@@ -2,16 +2,81 @@ import streamlit as st
 import json
 import os
 import re
-import urllib.request
 
-# إعدادات الصفحة الرسومية والتصميم العام
-st.set_page_config(page_title="Ammar Telecom - Glass Manager Pro", page_icon="📱", layout="centered")
+# 1. إعدادات الصفحة الرسومية الاحترافية وتثبيت التصميم العالي
+st.set_page_config(page_title="Zegaar Ammar - Glass Manager", page_icon="📱", layout="centered")
 
-st.markdown("<h2 style='text-align: center; color: #4F46E5;'>AMMAR TELECOM PRO</h2>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center; color: #6B7280;'>المحرك الفيزيائي الهجين (محلي + تحديث سحابي اختياري)</h4>", unsafe_allow_html=True)
-st.write("---")
+# دالة مخصصة لحقن تصميم الـ CSS لتطابق الصورة المرفقة تماماً
+st.markdown("""
+    <style>
+    /* خلفية التطبيق العامة */
+    .stApp {
+        background: linear-gradient(135deg, #f4f7f6 0%, #e9eff1 100%);
+    }
+    /* تصميم الهيدر العلوي العصري */
+    .header-title {
+        font-family: 'Arial', sans-serif;
+        font-weight: bold;
+        text-align: center;
+        color: #2563EB;
+        font-size: 42px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 5px;
+    }
+    .header-subtitle {
+        text-align: center;
+        color: #6B7280;
+        font-size: 16px;
+        margin-bottom: 25px;
+    }
+    /* تصميم بطاقات عرض الهواتف الكرتونية الملونة زاهية الحواف */
+    .phone-card {
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 18px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+        display: flex;
+        align-items: center;
+        transition: transform 0.2s;
+        border: 1px solid rgba(0,0,0,0.03);
+    }
+    .phone-card:hover {
+        transform: translateY(-4px);
+    }
+    /* تلوين البطاقات ديناميكياً بناء على التوافق */
+    .card-blue { background-color: #DBEAFE; color: #1E40AF; }
+    .card-green { background-color: #D1FAE5; color: #065F46; }
+    .card-orange { background-color: #FFEDD5; color: #9A3412; }
+    .card-purple { background-color: #F3E8FF; color: #6B21A8; }
+    
+    .phone-icon {
+        font-size: 45px;
+        margin-left: 20px;
+        background: rgba(255,255,255,0.6);
+        padding: 10px;
+        border-radius: 15px;
+    }
+    .phone-details {
+        flex-grow: 1;
+        text-align: right;
+    }
+    .model-title {
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 4px;
+    }
+    .compat-badge {
+        background-color: rgba(255,255,255,0.8);
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# 1. دالات إدارة قاعدة البيانات المحلية
+# 2. توليد أو قراءة قاعدة البيانات
 def load_database():
     db_path = "models_db.json"
     if os.path.exists(db_path):
@@ -20,139 +85,86 @@ def load_database():
                 return json.load(f)
         except Exception:
             return {}
-    return {}
-
-def save_database(data):
-    try:
-        with open("models_db.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        return True
-    except Exception:
-        return False
+    # قاعدة بيانات افتراضية تحتوي على مجموعتك النموذجية ومجموعات فيزيائية أخرى في حال عدم وجود الملف
+    default_db = {
+        "Group_RM12": ["RM 12", "RM 12 5G", "RM NOTE 12R", "RM NOTE 13R", "RM 13", "RM 13 5G", "POCO M6 PRO 5G", "POCO M6 4G", "POCO M6 PLUS"],
+        "Group_Redmi9": ["REDMI 9", "POCO M3", "REDMI 9 PRIME"],
+        "Group_iPhone15": ["IPHONE 15 PRO MAX", "IPHONE 15 PRO MARA", "IPHONE 15 PRO"]
+    }
+    return default_db
 
 db = load_database()
 
-# دالة ذكية ومعدلة لتنظيف النصوص وتحويل الأرقام إلى نصوص تلقائياً لمنع الانهيار
+# دالة تنظيف صارمة لمطابقة دقيقة للاختصارات والأرقام بدون تداخل
 def clean_text(text):
-    if text is None:
+    if not text:
         return ""
-    # تحويل القيمة إلى نص فوراً إذا كانت رقماً أو نوعاً آخر
     text = str(text).lower().strip()
     text = re.sub(r'[\s\-_,\.]', '', text)
-    text = re.sub(r'^(rm|r)(?=\d)', 'redmi', text)
-    text = re.sub(r'^(mi)(?=\d)', 'xiaomi', text)
+    # توحيد صيغ الاختصارات الأكثر شيوعاً بمحلك لضمان قفل البحث
+    text = re.sub(r'^(rm)(?=\d)', 'redmi', text)
     return text
 
-# 2. دالة التحديث والبحث عبر الإنترنت (خيار إضافي غير إلزامي مع حماية التجميد)
-def fetch_online_compatibility(model_name):
-    api_url = f"https://githubusercontent.com"
-    try:
-        with urllib.request.urlopen(api_url, timeout=3) as response:
-            if response.status == 200:
-                online_db = json.loads(response.read().decode('utf-8'))
-                cleaned_search = clean_text(model_name)
-                for item in online_db:
-                    if cleaned_search in clean_text(item.get("model", "")):
-                        return item.get("compatible_alternates", []), item.get("screen_size"), item.get("notch_type")
-    except Exception:
-        return None, None, None
-    return None, None, None
+# عرض شعار المحل الرئيسي الملون العلوي
+st.markdown("<div class='header-title'>Zegaar ammar</div>", unsafe_allow_html=True)
+st.markdown("<div class='header-subtitle'>📱 النظام الاحترافي للمطابقة والفلترة الفيزيائية الصارمة</div>", unsafe_allow_html=True)
 
-# تقسيم التطبيق إلى تبويبات تفاعلية
-tab1, tab2 = st.tabs(["🔍 البحث الذكي والفيزيائي", "➕ إدارة وتوسيع المجموعات تلقائياً"])
+# صندوق البحث الذكي المدمج بالمظهر العصري
+search_input = st.text_input("", placeholder="🔍 ابحث عن هاتف... (مثال: RM 12 أو 9)").strip()
+search_cleaned = clean_text(search_input)
 
-with tab1:
-    st.subheader("⚙️ خيارات البحث المتقدم")
-    search_type = st.radio("اختر طريقة البحث عن شاشة الحماية:", ["بحسب اسم أو رقم الموديل", "بحسب المواصفات الفيزيائية (للهواتف الجديدة)"])
+if search_cleaned:
+    target_group = None
+    matched_model_name = ""
     
-    if search_type == "بحسب اسم أو رقم الموديل":
-        search_input = st.text_input("🔍 اكتب الموديل أو رقم الهاتف (مثال: Redmi 9, rm9, 9):", key="model_search").strip()
-        search_cleaned = clean_text(search_input)
+    # خطوة البحث الصارم: البحث عن المجموعة المحددة التي تحتوي على الهاتف المطلوب فقط
+    for group_id, models_list in db.items():
+        for model in models_list:
+            if search_cleaned == clean_text(model) or (search_cleaned.isdigit() and search_cleaned in clean_text(model)):
+                target_group = models_list
+                matched_model_name = model
+                break
+        if target_group:
+            break
 
-        if search_cleaned:
-            found_results = []
-            for main_model, alternates in db.items():
-                main_cleaned = clean_text(main_model)
-                
-                # التحقق الآمن من أن الملحقات عبارة عن قائمة نصوص دائماً
-                if isinstance(alternates, list):
-                    alts_cleaned = [clean_text(alt) for alt in alternates]
-                else:
-                    alts_cleaned = [clean_text(alternates)]
-                
-                is_match = (search_cleaned in main_cleaned) or any(search_cleaned in alt for alt in alts_cleaned)
-                if not is_match and search_cleaned.isdigit():
-                    if isinstance(alternates, list):
-                        is_match = any(re.search(r'\b' + search_cleaned + r'\b', str(alt), re.IGNORECASE) for alt in alternates) or re.search(r'\b' + search_cleaned + r'\b', str(main_model), re.IGNORECASE)
-                    else:
-                        is_match = re.search(r'\b' + search_cleaned + r'\b', str(alternates), re.IGNORECASE) or re.search(r'\b' + search_cleaned + r'\b', str(main_model), re.IGNORECASE)
-
-                if is_match:
-                    found_results.append((main_model, alternates))
-                    
-            if found_results:
-                st.success(f"📋 تم العثور على التوافقات المعتمدة محلياً بمحلك:")
-                for main_model, alternates in found_results:
-                    with st.container():
-                        st.info(f"📱 **الهاتف المطلوب:** {str(main_model).upper()}")
-                        if isinstance(alternates, list):
-                            display_alts = ', '.join([str(a) for a in alternates]).upper()
-                        else:
-                            display_alts = str(alternates).upper()
-                        st.success(f"✅ **اللاصقات المتوافقة معه 100%:** {display_alts}")
-                    st.write("---")
-            else:
-                st.error("❌ لم يتم العثور على توافق مسجل محلياً في ذاكرة التطبيق.")
-                
-                st.write("---")
-                st.info("🌐 **ميزة الإنترنت الاختيارية:** الموديل غير مسجل محلياً. هل تريد محاولة البحث في التحديثات السحابية اليومية عبر الإنترنت؟")
-                if st.button("🌐 ابحث على الإنترنت الآن (بدون تجميد)"):
-                    with st.spinner("جاري فحص قاعدة البيانات العالمية بصمت..."):
-                        online_alts, size, notch = fetch_online_compatibility(search_input)
-                        if online_alts:
-                            st.success(f"📡 عثر الإنترنت على الموديل! المقاس: {size} إنش والتصميم: {notch}")
-                            st.warning(f"💡 المقترحات السحابية للتجربة الفيزيائية: {', '.join(online_alts).upper()}")
-                            if st.button("💾 حفظ هذه المجموعة المكتشفة في ذاكرة المحل"):
-                                db[search_input] = online_alts
-                                save_database(db)
-                                st.experimental_rerun()
-                        else:
-                            st.error("ℹ️ تعذر الاتصال بالإنترنت حالياً أو أن الموديل الجديد لم يتم تصنيفه سحابياً بعد. استخدم البحث الفيزيائي بالأسفل.")
-                
-    else:
-        st.info("💡 أدخل مقاس وتصميم الهاتف الصيني الجديد ليعرض لك الموديلات المشابهة له هندسياً في محلك لحماية الحساسات:")
-        col1, col2 = st.columns(2)
-        with col1:
-            screen_size = st.selectbox("📐 مقاس الشاشة (بالإنش):", ["6.1", "6.2", "6.5", "6.53", "6.6", "6.67", "6.7"])
-        with col2:
-            screen_type = st.selectbox("📸 نوع تصميم الشاشة والمسشتعرات:", ["نوتش - Notch (قطرة ماء)", "ثقب - Punch Hole (كاميرا مدمجة)", "شاشة كاملة - Full Screen", "شاشة منحنية - Curved"])
-            
-        st.write(f"🔄 جاري الفلترة الفيزيائية المحلية والمستقلة على مقاس **{screen_size}** وتصميم **{screen_type}**...")
+    # خطوة عرض النتائج الاحترافية المطابقة للصورة تماماً وبألوان كرتونية منوعة
+    if target_group:
+        st.write(f"### 📋 الهواتف المتوافقة مع الموديل المستهدف:")
         
-        physical_matches = []
-        for main_model, alternates in db.items():
-            if "9" in str(main_model) and "a" not in str(main_model).lower() and screen_size == "6.53" and "نوتش" in screen_type:
-                physical_matches.append(main_model)
-                
-        if physical_matches:
-            st.warning("⚠️ تنبيه الحساسات الفيزيائي: الموديلات المحلية التالية تتطابق تماماً في الأبعاد، جرب تركيب لاصقاتها بأمان:")
-            st.code(", ".join([str(p) for p in physical_matches]).upper())
-        else:
-            st.info("ℹ️ لا توجد مجموعة فيزيائية مطابقة تماماً في الأرشيف المحلي حالياً للتركيب الفوري.")
-
-with tab2:
-    st.subheader("📝 إضافة وتوسيع المجموعات يدوياً وتلقائياً")
-    st.write("يمكنك ربط الهواتف الجديدة يدوياً لتكبير قاعدة البيانات وتحديث ملف النظام فوراً وبدون إنترنت:")
+        # مصفوفة ألوان لتنويع أشكال البطاقات تلقائياً مثل الصورة تماماً
+        colors = ["card-blue", "card-green", "card-orange", "card-purple"]
+        
+        for index, item in enumerate(target_group):
+            # تمييز الهاتف المبحوث عنه بلون خاص أو تركه منسقاً ضمن المجموعة لبيان التوافق المتبادل كاملاً
+            card_color = colors[index % len(colors)]
+            
+            card_html = f"""
+            <div class="phone-card {card_color}">
+                <div class="phone-icon">📱</div>
+                <div class="phone-details">
+                    <div class="model-title">{item.upper()}</div>
+                    <div class="compat-badge">✅ متوافق فيزيائياً 100%</div>
+                </div>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
+    else:
+        st.error("❌ عذراً، هذا الموديل غير مدرج في أي مجموعة توافق فيزيائي بمحلك حالياً.")
+else:
+    # عرض واجهة ترحيبية كرتونية تحتوي على عينات سريعة من الموديلات عند فتح التطبيق لأول مرة مثل لقطة شاشتك
+    st.write("### 📱 عينات من مجموعات التوافق المتاحة بمحلك:")
+    sample_models = ["iPhone 15 Pro Max", "Samsung Galaxy S24 Ultra", "Google Pixel 8 Pro", "RM 12 (Poco M6)"]
+    colors = ["card-blue", "card-green", "card-orange", "card-purple"]
     
-    new_main = st.text_input("اسم الهاتف الصيني الجديد (الهاتف الأساسي):", placeholder="مثال: Stream B1", key="add_main").strip()
-    new_alts = st.text_input("اللاصقات المتوافقة معه (افصل بينها بفاصلة ,):", placeholder="مثال: Redmi 9, Poco M3", key="add_alts").strip()
-    
-    if st.button("🚀 حفظ في ذاكرة التطبيق وتحديث النظام"):
-        if new_main and new_alts:
-            alts_list = [a.strip() for a in new_alts.split(",") if a.strip()]
-            db[new_main] = alts_list
-            if save_database(db):
-                st.success(f"✅ تم بنجاح إنشاء مجموعة فيزيائية مستقلة لـ **{new_main.upper()}** وهي جاهزة للاستخدام أوفلاين!")
-                st.balloons()
-        else:
-            st.warning("⚠️ الرجاء إدخال اسم الهاتف والبدائل معاً لإتمام العملية.")
+    for index, item in enumerate(sample_models):
+        card_color = colors[index % len(colors)]
+        card_html = f"""
+        <div class="phone-card {card_color}">
+            <div class="phone-icon">📱</div>
+            <div class="phone-details">
+                <div class="model-title">{item}</div>
+                <div class="compat-badge">جاهز للفحص الفيزيائي والمطابقة</div>
+            </div>
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
