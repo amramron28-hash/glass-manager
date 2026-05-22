@@ -32,34 +32,31 @@ def save_database(data):
 
 db = load_database()
 
+# دالة ذكية ومعدلة لتنظيف النصوص وتحويل الأرقام إلى نصوص تلقائياً لمنع الانهيار
+def clean_text(text):
+    if text is None:
+        return ""
+    # تحويل القيمة إلى نص فوراً إذا كانت رقماً أو نوعاً آخر
+    text = str(text).lower().strip()
+    text = re.sub(r'[\s\-_,\.]', '', text)
+    text = re.sub(r'^(rm|r)(?=\d)', 'redmi', text)
+    text = re.sub(r'^(mi)(?=\d)', 'xiaomi', text)
+    return text
+
 # 2. دالة التحديث والبحث عبر الإنترنت (خيار إضافي غير إلزامي مع حماية التجميد)
 def fetch_online_compatibility(model_name):
-    # رابط قاعدة بيانات سحابية مفتوحة ومحدثة يومياً لمواصفات الهواتف وأبعادها هندسياً
     api_url = f"https://githubusercontent.com"
     try:
-        # تحديد مهلة زمنية 3 ثوانٍ فقط لمنع تجميد التطبيق في حال ضعف الإنترنت
         with urllib.request.urlopen(api_url, timeout=3) as response:
             if response.status == 200:
                 online_db = json.loads(response.read().decode('utf-8'))
-                # البحث الذكي داخل البيانات السحابية المستلمة عن توافقات الموديل الصيني الجديد
                 cleaned_search = clean_text(model_name)
                 for item in online_db:
                     if cleaned_search in clean_text(item.get("model", "")):
                         return item.get("compatible_alternates", []), item.get("screen_size"), item.get("notch_type")
     except Exception:
-        # في حال انقطاع الإنترنت أو تجاوز المهلة، يتخطى الكود العملية بصمت ويستمر التطبيق محلياً
         return None, None, None
     return None, None, None
-
-# دالة تنظيف النصوص للمقارنة المرنة
-def clean_text(text):
-    if not text:
-        return ""
-    text = text.lower().strip()
-    text = re.sub(r'[\s\-_,\.]', '', text)
-    text = re.sub(r'^(rm|r)(?=\d)', 'redmi', text)
-    text = re.sub(r'^(mi)(?=\d)', 'xiaomi', text)
-    return text
 
 # تقسيم التطبيق إلى تبويبات تفاعلية
 tab1, tab2 = st.tabs(["🔍 البحث الذكي والفيزيائي", "➕ إدارة وتوسيع المجموعات تلقائياً"])
@@ -76,11 +73,19 @@ with tab1:
             found_results = []
             for main_model, alternates in db.items():
                 main_cleaned = clean_text(main_model)
-                alts_cleaned = [clean_text(alt) for alt in alternates]
+                
+                # التحقق الآمن من أن الملحقات عبارة عن قائمة نصوص دائماً
+                if isinstance(alternates, list):
+                    alts_cleaned = [clean_text(alt) for alt in alternates]
+                else:
+                    alts_cleaned = [clean_text(alternates)]
                 
                 is_match = (search_cleaned in main_cleaned) or any(search_cleaned in alt for alt in alts_cleaned)
                 if not is_match and search_cleaned.isdigit():
-                    is_match = any(re.search(r'\b' + search_cleaned + r'\b', alt, re.IGNORECASE) for alt in alternates) or re.search(r'\b' + search_cleaned + r'\b', main_model, re.IGNORECASE)
+                    if isinstance(alternates, list):
+                        is_match = any(re.search(r'\b' + search_cleaned + r'\b', str(alt), re.IGNORECASE) for alt in alternates) or re.search(r'\b' + search_cleaned + r'\b', str(main_model), re.IGNORECASE)
+                    else:
+                        is_match = re.search(r'\b' + search_cleaned + r'\b', str(alternates), re.IGNORECASE) or re.search(r'\b' + search_cleaned + r'\b', str(main_model), re.IGNORECASE)
 
                 if is_match:
                     found_results.append((main_model, alternates))
@@ -89,13 +94,16 @@ with tab1:
                 st.success(f"📋 تم العثور على التوافقات المعتمدة محلياً بمحلك:")
                 for main_model, alternates in found_results:
                     with st.container():
-                        st.info(f"📱 **الهاتف المطلوب:** {main_model.upper()}")
-                        st.success(f"✅ **اللاصقات المتوافقة معه 100%:** {', '.join(alternates).upper()}")
+                        st.info(f"📱 **الهاتف المطلوب:** {str(main_model).upper()}")
+                        if isinstance(alternates, list):
+                            display_alts = ', '.join([str(a) for a in alternates]).upper()
+                        else:
+                            display_alts = str(alternates).upper()
+                        st.success(f"✅ **اللاصقات المتوافقة معه 100%:** {display_alts}")
                     st.write("---")
             else:
                 st.error("❌ لم يتم العثور على توافق مسجل محلياً في ذاكرة التطبيق.")
                 
-                # تفعيل الميزة السحابية الاختيارية في حال عدم وجود الموديل محلياً
                 st.write("---")
                 st.info("🌐 **ميزة الإنترنت الاختيارية:** الموديل غير مسجل محلياً. هل تريد محاولة البحث في التحديثات السحابية اليومية عبر الإنترنت؟")
                 if st.button("🌐 ابحث على الإنترنت الآن (بدون تجميد)"):
@@ -104,7 +112,6 @@ with tab1:
                         if online_alts:
                             st.success(f"📡 عثر الإنترنت على الموديل! المقاس: {size} إنش والتصميم: {notch}")
                             st.warning(f"💡 المقترحات السحابية للتجربة الفيزيائية: {', '.join(online_alts).upper()}")
-                            # خيار حفظ النتيجة السحابية محلياً لتحديث النظام بشكل تراكمي
                             if st.button("💾 حفظ هذه المجموعة المكتشفة في ذاكرة المحل"):
                                 db[search_input] = online_alts
                                 save_database(db)
@@ -124,12 +131,12 @@ with tab1:
         
         physical_matches = []
         for main_model, alternates in db.items():
-            if "9" in main_model and "a" not in main_model.lower() and screen_size == "6.53" and "نوتش" in screen_type:
+            if "9" in str(main_model) and "a" not in str(main_model).lower() and screen_size == "6.53" and "نوتش" in screen_type:
                 physical_matches.append(main_model)
                 
         if physical_matches:
             st.warning("⚠️ تنبيه الحساسات الفيزيائي: الموديلات المحلية التالية تتطابق تماماً في الأبعاد، جرب تركيب لاصقاتها بأمان:")
-            st.code(", ".join(physical_matches).upper())
+            st.code(", ".join([str(p) for p in physical_matches]).upper())
         else:
             st.info("ℹ️ لا توجد مجموعة فيزيائية مطابقة تماماً في الأرشيف المحلي حالياً للتركيب الفوري.")
 
