@@ -2,59 +2,80 @@ import streamlit as st
 import json
 import os
 
-# إعدادات الصفحة الاحترافية المظلمة لـ AMMAR TELECOM PRO
-st.set_page_config(page_title="AMMAR TELECOM PRO", page_icon="📱", layout="centered")
+DB_FILE = "models_db.json"
 
-# تطبيق ثيم مظلم مخصص
+# 1. دالة تحميل البيانات المدمجة
+def load_data():
+    if not os.path.exists(DB_FILE):
+        return []
+    try:
+        with open(DB_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+# 2. محرك البحث الذكي والمترجم التلقائي للاختصارات (RM, RMI, OP)
+def search_models(query, db_data):
+    query_clean = query.lower().strip().replace(" ", "")
+    if not query_clean:
+        return []
+        
+    # مترجم فوري للاختصارات الميدانية لضمان ظهور النتائج دائماً
+    replacements = {"rm": "realme", "rmi": "redmi", "op": "oppo", "hw": "huawei", "sam": "samsung", "xmi": "xiaomi"}
+    for short, full in replacements.items():
+        if query_clean.startswith(short) and not query_clean.startswith(full):
+            query_clean = query_clean.replace(short, full, 1)
+
+    target_group = None
+    # الخطوة أ: البحث الجزئي لتحديد المجموعة الفيزيائية المتوافقة
+    for model in db_data:
+        m_name = model.get("model_name", "").lower().replace(" ", "")
+        if query_clean in m_name or m_name in query_clean:
+            target_group = model.get("matrix_group")
+            if target_group:
+                break
+                
+    # الخطوة ب: جلب المجموعة كاملة (المقاس والشاشة المتطابقة فقط لا غير)
+    if target_group:
+        return [model for model in db_data if model.get("matrix_group") == target_group]
+        
+    return [model for model in db_data if query_clean in model.get("model_name", "").lower().replace(" ", "")]
+
+# 3. إعدادات الواجهة الاحترافية الزرقاء (AMMAR TELECOM PRO)
+st.set_page_config(page_title="AMMAR TELECOM PRO", page_icon="📱", layout="wide")
+
 st.markdown("""
     <style>
-    .stApp { background-color: #0b111e; color: #ffffff; }
-    .stTextInput>div>div>input { background-color: #172237; color: white; border: 1px solid #2563eb; border-radius: 8px; }
-    .card { background-color: #172237; border-left: 5px solid #2563eb; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    .card-title { color: #3b82f6; font-size: 20px; font-weight: bold; margin-bottom: 5px; }
-    .card-meta { color: #9ca3af; font-size: 14px; }
+    .main { background-color: #0f172a; color: #ffffff; }
+    .stTextInput>div>div>input { background-color: #1e293b; color: white; border-radius: 8px; border: 1px solid #3b82f6; }
+    .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 15px; border-left: 5px solid #3b82f6; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .model-title { color: #3b82f6; font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+    .info-line { font-size: 15px; margin: 5px 0; color: #cbd5e1; }
+    .badge { background-color: #2563eb; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
 st.title("📱 AMMAR TELECOM PRO")
-st.subheader("محرك البحث الذكي للموديلات المتوافقة فيزيائياً لعام 2026")
+st.subheader("محرك البحث الذكي للموديلات المتوافقة في المقاس والشاشة")
 
-# دالة تحميل قاعدة البيانات
-def load_db():
-    db_path = "models_db.json"
-    if os.path.exists(db_path):
-        with open(db_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+db_data = load_data()
 
-db = load_db()
+# خانة البحث المرن
+query = st.text_input("اكتب اسم الهاتف أو اختصاره (مثال: RM 12, Reno 12, OP A38):", "")
 
-# خانة البحث الذكي
-search_query = st.text_input("أدخل اسم الموديل أو الحروف الأولى منه (مثال: c35 أو a15):").strip().lower()
-
-if search_query:
-    found_models = []
-    group_title = ""
-    
-    # البحث المطور: التحقق من انتماء التوكن لأي مجموعة
-    for group_id, group_data in db.items():
-        models_list = group_data.get("compatible_models", [])
-        # إذا تطابق البحث مع أي موديل داخل المجموعة
-        if any(search_query in model.lower() for model in models_list):
-            found_models = models_list
-            group_title = group_data.get("group_name", "مجموعة متوافقة")
-            break # جلب المجموعة كاملة فوراً دون نقصان
-            
-    if found_models:
-        st.success(f"🔍 تم العثور على: {group_title} (تضم {len(found_models)} موديلاً متوافقاً)")
-        
-        # عرض الموديلات الـ 60 كاملة في بطاقات عمودية مستقلة تماماً وقابلة للتمرير طويلاً
-        for model in found_models:
-            st.markdown(f"""
+if query:
+    results = search_models(query, db_data)
+    if results:
+        st.success(f"تم العثور على {len(results)} موديل متوافق تماماً في المقاس والشاشة:")
+        for idx, model in enumerate(results):
+            with st.container():
+                st.markdown(f"""
                 <div class="card">
-                    <div class="card-title">📱 {model}</div>
-                    <div class="card-meta">لاصق الحماية متوافق فيزيائياً بنسبة 100%</div>
+                    <div class="model-title">{idx+1}. {model.get('model_name', 'غير معروف')}</div>
+                    <div class="info-line"><b>Matrix Group:</b> <span class="badge">{model.get('matrix_group', 'N/A')}</span></div>
+                    <div class="info-line"><b>العلامة التجارية:</b> {model.get('brand', 'غير معروف')}</div>
+                    <div class="info-line"><b>التوافق الفيزيائي:</b> مقاس وأبعاد متطابقة 100% ✓</div>
                 </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allowed_html=False if 'unsafe_allow_html' not in st.markdown.__code__.co_varnames else True)
     else:
-        st.error("⚠️ عذراً، هذا الموديل غير مدرج في أي مجموعة توافق فيزيائي بمحلك حالياً.")
+        st.error(f"الموديل '{query}' غير مسجل حالياً في قاعدة البيانات.")
