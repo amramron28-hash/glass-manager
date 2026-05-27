@@ -1,385 +1,67 @@
 {
-  "meta": {
-    "version": "1.0",
-    "last_updated": "2026-05-21",
-    "total_groups": 62,
-    "description": "قاعدة بيانات شاملة لتوافقات زجاج حماية الهواتف - Ammar Telecom Pro"
-  },
-  "groups": [
-    {
-      "id": "GRP_001",
-      "source": "main",
-      "name": "Oppo/Realme Reno 7/8 & F Series",
-      "models": [
-        "Oppo A93 4G", "Oppo Reno 7", "Oppo Reno 8", "Realme 11 4G", "Realme 10 4G",
-        "Oppo F19", "Oppo F19 Pro", "Oppo F19 Pro Plus", "Oppo F17 Pro", "Oppo F19S",
-        "Oppo F21 Pro 4G", "Oppo F21 Pro 5G", "Oppo F21S Pro", "Realme 7 Pro", "Realme X7",
-        "Realme 8 Pro", "Realme 9 4G", "Realme V15 5G", "Realme 9 Pro+", "Realme Q2 Pro",
-        "Realme Narzo 60", "Oppo Find X5 Lite 5G", "Oppo A95", "Oppo A95 5G", "Oppo A94 5G",
-        "Oppo A74 4G", "Oppo A78 4G", "Oppo A94", "Oppo Reno 7 5G", "Oppo Reno 7 SE 5G",
-        "Oppo A96 5G China", "Oppo Reno 6 Lite", "Oppo Reno 5 Lite", "Oppo Reno 4",
-        "Oppo Reno 4 5G", "Oppo Reno 4 Lite", "Oppo Reno 2", "Oppo Reno 7Z 5G",
-        "Oppo Reno 5 Z", "Oppo Reno 5F", "Oppo Reno 4 SE", "Oppo Reno 4 F", "Oppo Reno 6Z",
-        "Oppo Reno 7 Lite", "Oppo Reno 8Z 5G", "Oppo Reno 8T", "Realme Narzo 50 Pro 5G",
-        "Oppo Reno 8 5G", "Oppo Reno 8 Lite", "OnePlus Nord CE 2 5G"
-      ]
-    },
-    {
-      "id": "GRP_002",
-      "source": "main",
-      "name": "Tecno/Infinix Spark/Pop/Hot 2024-2025",
-      "models": [
-        "Tecno Pop 9", "Tecno Pop 10", "Tecno Spark Go 1", "Tecno Spark Go 1S",
-        "Tecno Spark 40", "Tecno Spark 40C", "Tecno Spark Go 2", "Tecno Spark Go 2025",
-        "Tecno Spark 30C", "Tecno Spark 30 5G", "Infinix Hot 50 5G", "Infinix Hot 50i X6531",
-        "Infinix Hot 60i", "Infinix Hot 60", "Infinix X6728", "Tecno Smart 9", "Tecno Smart 10",
-        "Infinix X6725", "Tecno Smart 10 Plus", "Infinix X6725B", "Tecno Smart 10 Plus NFC",
-        "Infinix X6725C", "Infinix Note 50X", "Tecno Pova 6 Neo 5G", "Motorola One 5G Ace",
-        "Motorola Moto G 5G", "Itel A80", "Itel P65"
-      ]
-    },
-    {
-      "id": "GRP_003",
-      "source": "main",
-      "name": "Realme Narzo/C Series & Huawei/Vivo",
-      "models": [
-        "Realme Narzo N53", "Realme C53", "Realme C63", "Realme C53 India", "Realme C51",
-        "Realme Note 50", "Realme Note 60", "Realme Note 60X", "Realme C65S",
-        "Realme Narzo N63", "Realme C61", "Realme C61 Global", "Realme Narzo N61",
-        "Realme Narzo 8 Lite", "Realme C71 India", "Realme Note 70", "Realme Note 70T",
-        "Huawei Nova Y70", "Honor X7", "Honor X7A", "Huawei Nova Y70 Plus", "Huawei Play 30 Plus",        "Vivo Y04", "Vivo Y29S", "Vivo Y19E India", "Vivo Y37C", "Vivo Y19", "Vivo T4 Lite",
-        "Vivo Y29T 5G", "Vivo Y50 5G", "Vivo Y50M 5G", "Vivo Y19S GT", "Vivo Y04S",
-        "Vivo G3 5G", "Vivo Y50i"
-      ]
-    },
-    {
-      "id": "GRP_004",
-      "source": "main",
-      "name": "Oppo/Realme/Narzo Large Mixed Group",
-      "models": [
-        "Oppo A1", "Oppo K11X", "Oppo A98 5G", "Oppo F23", "Oppo F23 Pro", "Oppo A58 4G",
-        "Oppo A79 5G", "Oppo A2 5G", "Oppo A60", "Oppo A3 Pro India", "Oppo K12X",
-        "Oppo A3X China", "Oppo A3X 4G", "Oppo A3X", "Oppo A80 5G", "Oppo A3 5G India",
-        "Oppo A40", "Oppo A40M", "Oppo A3 4G", "Oppo A3i", "Oppo A5X", "Oppo A5 Pro 5G",
-        "Oppo A5X 5G", "Oppo A5 4G", "Oppo A5 5G", "Oppo K13X 5G", "Oppo A5i Pro", "Oppo A5i",
-        "Realme 11 5G", "Realme 11X", "Realme C67 5G", "Vivo V50S 5G", "Realme C55",
-        "Realme C73", "Realme Narzo N55", "Realme Narzo 60X", "Realme 12", "Realme 12X",
-        "Realme Narzo 70X", "Realme Narzo N65", "Realme 12 Lite", "Realme C67 4G",
-        "Realme C65", "Realme C63 5G", "Realme 13", "Realme C75", "Realme C75X",
-        "Realme P3X", "Realme 14X", "Realme V60 Pro", "Realme P3X", "Realme C75 5G",
-        "Realme Narzo 80X 5G", "Realme C71", "Realme Narzo 8 Lite 5G", "Vivo T3X",
-        "iQOO Z9X", "Vivo Y200i", "Vivo Y38", "Vivo Y200T", "Vivo Y58", "Vivo Y28 4G",
-        "Vivo Y37 Pro", "Vivo Y19S", "Vivo Y29", "Vivo Y29 4G", "Vivo T4X", "Vivo Y300i",
-        "Vivo Y39", "Vivo Y300T", "iQOO Z10X", "Redmi Note 12 5G", "Redmi Note 12 5G China",
-        "Redmi Note 12 4G", "Poco X5", "Redmi Note 12R Pro", "Motorola Moto G05",
-        "Motorola Moto G15", "Motorola Moto G15 Power", "Motorola Moto E15",
-        "Motorola Edge 20 Lite", "Motorola Edge 20 Fusion", "Motorola Moto G66J",
-        "Motorola Moto G66Y", "OnePlus Nord CE 3 Lite", "OnePlus Nord N30",
-        "OnePlus Nord N30 SE", "Tecno Spark 30 Pro", "Infinix Hot 50 Pro"
-      ]
-    },
-    {
-      "id": "GRP_005",
-      "source": "main",
-      "name": "Redmi Note Pro & Poco/Xiaomi Flagship",
-      "models": [
-        "Redmi Note 9 Pro 4G", "Redmi Note 10 Pro 4G", "Redmi Note 11 Pro 4G",
-        "Redmi Note 12 Pro 4G", "Redmi Note 14 4G", "Poco X3", "Poco X3 Pro",
-        "Redmi Note 9S", "Redmi Note 9 Pro Max", "Redmi Note 10 Pro Max",
-        "Redmi Note 11 Pro+ 5G", "Redmi Note 11E Pro", "Xiaomi Mi 10i", "Xiaomi Mi 10T 5G",
-        "Xiaomi Mi 10T Pro 5G", "Xiaomi Mi 10T Lite 5G", "Xiaomi 11T", "Xiaomi 11T Pro",
-        "Xiaomi 11X", "Xiaomi 11X Pro", "Xiaomi 11i", "Poco F4 5G", "Poco F2 Pro",
-        "Xiaomi Poco M2 Pro", "Poco X4 Pro 5G", "Poco X4 5G", "Poco M2 Pro",
-        "Xiaomi K40", "Xiaomi K40 Pro", "Xiaomi K40 Pro+", "Black Shark 4",
-        "Black Shark 4 Pro", "Black Shark 4S", "Black Shark 4S Pro", "Xiaomi K40S 5G",
-        "Redmi K30 Ultra", "Redmi K30 Pro", "Redmi K30", "Redmi K30S", "Redmi K30i",
-        "Poco F3", "Poco X2", "Poco X3", "Poco X3 Pro", "Poco F2", "Poco F2 Pro"
-      ]
-    },
-    {      "id": "GRP_006",
-      "source": "main",
-      "name": "Realme C/Narzo/Oppo A Entry Level",
-      "models": [
-        "Realme 5", "Realme 5i", "Realme 5S", "Realme 7i", "Realme C20", "Realme C21",
-        "Realme C3", "Realme C3i", "Realme C11", "Realme C12", "Realme C15",
-        "Realme C25S", "Realme C25", "Realme C25Y", "Realme C21Y", "Realme C11 2021",
-        "Realme C35", "Realme C31", "Realme V3", "Realme V11 5G", "Realme Q2i",
-        "Realme Narzo 30A", "Realme Narzo 10A", "Realme Narzo 10", "Realme Narzo 50A",
-        "Realme Narzo 50i", "Realme Narzo 50A Prime", "Realme Narzo 50i Prime",
-        "Realme Narzo 50 5G", "Realme Narzo 20", "Realme Narzo 20A", "Realme V23 5G",
-        "Realme 9i 5G", "Realme 10T", "Realme C30S", "Realme C33", "Realme C33 2023",
-        "Realme C30", "Realme 10 5G", "Realme V20", "Realme 10S", "Oppo A15", "Oppo A15S",
-        "Oppo A31", "Oppo A9 2020", "Oppo A5 2020", "Oppo A53S 5G", "Oppo A54S",
-        "Oppo A16", "Oppo A11", "Oppo A16S", "Oppo A55 5G", "Oppo A56 5G", "Oppo A16K",
-        "Oppo A16E", "Oppo A35", "Oppo A8", "Oppo A55S 5G", "Oppo A57 5G", "Oppo A57 4G",
-        "Oppo K10 5G", "Oppo A77 5G", "Oppo A97 5G", "Oppo A57E", "Oppo A57S",
-        "Oppo A77 4G", "Oppo A17", "Oppo A17K", "Oppo A77S", "Oppo A58 5G China",
-        "Oppo A58X 5G", "Oppo A78 5G", "Oppo A56S 5G", "Oppo A1X 5G", "Oppo A38",
-        "Oppo A18", "Oppo A2X 5G", "Oppo A59 5G"
-      ]
-    },
-    {
-      "id": "GRP_007",
-      "source": "main",
-      "name": "Samsung A/M/F Series Large Group",
-      "models": [
-        "Samsung Galaxy A12", "Samsung Galaxy A02", "Samsung Galaxy A02S",
-        "Samsung Galaxy A02 5G", "Samsung Galaxy A03", "Samsung Galaxy A03S",
-        "Samsung Galaxy A03 Core", "Samsung Galaxy A04", "Samsung Galaxy A04S",
-        "Samsung Galaxy A04 Core", "Samsung Galaxy A04e", "Samsung Galaxy A13 4G",
-        "Samsung Galaxy A13 5G", "Samsung Galaxy A23 4G", "Samsung Galaxy A23 5G",
-        "Samsung Galaxy A32 5G", "Samsung Galaxy M02", "Samsung Galaxy M02S",
-        "Samsung Galaxy M12", "Samsung Galaxy M32 5G", "Samsung Galaxy F12",
-        "Samsung Galaxy F02S", "Samsung Galaxy A04", "Samsung Galaxy A04S",
-        "Samsung Galaxy A04e", "Samsung Galaxy F04", "Samsung Galaxy M04",
-        "Samsung Galaxy A04 Core", "Samsung Galaxy M04S", "Samsung Galaxy M33 5G",
-        "Samsung Galaxy M13 4G", "Samsung Galaxy M13 5G", "Samsung Galaxy M13 India",
-        "Samsung Galaxy M23 5G", "Samsung Galaxy M32 5G", "Samsung Galaxy M33 5G",
-        "Samsung Galaxy F02S 4G", "Samsung Galaxy F12 4G", "Samsung Galaxy F13 4G",
-        "Samsung Galaxy F23 5G", "Samsung Galaxy A14 4G", "Samsung Galaxy A14 5G",
-        "Samsung Galaxy M14 5G", "Samsung Galaxy F14 5G", "Samsung Galaxy A22 5G",
-        "Samsung Galaxy F42 5G", "Samsung Galaxy A31", "Samsung Galaxy A32 4G",
-        "Samsung Galaxy A33 5G", "Samsung Galaxy A22 4G", "Samsung Galaxy F22 4G",
-        "Samsung Galaxy M22", "Samsung Galaxy M32 4G", "Samsung Galaxy A34 5G",
-        "Samsung Galaxy A05S", "Samsung Galaxy M14 4G", "Samsung Galaxy A30",
-        "Samsung Galaxy A50", "Samsung Galaxy A20", "Samsung Galaxy A30S",
-        "Samsung Galaxy A50S", "Samsung Galaxy M10S", "Samsung Galaxy M21",
-        "Samsung Galaxy M21S", "Samsung Galaxy M21 2021", "Samsung Galaxy M30",
-        "Samsung Galaxy M30S", "Samsung Galaxy M31", "Samsung Galaxy M31 Prime",        "Samsung Galaxy F41", "Samsung Galaxy A54 5G", "Samsung Galaxy S23 FE",
-        "Samsung Galaxy A70", "Samsung Galaxy A70S", "Samsung Galaxy A42 5G",
-        "Samsung Galaxy M42 5G"
-      ]
-    },
-    {
-      "id": "GRP_008",
-      "source": "main",
-      "name": "Redmi 9A/Note 9 Basic & Samsung Entry",
-      "models": [
-        "Redmi 9A", "Redmi 9C", "Redmi 9i", "Redmi 9 Activ", "Redmi 10A 4G",
-        "Xiaomi Poco C3", "Xiaomi Poco C31", "Redmi 10C", "Redmi 10 Power",
-        "Redmi 11A", "Redmi 12C", "Xiaomi Poco C40", "Xiaomi Poco C55",
-        "Xiaomi Poco C61", "Samsung Galaxy A02", "Samsung Galaxy A12",
-        "Samsung Galaxy A02S", "Samsung Galaxy A03", "Samsung Galaxy A03S",
-        "Samsung Galaxy A03 Core", "Samsung Galaxy A04", "Samsung Galaxy A04S",
-        "Samsung Galaxy F04", "Samsung Galaxy M04", "Samsung Galaxy A04 Core",
-        "Samsung Galaxy M04S", "Samsung Galaxy A23 4G", "Vivo Y16", "Vivo Y37"
-      ]
-    },
-    {
-      "id": "GRP_009",
-      "source": "main",
-      "name": "Redmi Note 12/13 & Poco M6",
-      "models": [
-        "Redmi 12", "Redmi 12 5G", "Redmi Note 12R", "Redmi Note 13R",
-        "Redmi 13", "Redmi 13 5G", "Poco M6 Pro 5G", "Poco M6 4G", "Poco M6 Plus"
-      ]
-    },
-    {
-      "id": "GRP_010",
-      "source": "main",
-      "name": "iPhone All Series",
-      "models": [
-        "iPhone 6", "iPhone 6s", "iPhone 6 Plus", "iPhone 6s Plus",
-        "iPhone 7", "iPhone 8", "iPhone 7 Plus", "iPhone 8 Plus",
-        "iPhone X", "iPhone XS", "iPhone 11 Pro", "iPhone XR", "iPhone 11",
-        "iPhone XS Max", "iPhone 11 Pro Max", "iPhone 12 Pro Max",
-        "iPhone 12", "iPhone 12 Pro", "iPhone 13 Pro Max", "iPhone 14 Plus",
-        "iPhone 14 Pro Max", "iPhone 13", "iPhone 13 Pro", "iPhone 14",
-        "iPhone 14 Pro", "iPhone 15", "iPhone 15 Pro", "iPhone 15 Pro Max",
-        "iPhone 15 Plus", "iPhone SE 2020", "iPhone SE 2022", "iPhone 16 Pro",
-        "iPhone 16 Pro Max", "iPhone 16", "iPhone 16 Plus"
-      ]
-    },
-    {
-      "id": "GRP_011",
-      "source": "main",
-      "name": "Huawei/Honor Mixed",
-      "models": [        "Huawei Nova 7", "Huawei Nova 7 SE", "Huawei Nova 10z", "Huawei P40 Lite 5G",
-        "Honor 30", "Honor 30S", "Honor V30", "Honor V30 Pro", "Huawei Honor X10 5G",
-        "Huawei Enjoy 20 Plus", "Huawei Y9A No Holes", "Huawei Nova Y61",
-        "Huawei Enjoy 50z", "Honor X5", "Honor X5 Plus", "Honor X6", "Honor X6A",
-        "Honor X6B", "Honor X8 5G", "Honor X8A 5G", "Huawei Play 6C", "Huawei Play 20",
-        "Huawei Play 30", "Huawei Play 40", "Huawei Play 70 Lite", "Huawei Enjoy 20",
-        "Huawei Nova Y60"
-      ]
-    },
-    {
-      "id": "GRP_012",
-      "source": "main",
-      "name": "Vivo Y/T Series Large",
-      "models": [
-        "Vivo Y3", "Vivo Y11 2019", "Vivo Y12", "Vivo Y15 2019", "Vivo Y17", "Vivo U10",
-        "Vivo Y91", "Vivo Y93", "Vivo Y95", "Vivo Y90", "Vivo Y1S", "Vivo V23 5G",
-        "Vivo Y20", "Vivo Y20G", "Vivo Y20A", "Vivo Y55 5G", "Vivo Y21", "Vivo Y21E",
-        "Vivo Y21S", "Vivo Y21T", "Vivo Y20T", "Vivo T1 5G", "Vivo Y11S", "Vivo Y12A",
-        "Vivo Y12S", "Vivo Y12S 2021", "Vivo Y15S", "Vivo Y31", "Vivo Y33T",
-        "Vivo Y31 2021", "Vivo Y31S 5G", "Vivo Y32", "Vivo Y33S", "Vivo Y3S 2021",
-        "Vivo Y51 2020 December", "Vivo Y51A", "Vivo Y52 5G", "Vivo Y52S",
-        "Vivo Y53S 4G", "Vivo Y55S 5G", "Vivo Y54S", "Vivo Y76S", "Vivo Y72 5G",
-        "Vivo Y75 5G", "Vivo Y76 5G", "Vivo T1X", "Vivo Y33S 5G", "Vivo T1 5G",
-        "Vivo Y33", "Vivo Y01", "Vivo Y33E", "Vivo Y72T", "Vivo T1X 4G", "Vivo Y21G",
-        "Vivo Y150", "Vivo Y30 5G", "Vivo T1X", "Vivo Y77", "Vivo Y73T", "Vivo Y52T",
-        "Vivo Y16", "Vivo Y75S", "Vivo Y22", "Vivo Y22S", "Vivo Y77E", "Vivo Y35",
-        "Vivo Y02S", "Vivo Y30 5G", "Vivo Y77", "Vivo Y73T", "Vivo Y02", "Vivo Y58 2023",
-        "Vivo Y35 5G", "Vivo Y56", "Vivo Y11", "Vivo Y35+", "Vivo Y36", "Vivo Y27 4G",
-        "Vivo Y02T", "Vivo A38", "Vivo Y17S", "Vivo A18", "Vivo Y27 5G", "Vivo Y12",
-        "Vivo Y36i", "Vivo A59 5G", "Vivo Y28 5G", "Vivo Y03", "Vivo Y18", "Vivo Y18E"
-      ]
-    },
-    {
-      "id": "GRP_013",
-      "source": "support",
-      "name": "Samsung S Series & A High-End",
-      "models": [
-        "Samsung Galaxy S21 FE", "Samsung Galaxy S21", "Samsung Galaxy S21 Plus",
-        "Samsung Galaxy S22", "Samsung Galaxy S23", "Samsung Galaxy S22 Plus",
-        "Samsung Galaxy S23 Plus", "Samsung Galaxy S24 Ultra", "Samsung Galaxy S24",
-        "Samsung Galaxy S24 Plus", "Samsung Galaxy S24 FE", "Samsung Galaxy A72",
-        "Samsung Galaxy A7 2018", "Samsung Galaxy A750", "Samsung Galaxy J4 Plus",
-        "Samsung Galaxy J6 Plus", "Samsung Galaxy J4 Core", "Samsung Galaxy S21 FE",
-        "Samsung Galaxy A10S", "Samsung Galaxy M10", "Samsung Galaxy M20",
-        "Samsung Galaxy A10", "Samsung Galaxy M01S", "Samsung Galaxy A11",
-        "Samsung Galaxy M11", "Samsung Galaxy A20S", "Samsung Galaxy F52 5G",
-        "Samsung Galaxy A21S No Holes", "Samsung Galaxy A51", "Samsung Galaxy A51 5G",
-        "Samsung Galaxy A52", "Samsung Galaxy A52S 5G", "Samsung Galaxy A53 5G",
-        "Samsung Galaxy M31S", "Samsung Galaxy S20 FE", "Samsung Galaxy S20 FE 5G",
-        "Samsung Galaxy S20 FE 2022", "Samsung Galaxy A60", "Samsung Galaxy M40",        "Samsung Galaxy A71", "Samsung Galaxy A71 5G", "Samsung Galaxy A81",
-        "Samsung Galaxy A91", "Samsung Galaxy M51", "Samsung Galaxy M62",
-        "Samsung Galaxy F62", "Samsung Galaxy S10 Lite", "Samsung Galaxy Note 10 Lite",
-        "Samsung Galaxy A72", "Samsung Galaxy A7 2018", "Samsung Galaxy A750",
-        "Samsung Galaxy J4 Plus", "Samsung Galaxy J6 Plus", "Samsung Galaxy J4 Core",
-        "Samsung Galaxy F42 5G", "Samsung Galaxy M52 5G", "Samsung Galaxy A15 4G",
-        "Samsung Galaxy A15 5G", "Samsung Galaxy A25 5G", "Samsung Galaxy A24 4G",
-        "Samsung Galaxy M34 5G", "Samsung Galaxy F34 5G", "Samsung Galaxy F15",
-        "Samsung Galaxy M15", "Samsung Galaxy A05", "Samsung Galaxy A35",
-        "Samsung Galaxy A55", "Samsung Galaxy M35"
-      ]
-    },
-    {
-      "id": "GRP_014",
-      "source": "support",
-      "name": "OnePlus Nord Series",
-      "models": [
-        "OnePlus 10T", "OnePlus 10T 5G", "OnePlus 6T", "OnePlus 6T", "OnePlus 7",
-        "OnePlus 9", "OnePlus 9 5G", "OnePlus 9RT", "OnePlus 9RT 5G", "OnePlus 9R",
-        "OnePlus Nord 2 5G", "OnePlus Nord CE 5G", "OnePlus Nord 2T",
-        "OnePlus Nord 3", "OnePlus Nord CE 3", "OnePlus Ace 2V", "OnePlus Ace 3V",
-        "OnePlus Nord CE 4", "OnePlus Nord CE 4 Lite 5G No Holes",
-        "OnePlus Nord CE 2 Lite 5G", "OnePlus Nord 2 Lite", "OnePlus N100",
-        "OnePlus Ace Racing", "OnePlus Nord CE 3 Lite 5G", "OnePlus Nord N30 5G",
-        "OnePlus Nord N30 SE 5G No Holes", "OnePlus Nord", "OnePlus Nord N10 5G",
-        "OnePlus 6", "OnePlus Nord N20 SE", "OnePlus N300 5G", "OnePlus 10R",
-        "OnePlus Ace", "OnePlus Nord CE 2 5G", "OnePlus 7T"
-      ]
-    },
-    {
-      "id": "GRP_015",
-      "source": "support",
-      "name": "iQOO/Z Series",
-      "models": [
-        "Vivo iQOO Neo 7", "iQOO Neo 7 Pro", "iQOO Neo 7 SE", "iQOO Neo 7 Racing",
-        "iQOO Neo 8", "iQOO Neo 8 Pro", "iQOO Neo 9", "iQOO Neo 9 Pro",
-        "iQOO 9 China", "iQOO Neo 9S Pro+", "iQOO 10", "iQOO 11", "iQOO 11S",
-        "iQOO 12 5G", "Vivo T2", "Vivo T3 5G", "Vivo S18E", "Vivo V29E",
-        "Vivo Y100 4G", "Vivo Y100 IDN", "Vivo Y200", "Vivo Y200E", "Vivo V30 SE",
-        "Vivo V30 Lite", "iQOO Neo 6", "iQOO Neo 6 SE", "iQOO Z9 5G", "Vivo V40 SE"
-      ]
-    },
-    {
-      "id": "GRP_016",
-      "source": "support",
-      "name": "Tecno/Infinix Hot/Smart/Spark",
-      "models": [
-        "Infinix Hot 8", "Infinix Hot 8 Lite", "Infinix Hot 10i", "Infinix Hot 11",
-        "Infinix Hot 12i", "Infinix Hot 20i", "Infinix Hot 20 5G", "Infinix Hot 30i",
-        "Infinix Smart 6", "Infinix Smart 6 HD", "Infinix Smart 7 HD",        "Infinix Smart 6", "Infinix Hot 10 Lite", "Infinix Hot 11S", "Infinix Hot 20S",
-        "Infinix Hot 30", "Infinix Hot 30 5G", "Infinix Hot 40", "Infinix Hot 40 Pro",
-        "Infinix Note 30", "Infinix Note 30 4G", "Infinix Note 30 5G", "Infinix Zero 5G",
-        "Infinix Zero 5G 2023", "Infinix Note 12", "Infinix Note 12 2023",
-        "Infinix Note 12 G96", "Infinix Note 12 Pro", "Infinix Note 12i 2022",
-        "Infinix Zero 20", "Tecno Spark 6 Go", "Tecno Spark Go 2022", "Tecno Spark Go 2023",
-        "Tecno Spark 8P", "Tecno Spark 9T", "Tecno Spark 9T India", "Infinix Hot 10 Lite",
-        "Infinix Smart 6", "Infinix Smart 5 Pro", "Tecno Spark 7", "Tecno Spark 8",
-        "Tecno Spark 8C", "Tecno Spark 8T", "Tecno Spark 9", "Tecno Spark 9 Pro",
-        "Infinix Smart 5", "Infinix Smart 7", "Infinix Smart 7 HD", "Infinix Y20",
-        "Infinix Y20G", "Infinix Y20A", "Infinix A5 2020", "Infinix A8", "Infinix A9 2020"
-      ]
-    },
-    {
-      "id": "GRP_017",
-      "source": "support",
-      "name": "Motorola G/E/Edge Series",
-      "models": [
-        "Motorola Moto E13", "Motorola Moto E22", "Motorola Moto G60", "Motorola Moto G60S",
-        "Motorola Moto G51 5G", "Motorola Moto G40 Fusion No Holes", "Motorola Moto G52",
-        "Motorola Moto G82", "Motorola Moto G71S", "Motorola Moto G72", "Motorola Edge 30 No Holes Out Of Stock",
-        "Motorola Moto G31", "Motorola Moto G41", "Motorola Moto G42", "Motorola Moto G71 5G No Holes Out Of Stock",
-        "Motorola Moto G13", "Motorola Moto G14", "Motorola Moto G23", "Motorola Moto G32",
-        "Motorola Moto G34 5G", "Motorola Moto G53 5G", "Motorola Moto G54 5G", "Motorola Moto G62 5G",
-        "Motorola Moto G64 5G", "Motorola Moto G73 5G No Holes Out Of Stock", "Motorola Moto G04",
-        "Motorola Moto G22", "Motorola Moto G24", "Motorola Moto G24 Power", "Motorola Moto E32",
-        "Motorola Moto E32S No Holes Out Of Stock", "Motorola Moto G84 5G No Holes Out Of Stock"
-      ]
-    },
-    {
-      "id": "GRP_018",
-      "source": "support",
-      "name": "Nothing Phone Series",
-      "models": [
-        "Nothing Phone 1", "Nothing Phone 2", "Nothing Phone 2a 5G", "Nothing Phone 2a+"
-      ]
-    },
-    {
-      "id": "GRP_019",
-      "source": "support",
-      "name": "Xiaomi/Redmi K/Poco F Series",
-      "models": [
-        "Redmi K30 5G", "Redmi K30 Pro", "Redmi K30 Pro Zoom", "Redmi Note 9S",
-        "Redmi Note 9 Pro", "Redmi Note 9 Pro Max", "Redmi Note 10 Lite", "Poco M2 Pro",
-        "Poco X2", "Poco X3", "Poco X3 NFC", "Poco X3 Pro", "Poco F2 Pro",
-        "Xiaomi Mi 10i 5G", "Xiaomi Mi 10T 5G", "Xiaomi Mi 10T Pro 5G", "Xiaomi Mi 10T Lite 5G",
-        "Xiaomi 11T", "Xiaomi 11T Pro", "Xiaomi Poco X3 GT", "Redmi 10", "Redmi 10 Prime",
-        "Redmi Note 10 5G", "Redmi Note 10T 5G", "Redmi Note 11 4G 2021", "Redmi Note 11 SE",
-        "Redmi K20", "Redmi K20 Pro", "Xiaomi 9T", "Xiaomi 9X", "Xiaomi 9 Pro",
-        "Xiaomi 11 Lite 4G", "Xiaomi 11 Lite 5G", "Xiaomi 11 Lite 5G NE", "Redmi 9",        "Redmi 9 Prime", "Xiaomi Poco M2", "Redmi 8A", "Redmi 8A Dual", "Redmi Note 4X 32GB",
-        "Redmi Note 4 India", "Redmi Note 5 Pro", "Redmi Note 6 Pro", "Redmi Note 8",
-        "Redmi Note 8T"
-      ]
-    },
-    {
-      "id": "GRP_020",
-      "source": "support",
-      "name": "Oppo Realme Mixed Large",
-      "models": [
-        "Oppo Realme 5", "Oppo Realme 5i", "Oppo Realme 5S", "Oppo Realme 6i", "Oppo Realme 7i Global",
-        "Oppo Realme C3", "Oppo Realme C11", "Oppo Realme 2021", "Oppo Realme C12", "Oppo Realme C15",
-        "Oppo Realme C20", "Oppo Realme C21", "Oppo Realme C21Y", "Oppo Realme C25", "Oppo Realme C25Y",
-        "Oppo Realme C25S", "Oppo Realme C30", "Oppo Realme C35", "Oppo Realme V11 5G",
-        "Oppo Realme Narzo 10", "Oppo Realme Narzo 10A", "Oppo Realme Narzo 20", "Oppo Realme Narzo 20A",
-        "Oppo Realme Narzo 30A", "Oppo Realme Narzo 50A", "Oppo Realme Narzo 50A Prime",
-        "Oppo Realme Narzo 50i", "Oppo Realme Narzo 50i Prime", "Oppo Realme Q5i", "Oppo A5 2020",
-        "Oppo A8", "Oppo A9 2020", "Oppo A11", "Oppo A15", "Oppo A15S", "Oppo A16", "Oppo A16E",
-        "Oppo A16S", "Oppo A16K", "Oppo A31", "Oppo A35", "Oppo A53S 5G", "Oppo A54S", "Oppo A55 5G",
-        "Oppo A56 5G", "Oppo A5S 5G", "Oppo A57 4G", "Oppo A57 5G", "Oppo A77", "Oppo K10 5G",
-        "Oppo A7 5G", "Oppo A53 4G", "Oppo A32 4G", "Oppo A33 2020", "Oppo A36", "Oppo A53 4G",
-        "Oppo A53S", "Oppo A54 4G", "Oppo A55 4G", "Oppo A76", "Oppo A92S", "Oppo A96 4G",
-        "Oppo K10 China", "Oppo Realme 6 Pro", "Oppo Realme 7i", "Oppo Realme 8i", "Oppo Realme 9i",
-        "Oppo Realme 9 Pro", "Oppo Realme 9 5G", "Oppo Realme 9 5G SE", "Oppo Realme X3",
-        "Oppo Realme X3 Super Zoom", "Oppo Realme X50 5G", "Oppo Realme C17", "Oppo Realme Narzo 50",
-        "Oppo Realme Reno 4Z 5G", "Oppo A91", "Oppo A73", "Oppo F15", "Oppo F17", "Oppo Reno 3",
-        "Oppo A93 4G", "Oppo F17 Pro", "Oppo Reno 4F", "Oppo Reno 4 SE", "Oppo Reno 5 5G",
-        "Oppo F7", "Oppo R15", "Oppo A3", "Oppo F9", "Oppo F9 Pro", "Realme 2 Pro", "Realme C1",
-        "Oppo A7", "Oppo A5S", "Oppo A11K", "Oppo Realme 3", "Oppo Realme X", "Oppo Realme XT",
-        "Oppo Realme 6", "Oppo Realme 6S", "Oppo Realme 7 5G Asia", "Oppo Realme 7 Global",
-        "Oppo Realme X7 Pro", "Oppo Realme Narzo 20 Pro", "Oppo Realme 30 5G", "Oppo Realme 30 Pro 5G",
-        "Oppo A52 4G", "Oppo A92 4G", "Oppo Reno 2 Z", "Oppo Reno 2F", "Oppo K7X", "Oppo Realme GT Neo 2",
-        "Oppo Realme GT 2"
-      ]
-    }
-  ],
-  "update_instructions": {
-    "how_to_add_group": "أضف كائن جديد في مصفوفة 'groups' مع تحديد id فريد (GRP_XXX)",
-    "how_to_update_group": "عدّل المصفوفة 'models' داخل المجموعة المطلوبة",
-    "naming_convention": "استخدم أسماء الموديلات الكاملة قدر الإمكان (مثال: 'Redmi 9A' بدلاً من 'RM 9A')"
+  "مجموعة_النجاح_الكبرى_realme_oppo": {
+    "group_name": "مجموعة النجاح الكبرى (Realme & Oppo)",
+    "compatible_models": [
+      "Realme C35",
+      "Realme C31",
+      "Realme C21Y",
+      "Realme C25Y",
+      "Oppo A15",
+      "Oppo A15s",
+      "Oppo A16",
+      "Oppo A16s",
+      "Oppo A54 4G",
+      "Oppo A53",
+      "Oppo A74 4G",
+      "Oppo A94 4G",
+      "Realme 8 4G",
+      "Realme 8 Pro",
+      "Realme 9i",
+      "Oppo A76",
+      "Oppo A96",
+      "Realme C11",
+      "Realme C12",
+      "Realme C15",
+      "Oppo A12",
+      "Oppo A5s",
+      "Oppo A3s",
+      "Realme C1",
+      "Realme C2",
+      "Oppo A1k",
+      "Oppo A5 2020",
+      "Oppo A9 2020",
+      "Oppo A31 2020",
+      "Realme 5",
+      "Realme 5i",
+      "Realme 5s",
+      "Realme C3",
+      "Oppo F17",
+      "Oppo F19",
+      "Oppo F19 Pro",
+      "Realme 7i",
+      "Realme C17",
+      "Oppo Reno 4 4G",
+      "Oppo Reno 5 4G",
+      "Oppo Reno 6 4G",
+      "Realme 6",
+      "Realme 6 Pro",
+      "Realme 7 4G",
+      "Oppo A78 4G",
+      "Oppo A58 4G",
+      "Oppo A38",
+      "Oppo A18",
+      "Realme C55",
+      "Realme C53",
+      "Realme Narzo 50A",
+      "Realme Narzo 50i",
+      "Oppo A57 2022",
+      "Oppo A77 4G",
+      "Realme C30",
+      "Realme C33",
+      "Oppo Reno 7 4G",
+      "Oppo Reno 8 4G",
+      "Realme 10 4G",
+      "Oppo A79 5G"
+    ]
   }
 }
