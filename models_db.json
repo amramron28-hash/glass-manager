@@ -1,70 +1,20 @@
 {
-  "مجموعة_النجاح_الكبرى_realme_oppo": {
-    "group_name": "مجموعة النجاح الكبرى (Realme & Oppo)",
-    "compatible_models": [
-      "Realme C35",
-      "Realme C31",
-      "Realme C21Y",
-      "Realme C25Y",
-      "Oppo A15",
-      "Oppo A15s",
-      "Oppo A16",
-      "Oppo A16s",
-      "Oppo A54 4G",
-      "Oppo A53",
-      "Oppo A74 4G",
-      "Oppo A94 4G",
-      "Realme 8 4G",
-      "Realme 8 Pro",
-      "Realme 9i",
-      "Oppo A76",
-      "Oppo A96",
-      "Realme C11",
-      "Realme C12",
-      "Realme C15",
-      "Oppo A12",
-      "Oppo A5s",
-      "Oppo A3s",
-      "Realme C1",
-      "Realme C2",
-      "Oppo A1k",
-      "Oppo A5 2020",
-      "Oppo A9 2020",
-      "Oppo A31 2020",
-      "Realme 5",
-      "Realme 5i",
-      "Realme 5s",
-      "Realme C3",
-      "Oppo F17",
-      "Oppo F19",
-      "Oppo F19 Pro",
-      "Realme 7i",
-      "Realme C17",
-      "Oppo Reno 4 4G",
-      "Oppo Reno 5 4G",
-      "Oppo Reno 6 4G",
-      "Realme 6",
-      "Realme 6 Pro",
-      "Realme 7 4G",
-      "Oppo A78 4G",
-      "Oppo A58 4G",
-      "Oppo A38",
-      "Oppo A18",
-      "Realme C55",
-      "Realme C53",
-      "Realme Narzo 50A",
-      "Realme Narzo 50i",
-      "Oppo A57 2022",
-      "Oppo A77 4G",
-      "Realme C30",
-      "Realme C33",
-      "Oppo Reno 7 4G",
-      "Oppo Reno 8 4G",
-      "Realme 10 4G",
-      "Oppo A79 5G"
-    ]
+  "metadata": {
+    "version": 1,
+    "last_updated": "2026-06-08",
+    "status": "stable"
   },
-  "system_notifications": [
-    "⚠️ تحذير: رابط السحاب NPOINT_URL غير معرف! البيانات تحفظ محلياً فقط وتتعرض للضياع!"
-  ]
+  "data": {
+    "6.40": {
+      "Notch Screen": {
+        "virtual_proximity_sensor": ["Oppo A74 4G", "Oppo F19"],
+        "hardware_proximity_sensor": ["Oppo Reno 2"]
+      }
+    },
+    "6.50": {
+      "Notch Screen": {
+        "hardware_proximity_sensor": ["Oppo A11", "Realme 5"]
+      }
+    }
+  }
 }
