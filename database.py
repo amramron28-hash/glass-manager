@@ -5,14 +5,15 @@ def load_db():
         with open('models_db.json', 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
-        return {"compatible_models": [], "system_notifications": []}
+        return {"compatible_models": []} # حقل فارغ ونظيف
 
 def save_db(data):
-    # مسح أي تنبيهات قديمة لضمان نظافة الملف
-    data["system_notifications"] = [] 
+    # نضمن أن الملف يحتوي فقط على البيانات الحقيقية دون أي تنبيهات
+    clean_data = {
+        "compatible_models": data.get("compatible_models", [])
+    }
     with open('models_db.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+        json.dump(clean_data, f, ensure_ascii=False, indent=4)
 
 def add_notification(message):
-    # دالة فارغة لإرضاء السكربت ومنع خطأ الاستيراد
-    pass
+    pass # لا تفعل شيئاً، هذا يمنع ظهور رسائل الخطأ في تطبيقك
