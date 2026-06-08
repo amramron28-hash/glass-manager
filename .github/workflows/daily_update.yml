@@ -15,8 +15,9 @@ jobs:
         with:
           python-version: '3.9'
       - name: Install dependencies
-        run: pip install requests
-      - name: Run script
+        run: |
+          pip install requests fuzzywuzzy python-Levenshtein
+      - name: Run watcher
         run: python glass_watcher.py
       - name: Commit and Push
         run: |
