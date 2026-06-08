@@ -1,26 +1,29 @@
 import json
+import os
+
+DB_FILE = 'models_db.json'
 
 def load_db():
+    """
+    تحميل البيانات مع الحفاظ على هيكل الـ JSON الحالي (metadata, data)
+    """
+    if not os.path.exists(DB_FILE):
+        return {"metadata": {"version": 1}, "data": {}}
+        
     try:
-        with open('models_db.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            # التأكد من وجود البيانات الأساسية فقط
-            if "compatible_models" not in data:
-                data["compatible_models"] = []
-            return data
-    except FileNotFoundError:
-        return {"compatible_models": []}
+        with open(DB_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {"metadata": {"version": 1}, "data": {}}
 
 def save_db(data):
-    # إنشاء نسخة نظيفة من البيانات لا تحتوي على "system_notifications"
-    clean_data = {
-        "compatible_models": data.get("compatible_models", [])
-    }
-    
-    # الكتابة للملف وتخزينه بصيغة نظيفة
-    with open('models_db.json', 'w', encoding='utf-8') as f:
-        json.dump(clean_data, f, ensure_ascii=False, indent=4)
+    """
+    حفظ البيانات كما هي دون حذف مفاتيح أساسية
+    """
+    with open(DB_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
 def add_notification(message):
-    # هذه الدالة أصبحت فارغة لضمان عدم إضافة أي رسائل خطأ للملف
+    # إذا كنت تريد تفعيل الإشعارات لاحقاً، يمكننا إضافتها هنا
+    # ولكن حالياً نتركها فارغة كما طلبت
     pass
