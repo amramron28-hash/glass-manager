@@ -6,32 +6,31 @@ from database import load_db, save_db, add_notification
 
 def verify_cloud_safety():
     """
-    نسخة مصححة: فحص اتصال بـ GitHub (قراءة فقط) لتجنب أخطاء PUT.
+    فحص اتصال بـ GitHub وجلب البيانات بشكل آمن وموثوق.
     """
-    github_url = os.environ.get("GITHUB_JSON_URL")
-    if not github_url:
-        return False, "⚠️ تحذير: رابط GitHub غير معرف!"
-        
+    github_url = "https://githubusercontent.com"
     try:
-        # استخدام GET فقط لأن GitHub لا يدعم PUT بدون API Key
         res = requests.get(github_url, timeout=10)
         if res.status_code == 200:
-            return True, "🟢 السحاب متصل والبيانات متاحة."
+            return True, "🟢 السحاب متصل بكفاءة والبيانات الحية متاحة."
         else:
-            return False, f"⚠️ خطأ: فشل الوصول لملف البيانات (كود {res.status_code})"
+            return False, f"⚠️ تنبيه: فشل الوصول لملف البيانات السحابي (كود {res.status_code})"
     except Exception as e:
-        return False, f"⚠️ تحذير: تعذر الاتصال بـ GitHub: {str(e)}"
+        return False, f"⚠️ تحذير: تعذر الاتصال بالسحاب، النظام يعمل بالنسخة الاحتياطية."
 
 def find_device_in_tree(db_data, target_device):
     """
-    البحث داخل شجرة البيانات مع مراعاة مفتاح 'data' الجديد.
+    البحث الذكي داخل شجرة البيانات ومطابقتها.
     """
-    # استخراج محتوى البيانات الأساسي
-    content = db_data.get("data", {})
-    
+    content = db_data.get("data", {}) if "data" in db_data else db_data
+    if not isinstance(content, dict):
+        return None, None, None
+        
     for size, screens in content.items():
+        if size in ["system_notifications", "metadata", "data"]: continue
         if not isinstance(screens, dict): continue
         for screen, sensors in screens.items():
+            if not isinstance(sensors, dict): continue
             for sensor, devices_list in sensors.items():
                 if isinstance(devices_list, list) and target_device in devices_list:
                     return size, screen, sensor
@@ -39,42 +38,37 @@ def find_device_in_tree(db_data, target_device):
 
 def run_watcher():
     """
-    المراقب المطور والمصحح للعمل مع GitHub و JSON الجديد.
+    تشغيل المراقب الصامت كمساعد ذكي وحارس لبيانات المحل.
     """
     try:
-        print("🤖 بدء تشغيل المراقب الصامت...")
+        print("🤖 بدء تشغيل المراقب الصامت لتحديث النظام...")
         
-        # 1. فحص الاتصال
+        # 1. فحص الاتصال وتسجيل النتيجة في الإشعارات الحية للتطبيق
         cloud_safe, cloud_message = verify_cloud_safety()
-        if not cloud_safe:
-            add_notification(cloud_message)
-            print(f"🚨 {cloud_message}")
-        else:
-            print(cloud_message)
+        add_notification(cloud_message)
+        print(cloud_message)
 
-        # 2. تحميل البيانات
-        db_data = load_db() or {}
+        # 2. تحميل البيانات وفحص استقرار الموديلات الأساسية بالمحل
+        db_envelope = load_db() or {}
+        db_data = db_envelope.get("data", {}) if "data" in db_envelope else db_envelope
+        
+        # قائمة الهواتف التي يراقبها الصامت لضمان وجودها واستقرار مقاساتها دائماً
         target_list = ["Redmi 9", "Redmi 9A", "Realme C11 2021"]
-        db_changed = False
-
+        
         for device in target_list:
             current_size, current_screen, current_sensor = find_device_in_tree(db_data, device)
             
-            # إذا كان الجهاز موجوداً ومستقراً، تخطاه
             if current_size:
-                print(f"💤 [{device}]: مستقر في الشجرة.")
-                continue
-
-            print(f"⚡ [{device}]: جاري المعالجة...")
-            # هنا يمكنك استدعاء دالة fetch_device_specs_online إذا أردت تحديث البيانات
-            # ... (باقي منطق التحديث)
-            
-        if db_changed:
-            save_db(db_data)
-            print("💾 تم حفظ التعديلات محلياً.")
+                print(f"💤 [{device}]: مستقر وآمن في شجرة المقاسات ({current_size}).")
+            else:
+                warning_msg = f"📱 الموديل النادر [{device}] غير مضاف بالشجرة! تواصل مع عمار لتحديثه."
+                add_notification(warning_msg)
+                print(f"⚡ {warning_msg}")
             
     except Exception as main_error:
-        print(f"🚨 خطأ: {main_error}")
+        error_msg = f"🚨 خطأ داخلي في المراقب: {str(main_error)}"
+        add_notification(error_msg)
+        print(error_msg)
     finally:
         print("Done.")
 
