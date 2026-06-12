@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# حقن كود التنسيق لجعل صندوق الإدخال زجاجياً شفافاً والكتابة لأقصى اليمين
+# حقن كود التنسيق المطور لجعل صندوق الإدخال زجاجياً شفافاً والكتابة لأقصى اليسار
 inject_slate_navy_css()
 st.markdown("""
 <style>
@@ -22,26 +22,32 @@ div[data-baseweb="input"], div[data-baseweb="base-input"] {
     border: 1px solid rgba(0, 191, 255, 0.4) !important;
     border-radius: 8px !important;
     box-shadow: 0 0 10px rgba(0, 191, 255, 0.1) !important;
-    direction: rtl !important;
+    direction: ltr !important; /* اتجاه لليسار */
 }
 
-/* ➡️ إجبار المؤشر والنص المكتوب على البقاء في أقصى اليمين */
+/* ⬅️ إجبار المؤشر والنص المكتوب بداخل شريط البحث على البقاء في أقصى اليسار */
 div[data-baseweb="input"] input {
     color: #ffffff !important;
     background-color: transparent !important;
     font-size: 16px !important;
-    text-align: right !important;
-    direction: rtl !important;
+    text-align: left !important; /* محاذاة لليسار */
+    direction: ltr !important;
 }
 
 div[data-baseweb="input"] input::placeholder {
-    text-align: right !important;
-    direction: rtl !important;
+    text-align: left !important;
+    direction: ltr !important;
 }
 
 div[data-baseweb="input"]:focus-within {
     border: 1px solid #00bfff !important;
     box-shadow: 0 0 15px rgba(0, 191, 255, 0.4) !important;
+}
+
+/* ⬅️ إجبار نصوص بطاقات النتائج العريضة على المحاذاة لأقصى اليسار */
+.full-width-card {
+    text-align: left !important;
+    padding-left: 20px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -50,8 +56,6 @@ render_app_header()
 
 # 2. تحميل شجرة البيانات وفهرسة الموديلات بالـ RAM
 db_data = load_db()
-
-# فك التغليف بمرونة لضمان عدم حدوث تشوه أو انهيار بالرام
 data_cluster = db_data.get("data", db_data)
 
 all_registered_models = []
@@ -75,7 +79,7 @@ def auto_fix_database_routine():
 render_sidebar(db_data, save_db, len(all_registered_models), fix_callback=auto_fix_database_routine)
 
 # ==============================================================================
-# 🔍 4. Zegaarammar glass manger Autocomplete API (واجهة الإكمال التلقائي المحمية)
+# 🔍 4. Zegaarammar glass manger Autocomplete API (تفعيل الإكمال التلقائي حياً)
 # ==============================================================================
 if "search_input_val" not in st.session_state:
     st.session_state["search_input_val"] = ""
@@ -87,20 +91,20 @@ if "show_workflow_box" not in st.session_state:
     st.session_state["show_workflow_box"] = False
 
 search_query = st.text_input(
-    "🔍 ابحث عن هاتف أو اكتب اسماً جديداً مباشرة لبدء الفحص والمطابقة:",
+    "🔍 Search target phone model to begin inspection:",
     value=st.session_state["search_input_val"],
     key="pure_automated_search_input"
 )
 
 st.session_state["search_input_val"] = search_query
 
-# حماية صارمة: التفاعل وعرض التكملة والتهجي يبدأ فقط عند البدء الفعلي في كتابة الحروف
-if search_query.strip():
-    # تصفية وفهرسة سريعة من الذاكرة الحية المتطابقة
-    filtered_suggestions = [m for m in all_registered_models if m.lower().startswith(search_query.lower())][:4]
+# 🚀 تفعيل التنبؤ حياً: الاقتراحات تظهر فوراً وتتحدث تلقائياً مع كل حرف تكتبه
+if search_query.strip() and len(search_query.strip()) >= 2:
+    # جلب الهواتف المتطابقة من قاعدة البيانات في الرام
+    filtered_suggestions = [m for m in all_registered_models if search_query.lower() in m.lower()][:4]
     
-    if filtered_suggestions and normalize_text(search_query) != normalize_text(filtered_suggestions[0]):
-        st.markdown("<p style='text-align:right;color:#00bfff;font-size:14px;margin-bottom:2px;direction:rtl;'>💡 مساعد التكملة والتهجي (انقر للتثبيت الفوري):</p>", unsafe_allow_html=True)
+    if filtered_suggestions:
+        st.markdown("<p style='text-align:left;color:#00bfff;font-size:14px;margin-bottom:2px;direction:ltr;'>💡 Autocomplete Suggestions:</p>", unsafe_allow_html=True)
         cols = st.columns(len(filtered_suggestions))
         for idx, suggested_name in enumerate(filtered_suggestions):
             with cols[idx]:
@@ -110,7 +114,7 @@ if search_query.strip():
                     st.session_state["show_workflow_box"] = False
                     st.rerun()
 
-    if st.button(f"🚀 فحص ومطابقة: {search_query}", type="primary", use_container_width=True):
+    if st.button(f"🚀 Inspect Model: {search_query}", type="primary", use_container_width=True):
         st.session_state["final_search_term"] = search_query.strip()
         st.session_state["show_workflow_box"] = False
 
@@ -121,64 +125,91 @@ show_workflow_box = st.session_state["show_workflow_box"]
 # ==========================================
 if final_search_term and not show_workflow_box:
     
-    # فحص صارم ومحكم لتحديد مسار الهاتف وتجنب تضارب هياكل الـ JSON
     size_str, panel, sensor, real_name = find_model_coords(data_cluster, final_search_term)
     
-    # 🟢 [الخطة أ]: الهاتف مدرج مسبقاً وتفجر البطاقات العريضة فوراً للزبون
+    # 🟢 [الخطة أ]: الهاتف مدرج مسبقاً وتفجر البطاقات العريضة فوراً لليسار
     if size_str and normalize_text(real_name) == normalize_text(final_search_term):
-        st.markdown(f"### 📊 نتائج التوافق والمقاسات للهاتف: `{real_name}`")
+        st.markdown(f"### 📊 Inspection Results for: `{real_name}`")
         
         results = get_compatibles_strict(data_cluster, real_name)
         
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown(f"**📐 مقاس الهاتف الحالي:** {results['current_model']['size']}")
-            st.markdown(f"**🖥️ نوع الشاشة الهيكلي:** {results['current_model']['panel']}")
+            st.markdown(f"**📐 Current Size:** {results['current_model']['size']}")
+            st.markdown(f"**🖥️ Panel Type:** {results['current_model']['panel']}")
         with col2:
-            st.markdown(f"**👁️ مستشعر التقارب المكتشف:** {results['current_model']['sensor']}")
+            st.markdown(f"**👁️ Proximity Sensor:** {results['current_model']['sensor']}")
             
         st.markdown("---")
         display_full_width_cards(results)
         
     else:
-        # حارس حظر الرندرة المبكرة طالما يوجد للمكتوب تطابق في بداية أسماء الموديلات بالرام
         is_typing = any(m.lower().startswith(final_search_term.lower()) for m in all_registered_models)
         
         if is_typing:
-            st.caption("⚡ يرجى كتابة الاسم كاملاً أو اختيار التكملة المتاحة بالأعلى...")
+            st.caption("⚡ Typing... please complete the name or choose a suggestion above...")
         else:
-            # 🔴 انقطعت سبل البحث [الخطة ج]: تنبثق حقول معالج الإدخال تلقائياً في نهاية المطاف
-            st.error(f"🚨 الموديل (`{final_search_term}`) جديد تماماً وغير مسجل في قاعدة البيانات.")
-            st.markdown("### 📝 [الخطة ج]: إدخال مواصفات هاتف الزبون للفحص والمطابقة السحابية:")
+            # 🔴 انقطعت سبل البحث [الخطة ج]: تنبثق حقول معالج الإدخال تلقائياً
+            st.error(f"🚨 Model (`{final_search_term}`) is new and not registered in the database.")
+            st.markdown("### 📝 [Plan C]: Insert New Model Specifications:")
             st.session_state["show_workflow_box"] = True
             st.rerun()
 
 # ===== [الخطة ج]: واجهة إدخال هاتف جديد وفحص المقاسات المتقاطعة (الخطة ب) =====
 if show_workflow_box:
     inserted_name = st.text_input(
-        "اسم الهاتف المراد تسجيله ومطابقته:",
+        "Target Phone Model Name:",
         value=final_search_term,
         key="workflow_new_name"
     )
     
     col_s, col_p, col_se = st.columns(3)
     with col_s:
-        new_size = st.text_input("📐 المقاس الرقمي للزبون (مثال: 6.50):", key="workflow_size")
+        new_size = st.text_input("📐 Digital Screen Size (e.g., 6.67):", key="workflow_size")
     with col_p:
-        new_panel = st.selectbox("🖥️ نوع الشاشة الهيكلي:", ["Notch Screen", "Punch-Hole Screen"], key="workflow_panel")
-    with col_se:
-        new_sensor = st.selectbox("👁️ مستشعر التقارب الملاحظ:", ["virtual_proximity_sensor", "hardware_proximity_sensor"], key="workflow_sensor")
+        new_panel = st.selectbox("🖥️ Structural Screen Type:", ["Notch Screen", "Punch-Hole Screen"], key="workflow_panel")
+    with col_se = st.selectbox("👁️ Detected Proximity Sensor:", ["virtual_proximity_sensor", "hardware_proximity_sensor", "hardware_top_sensor", "under_display_fingerprint"], key="workflow_sensor")
     
-    if inserted_name and new_size:
-        inserted_name = inserted_name.strip()
-        new_size = new_size.strip()
+    # ⚙️ [خيار Auto مفعّل]: فحص وعرض المقاسات المتقاطعة حياً بمجرد إدخال المقاس تلقائياً
+    if new_size and new_size.strip() != "":
+        size_clean = new_size.strip()
+        panel_clean = new_panel
         
-        # 🔵 [الخطة ب]: استدعاء الفحص العينات المتقاطعة لمعرفة البدائل الجاهزة مسبقاً
-        matched_list = check_existing_size_group(data_cluster, new_size, new_panel)
+        # 🔵 [الخطة ب التلقائية]: استدعاء الفحص والمطابقة الحية للمقاس بدون الحاجة لضغط زر
+        matched_list = check_existing_size_group(data_cluster, size_clean, panel_clean)
         st.markdown("---")
         
         if matched_list:
-            st.info("💡 **[الخطة ب مفعّلة]**: تم رصد مجموعة مقاسات متوافقة مسبقاً في السستم لهذا الهاتف الجديد!")
-            st.markdown(f"🎯 **الموديلات البديلة المتوافقة مع هاتف الزبون حالياً:** {', '.join(matched_list)}")
+            st.info("💡 **[Plan B Auto-Activated]**: Compatible model group detected in system for this size!")
+            st.markdown(f"🎯 **Alternative compatible models available:** {', '.join(matched_list)}")
         else:
-            st.warning("🎯 **[الخطة ج الكاملة]**: هذا المقاس نادر ومستقل تماماً، لا توجد عائلة مقاسات مطابقة له حالياً.")
+            st.warning("🎯 **[Full Plan C]**: This size is unique and independent. No matching size family found.")
+            
+        # ==========================================
+        # 🚀 زر الحفظ السحابي النهائي والتأكيدي
+        # ==========================================
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button(f"💾 Save {inserted_name} Permanently to GitHub Cloud", type="primary", use_container_width=True):
+            
+            if size_clean not in data_cluster:
+                data_cluster[size_clean] = {}
+            if panel_clean not in data_cluster[size_clean]:
+                data_cluster[size_clean][panel_clean] = {}
+            if new_sensor not in data_cluster[size_clean][panel_clean]:
+                data_cluster[size_clean][panel_clean][new_sensor] = []
+                
+            if inserted_name.strip() not in data_cluster[size_clean][panel_clean][new_sensor]:
+                data_cluster[size_clean][panel_clean][new_sensor].append(inserted_name.strip())
+                
+                db_data["data"] = data_cluster
+                
+                if save_db(db_data):
+                    st.success(f"✨ Successfully added `{inserted_name}` and synced with GitHub database!")
+                    st.session_state["search_input_val"] = ""
+                    st.session_state["final_search_term"] = ""
+                    st.session_state["show_workflow_box"] = False
+                    st.rerun()
+                else:
+                    st.error("❌ Cloud sync failed. Please verify your GITHUB_TOKEN settings.")
+            else:
+                st.info("📋 This model is already registered with the same specs.")
