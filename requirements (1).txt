@@ -1,0 +1,8 @@
+streamlit
+pillow
+requests
+rapidfuzz
+cachetools
+streamlit-searchbox
+orjson
+rich
