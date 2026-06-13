@@ -1,0 +1,105 @@
+/* ضبط الحاويات وتفتيح الخلفية الجدارية بالأبعاد الأصلية المتناسقة */
+[data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"] {
+    background-color: transparent !important;
+}
+
+/* شعار وعنوان التطبيق بتأثير النيون السماوي المضيء */
+.app-main-title {
+    font-size: 36px !important;
+    font-weight: 900 !important;
+    color: #00bfff !important;
+    text-align: center !important;
+    text-shadow: 0 0 10px rgba(0, 191, 255, 0.6), 0 0 20px rgba(0, 191, 255, 0.4) !important;
+    margin-bottom: 5px !important;
+    letter-spacing: 1px !important;
+}
+.app-sub-title {
+    font-size: 16px !important;
+    color: #a0aec0 !important;
+    text-align: center !important;
+    margin-bottom: 25px !important;
+    font-weight: bold !important;
+}
+
+/* تنسيقات القوائم وحقول الإدخال الصارمة لليمين RTL */
+div[data-testid="stWidgetLabel"], .stTextInput input, .stSelectbox div[data-baseweb="select"], .stSelectbox input {
+    direction: rtl !important;
+    text-align: right !important;
+}
+div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
+    direction: rtl !important;
+    text-align: right !important;
+    background-color: #0d111a !important;
+    border: 1px solid #00bfff !important;
+}
+
+/* كروت عرض الهواتف المتوافقة الملونة */
+.section-title {
+    font-size: 22px !important;
+    font-weight: bold !important;
+    color: #ffffff !important;
+    margin-top: 25px !important;
+    text-align: right !important;
+    direction: rtl !important;
+}
+.spec-badge {
+    background-color: #0b0f19 !important;
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
+    margin: 4px !important;
+    display: inline-block !important;
+    border: 2px solid #00bfff !important;
+    color: #ffffff !important;
+    font-weight: bold !important;
+}
+
+/* إجبار الكروت على محاذاة الأسماء أقصى اليمين وتجهيز اليسار للصور مستقبلاً */
+.ammar-flat-card {
+    padding: 16px 22px !important;
+    margin-bottom: 10px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important; /* البدء من اليمين في واجهات RTL */
+    direction: rtl !important;
+    text-align: right !important;
+    width: 100% !important;
+}
+.flat-exact { background-color: #143d1a !important; border: 2px solid #2ecc71 !important; }
+.flat-plus { background-color: #11284d !important; border: 2px solid #3498db !important; }
+.flat-minus { background-color: #5c320d !important; border: 2px solid #e67e22 !important; }
+
+/* ضبط خط أسماء الهواتف ليكون ملتصقاً باليمين بالكامل */
+.flat-phone-text { 
+    color: #ffffff !important; 
+    font-size: 24px !important; 
+    font-weight: 800 !important;
+    text-align: right !important;
+    display: block !important;
+    width: 100% !important;
+    padding-right: 5px !important;
+}
+
+.flat-warning-card {
+    background-color: #420f12 !important;
+    border: 3px solid #ff4a5a !important;
+    padding: 16px 22px !important;
+    margin-bottom: 10px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    direction: rtl !important;
+    text-align: right !important;
+}
+.flat-warn-text { 
+    color: #ffb3b9 !important; 
+    font-size: 24px !important;
+    text-align: right !important;
+    display: block !important;
+    width: 100% !important;
+}
+section[data-testid="stSidebar"] {
+    background-color: rgba(13, 17, 26, 0.96) !important;
+    border-right: 1px solid #21263d !important;
+}
