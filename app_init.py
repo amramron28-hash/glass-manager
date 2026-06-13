@@ -1,9 +1,6 @@
 from database import load_db
 
 def initialize_system_data():
-    """
-    قراءة قاعدة البيانات وتطهيرها من المسافات، وحساب حصص الـ RAM للبراندات
-    """
     db_data = load_db()
     all_flat_models = []
     all_available_sizes = []
@@ -25,7 +22,7 @@ def initialize_system_data():
                     total_models += len(models_list)
                     for model in models_list:
                         all_flat_models.append(model.strip())
-                        first_word = model.split()[0] if model.split() else "Unknown"
+                        first_word = model.split() if model.split() else "Unknown"
                         brand_counts[first_word] = brand_counts.get(first_word, 0) + 1
         if not size_has_models: 
             empty_groups_count += 1
@@ -33,4 +30,3 @@ def initialize_system_data():
     unique_models = sorted(list(set(all_flat_models)))
     
     return db_data, unique_models, total_models, empty_groups_count, brand_counts
-
