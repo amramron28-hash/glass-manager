@@ -1,3 +1,7 @@
-rich
 streamlit
 requests
+pillow
+streamlit-searchbox
+rapidfuzz
+cachetools
+rich
