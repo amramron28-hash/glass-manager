@@ -43,8 +43,10 @@ with st.sidebar:
                 st.markdown(f"<p style='text-align:right;margin-bottom:2px;'>📋 <b>{b_name}</b>: {b_count} ({percentage}%)</p>", unsafe_allow_html=True)
                 st.progress(percentage / 100)
         st.markdown("---")
-        if empty_groups_count > 0: st.warning(f"⚠️ مجموعات فارغة بالشجرة: {empty_groups_count}")
-        else: st.success("🎯 فحص سليم: لا توجد مجموعات ميتة.")
+        if empty_groups_count > 0: 
+            st.warning(f"⚠️ مجموعات فارغة بالشجرة: {empty_groups_count}")
+        else: 
+            st.success("🎯 فحص سليم: لا توجد مجموعات ميتة.")
 
 # ==========================================
 # 📱 واجهة خطة العمل التتابعية النظيفة (أ، ب، ج)
@@ -132,4 +134,3 @@ if st.session_state.custom_search_input:
                         save_db(db_data)
                         st.success(f"✨ [السيناريو 3 تم]: تم تسجيل وتأسيس مجموعة مقاس جديدة كلياً باسم [{norm_size}] وحفظ الهاتف كأول عنصر لها!")
                         st.rerun()
-
