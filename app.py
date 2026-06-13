@@ -9,26 +9,37 @@ from logic_engine import (
 from streamlit_searchbox import st_searchbox
 from rapidfuzz import process, fuzz
 
-# استيراد أدوات الواجهة الفاخرة من ملف ui_components المعتمد بجيتهاب كلياً
+# استيراد أدوات الواجهة الفاخرة والبطاقات النيونية الملونة من ui_components
 from ui_components import inject_pwa_and_styles, render_top_bar, draw_technical_coords, draw_neon_section
 # استيراد محرك جرد البيانات والتهيئة من الجزء الأول
 from app_init import initialize_system_data
 
 st.set_page_config(layout="wide", page_title="ZEGAAR AMMAR GLASS MANAGER", page_icon="🔍")
 
-# تفعيل الهوية البصرية وحقن الـ CSS فوراً لشاشة الهاتف
+# 🌌 [المرحلة أ]: حقن صورة الخلفية phone_image.webp وتثبيت هوية الـ PWA فوراً
 inject_pwa_and_styles()
 
-# استدعاء بيانات الجرد والتهيئة الحية من الجزء الأول
+# استدعاء بيانات الجرد والتهيئة الحية من الجزء الأول وتجهيز الـ RAM
 db_data, unique_models, total_models, empty_groups_count, brand_counts = initialize_system_data()
 
-# دالة الفلترة الذكية لمنع فراغات اللمس ومطابقة الأخطاء الإملائية والكلمات الناقصة حياً
-def search_models_callback(search_term: str):
+
+# 🎯 دالة الفلترة الذكية (تمت إضافة **kwargs لحل مشكلة label_visibility بشكل نهائي وجذري)
+def search_models_callback(search_term: str, **kwargs):
+    """
+    المراقب الصامت: تم تأمين الدالة بـ **kwargs لاستقبال وتصفية أي متغيرات عشوائية 
+    ترميها مكتبة streamlit_searchbox، مما يقضي على الـ TypeError تماماً.
+    """
+    # يمنع نزول الستارة المنسدلة إذا كان الحقل فارغاً تماماً أو مسافات فقط عند اللمس
     if not search_term or not search_term.strip(): 
         return []
+    
+    # تنظيف العبارة المكتوبة يدوياً
     search_normalized = normalize_text(search_term.strip().lower())
+    
+    # محرك RapidFuzz يصحح الأخطاء الإملائية والبراندات المبعثرة حياً داخل الستارة
     fuzzy_results = process.extract(search_normalized, unique_models, scorer=fuzz.WRatio, limit=8)
     return [match for match, score, _ in fuzzy_results if score > 60]
+
 
 # ==========================================
 # 🛠️ اللوحة الجانبية الإحصائية
@@ -52,7 +63,7 @@ with st.sidebar:
 # 📱 واجهة خطة العمل التتابعية النظيفة (أ، ب، ج)
 # ==========================================
 
-# 1. استدعاء شريط الأدوات الزجاجي المدمج في أعلى الصفحة (الإشعارات والترس) ليعتمد على الـ RAM
+# 🔔 تفعيل شريط الأدوات العلوي الزجاجي (جرس الإشعارات، ترس الإعدادات، وزر تنظيف المراقب الصامت)
 render_top_bar(db_data, total_models)
 
 st.markdown("<h1 style='text-align:center;color:#00bfff; font-weight: bold; margin-top: 10px;'>🔍 ZEGAAR AMMAR GLASS MANAGER</h1>", unsafe_allow_html=True)
@@ -61,11 +72,12 @@ st.markdown("<br>", unsafe_allow_html=True)
 if "custom_search_input" not in st.session_state: 
     st.session_state.custom_search_input = ""
 
-# 🏁 [الواجهة أ]: الشاشة بيضاء ونظيفة تماماً.. شريط البحث فقط في منتصف التطبيق
+# 🏁 [الواجهة أ]: شريط البحث النظيف والوحيد ممتد في المنتصف بدون أي نوافذ مشوهة
 selected_phone = st_searchbox(
     search_function=search_models_callback,
     placeholder="🔍 ادخل اسم هاتف الزبون هنا لفحص التوافق والمجموعات الحية...",
-    key="phone_search_autocomplete", label_visibility="collapsed"
+    key="phone_search_autocomplete",
+    label=""
 )
 
 if selected_phone: 
@@ -80,7 +92,7 @@ if st.session_state.custom_search_input:
     
     # 🌟 السيناريو 1: الموديل موجود مسبقاً في مجموعات الحماية المخزنة بالـ JSON
     if size_grp:
-        # جلب قاموس التوافق المتشعب والذكي الحسابي
+        # جلب قاموس التوافق المتشعب والذكي الحسابي وعزل الحساسات
         compat_results = get_compatibles_strict(db_data, current_search)
         
         st.markdown("<br>", unsafe_allow_html=True)
@@ -101,7 +113,7 @@ if st.session_state.custom_search_input:
         st.warning(f"⚠️ الموديل [{current_search}] غير مسجل في أي مجموعة حالياً داخل النظام.")
         
         with st.form("dynamic_routing_form", clear_on_submit=False):
-            st.markdown("<p style='text-align:right; color:#a0aec0;'>يرجى تحديد مواصفات زجاج شاشة هاتف الزبون الممسوك بيدك ليقوم السيستم بتصنيفه تلقائياً:</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:right; color:#a0aec0;'>المراقب الصامت: يرجى تحديد أبعاد زجاج شاشة هاتف الزبون الممسوك بيدك ليقوم السيستم بتصنيفه تلقائياً:</p>", unsafe_allow_html=True)
             col_in1, col_in2, col_in3 = st.columns(3)
             with col_in1: input_size = st.text_input("📏 مقاس الهاتف الصافي (مثال: 6.67):")
             with col_in2: input_panel = st.text_input("📺 نوع حماية الشاشة (Flat / Curved):")
