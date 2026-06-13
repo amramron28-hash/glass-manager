@@ -1,221 +1,93 @@
-import streamlit as st, os, base64, json
-from database import load_db, save_db
-from logic_engine import (
-    normalize_text,
-    find_model_coords,
-    get_compatibles_strict,
-    check_existing_size_group,
-    run_intelligent_inspector
-)
+import streamlit as st
+from database import load_db
+from logic_engine import find_model_coords, get_compatibles_strict
 
-st.set_page_config(
-    layout="wide",
-    page_title="ZEGAAR AMMAR GLASS MANAGER",
-    page_icon="🔍"
-)
+st.set_page_config(layout="wide", page_title="ZEGAAR AMMAR GLASS MANAGER", page_icon="🔍")
 
 # =========================
-# 🎨 الخلفية برابط مباشر ومكونات الواجهة المنبثقة
+# 🎨 التنسيق (CSS)
 # =========================
-IMAGE_URL = "https://githubusercontent.com"
-
-st.markdown(f"""
+st.markdown("""
 <style>
-[data-testid="stAppViewContainer"], .stApp {{
-    background-image: linear-gradient(rgba(10,14,23,0.45), rgba(10,14,23,0.45)), url('{IMAGE_URL}');
-    background-size: cover;
-    background-attachment: fixed;
-}}
-
-/* إجبار متصفح الهاتف على تفعيل التركيز والكتابة داخل حقول HTML */
-input, select, textarea {{
-    -webkit-user-select: text !important;
-    user-select: text !important;
-}}
-
-.ammar-card {{
-    padding: 12px;
-    border-radius: 10px;
-    margin: 6px 0;
-    color: white;
-    font-weight: bold;
-}}
-
-.exact {{ background: #1e8e3e; }}
-.plus {{ background: #1a73e8; }}
-.minus {{ background: #a56a00; }}
-.warn {{ background: #b3261e; }}
-
-/* تنسيق مخصص لنافذة الإعدادات المنبثقة وجرس الإشعارات والترس والمراقب الصامت */
-.app-header-popup {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(26, 31, 44, 0.9);
-    padding: 10px 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    color: white;
-}}
-.popup-icons {{
-    display: flex;
-    gap: 15px;
-    font-size: 20px;
-    cursor: pointer;
-}}
+.ammar-card { padding: 12px; border-radius: 10px; margin: 6px 0; color: white; font-weight: bold; }
+.exact { background: #1e8e3e; }
+.plus { background: #1a73e8; }
+.minus { background: #a56a00; }
+.warn { background: #b3261e; }
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
-# 📦 البيانات والفهرس
-# =========================
 db_data = load_db()
 
 @st.cache_data
-def build_flat(db_data):
+def build_flat(data):
     all_models = []
-    total = 0
-    brands = {}
-    empty = 0
-    for size, panels in db_data.items():
-        has = False
+    for size, panels in data.items():
         for panel, sensors in panels.items():
-            for sensor, data in sensors.items():
-                models = data.get("models", [])
-                if models:
-                    has = True
-                    total += len(models)
-                    for m in models:
-                        all_models.append(m)
-                        b = m.split()[0]
-                        brands[b] = brands.get(b, 0) + 1
-        if not has:
-            empty += 1
-    return sorted(set(all_models)), total, brands, empty
+            for sensor, data_val in sensors.items():
+                models = data_val.get("models", [])
+                all_models.extend([m for m in models if m and m.strip()])
+    return sorted(set(all_models))
 
-sorted_models, total_models, brand_counts, empty_groups = build_flat(db_data)
+sorted_models = build_flat(db_data)
 
 # =========================
-# 🛠️ عرض نافذة الإعدادات المنبثقة (المراقب الصامت، الترس، الجرس)
+# 🛠️ الواجهة الرئيسية
 # =========================
-st.markdown("""
-<div class="app-header-popup">
-    <div style="font-weight: bold; font-size: 18px;">🛠️ المراقب الصامت</div>
-    <div class="popup-icons">
-        <span>🔔</span>
-        <span>⚙️</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+col_title, col_bell, col_gear = st.columns([6, 1, 1])
+with col_title: st.subheader("🛠️ المراقب الصامت")
+with col_bell: 
+    if st.button("🔔"): st.toast("لا توجد إشعارات جديدة")
+with col_gear: 
+    if st.button("⚙️"): st.info("النظام يعمل بالوضع المستقر")
 
+st.markdown("---")
+
+params = st.query_params
+search_query = params.get("js_search_res", "")
+
+search = st.selectbox(
+    "🔍 ابحث هنا عن موديل الهاتف:",
+    options=[""] + sorted_models,
+    index=sorted_models.index(search_query) + 1 if search_query in sorted_models else 0
+)
+
+if search:
+    st.query_params["js_search_res"] = search
+else:
+    if "js_search_res" in st.query_params:
+        del st.query_params["js_search_res"]
 # =========================
-# 🔍 البحث الذكي المنبثق التلقائي (Autocomplete) المصحح للهاتف
+# 🧠 عرض النتائج (الجزء التكميلي)
 # =========================
-js_models = json.dumps(sorted_models, ensure_ascii=False)
-params = dict(st.query_params)
-search = params.get("js_search_res", "")
-workflow = params.get("js_show_wf", "") == "true"
-
-# استخدام حقل ذكي مع خاصية تفعيل لوحة المفاتيح فوراً على الهاتف والدعم التلقائي للقائمة المنبثقة
-st.markdown(f"""
-<div style="position: relative;">
-    <input id="s" type="text" autocomplete="off" placeholder="🔍 ابحث هنا عن موديل الهاتف..." 
-    style="width:100%; padding:14px; font-size:18px; border-radius:8px; border:1px solid #ccc; background: white; color: black;" value="{search}">
-    <div id="autocomplete-list" style="position: absolute; border: 1px solid #d4d4d4; border-bottom: none; border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background: white; color: black; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto;"></div>
-</div>
-
-<script>
-const models = {js_models};
-const input = document.getElementById("s");
-const list = document.getElementById("autocomplete-list");
-
-// إجبار متصفح الهاتف على التركيز وقبول كيبورد اللمس
-input.addEventListener('click', function() {{
-    this.focus();
-}});
-
-input.oninput = () => {{
-    let q = input.value.toLowerCase();
-    list.innerHTML = "";
-    if (!q) return false;
+if search:
+    coords = find_model_coords(db_data, search)
     
-    let filtered = models.filter(x => x.toLowerCase().includes(q)).slice(0, 5);
-    
-    filtered.forEach(item => {{
-        let b = document.createElement("DIV");
-        b.style.padding = "10px";
-        b.style.cursor = "pointer";
-        b.style.borderBottom = "1px solid #d4d4d4";
-        b.innerHTML = item;
-        
-        b.addEventListener("click", function() {{
-            input.value = item;
-            list.innerHTML = "";
-            // تحديث الرابط برقم الموديل لتفعيل نتائج الـ Streamlit فوراً
-            const url = new URL(window.location.href);
-            url.searchParams.set('js_search_res', item);
-            window.location.href = url.href;
-        }});
-        list.appendChild(b);
-    }});
-}};
-
-// إغلاق القائمة عند الضغط في أي مكان آخر
-document.addEventListener("click", function (e) {{
-    if (e.target !== input) {{
-        list.innerHTML = "";
-    }}
-}});
-</script>
-""", unsafe_allow_html=True)
-# =========================
-# 🧠 عرض النتائج (A)
-# =========================
-if search and not workflow:
-
-    size, panel, sensor, name = find_model_coords(
-        db_data,
-        search
-    )
-
-    if size:
-
+    # التأكد من صحة البيانات المسترجعة
+    if coords and coords[0]:
+        size, panel, sensor, name = coords
         st.markdown(f"## 📱 {name}")
-
-        res = get_compatibles_strict(
-            db_data,
-            search
-        )
-
-        st.write(
-            f"📐 {res['current_model']['size']}"
-        )
-
-        # 🟢 Exact
-        for m in res["exact"]:
-            st.markdown(
-                f"<div class='ammar-card exact'>🟢 {m}</div>",
-                unsafe_allow_html=True
-            )
-
-        # 🔵 Plus
-        for m in res["plus"]:
-            st.markdown(
-                f"<div class='ammar-card plus'>🔵 {m}</div>",
-                unsafe_allow_html=True
-            )
-
-        # 🟤 Minus
-        for m in res["minus"]:
-            st.markdown(
-                f"<div class='ammar-card minus'>🟤 {m}</div>",
-                unsafe_allow_html=True
-            )
-
-        # 🔴 Warn
-        for m in res["warn"]:
-            st.markdown(
-                f"<div class='ammar-card warn'>⚠️ {m}</div>",
-                unsafe_allow_html=True
-            )
+        
+        res = get_compatibles_strict(db_data, search)
+        
+        if res and 'current_model' in res:
+            st.write(f"📐 **المقاس:** {res['current_model'].get('size', 'غير محدد')}")
+            
+            # خريطة الفئات للعرض
+            categories = [
+                ("exact", "🟢 مطابق تماماً"), 
+                ("plus", "🔵 أكبر/أطول"), 
+                ("minus", "🟤 أصغر/أقصر"), 
+                ("warn", "⚠️ تحذير/توافق جزئي")
+            ]
+            
+            for key, label in categories:
+                items = res.get(key, [])
+                if items:
+                    st.write(f"### {label}")
+                    for m in items:
+                        st.markdown(f"<div class='ammar-card {key}'>{m}</div>", unsafe_allow_html=True)
+        else:
+            st.warning("لم يتم العثور على توافقات لهذا الموديل.")
+    else:
+        st.error("عذراً، لم يتم العثور على بيانات لهذا الموديل في قاعدة البيانات.")
