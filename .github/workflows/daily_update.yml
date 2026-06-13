@@ -16,5 +16,10 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
           git lfs install
+          git lfs track "*.webp"
+          git add .gitattributes
+          git commit -m "Track webp files with LFS" || true
           git push --force https://amramron28-hash:$HF_TOKEN@huggingface.co/spaces/amramron28/Zegaarammar main
