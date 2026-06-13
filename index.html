@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قاعدة بيانات شاشات الهواتف</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .size-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .size-header {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .screen-group {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .screen-group:last-child {
+            border-bottom: none;
+        }
+        .screen-type {
+            font-weight: bold;
+            color: #2980b9;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .sensor-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .sensor-item {
+            margin: 8px 0;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border-right: 3px solid #bdc3c7;
+        }
+        .sensor-type {
+            font-weight: bold;
+            color: #555;
+        }
+        .models-list {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .models-list span {
+            background: #eef2f3;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>قاعدة بيانات شاشات الهواتف</h1>
+    <div id="app"></div>
+</div>
+
+<script>
+    // البيانات التي قدمتها (تم دمجها هنا مباشرة)
+    const dbData = [
+      {
+        "size": "6.1",
+        "screens": [
+          {
+            "type": "Flat",
+            "sensors": [
+              { "type": "Capacitive", "models": ["iPhone 13", "iPhone 14", "iPhone 15"] },
+              { "type": "Resistive", "models": ["iPhone 13 (Old Gen)", "iPhone 14 (Old Gen)"] }
+            ]
+          },
+          {
+            "type": "Dynamic Island",
+            "sensors": [
+              { "type": "Capacitive", "models": ["iPhone 14 Pro", "iPhone 15 Pro", "iPhone 16"] },
+              { "type": "Resistive", "models": ["iPhone 14 Pro (Legacy)"] }
+            ]
+          }
+        ]
+      },
+      {
+        "size": "6.4",
+        "screens": [
+          {
+            "type": "Notch",
+            "sensors": [
+              { "type": "virtual", "models": ["Samsung A50", "Samsung A51", "Samsung A52"] },
+              { "type": "Capacitive", "models": ["Samsung A52s (Special)"] }
+            ]
+          },
+          {
+            "type": "Punch Hole",
+            "sensors": [
+              { "type": "Capacitive", "models": ["Samsung A53", "Samsung A54", "Samsung A55"] },
+              { "type": "Resistive", "models": ["Samsung A53 (Old)"] }
+            ]
+          }
+        ]
+      },
+      {
+        "size": "6.7",
+        "screens": [
+          {
+            "type": "Dynamic Island",
+            "sensors": [
+              { "type": "Capacitive", "models": ["iPhone 14 Pro Max", "iPhone 15 Pro Max", "iPhone 16 Pro Max"] },
+              { "type": "Resistive", "models": ["iPhone 14 Pro Max (Old)"] }
+            ]
+          },
+          {
+            "type": "Punch Hole",
+            "sensors": [
+              { "type": "virtual", "models": ["Samsung S23 Ultra", "Samsung S24 Ultra"] },
+              { "type": "Capacitive", "models": ["Samsung S23 (Standard)"] }
+            ]
+          }
+        ]
+      },
+      {
+        "size": "6.5",
+        "screens": [
+          {
+            "type": "Water Drop",
+            "sensors": [
+              { "type": "Capacitive", "models": ["Xiaomi Redmi Note 10", "Xiaomi Redmi Note 11"] },
+              { "type": "Resistive", "models": ["Xiaomi Redmi Note 10 (Old)"] }
+            ]
+          },
+          {
+            "type": "Punch Hole",
+            "sensors": [
+              { "type": "Capacitive", "models": ["Xiaomi Redmi Note 12", "Xiaomi Redmi Note 13"] }
+            ]
+          }
+        ]
+      },
+      {
+        "size": "6.0",
+        "screens": [
+          {
+            "type": "Flat",
+            "sensors": [
+              { "type": "Capacitive", "models": ["iPhone 12", "iPhone 13 Mini"] },
+              { "type": "Resistive", "models": ["iPhone 12 (Old)"] }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // دالة لعرض البيانات
+    function renderDB() {
+        const container = document.getElementById('app');
+        let html = '';
+
+        dbData.forEach(item => {
+            html += `<div class="size-card">
+                        <div class="size-header">حجم الشاشة: ${item.size} بوصة</div>`;
+            
+            item.screens.forEach(screen => {
+                html += `<div class="screen-group">
+                            <span class="screen-type">نوع الشاشة: ${screen.type}</span>
+                            <ul class="sensor-list">`;
+                
+                screen.sensors.forEach(sensor => {
+                    // تحويل مصفوفة الموديلات إلى نص فاصل بفاصلة
+                    const modelsText = sensor.models.map(m => `<span>${m}</span>`).join('');
+                    
+                    html += `<li class="sensor-item">
+                                <span class="sensor-type">${sensor.type}</span>:
+                                <div class="models-list">${modelsText}</div>
+                             </li>`;
+                });
+                
+                html += `</ul></div>`;
+            });
+            
+            html += `</div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    // تشغيل الدالة عند تحميل الصفحة
+    renderDB();
+</script>
+
+</body>
+</html>
