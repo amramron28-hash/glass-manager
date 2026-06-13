@@ -4,7 +4,7 @@ import os
 import base64
 
 def inject_pwa_and_styles():
-    """حقن ملف الـ Manifest ومعالجة خلفية شاشة الهاتف بأعلى دقة نفاذية"""
+    """حقن ملف الـ Manifest ومعالجة خلفية شاشة الهاتف بأعلى دقة نفاذية لطبقات السيستم العميقة"""
     st.markdown("""
     <head>
         <link rel="manifest" href="./manifest.json">
@@ -16,9 +16,23 @@ def inject_pwa_and_styles():
         with open("phone_image.webp", "rb") as f:
             bg_image_base64 = base64.b64encode(f.read()).decode()
 
-    # تعديل الـ CSS البرمجي لحقن الخلفية في الجسم الرئيسي لـ Streamlit مباشرة لضمان ظهورها
+    # 🌌 التحديث السحري: استهداف كامل طبقات الحاويات الافتراضية المعتمة وتصفيرها لتبرز الخلفية الزجاجية
     st.markdown(f"""
     <style>
+    [data-testid="stAppViewContainer"], 
+    [data-testid="stAppViewMain"], 
+    .stApp, 
+    .stMain, 
+    main, 
+    [data-testid="stApp"],
+    [data-testid="stHeader"],
+    div.stMainBlockContainer,
+    .stAppDeployButton,
+    [data-testid="stBlock"] {{
+        background-color: transparent !important;
+        background: transparent !important;
+    }}
+    
     .stApp {{
         background-image:
             linear-gradient(
