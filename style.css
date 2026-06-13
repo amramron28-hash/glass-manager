@@ -1,5 +1,18 @@
-/* ضبط الحاويات وتفتيح الخلفية الجدارية بالأبعاد الأصلية المتناسقة */
-[data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"] {
+/* ضبط الحاويات وإجبار الطبقات العميقة في سيرفر Streamlit على تمرير الخلفية */
+[data-testid="stAppViewContainer"], 
+[data-testid="stAppViewMain"], 
+.stApp, 
+.stMain, 
+main, 
+[data-testid="stApp"],
+[data-testid="stHeader"],
+.stDeployButton {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+/* إصلاح الطبقة الافتراضية العميقة التي كانت تحجب الصورة */
+div.stMainBlockContainer {
     background-color: transparent !important;
 }
 
@@ -60,7 +73,7 @@ div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
     border-radius: 12px !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: flex-start !important; /* البدء من اليمين في واجهات RTL */
+    justify-content: flex-start !important;
     direction: rtl !important;
     text-align: right !important;
     width: 100% !important;
