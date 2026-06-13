@@ -5,3 +5,4 @@ rapidfuzz
 cachetools
 streamlit-searchbox
 orjson
+rich
