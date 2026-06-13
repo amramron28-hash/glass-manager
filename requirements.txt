@@ -1,7 +1,7 @@
 streamlit
-requests
 pillow
-streamlit-searchbox
+requests
 rapidfuzz
 cachetools
-rich
+streamlit-searchbox
+orjson
