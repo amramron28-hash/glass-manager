@@ -16,24 +16,17 @@ def inject_pwa_and_styles():
         with open("phone_image.webp", "rb") as f:
             bg_image_base64 = base64.b64encode(f.read()).decode()
 
-    # 🌌 التحديث السحري: استهداف كامل طبقات الحاويات الافتراضية المعتمة وتصفيرها لتبرز الخلفية الزجاجية
+    # 🌌 التحديث الفوري: اختراق جذر المتصفح وطبقات الحاويات العميقة لفرض الصورة الخلفية
     st.markdown(f"""
     <style>
-    [data-testid="stAppViewContainer"], 
-    [data-testid="stAppViewMain"], 
-    .stApp, 
-    .stMain, 
-    main, 
-    [data-testid="stApp"],
-    [data-testid="stHeader"],
-    div.stMainBlockContainer,
-    .stAppDeployButton,
-    [data-testid="stBlock"] {{
+    /* تصفير كافة الحاويات لتبدو زجاجية وشفافة تماماً */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"], [data-testid="stHeader"], div.stMainBlockContainer, .stAppDeployButton, [data-testid="stBlock"] {{
         background-color: transparent !important;
         background: transparent !important;
     }}
     
-    .stApp {{
+    /* فرض الصورة في أعلى طبقة جذرية للمتصفح لمنع حجبها */
+    [data-testid="stAppViewContainer"] {{
         background-image:
             linear-gradient(
                 rgba(10,14,23,0.55),
