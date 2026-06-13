@@ -15,24 +15,29 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # إعداد الهوية
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           
-          # إنشاء مجلد مستقل مؤقت لنقل الملفات الحالية فقط وتجنب السجل القديم
+          # إنشاء مجلد مستقل مؤقت لنقل ملفات الأكواد فقط
           mkdir sync_dir
           cp -r * sync_dir/ || true
           rm -rf sync_dir/sync_dir
           rm -rf sync_dir/.git
           rm -rf sync_dir/.github
           
+          # إزالة أي ملفات صور تماماً من المجلد المؤقت لمنع فشل الرفع
+          rm -f sync_dir/*.webp
+          rm -f sync_dir/*.jpg
+          rm -f sync_dir/*.png
+          rm -f sync_dir/*.jpeg
+          
           # تهيئة مستودع جديد تماماً بداخل المجلد المؤقت
           cd sync_dir
-          git init-db || git init
+          git init
           git config --global init.defaultBranch main
           git checkout -b main || true
           
-          # إضافة الملفات ورفعها بشكل نظيف ومباشر
+          # إضافة الأكواد فقط ورفعها بشكل نظيف ومباشر
           git add .
-          git commit -m "Clean sync"
+          git commit -m "Clean sync without binary images"
           git push --force https://amramron28-hash:$HF_TOKEN@huggingface.co/spaces/amramron28/Zegaarammar main
