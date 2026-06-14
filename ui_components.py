@@ -1,53 +1,36 @@
 import streamlit as st
 import datetime
 import os
-import base64
 
 def inject_pwa_and_styles():
-    """حقن ملف الـ Manifest ومعالجة خلفية شاشة الهاتف بأعلى دقة اختراق لطبقات الاستضافة"""
+    """حقن ملف الـ Manifest ومعالجة خلفية شاشة الهاتف برابط Raw مباشر لاختراق قيود سيرفر الاستضافة السحابي"""
     st.markdown("""
     <head>
         <link rel="manifest" href="./manifest.json">
     </head>
     """, unsafe_allow_html=True)
 
-    # محاولة قراءة الصورة وتحويلها لنص رقمي فوري لفرضها داخل حاويات الويب العميقة
-    bg_image_base64 = ""
-    paths_to_check = ["phone_image.webp", "./app/phone_image.webp", "/app/phone_image.webp"]
-    
-    for path in paths_to_check:
-        if os.path.exists(path):
-            with open(path, "rb") as f:
-                bg_image_base64 = base64.b64encode(f.read()).decode()
-            break
-
-    # جدار الحماية البصري: إذا نجح التشفير النصي نقوم بحقنه، وإلا نستخدم المسار المباشر كخطة إنقاذ
-    if bg_image_base64:
-        background_style = f"url('data:image/webp;base64,{bg_image_base64}')"
-    else:
-        background_style = "url('./phone_image.webp')"
-
-    st.markdown(f"""
+    # 🌌 الحل السحري: استدعاء جدارية الصورة عبر رابط الـ Raw المباشر والمستقر من مستودعك بجيتهاب كخطة إنقاذ خارقة
+    # مع تصفير نفاذية كافة الخلايا والحاويات لتبدو زجاجية بالكامل
+    st.markdown("""
     <style>
-    /* تصفير كامل الحاويات والطبقات المعتمة والـ Blocks لشفافية زجاجية مطلقة */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"], [data-testid="stHeader"], div.stMainBlockContainer, .stAppDeployButton, [data-testid="stBlock"] {{
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"], [data-testid="stHeader"], div.stMainBlockContainer, .stAppDeployButton, [data-testid="stBlock"] {
         background-color: transparent !important;
         background: transparent !important;
-    }}
+    }
     
-    /* فرض الصورة في أعلى طبقة للمتصفح مع التدرج الداكن المريح للعين */
-    [data-testid="stAppViewContainer"] {{
+    [data-testid="stAppViewContainer"] {
         background-image:
             linear-gradient(
                 rgba(10,14,23,0.55),
-                rgba(10,14,23,0.55)
+                rgba(10,14,23,0.45)
             ),
-            {background_style} !important;
+            url("https://githubusercontent.com") !important;
         background-size: cover !important;
         background-position: center !important;
         background-repeat: no-repeat !important;
         background-attachment: fixed !important;
-    }}
+    }
     </style>
     """, unsafe_allow_html=True)
 
