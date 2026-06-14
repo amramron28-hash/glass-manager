@@ -211,23 +211,23 @@ with st.sidebar:
             else:
                 st.toast("🎯 السيستم مطهر ونظيف بالكامل مسبقاً.")
 # ==========================================
-# 📱 الواجهة الرئيسية (العنوان الإنجليزي الممتد بالكامل على طول الشاشة في الأعلى تماماً)
+# 📱 الواجهة الرئيسية (العنوان الممتد بصفين فقط باللون الأزرق السماوي)
 # ==========================================
 
-# 🌆 السطر الأول: الاسم ممتد بكامل عرض الشاشة في الأعلى تماماً باللون الأزرق السماوي المضيء
+# 🌆 الصف الأول: الاسم ممتد بكامل عرض الشاشة في الأعلى تماماً باللون الأزرق السماوي المضيء
 st.markdown(
     """
-    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; padding: 0px 5px; border-bottom: 2px solid rgba(0, 191, 255, 0.3); margin-top: -20px;">
+    <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 2px; padding: 0px 5px; border-bottom: 2px solid rgba(0, 191, 255, 0.3); margin-top: -20px;">
         <span style="font-size: 45px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 2px;">ZEGAAR AMMAR</span>
     </div>
     """, 
     unsafe_allow_html=True
 )
 
-# 🌆 السطر الثاني: الوظيفة ممتدة بكامل عرض الشاشة أسفله مباشرة بنفس التناظر البصري الفخم
+# 🌆 الصف الثاني: الوظيفة ممتدة بكامل عرض الشاشة أسفله مباشرة بنفس التناظر البصري الفخم
 st.markdown(
     """
-    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; padding: 0px 5px;">
+    <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 35px; padding: 0px 5px;">
         <span style="font-size: 45px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 2px;">GLASS MANAGER</span>
     </div>
     """, 
@@ -320,9 +320,8 @@ if st.session_state.custom_search_input:
             f"⚠️ الموديل [{current_search}] غير مسجل داخل النظام حالياً."
         )
 
-        # # استدعاء دالة المنطق المعزولة لحماية وتدفق المراحل الفنية خطوة بخطوة
+        # استدعاء دالة المنطق المعزولة لحماية وتدفق المراحل الفنية خطوة بخطوة
         process_new_model_form(
             db_data,
             current_search
         )
-
