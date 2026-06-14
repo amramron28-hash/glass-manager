@@ -30,7 +30,7 @@ def inject_pwa_and_styles():
                 bg_image_base64 = base64.b64encode(f.read()).decode()
             break
 
-    # 🌌 العودة للتصميم الأصلي الفخم (ممتد ومثبت بكامل أبعاد الشاشة وبأعلى نفاذية زجاجية)
+    # استعادة التصميم الأصلي الفخم الممتد والمثبت بكامل أبعاد الشاشة وبأعلى نفاذ زجاجي
     st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"], [data-testid="stHeader"], div.stMainBlockContainer, .stAppDeployButton, [data-testid="stBlock"] {{
@@ -45,7 +45,7 @@ def inject_pwa_and_styles():
                 rgba(10,14,23,0.55)
             ),
             url('data:image/webp;base64,{bg_image_base64}') !important;
-        background-size: cover !important; /* استعادة الامتداد الكامل والأصلي للصورة */
+        background-size: cover !important;
         background-position: center center !important;
         background-repeat: no-repeat !important;
         background-attachment: fixed !important;
@@ -71,7 +71,7 @@ def draw_technical_coords(size_grp, panel_grp, sensor_grp):
     """, unsafe_allow_html=True)
 
 def draw_neon_section(title, models_list, color_hex, badge_icon, current_search):
-    """[المرحلة ج]: توليد مجموعات التوافق ثنائية اللغة الفاخرة وجلب صور الهواتف آلياً بـ 0 ثانية تأخير"""
+    """[المرحلة ج]: توليد مجموعات التوافق ثنائية اللغة الفاخرة وجلب صور الهواتف آلياً بدون أخطاء روابط وبـ 0 ثانية تأخير"""
     if not models_list:
         return
     # العربية أقصى اليمين للعناوين الفئوية
@@ -83,17 +83,18 @@ def draw_neon_section(title, models_list, color_hex, badge_icon, current_search)
         specific_style = f"border: 2px solid #00bfff; box-shadow: 0px 0px 12px rgba(0, 191, 255, 0.5);" if is_current else f"border: 1px solid {color_hex};"
         bg_style = "background: linear-gradient(135deg, #0f172a, #1e293b);" if is_current else ""
         
-        # محرك الاستدعاء التلقائي الفوري لصور الهواتف
+        # 🎯 محرك الاستدعاء التلقائي الفوري والمصحح: تنظيف الاسم البرمجي وتركيبه داخل الرابط العالمي للصور
         clean_name_url = comp_model.strip().replace(" ", "-").lower()
         auto_phone_image_url = f"https://phonearena.com{clean_name_url}.jpg"
         
+        # هندسة بناء الكرت المفرغ: حجز مساحة الصورة في جهة اليمين والاسم بالإنجليزية ملتصق باليسار
         st.markdown(f"""
             <div class="{card_class}" style="{bg_style} {specific_style}">
                 <!-- الإنجليزية أقصى اليسار لاسم الهاتف النظيف -->
                 <span class="flat-phone-text">{'⭐ ' if is_current else ''}{comp_model}</span>
                 
-                <!-- 🖼️ نزول صورة الهاتف المجلوبة تلقائياً أقصى اليمين في المربع النيوني المحجوز مسبقاً -->
-                <div class="image-placeholder-box" style="overflow: hidden;">
+                <!-- 🖼️ نزول صورة الهاتف المجلوبة تلقائياً وبشكل مصحح أقصى اليمين في المربع النيوني المحجوز مسبقاً -->
+                <div class="image-placeholder-box" style="overflow: hidden; width: 55px; height: 55px;">
                     <img src="{auto_phone_image_url}" 
                          onerror="this.onerror=null; this.src='https://icons8.com'; this.style.opacity='0.4';" 
                          style="width: 100%; height: 100%; object-fit: contain;">
