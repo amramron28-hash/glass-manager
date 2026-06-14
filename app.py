@@ -48,35 +48,50 @@ db_data, unique_models, total_models, empty_groups_count, brand_counts = initial
 
 def process_new_model_form(db_data, current_search):
     """
-    محرك الفرز الصارم للمرحلة الثانية والثالثة: يضمن العزل الكلي وتتابع النوافذ 
-    تحت إشراف وعين المراقب الصامت دون ظهور مسبق للمرحلة التالية.
+    محرك الفرز الصارم والذكي للمراحل: تم ترقيته بالكامل ليحتوي على قوائم خيارات منسدلة 
+    تمنع الفني من الأخطاء الإملائية وتنعدم معها نسبة الخطأ تماماً في المتجر.
     """
     norm_model = normalize_text(current_search)
+
+    # 📋 تجهيز الخيارات الثابتة والمصطلحات الدقيقة للتطبيق لتوحيد شجرة البيانات
+    screen_options = [
+        "Flat Screen (شاشة مسطحة عادية)",
+        "Punch-Hole (شاشة بثقب كاميرا)",
+        "Notch Screen (شاشة بنوتش)",
+        "Curved Screen (شاشة منحنية)"
+    ]
+    
+    sensor_options = [
+        "Virtual Proximity Sensor (مستشعر افتراضي)",
+        "Hardware Sensor (مستشعر حقيقي مدمج)",
+        "Top Bezel Sensor (مستشعر في الإطار العلوي)"
+    ]
 
     # 📌 المرحلة الثانية: البحث عن المواصفات الفنية داخل المجموعات القائمة حالياً فقط
     if st.session_state.current_stage == 2:
         st.markdown("<h3 style='text-align:right; color:#e67e22;'>🔄 المرحلة الثانية: فحص الأبعاد الفنية للمجموعات القائمة</h3>", unsafe_allow_html=True)
         
         with st.form("stage_2_search_form", clear_on_submit=False):
-            st.markdown("<p style='text-align:right; color:#a0aec0; font-size:18px;'>المراقب الصامت يبحث حياً... أدخل مواصفات الهاتف للتحقق من وجود مجموعة مطابقة بالسيستم:</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:right; color:#a0aec0; font-size:18px;'>المراقب الصامت يحلل الآن حياً... اختر مواصفات هاتف الزبون بلمسة واحدة دون كتابة:</p>", unsafe_allow_html=True)
             col1, col2, col3 = st.columns(3)
             with col1:
-                input_size = st.text_input("📏 المقاس المراد فحصه")
+                input_size = st.text_input("📏 المقاس المراد فحصه (مثال: 6.67)")
             with col2:
-                input_panel = st.text_input("📺 نوع الشاشة المراد فحصها")
+                selected_panel = st.selectbox("📺 نوع وبنية الشاشة", options=screen_options)
             with col3:
-                input_sensor = st.text_input("👁️ مستشعر التقارب المراد فحصه")
+                selected_sensor = st.selectbox("👁️ مستشعر التقارب المخصص", options=sensor_options)
             
             submitted_stage2 = st.form_submit_button("⚡ تشغيل الفحص والمطابقة الحية")
 
             if submitted_stage2:
-                if not (input_size.strip() and input_panel.strip() and input_sensor.strip()):
-                    st.error("⚠️ يرجى ملء جميع الحقول الفنية للمرحلة الثانية!")
+                if not input_size.strip():
+                    st.error("⚠️ يرجى إدخال مقاس الهاتف الفعلي للمرحلة الثانية!")
                     return
 
                 norm_size = normalize_text(input_size)
-                norm_panel = normalize_text(input_panel)
-                norm_sensor = normalize_text(input_sensor)
+                # تنظيف وتجهيز المصطلحات المختارة من القائمة بدقة لمنع التكرار
+                norm_panel = normalize_text(selected_panel.split(" (")[0])
+                norm_sensor = normalize_text(selected_sensor.split(" (")[0])
 
                 try:
                     float(norm_size)
@@ -122,31 +137,30 @@ def process_new_model_form(db_data, current_search):
     # 📌 المرحلة الثالثة: إنشاء وإدراج الهاتف كمجموعة جديدة كلياً (ممنوع ظهورها مسبقاً قبل فشل الثانية)
     elif st.session_state.current_stage == 3:
         st.markdown("<h3 style='text-align:right; color:#ef4444;'>🆕 المرحلة الثالثة: إنشاء وإدراج مجموعة جديدة كلياً بالسيستم</h3>", unsafe_allow_html=True)
-        st.warning("⚠️ المراقب الصامت أكد عدم وجود مواصفات مطابقة مسبقاً! يرجى تأكيد بيانات المجموعة الجديدة الآن لحفظها نهائياً.")
+        st.warning("⚠️ المراقب الصامت أكد عدم وجود مواصفات مطابقة مسبقاً! يرجى تأكيد الخيارات لإنشاء المجموعة الجديدة نهائياً.")
         
+        # استرجاع المقاس المكتوب في المرحلة السابقة تلقائياً لتسريع العمل
         default_size = st.session_state.get("temp_size", "")
-        default_panel = st.session_state.get("temp_panel", "")
-        default_sensor = st.session_state.get("temp_sensor", "")
 
         with st.form("stage_3_creation_form", clear_on_submit=False):
             col1, col2, col3 = st.columns(3)
             with col1:
                 new_size = st.text_input("📏 تأكيد مقاس المجموعة الجديدة", value=default_size)
             with col2:
-                new_panel = st.text_input("📺 تأكيد نوع الشاشة للمجموعة الجديدة", value=default_panel)
+                new_panel = st.selectbox("📺 تأكيد نوع وبنية الشاشة الجديدة", options=screen_options)
             with col3:
-                new_sensor = st.text_input("👁️ تأكيد الحساس للمجموعة الجديدة", value=default_sensor)
+                new_sensor = st.selectbox("👁️ تأكيد مستشعر التقارب المخصص الجديد", options=sensor_options)
             
             submitted_stage3 = st.form_submit_button("✨ إنشاء المجموعة الجديدة وحفظ الهاتف رسمياً")
 
             if submitted_stage3:
-                if not (new_size.strip() and new_panel.strip() and new_sensor.strip()):
-                    st.error("⚠️ يرجى التأكد من ملء كافة البيانات الفنية لإنشاء المجموعة الجديدة!")
+                if not new_size.strip():
+                    st.error("⚠️ يرجى التأكد من إدخال مقاس المجموعة الجديدة!")
                     return
 
                 norm_size = normalize_text(new_size)
-                norm_panel = normalize_text(new_panel)
-                norm_sensor = normalize_text(new_sensor)
+                norm_panel = normalize_text(new_panel.split(" (")[0])
+                norm_sensor = normalize_text(new_sensor.split(" (")[0])
 
                 try:
                     float(norm_size)
