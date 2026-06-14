@@ -210,118 +210,19 @@ with st.sidebar:
                 st.rerun()
             else:
                 st.toast("🎯 السيستم مطهر ونظيف بالكامل مسبقاً.")
+
 # ==========================================
 # 📱 الواجهة الرئيسية (العنوان الممتد بصفين فقط باللون الأزرق السماوي)
 # ==========================================
 
-# 🌆 الصف الأول: الاسم ممتد بكامل عرض الشاشة في الأعلى تماماً باللون الأزرق السماوي المضيء
+# 🌆 الصف الأول: الاسم ممتد بالكامل باللون الأزرق السماوي المضيء في الأعلى تماماً مقاس متوافق للهاتف
 st.markdown(
     """
     <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 2px; padding: 0px 5px; border-bottom: 2px solid rgba(0, 191, 255, 0.3); margin-top: -20px;">
-        <span style="font-size: 45px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 2px;">ZEGAAR AMMAR</span>
+        <span style="font-size: 28px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 1px; white-space: nowrap;">ZEGAAR AMMAR</span>
     </div>
     """, 
     unsafe_allow_html=True
 )
 
-# 🌆 الصف الثاني: الوظيفة ممتدة بكامل عرض الشاشة أسفله مباشرة بنفس التناظر البصري الفخم
-st.markdown(
-    """
-    <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 35px; padding: 0px 5px;">
-        <span style="font-size: 45px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 2px;">GLASS MANAGER</span>
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
 
-# شريط البحث المتطور والمراقب حياً
-selected_phone = st_searchbox(
-    search_function=lambda q, **k: search_models_callback(
-        q,
-        unique_models
-    ),
-    placeholder="🔍 Enter customer phone model here for live compatibility check...",
-    key="phone_search_autocomplete",
-    label=""
-)
-
-# 🔒 بوابة الأمان: عند كتابة هاتف جديد أو مسح الحقل، يتم تصفير المرحلة فوراً لحماية الخطة من التداخل
-if selected_phone and selected_phone.strip() != st.session_state.custom_search_input:
-    st.session_state.custom_search_input = selected_phone.strip()
-    st.session_state.current_stage = 2  # فرض الرجوع للمرحلة الثانية لضمان الفحص المعزول
-
-if st.session_state.custom_search_input:
-    current_search = st.session_state.custom_search_input
-    size_grp, panel_grp, sensor_grp, real_name = find_model_coords(
-        db_data,
-        current_search
-    )
-
-    # -------------------------------------------------------------
-    # 📌 المرحلة الأولى: الهاتف مسجل وموجود بالفعل بالسيستم (تم فحص المطابقة والإنهاء)
-    # -------------------------------------------------------------
-    if size_grp:
-        compat_results = get_compatibles_strict(
-            db_data,
-            current_search
-        )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.success(
-            f"🎯 الموديل [{real_name}] مسجل ومتوافق حياً في النظام!"
-        )
-
-        # رسم كروت الأبعاد الفنية للمجموعة
-        draw_technical_coords(
-            size_grp,
-            panel_grp,
-            sensor_grp
-        )
-
-        # إنتاج الأقسام الملونة بالكامل (ملء الخلفية بالألوان المحددة)
-        draw_neon_section(
-            "مطابقة للمقاس تماماً (Exact Matches)",
-            compat_results["exact"],
-            "#2ecc71", # أخضر مصمت بالكامل
-            "🎯",
-            current_search
-        )
-
-        draw_neon_section(
-            "أكبر بقليل (Plus Sizes)",
-            compat_results["plus"],
-            "#3498db", # أزرق مصمت بالكامل
-            "➕",
-            current_search
-        )
-
-        draw_neon_section(
-            "أصغر بقليل (Minus Sizes)",
-            compat_results["minus"],
-            "#e67e22", # برتقالي مصمت بالكامل
-            "➖",
-            current_search
-        )
-
-        draw_neon_section(
-            "مستشعر مختلف (Warning)",
-            compat_results["warn"],
-            "#ef4444", # أحمر مصمت بالكامل للتحذير
-            "⚠️",
-            current_search
-        )
-
-    # -------------------------------------------------------------
-    # 📌 المرحلة الثانية والثالثة: تدار بشكل صارم ومستقل لحظر تداخل الواجهات والنوافذ مسبقاً
-    # -------------------------------------------------------------
-    else:
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.warning(
-            f"⚠️ الموديل [{current_search}] غير مسجل داخل النظام حالياً."
-        )
-
-        # استدعاء دالة المنطق المعزولة لحماية وتدفق المراحل الفنية خطوة بخطوة
-        process_new_model_form(
-            db_data,
-            current_search
-        )
