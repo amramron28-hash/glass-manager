@@ -1,158 +1,169 @@
-import streamlit as st
-from database import save_db
-from logic_engine import normalize_text
-from rapidfuzz import process, fuzz
+import re
 
-def search_models_callback(search_term, unique_models):
-    """البحث اللحظي الذكي عن أسماء الهواتف"""
-    if not search_term or not search_term.strip():
+def normalize_text(text):
+    """
+    تنظيف وتوحيد النصوص بحذر شديد:
+    إزالة المسافات الزائدة، الشرطات، وتحويل الحروف لصغيرة لضمان المطابقة المرنة الذكية.
+    """
+    if not text:
+        return ""
+    cleaned = text.lower().strip()
+    cleaned = re.sub(re.compile(r'[-_/ \s]+'), ' ', cleaned)
+    return cleaned.strip()
+
+def filter_models_live(db_data, search_term):
+    """
+    فلترة الموديلات حياً من الذاكرة بناءً على الحروف المكتوبة مع دعم التقارب الذكي.
+    متوافق تماماً مع الهيكل الحقيقي للقاموس المباشر.
+    """
+    if not search_term:
         return []
+    
+    normalized_search = normalize_text(search_term)
+    matched_models = []
+    
+    for size_key, panels in db_data.items():
+        for panel_key, sensors in panels.items():
+            for sensor_key, sensor_data in sensors.items():
+                models_list = sensor_data.get("models", []) if isinstance(sensor_data, dict) else sensor_data
+                for model in models_list:
+                    if normalized_search in normalize_text(model):
+                        matched_models.append(model)
+                            
+    return sorted(list(set(matched_models)))
 
-    search_normalized = normalize_text(search_term.strip().lower())
-    fuzzy_results = process.extract(
-        search_normalized,
-        unique_models,
-        scorer=fuzz.WRatio,
-        limit=8
-    )
-    return [match for match, score, _ in fuzzy_results if score > 60]
-
-def process_new_model_form(db_data, current_search):
+def find_model_coords(db_data, model_name):
     """
-    إدارة المرحلة الثانية والمرحلة الثالثة بفصل صارم يمنع ظهور النوافذ بشكل متداخل مسبقاً،
-    مع تفعيل عين وأذن 'المراقب الصامت' لحماية البيانات من التكرار العشوائي.
+    البحث الحذر عن موقع الهاتف داخل شجرة البيانات وإرجاع إحداثياته الحقيقية.
     """
-    # 👁️ تهيئة حالة المرحلة الحالية لتبدأ من المرحلة الثانية فوراً عند غياب الاسم
-    if "current_stage" not in st.session_state:
-        st.session_state.current_stage = 2  
-
-    norm_model = normalize_text(current_search)
-
-    # -------------------------------------------------------------
-    # 📌 المرحلة الثانية: البحث عن المقاس والمواصفات داخل المجموعات الحالية فقط
-    # -------------------------------------------------------------
-    if st.session_state.current_stage == 2:
-        st.markdown("<h3 style='text-align:right; color:#e67e22;'>🔄 المرحلة الثانية: فحص الأبعاد الفنية للمجموعات القائمة</h3>", unsafe_allow_html=True)
+    if not model_name:
+        return None, None, None, None
         
-        with st.form("stage_2_search_form", clear_on_submit=False):
-            st.markdown("<p style='text-align:right; color:#a0aec0; font-size:18px;'>المراقب الصامت يبحث الآن... أدخل مواصفات الهاتف للبحث عن مجموعة مطابقة متوفرة بالسيستم حالياً:</p>", unsafe_allow_html=True)
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                input_size = st.text_input("📏 المقاس المراد فحصه")
-            with col2:
-                input_panel = st.text_input("📺 نوع الشاشة المراد فحصها")
-            with col3:
-                input_sensor = st.text_input("👁️ مستشعر التقارب المراد فحصه")
+    normalized_target = normalize_text(model_name)
+    
+    for size_str, panels in db_data.items():
+        for panel_name, sensors in panels.items():
+            for sensor_name, sensor_data in sensors.items():
+                models_list = sensor_data.get("models", []) if isinstance(sensor_data, dict) else sensor_data
+                for m in models_list:
+                    if normalize_text(m) == normalized_target:
+                        return size_str, panel_name, sensor_name, m
+                            
+    return None, None, None, None
+
+def get_compatibles_strict(db_data, model_name):
+    """
+    محرك التوجيه الصارم لحساب التوافقات بناءً على المقاس الحقيقي (Exact / Plus / Minus)
+    مع عزل الهواتف ذات الحساس المختلف في قائمة الـ warn وتحذير الفني.
+    """
+    results = {
+        "current_model": {"size": "0.00", "panel": "", "sensor": ""},
+        "exact": [],
+        "plus": [],
+        "minus": [],
+        "warn": []
+    }
+    
+    size_str, panel, sensor, real_name = find_model_coords(db_data, model_name)
+    
+    if not size_str:
+        return results
+        
+    results["current_model"] = {"size": size_str, "panel": panel, "sensor": sensor}
+    current_size = float(size_str)
+    
+    for size_key, panels in db_data.items():
+        try:
+            target_size = float(size_key)
+        except ValueError:
+            continue
             
-            submitted_stage2 = st.form_submit_button("⚡ فحص ومطابقة بالمجموعات الحالية")
+        diff = round(target_size - current_size, 2)
+        
+        for panel_key, sensors in panels.items():
+            if panel_key != panel:
+                continue
+                
+            for sensor_key, sensor_data in sensors.items():
+                models_list = sensor_data.get("models", []) if isinstance(sensor_data, dict) else sensor_data
+                for m in models_list:
+                    if normalize_text(m) == normalize_text(real_name):
+                        continue
+                        
+                    if diff == 0.00:
+                        if sensor_key == sensor:
+                            results["exact"].append(m)
+                        else:
+                            results["warn"].append(m)
+                    elif 0.01 <= diff <= 0.03:
+                        if sensor_key == sensor:
+                            results["plus"].append(m)
+                        else:
+                            results["warn"].append(m)
+                    elif -0.03 <= diff <= -0.01:
+                        if sensor_key == sensor:
+                            results["minus"].append(m)
+                        else:
+                            results["warn"].append(m)
+                            
+    results["exact"] = sorted(list(set(results["exact"])))
+    results["plus"] = sorted(list(set(results["plus"])))
+    results["minus"] = sorted(list(set(results["minus"])))
+    results["warn"] = sorted(list(set(results["warn"])))
+    
+    return results
 
-            if submitted_stage2:
-                if not (input_size.strip() and input_panel.strip() and input_sensor.strip()):
-                    st.error("⚠️ يرجى ملء جميع الحقول الفنية للمرحلة الثانية!")
-                    return
+def check_existing_size_group(db_data, size_str, panel_name):
+    """
+    التحقق من وجود مجموعة مقاسات متطابقة مسبقاً في الـ RAM لإجراء [الحالة ب].
+    """
+    matched_models = []
+    size_str = str(size_str).strip()
+    if size_str in db_data:
+        if panel_name in db_data[size_str]:
+            for sensor_key, sensor_data in db_data[size_str][panel_name].items():
+                models_list = sensor_data.get("models", []) if isinstance(sensor_data, dict) else sensor_data
+                matched_models.extend(models_list)
+    return sorted(list(set(matched_models)))
 
-                norm_size = normalize_text(input_size)
-                norm_panel = normalize_text(input_panel)
-                norm_sensor = normalize_text(input_sensor)
-
-                # 👁️ عين المراقب الصامت: فحص منطقية المقاس لمنع إدخال نصوص عشوائية
-                try:
-                    float(norm_size)
-                except ValueError:
-                    st.error("❌ تنبيه من المراقب الصامت: خانة المقاس يجب أن تحتوي على رقم (مثل: 6.67 أو 6.5) وليس نصوصاً!")
-                    return
-
-                # التحقق الفعلي من وجود هذه التوليفة الفنية في المجموعات الحالية
-                structure_exists = (
-                    norm_size in db_data
-                    and norm_panel in db_data[norm_size]
-                    and norm_sensor in db_data[norm_size][norm_panel]
-                )
-
-                if structure_exists:
-                    # المجموعة موجودة -> نربط الهاتف بها فوراً وينتهي العمل بنجاح
-                    target_node = db_data[norm_size][norm_panel][norm_sensor]
-                    if isinstance(target_node, list):
-                        db_data[norm_size][norm_panel][norm_sensor] = {"models": target_node}
+def run_intelligent_inspector(db_data):
+    """
+    تطهير وصيانة شجرة البيانات تلقائياً وترتيبها لرفع السرعة اللحظية.
+    """
+    cleaned_db = {}
+    changes_made = False
+    
+    for size_key, panels in db_data.items():
+        cleaned_size = size_key.strip()
+        if cleaned_size not in cleaned_db:
+            cleaned_db[cleaned_size] = {}
+            
+        for panel_key, sensors in panels.items():
+            cleaned_panel = panel_key.strip()
+            if cleaned_panel not in cleaned_db[cleaned_size]:
+                cleaned_db[cleaned_size][cleaned_panel] = {}
+                
+            for sensor_key, sensor_data in sensors.items():
+                cleaned_sensor = sensor_key.strip()
+                
+                models_list = sensor_data.get("models", []) if isinstance(sensor_data, dict) else sensor_data
+                
+                seen_normalized = {}
+                unique_models = []
+                
+                for m in models_list:
+                    cleaned_name = " ".join(m.split())
+                    norm_name = normalize_text(cleaned_name)
                     
-                    models = db_data[norm_size][norm_panel][norm_sensor]["models"]
-                    if norm_model not in models:
-                        models.append(norm_model)
-                        save_db(db_data)
-                        st.success(f"🎯 تم العثور على المجموعة بنجاح! ودمج الهاتف [{norm_model}] بداخلها كلياً.")
-                        st.session_state.current_stage = 2 
-                        st.rerun()
+                    if norm_name and norm_name not in seen_normalized:
+                        seen_normalized[norm_name] = cleaned_name
+                        unique_models.append(cleaned_name)
                     else:
-                        st.info("📢 أذن المراقب الصامت: هذا الهاتف مسجل بالفعل داخل هذه المجموعة مسبقاً.")
-                else:
-                    # ❌ لم نجد المواصفات -> يتم إنهاء المرحلة الثانية تماماً والانتقال الصارم للمرحلة الثالثة بعد الضغط
-                    st.session_state.temp_size = norm_size
-                    st.session_state.temp_panel = norm_panel
-                    st.session_state.temp_sensor = norm_sensor
-                    st.session_state.current_stage = 3 
-                    st.rerun()
-
-        # زر أمان فوري للانتقال للمرحلة الثالثة مباشرة إذا كان الفني متأكداً أن الهاتف جديد كلياً
-        if st.button("➕ لم أجد المواصفات، الانتقال للمرحلة الثالثة لإدراج مجموعة جديدة"):
-            st.session_state.temp_size = ""
-            st.session_state.temp_panel = ""
-            st.session_state.temp_sensor = ""
-            st.session_state.current_stage = 3
-            st.rerun()
-
-    # -------------------------------------------------------------
-    # 📌 المرحلة الثالثة: إدراج كمجموعة جديدة كلياً (ممنوع ظهورها مسبقاً قبل انتهاء المرحلة الثانية)
-    # -------------------------------------------------------------
-    elif st.session_state.current_stage == 3:
-        st.markdown("<h3 style='text-align:right; color:#ef4444;'>🆕 المرحلة الثالثة: إنشاء وإدراج مجموعة جديدة كلياً بالسيستم</h3>", unsafe_allow_html=True)
-        st.warning("⚠️ المراقب الصامت أكد عدم وجود مواصفات مطابقة مسبقاً! يرجى تأكيد بيانات المجموعة الجديدة الآن لحفظها نهائياً.")
-        
-        # استرجاع القيم المكتوبة في المرحلة السابقة تلقائياً لتسريع العمل الفني ومنع تكرار الكتابة
-        default_size = st.session_state.get("temp_size", "")
-        default_panel = st.session_state.get("temp_panel", "")
-        default_sensor = st.session_state.get("temp_sensor", "")
-
-        with st.form("stage_3_creation_form", clear_on_submit=False):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                new_size = st.text_input("📏 تأكيد مقاس المجموعة الجديدة", value=default_size)
-            with col2:
-                new_panel = st.text_input("📺 تأكيد نوع الشاشة للمجموعة الجديدة", value=default_panel)
-            with col3:
-                new_sensor = st.text_input("👁️ تأكيد الحساس للمجموعة الجديدة", value=default_sensor)
-            
-            submitted_stage3 = st.form_submit_button("✨ إنشاء المجموعة الجديدة وحفظ الهاتف رسمياً")
-
-            if submitted_stage3:
-                if not (new_size.strip() and new_panel.strip() and new_sensor.strip()):
-                    st.error("⚠️ يرجى التأكد من ملء كافة البيانات الفنية لإنشاء المجموعة الجديدة!")
-                    return
-
-                norm_size = normalize_text(new_size)
-                norm_panel = normalize_text(new_panel)
-                norm_sensor = normalize_text(new_sensor)
-
-                # 👁️ عين المراقب الصامت: حماية شجرة البيانات السحابية والمحلية من التخريب البرمجي
-                try:
-                    float(norm_size)
-                except ValueError:
-                    st.error("❌ خطأ فني: لا يمكن إنشاء مجموعة بمقاس غير رقمي!")
-                    return
-
-                if norm_size not in db_data:
-                    db_data[norm_size] = {}
-                if norm_panel not in db_data[norm_size]:
-                    db_data[norm_size][norm_panel] = {}
-
-                db_data[norm_size][norm_panel][norm_sensor] = {"models": [norm_model]}
+                        changes_made = True
                 
-                save_db(db_data)
-                st.success(f"✨ نجاح كلي! تم إنشاء شجرة المجموعة الفنية الجديدة [{norm_size}] وحفظ الهاتف بنجاح كلي تحت مراقبة النظام.")
+                if len(unique_models) != len(models_list):
+                    changes_made = True
+                    
+                cleaned_db[cleaned_size][cleaned_panel][cleaned_sensor] = {"models": sorted(unique_models)}
                 
-                # إعادة تهيئة النظام للموديل القادم والعودة الآمنة للمرحلة 2
-                st.session_state.current_stage = 2
-                st.rerun()
-        
-        if st.button("⬅️ تراجع والعودة للمرحلة الثانية"):
-            st.session_state.current_stage = 2
-            st.rerun()
+    return cleaned_db, changes_made
