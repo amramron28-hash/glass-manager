@@ -6,7 +6,7 @@ import base64
 def inject_pwa_and_styles():
     """
     حقن ملف الـ Manifest ومعالجة خلفية شاشة الهاتف بالتشفير النصي الفوري Base64
-    لاختراق حظر الـ iframe والـ CORS في سيرفرات Hugging Face قسرياً.
+    لاختراق حظر الـ iframe والـ CORS في سيرفرات Hugging Face قسرياً وبأعلى دقة نفاذ.
     """
     st.markdown("""
     <head>
@@ -14,9 +14,15 @@ def inject_pwa_and_styles():
     </head>
     """, unsafe_allow_html=True)
 
-    # قراءة الصورة محلياً وتحويلها لنص بايتات فوري لا يمكن للمتصفح حظره
+    # 🎯 محاذاة وفحص كافة المسارات المتوقعة لجذر السيرفر السحابي لـ Hugging Face وجلب جينات الصورة الفورية
     bg_image_base64 = ""
-    paths_to_check = ["phone_image.webp", "./app/phone_image.webp", "/app/phone_image.webp"]
+    paths_to_check = [
+        "phone_image.webp", 
+        "./phone_image.webp", 
+        "app/phone_image.webp", 
+        "./app/phone_image.webp", 
+        "/app/phone_image.webp"
+    ]
     
     for path in paths_to_check:
         if os.path.exists(path):
@@ -24,7 +30,7 @@ def inject_pwa_and_styles():
                 bg_image_base64 = base64.b64encode(f.read()).decode()
             break
 
-    # تصفير الحاويات وحقن الصورة في جذر الـ HTML والجسم والـ Container معاً لإجبارها على الانفجار البصري
+    # تصفير الحاويات وحقن بايتات الصورة في أعمق جذور المتصفح (html, body, container)
     st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"], [data-testid="stHeader"], div.stMainBlockContainer, .stAppDeployButton, [data-testid="stBlock"] {{
@@ -52,7 +58,9 @@ def inject_pwa_and_styles():
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 def draw_technical_coords(size_grp, panel_grp, sensor_grp):
-    """[المرحلة ب]: إظهار الإحداثيات الفنية التتابعية للمجموعة المكتشفة"""
+    """
+    📋 [المرحلة ب]: رسم وإظهار بطاقة تحليل الأبعاد الفنية التتابعية لهاتف الزبون
+    """
     st.markdown(f"""
         <div style='background: rgba(15, 23, 42, 0.7); padding: 20px; border-radius: 12px; border: 1px dashed #00bfff; margin-bottom: 25px;'>
             <h4 style='text-align:center; color:#00bfff; margin-top:0;'>📋 تحليل الإحداثيات الفنية للمجموعة التوافقية</h4>
@@ -65,7 +73,9 @@ def draw_technical_coords(size_grp, panel_grp, sensor_grp):
     """, unsafe_allow_html=True)
 
 def draw_neon_section(title, models_list, color_hex, badge_icon, current_search):
-    """[المرحلة ج]: توليد مجموعات التوافق ببطاقات نيونية فخمة جداً ملونة وبمحاذاة كاملة لليمين"""
+    """
+    📱 [المرحلة ج]: توليد مجموعات التوافق ببطاقات نيونية فخمة جداً ملونة وبمحاذاة كاملة لليمين
+    """
     if not models_list:
         return
     st.markdown(f"<h4 style='text-align:right;color:{color_hex}; margin-top:20px; margin-bottom:10px;'>{badge_icon} {title} ({len(models_list)}):</h4>", unsafe_allow_html=True)
