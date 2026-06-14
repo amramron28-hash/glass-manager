@@ -104,8 +104,10 @@ def process_new_model_form(db_data, current_search):
                     return
 
                 norm_size = normalize_text(input_size)
-                norm_panel = normalize_text(selected_panel.split(" ("))
-                norm_sensor = normalize_text(selected_sensor.split(" ("))
+                
+                # 🛠️ الإصلاح الجذري الفوري: التقاط [0] لمنع الـ AttributeError وقراءة النصوص كلياً كسرير نظيف
+                norm_panel = normalize_text(selected_panel.split(" (")[0])
+                norm_sensor = normalize_text(selected_sensor.split(" (")[0])
 
                 try:
                     float(norm_size)
@@ -172,8 +174,10 @@ def process_new_model_form(db_data, current_search):
                     return
 
                 norm_size = normalize_text(new_size)
-                norm_panel = normalize_text(new_panel.split(" ("))
-                norm_sensor = normalize_text(new_sensor.split(" ("))
+                
+                # 🛠️ دمج وتطهير أمان مصفوفات السلسلة للمرحلة الثالثة لمنع أخطاء التوجيه
+                norm_panel = normalize_text(new_panel.split(" (")[0])
+                norm_sensor = normalize_text(new_sensor.split(" (")[0])
 
                 try:
                     float(norm_size)
@@ -190,9 +194,9 @@ def process_new_model_form(db_data, current_search):
                 
                 save_db(db_data)
                 
-                # 📢 اللمسة الأخيرة وتثبيت إشعار الحفظ بنجاح كلي أمام الفني
+                # تثبيت إشعار الحفظ بنجاح كلي أمام عين الفني
                 st.session_state.show_success_toast = f"✨ تم إنشاء مجموعة جديدة [{new_size}] وحفظ الهاتف [{current_search}] بنجاح كلي!"
-                st.session_state.custom_search_input = "" # تصفير حقل البحث للبدء من جديد
+                st.session_state.custom_search_input = "" 
                 st.session_state.current_stage = 2
                 st.rerun()
         
@@ -236,7 +240,7 @@ selected_phone = st_searchbox(
         unique_models
     ),
     placeholder="🔍 ابحث عن هاتف أو اكتب اسماً جديداً واضغط تأكيد بالأسفل...",
-    key="phone_search_autocomplete_v3",
+    key="phone_search_autocomplete_v4",
     label=""
 )
 
@@ -248,7 +252,7 @@ if selected_phone:
 # إذا كتب الفني اسماً جديداً تماماً وظهرت "No options"، نتيح له هنا زر تأكيد الاسم المكتوب لتنشيط الخطة حياً
 if not selected_phone:
     st.markdown("<p style='color:#a0aec0; margin-bottom: 2px; text-align: right;'>➕ إذا كان الهاتف جديداً كلياً، اكتبه بالأسفل لفتح المرحلة الثانية مباشرة:</p>", unsafe_allow_html=True)
-    custom_typed = st.text_input(label="", placeholder="اكتب اسم الهاتف الجديد هنا لتأكيده الفوري...", key="fallback_manual_input_text")
+    custom_typed = st.text_input(label="", placeholder="اكتب اسم الهاتف الجديد هنا لتأكيده الفوري...", key="fallback_manual_input_text_v4")
     if custom_typed.strip() and custom_typed.strip() != st.session_state.custom_search_input:
         st.session_state.custom_search_input = custom_typed.strip()
         st.session_state.current_stage = 2
