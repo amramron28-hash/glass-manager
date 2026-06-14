@@ -37,6 +37,7 @@ from ui_components import (
 )
 from app_init import initialize_system_data
 from rapidfuzz import process, fuzz
+from streamlit_searchbox import st_searchbox
 
 # 📊 4. تشغيل وحقن الخلفيات وقراءة قاعدة البيانات الحقيقية وتعبئة المتغيرات فوراً
 inject_pwa_and_styles()
@@ -46,10 +47,24 @@ db_data, unique_models, total_models, empty_groups_count, brand_counts = initial
 # 🧠 5. الدوال المنطقية المدمجة بالأعلى لفرز وإدارة المراحل حياً كلياً
 # ==========================================
 
+def search_models_callback(search_term, unique_models):
+    """البحث اللحظي الذكي والاقتراحات التلقائية لأسماء الهواتف"""
+    if not search_term or not search_term.strip():
+        return []
+
+    search_normalized = normalize_text(search_term.strip().lower())
+    fuzzy_results = process.extract(
+        search_normalized,
+        unique_models,
+        scorer=fuzz.WRatio,
+        limit=8
+    )
+    return [match for match, score, _ in fuzzy_results if score > 60]
+
 def process_new_model_form(db_data, current_search):
     """
     محرك الفرز الصارم والذكي للمراحل: تم ترقيته بالكامل ليحتوي على قوائم خيارات منسدلة 
-    تمنع الفني من الأخطاء الإملائية وتنعدم معها نسبة الخطأ تماماً في المتجر.
+    تمنع الفني من الأخطاء الإملائية مع تثبيت إشعارات النجاح والتأكيد اللحظي.
     """
     norm_model = normalize_text(current_search)
 
@@ -89,7 +104,6 @@ def process_new_model_form(db_data, current_search):
                     return
 
                 norm_size = normalize_text(input_size)
-                # تنظيف وتجهيز المصطلحات المختارة من القائمة بدقة لمنع التكرار
                 norm_panel = normalize_text(selected_panel.split(" (")[0])
                 norm_sensor = normalize_text(selected_sensor.split(" (")[0])
 
@@ -114,13 +128,12 @@ def process_new_model_form(db_data, current_search):
                     if norm_model not in models:
                         models.append(norm_model)
                         save_db(db_data)
-                        st.success(f"🎯 تم العثور على المجموعة بنجاح! ودمج الهاتف [{norm_model}] بداخلها كلياً.")
+                        st.toast(f"🎯 تم ربط [{norm_model}] بالمجموعة بنجاح!")
                         st.session_state.current_stage = 2 
                         st.rerun()
                     else:
                         st.info("📢 أذن المراقب الصامت: هذا الهاتف مسجل بالفعل داخل هذه المجموعة مسبقاً.")
                 else:
-                    # تفكيك وإنهاء المرحلة الثانية فوراً والانتقال الصارم والمنعزل للمرحلة الثالثة
                     st.session_state.temp_size = norm_size
                     st.session_state.temp_panel = norm_panel
                     st.session_state.temp_sensor = norm_sensor
@@ -139,7 +152,6 @@ def process_new_model_form(db_data, current_search):
         st.markdown("<h3 style='text-align:right; color:#ef4444;'>🆕 المرحلة الثالثة: إنشاء وإدراج مجموعة جديدة كلياً بالسيستم</h3>", unsafe_allow_html=True)
         st.warning("⚠️ المراقب الصامت أكد عدم وجود مواصفات مطابقة مسبقاً! يرجى تأكيد الخيارات لإنشاء المجموعة الجديدة نهائياً.")
         
-        # استرجاع المقاس المكتوب في المرحلة السابقة تلقائياً لتسريع العمل
         default_size = st.session_state.get("temp_size", "")
 
         with st.form("stage_3_creation_form", clear_on_submit=False):
@@ -176,7 +188,9 @@ def process_new_model_form(db_data, current_search):
                 db_data[norm_size][norm_panel][norm_sensor] = {"models": [norm_model]}
                 
                 save_db(db_data)
-                st.success(f"✨ نجاح كلي! تم إنشاء شجرة المجموعة الفنية الجديدة [{norm_size}] وحفظ الهاتف بنجاح كلي تحت مراقبة النظام.")
+                
+                # 📢 اللمسة الأخيرة: حجز إشعار النجاح والتأكيد اللحظي في الذاكرة لكي يراه الفني بوضوح خارق
+                st.session_state.show_success_toast = f"✨ تم إنشاء مجموعة جديدة [{new_size}] وحفظ الهاتف بنجاح!"
                 st.session_state.current_stage = 2
                 st.rerun()
         
@@ -184,7 +198,7 @@ def process_new_model_form(db_data, current_search):
             st.session_state.current_stage = 2
             st.rerun()
 # ==========================================
-# 📱 الواجهة الرئيسية (العنوان الممتد بصفين فقط باللون الأزرق السماوي)
+# 📱 الواجهة الرئيسية (العنوان بصفين وصندوق البحث اللحظي المطور)
 # ==========================================
 
 # 🌆 الصف الأول: الاسم ممتد بالكامل باللون الأزرق السماوي المضيء في الأعلى تماماً مقاس متوافق للهاتف
@@ -207,17 +221,28 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 🔍 حقل البحث الحي المباشر والمستمر لملائمة شاشات الهواتف كلياً
-raw_search = st.text_input(
-    label="",
-    placeholder="🔍 اكتب اسم هاتف الزبون حياً هنا لفحص التوافق اللحظي...",
-    key="live_phone_search_input"
+# 📢 التقاط وعرض إشعار النجاح والتأكيد اللحظي المخزن من المرحلة الثالثة وتثبيته بذكاء أمام الفني
+if "show_success_toast" in st.session_state and st.session_state.show_success_toast:
+    st.success(st.session_state.show_success_toast)
+    st.toast(st.session_state.show_success_toast)
+    # تصفير الحاوية بعد العرض لعدم التكرار عند إعادة الإنعاش العادية
+    st.session_state.show_success_toast = ""
+
+# 🔍 إعادة صندوق البحث الذكي والمطور بالاقتراحات اللحظية (Fuzzy Autocomplete)
+selected_phone = st_searchbox(
+    search_function=lambda q, **k: search_models_callback(
+        q,
+        unique_models
+    ),
+    placeholder="🔍 ابدأ بكتابة حروف اسم الهاتف أو اختر من المقترحات...",
+    key="phone_search_autocomplete_v2",
+    label=""
 )
 
-# 🔒 بوابة الأمان اللحظية: تحديث المتغير وتصفير المراحل حياً بناءً على الحروف المكتوبة لمنع التداخل
-if raw_search.strip() != st.session_state.custom_search_input:
-    st.session_state.custom_search_input = raw_search.strip()
-    st.session_state.current_stage = 2  # فرض إعادة الفحص للمرحلة الثانية عند أي تغيير حركي
+# 🔒 بوابة الأمان الذكية واللحظية لتحديث المتغير وتأمين تتابع المراحل الصارم [1، 2، 3]
+if selected_phone and selected_phone.strip() != st.session_state.custom_search_input:
+    st.session_state.custom_search_input = selected_phone.strip()
+    st.session_state.current_stage = 2  # فرض الرجوع للمرحلة الثانية كبوابة أمان عند فحص موديل جديد
 
 if st.session_state.custom_search_input:
     current_search = st.session_state.custom_search_input
