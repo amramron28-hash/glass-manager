@@ -1,36 +1,49 @@
 import streamlit as st
 import datetime
 import os
+import base64
 
 def inject_pwa_and_styles():
-    """حقن ملف الـ Manifest ومعالجة خلفية شاشة الهاتف برابط Raw مباشر لاختراق قيود سيرفر الاستضافة السحابي"""
+    """
+    حقن ملف الـ Manifest ومعالجة خلفية شاشة الهاتف بالتشفير النصي الفوري Base64
+    لاختراق حظر الـ iframe والـ CORS في سيرفرات Hugging Face قسرياً.
+    """
     st.markdown("""
     <head>
         <link rel="manifest" href="./manifest.json">
     </head>
     """, unsafe_allow_html=True)
 
-    # 🌌 الحل السحري: استدعاء جدارية الصورة عبر رابط الـ Raw المباشر والمستقر من مستودعك بجيتهاب كخطة إنقاذ خارقة
-    # مع تصفير نفاذية كافة الخلايا والحاويات لتبدو زجاجية بالكامل
-    st.markdown("""
+    # قراءة الصورة محلياً وتحويلها لنص بايتات فوري لا يمكن للمتصفح حظره
+    bg_image_base64 = ""
+    paths_to_check = ["phone_image.webp", "./app/phone_image.webp", "/app/phone_image.webp"]
+    
+    for path in paths_to_check:
+        if os.path.exists(path):
+            with open(path, "rb") as f:
+                bg_image_base64 = base64.b64encode(f.read()).decode()
+            break
+
+    # تصفير الحاويات وحقن الصورة في جذر الـ HTML والجسم والـ Container معاً لإجبارها على الانفجار البصري
+    st.markdown(f"""
     <style>
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"], [data-testid="stHeader"], div.stMainBlockContainer, .stAppDeployButton, [data-testid="stBlock"] {
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"], [data-testid="stHeader"], div.stMainBlockContainer, .stAppDeployButton, [data-testid="stBlock"] {{
         background-color: transparent !important;
         background: transparent !important;
-    }
+    }}
     
-    [data-testid="stAppViewContainer"] {
+    html, body, [data-testid="stAppViewContainer"] {{
         background-image:
             linear-gradient(
                 rgba(10,14,23,0.55),
-                rgba(10,14,23,0.45)
+                rgba(10,14,23,0.55)
             ),
-            url("https://githubusercontent.com") !important;
+            url('data:image/webp;base64,{bg_image_base64}') !important;
         background-size: cover !important;
         background-position: center !important;
         background-repeat: no-repeat !important;
         background-attachment: fixed !important;
-    }
+    }}
     </style>
     """, unsafe_allow_html=True)
 
