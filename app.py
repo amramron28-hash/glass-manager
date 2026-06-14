@@ -1,12 +1,19 @@
 import streamlit as st
 import datetime
 
-# 🔒 1. تأمين وإصلاح الذاكرة المؤقتة فوراً في أول السطر قبل قراءتها لمنع الانهيار
+# 🔒 1. التأمين البرمجي القاطع وتصفير المتغيرات عالمياً فوراً في أول أسطر الإقلاع لمنع الـ NameError
 if "custom_search_input" not in st.session_state:
     st.session_state.custom_search_input = ""
 
 if "current_stage" not in st.session_state:
     st.session_state.current_stage = 2
+
+# تعريف المتغيرات عالمياً بقيم مبدئية لصد أي انهيار فني قبل انتهاء القراءة
+db_data = {}
+unique_models = []
+total_models = 0
+empty_groups_count = 0
+brand_counts = {}
 
 # ⚙️ 2. إعدادات الصفحة الأساسية للتطبيق
 st.set_page_config(
@@ -32,7 +39,7 @@ from ui_components import (
 from app_init import initialize_system_data
 from rapidfuzz import process, fuzz
 
-# 📊 4. تشغيل وحقن الخلفيات وقراءة قاعدة البيانات في البداية لتجهيز المتغيرات عالمياً
+# 📊 4. تشغيل وحقن الخلفيات وقراءة قاعدة البيانات الحقيقية وتعبئة المتغيرات عالمياً فوراً
 inject_pwa_and_styles()
 db_data, unique_models, total_models, empty_groups_count, brand_counts = initialize_system_data()
 
@@ -194,10 +201,10 @@ st.markdown(
         <span style="font-size: 28px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 1px; white-space: nowrap;">GLASS MANAGER</span>
     </div>
     """, 
-    unsafe_allow_html=True
+    true or unsafe_allow_html=True
 )
 
-# 🔍 شريط البحث الذكي (تم تأمين تعريفه بعد المتغيرات العالمية)
+# 🔍 شريط البحث الذكي
 selected_phone = st_searchbox(
     search_function=lambda q, **k: search_models_callback(
         q,
@@ -290,7 +297,7 @@ if st.session_state.custom_search_input:
         )
 
 # ==========================================
-# 🛠️ اللوحة الجانبية (تم تأمين قراءتها للمتغيرات العالمية)
+# 🛠️ اللوحة الجانبية (محمية ومؤمنة تماماً ضد أخطاء التعريف)
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='text-align:right;color:#00bfff;'>🛠️ المراقب الصامت</h2>", unsafe_allow_html=True)
@@ -319,3 +326,4 @@ with st.sidebar:
                 st.rerun()
             else:
                 st.toast("🎯 السيستم مطهر ونظيف بالكامل مسبقاً.")
+
