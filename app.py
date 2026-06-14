@@ -104,8 +104,8 @@ def process_new_model_form(db_data, current_search):
                     return
 
                 norm_size = normalize_text(input_size)
-                norm_panel = normalize_text(selected_panel.split(" (")[0])
-                norm_sensor = normalize_text(selected_sensor.split(" (")[0])
+                norm_panel = normalize_text(selected_panel.split(" ("))
+                norm_sensor = normalize_text(selected_sensor.split(" ("))
 
                 try:
                     float(norm_size)
@@ -129,6 +129,7 @@ def process_new_model_form(db_data, current_search):
                         models.append(norm_model)
                         save_db(db_data)
                         st.toast(f"🎯 تم ربط [{norm_model}] بالمجموعة بنجاح!")
+                        st.session_state.custom_search_input = "" # تصفير الحقل للعودة
                         st.session_state.current_stage = 2 
                         st.rerun()
                     else:
@@ -171,8 +172,8 @@ def process_new_model_form(db_data, current_search):
                     return
 
                 norm_size = normalize_text(new_size)
-                norm_panel = normalize_text(new_panel.split(" (")[0])
-                norm_sensor = normalize_text(new_sensor.split(" (")[0])
+                norm_panel = normalize_text(new_panel.split(" ("))
+                norm_sensor = normalize_text(new_sensor.split(" ("))
 
                 try:
                     float(norm_size)
@@ -189,8 +190,9 @@ def process_new_model_form(db_data, current_search):
                 
                 save_db(db_data)
                 
-                # 📢 اللمسة الأخيرة: حجز إشعار النجاح والتأكيد اللحظي في الذاكرة لكي يراه الفني بوضوح خارق
-                st.session_state.show_success_toast = f"✨ تم إنشاء مجموعة جديدة [{new_size}] وحفظ الهاتف بنجاح!"
+                # 📢 اللمسة الأخيرة وتثبيت إشعار الحفظ بنجاح كلي أمام الفني
+                st.session_state.show_success_toast = f"✨ تم إنشاء مجموعة جديدة [{new_size}] وحفظ الهاتف [{current_search}] بنجاح كلي!"
+                st.session_state.custom_search_input = "" # تصفير حقل البحث للبدء من جديد
                 st.session_state.current_stage = 2
                 st.rerun()
         
@@ -198,7 +200,7 @@ def process_new_model_form(db_data, current_search):
             st.session_state.current_stage = 2
             st.rerun()
 # ==========================================
-# 📱 الواجهة الرئيسية (العنوان بصفين وصندوق البحث اللحظي المطور)
+# 📱 الواجهة الرئيسية (العنوان الممتد بصفين فقط باللون الأزرق السماوي)
 # ==========================================
 
 # 🌆 الصف الأول: الاسم ممتد بالكامل باللون الأزرق السماوي المضيء في الأعلى تماماً مقاس متوافق للهاتف
@@ -221,31 +223,42 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 📢 التقاط وعرض إشعار النجاح والتأكيد اللحظي المخزن من المرحلة الثالثة وتثبيته بذكاء أمام الفني
+# 📢 التقاط وعرض إشعار النجاح المكتمل والمثبت للمرحلة الثالثة أمام الفني بوضوح خارق
 if "show_success_toast" in st.session_state and st.session_state.show_success_toast:
     st.success(st.session_state.show_success_toast)
     st.toast(st.session_state.show_success_toast)
-    # تصفير الحاوية بعد العرض لعدم التكرار عند إعادة الإنعاش العادية
     st.session_state.show_success_toast = ""
 
-# 🔍 إعادة صندوق البحث الذكي والمطور بالاقتراحات اللحظية (Fuzzy Autocomplete)
+# 🔍 صندوق البحث الذكي بالمقترحات الفورية اللحظية
 selected_phone = st_searchbox(
     search_function=lambda q, **k: search_models_callback(
         q,
         unique_models
     ),
-    placeholder="🔍 ابدأ بكتابة حروف اسم الهاتف أو اختر من المقترحات...",
-    key="phone_search_autocomplete_v2",
+    placeholder="🔍 ابحث عن هاتف أو اكتب اسماً جديداً واضغط تأكيد بالأسفل...",
+    key="phone_search_autocomplete_v3",
     label=""
 )
 
-# 🔒 بوابة الأمان الذكية واللحظية لتحديث المتغير وتأمين تتابع المراحل الصارم [1، 2، 3]
-if selected_phone and selected_phone.strip() != st.session_state.custom_search_input:
+# 🔒 المعالجة الهجينة الخارقة: حقل نصي مساعد يظهر فقط ليرى الفني ما يكتبه ويثبته داخل المراحل لمنع اختفاء الخطة
+if selected_phone:
     st.session_state.custom_search_input = selected_phone.strip()
-    st.session_state.current_stage = 2  # فرض الرجوع للمرحلة الثانية كبوابة أمان عند فحص موديل جديد
+    st.session_state.current_stage = 2
 
+# إذا كتب الفني اسماً جديداً تماماً وظهرت "No options"، نتيح له هنا زر تأكيد الاسم المكتوب لتنشيط الخطة حياً
+if not selected_phone:
+    st.markdown("<p style='color:#a0aec0; margin-bottom: 2px; text-align: right;'>➕ إذا كان الهاتف جديداً كلياً، اكتبه بالأسفل لفتح المرحلة الثانية مباشرة:</p>", unsafe_allow_html=True)
+    custom_typed = st.text_input(label="", placeholder="اكتب اسم الهاتف الجديد هنا لتأكيده الفوري...", key="fallback_manual_input_text")
+    if custom_typed.strip() and custom_typed.strip() != st.session_state.custom_search_input:
+        st.session_state.custom_search_input = custom_typed.strip()
+        st.session_state.current_stage = 2
+
+# تفعيل وعرض تدفق المراحل بناءً على الاسم المعتمد في الذاكرة
 if st.session_state.custom_search_input:
     current_search = st.session_state.custom_search_input
+    
+    st.markdown(f"<p style='color:#00bfff; font-size:18px; font-weight:bold; text-align:right;'>📱 الهاتف المبحوث عنه حالياً: [{current_search}]</p>", unsafe_allow_html=True)
+    
     size_grp, panel_grp, sensor_grp, real_name = find_model_coords(
         db_data,
         current_search
@@ -309,11 +322,6 @@ if st.session_state.custom_search_input:
     # 📌 المرحلة الثانية والثالثة بشكل مستقل وصارم كلياً (التحويل التلقائي الذكي)
     # -------------------------------------------------------------
     else:
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.warning(
-            f"⚠️ الموديل [{current_search}] غير مسجل داخل النظام حالياً."
-        )
-
         # استدعاء دالة المنطق المعزولة بالأعلى لضمان التتابع وعزل النوافذ تماماً
         process_new_model_form(
             db_data,
