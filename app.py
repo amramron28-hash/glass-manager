@@ -168,7 +168,7 @@ def process_new_model_form(db_data, current_search):
                 if norm_size not in db_data:
                     db_data[norm_size] = {}
                 if norm_panel not in db_data[norm_size]:
-                    db_data[norm_size][norm_panel] = {}
+                    db_data[norm_size][panel] = {}
 
                 db_data[norm_size][norm_panel][norm_sensor] = {"models": [norm_model]}
                 
@@ -201,7 +201,7 @@ st.markdown(
         <span style="font-size: 28px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 1px; white-space: nowrap;">GLASS MANAGER</span>
     </div>
     """, 
-    true or unsafe_allow_html=True
+    unsafe_allow_html=True
 )
 
 # 🔍 شريط البحث الذكي
@@ -326,4 +326,3 @@ with st.sidebar:
                 st.rerun()
             else:
                 st.toast("🎯 السيستم مطهر ونظيف بالكامل مسبقاً.")
-
