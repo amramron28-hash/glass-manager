@@ -6,7 +6,7 @@ import base64
 def inject_pwa_and_styles():
     """
     حقن ملف الـ Manifest ومعالجة خلفية شاشة الهاتف بالتشفير النصي الفوري Base64 
-    الأصلي الممتد بكامل تفاصيل الزجاج المتوهج ودقة نفاذ 100%.
+    مع تفعيل المرونة الكاملة والتجاوب التلقائي (Responsive) مع جميع أحجام الشاشات.
     """
     st.markdown("""
     <head>
@@ -30,7 +30,7 @@ def inject_pwa_and_styles():
                 bg_image_base64 = base64.b64encode(f.read()).decode()
             break
 
-    # استعادة التصميم الأصلي الفخم الممتد والمثبت بكامل أبعاد الشاشة وبأعلى نفاذ زجاجي
+    # 🌌 التحديث السحري: جعل أبعاد الصورة مرنة تماماً (100% عرض و100% ارتفاع) وتتمركز آلياً حسب مقاس الشاشة
     st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewMain"], .stApp, .stMain, main, [data-testid="stApp"], [data-testid="stHeader"], div.stMainBlockContainer, .stAppDeployButton, [data-testid="stBlock"] {{
@@ -45,8 +45,8 @@ def inject_pwa_and_styles():
                 rgba(10,14,23,0.45)
             ),
             url('data:image/webp;base64,{bg_image_base64}') !important;
-        background-size: cover !important; 
-        background-position: center center !important;
+        background-size: 100% 100% !important; /* فرض أبعاد مرنة متجاوبة بالكامل لمنع التشويه والقص */
+        background-position: center center !important; /* تثبيت سنتر وتناظر زجاج الهاتف في الوسط */
         background-repeat: no-repeat !important;
         background-attachment: fixed !important;
     }}
