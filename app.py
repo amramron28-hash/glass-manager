@@ -32,8 +32,12 @@ from ui_components import (
 from app_init import initialize_system_data
 from rapidfuzz import process, fuzz
 
+# 📊 4. تشغيل وحقن الخلفيات وقراءة قاعدة البيانات في البداية لتجهيز المتغيرات عالمياً
+inject_pwa_and_styles()
+db_data, unique_models, total_models, empty_groups_count, brand_counts = initialize_system_data()
+
 # ==========================================
-# 🧠 4. نقل الدوال المنطقية للأعلى أولاً (لحل مشكلة الـ NameError نهائياً)
+# 🧠 5. الدوال المنطقية للتحكم وفصل المراحل حياً
 # ==========================================
 
 def search_models_callback(search_term, unique_models):
@@ -51,7 +55,7 @@ def search_models_callback(search_term, unique_models):
     return [match for match, score, _ in fuzzy_results if score > 60]
 
 def process_new_model_form(db_data, current_search):
-    """إدارة المرحلة الثانية والمرحلة الثالثة بفصل صارم يمنع تداخل النوافذ"""
+    """إدارة المرحلة الثانية والمرحلة الثالثة بفصل صارم يمنع تداخل النوافذ مسبقاً"""
     norm_model = normalize_text(current_search)
 
     # 📌 المرحلة الثانية: البحث عن المقاس والمواصفات داخل المجموعات الحالية فقط
@@ -193,7 +197,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 🔍 شريط البحث الذكي (تم وضعه أسفل تعريف الدالة لحل الـ NameError نهائياً)
+# 🔍 شريط البحث الذكي (تم تأمين تعريفه بعد المتغيرات العالمية)
 selected_phone = st_searchbox(
     search_function=lambda q, **k: search_models_callback(
         q,
@@ -286,7 +290,7 @@ if st.session_state.custom_search_input:
         )
 
 # ==========================================
-# 🛠️ اللوحة الجانبية (المراقب الصامت الذكي)
+# 🛠️ اللوحة الجانبية (تم تأمين قراءتها للمتغيرات العالمية)
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='text-align:right;color:#00bfff;'>🛠️ المراقب الصامت</h2>", unsafe_allow_html=True)
