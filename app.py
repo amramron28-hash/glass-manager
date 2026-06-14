@@ -1,14 +1,14 @@
 import streamlit as st
 import datetime
 
-# 🔒 1. التأمين البرمجي القاطع وتصفير المتغيرات عالمياً فوراً في أول أسطر الإقلاع لمنع الـ NameError
+# 🔒 1. التأمين البرمجي وتأكيد تهيئة الذاكرة المؤقتة لمنع الـ AttributeError والـ NameError
 if "custom_search_input" not in st.session_state:
     st.session_state.custom_search_input = ""
 
 if "current_stage" not in st.session_state:
     st.session_state.current_stage = 2
 
-# تعريف المتغيرات عالمياً بقيم مبدئية لصد أي انهيار فني قبل انتهاء القراءة
+# تعريف مبدئي للمتغيرات العالمية لصد أي انهيار فني أثناء إقلاع وقراءة السيرفر
 db_data = {}
 unique_models = []
 total_models = 0
@@ -22,7 +22,7 @@ st.set_page_config(
     page_icon="🔍"
 )
 
-# 📦 3. الاستيرادات الأمنية والذكية من الملفات الأخرى
+# 📦 3. الاستيرادات البرمجية من الملفات والمحركات الفنية للمشروع
 from database import save_db
 from logic_engine import (
     normalize_text,
@@ -30,7 +30,6 @@ from logic_engine import (
     get_compatibles_strict,
     run_intelligent_inspector
 )
-from streamlit_searchbox import st_searchbox
 from ui_components import (
     inject_pwa_and_styles,
     draw_technical_coords,
@@ -39,38 +38,27 @@ from ui_components import (
 from app_init import initialize_system_data
 from rapidfuzz import process, fuzz
 
-# 📊 4. تشغيل وحقن الخلفيات وقراءة قاعدة البيانات الحقيقية وتعبئة المتغيرات عالمياً فوراً
+# 📊 4. تشغيل وحقن الخلفيات وقراءة قاعدة البيانات الحقيقية وتعبئة المتغيرات فوراً
 inject_pwa_and_styles()
 db_data, unique_models, total_models, empty_groups_count, brand_counts = initialize_system_data()
 
 # ==========================================
-# 🧠 5. الدوال المنطقية للتحكم وفصل المراحل حياً
+# 🧠 5. الدوال المنطقية المدمجة بالأعلى لفرز وإدارة المراحل حياً كلياً
 # ==========================================
 
-def search_models_callback(search_term, unique_models):
-    """البحث اللحظي الذكي عن أسماء الهواتف"""
-    if not search_term or not search_term.strip():
-        return []
-
-    search_normalized = normalize_text(search_term.strip().lower())
-    fuzzy_results = process.extract(
-        search_normalized,
-        unique_models,
-        scorer=fuzz.WRatio,
-        limit=8
-    )
-    return [match for match, score, _ in fuzzy_results if score > 60]
-
 def process_new_model_form(db_data, current_search):
-    """إدارة المرحلة الثانية والمرحلة الثالثة بفصل صارم يمنع تداخل النوافذ مسبقاً"""
+    """
+    محرك الفرز الصارم للمرحلة الثانية والثالثة: يضمن العزل الكلي وتتابع النوافذ 
+    تحت إشراف وعين المراقب الصامت دون ظهور مسبق للمرحلة التالية.
+    """
     norm_model = normalize_text(current_search)
 
-    # 📌 المرحلة الثانية: البحث عن المقاس والمواصفات داخل المجموعات الحالية فقط
+    # 📌 المرحلة الثانية: البحث عن المواصفات الفنية داخل المجموعات القائمة حالياً فقط
     if st.session_state.current_stage == 2:
         st.markdown("<h3 style='text-align:right; color:#e67e22;'>🔄 المرحلة الثانية: فحص الأبعاد الفنية للمجموعات القائمة</h3>", unsafe_allow_html=True)
         
         with st.form("stage_2_search_form", clear_on_submit=False):
-            st.markdown("<p style='text-align:right; color:#a0aec0; font-size:18px;'>المراقب الصامت يبحث الآن... أدخل مواصفات الهاتف للبحث عن مجموعة مطابقة متوفرة بالسيستم حالياً:</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:right; color:#a0aec0; font-size:18px;'>المراقب الصامت يبحث حياً... أدخل مواصفات الهاتف للتحقق من وجود مجموعة مطابقة بالسيستم:</p>", unsafe_allow_html=True)
             col1, col2, col3 = st.columns(3)
             with col1:
                 input_size = st.text_input("📏 المقاس المراد فحصه")
@@ -79,7 +67,7 @@ def process_new_model_form(db_data, current_search):
             with col3:
                 input_sensor = st.text_input("👁️ مستشعر التقارب المراد فحصه")
             
-            submitted_stage2 = st.form_submit_button("⚡ فحص ومطابقة بالمجموعات الحالية")
+            submitted_stage2 = st.form_submit_button("⚡ تشغيل الفحص والمطابقة الحية")
 
             if submitted_stage2:
                 if not (input_size.strip() and input_panel.strip() and input_sensor.strip()):
@@ -117,6 +105,7 @@ def process_new_model_form(db_data, current_search):
                     else:
                         st.info("📢 أذن المراقب الصامت: هذا الهاتف مسجل بالفعل داخل هذه المجموعة مسبقاً.")
                 else:
+                    # تفكيك وإنهاء المرحلة الثانية فوراً والانتقال الصارم والمنعزل للمرحلة الثالثة
                     st.session_state.temp_size = norm_size
                     st.session_state.temp_panel = norm_panel
                     st.session_state.temp_sensor = norm_sensor
@@ -130,7 +119,7 @@ def process_new_model_form(db_data, current_search):
             st.session_state.current_stage = 3
             st.rerun()
 
-    # 📌 المرحلة الثالثة: إدراج كمجموعة جديدة كلياً (ممنوع ظهورها مسبقاً)
+    # 📌 المرحلة الثالثة: إنشاء وإدراج الهاتف كمجموعة جديدة كلياً (ممنوع ظهورها مسبقاً قبل فشل الثانية)
     elif st.session_state.current_stage == 3:
         st.markdown("<h3 style='text-align:right; color:#ef4444;'>🆕 المرحلة الثالثة: إنشاء وإدراج مجموعة جديدة كلياً بالسيستم</h3>", unsafe_allow_html=True)
         st.warning("⚠️ المراقب الصامت أكد عدم وجود مواصفات مطابقة مسبقاً! يرجى تأكيد بيانات المجموعة الجديدة الآن لحفظها نهائياً.")
@@ -168,7 +157,7 @@ def process_new_model_form(db_data, current_search):
                 if norm_size not in db_data:
                     db_data[norm_size] = {}
                 if norm_panel not in db_data[norm_size]:
-                    db_data[norm_size][panel] = {}
+                    db_data[norm_size][norm_panel] = {}
 
                 db_data[norm_size][norm_panel][norm_sensor] = {"models": [norm_model]}
                 
@@ -204,21 +193,17 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 🔍 شريط البحث الذكي
-selected_phone = st_searchbox(
-    search_function=lambda q, **k: search_models_callback(
-        q,
-        unique_models
-    ),
-    placeholder="🔍 Enter customer phone model here for live check...",
-    key="phone_search_autocomplete",
-    label=""
+# 🔍 حقل البحث الحي المباشر والمستمر لملائمة شاشات الهواتف كلياً
+raw_search = st.text_input(
+    label="",
+    placeholder="🔍 اكتب اسم هاتف الزبون حياً هنا لفحص التوافق اللحظي...",
+    key="live_phone_search_input"
 )
 
-# 🔒 بوابة الأمان: عند كتابة هاتف جديد أو مسح الحقل، يتم تصفير المرحلة فوراً لحماية الخطة من التداخل
-if selected_phone and selected_phone.strip() != st.session_state.custom_search_input:
-    st.session_state.custom_search_input = selected_phone.strip()
-    st.session_state.current_stage = 2  # فرض الرجوع للمرحلة الثانية لضمان الفحص المعزول
+# 🔒 بوابة الأمان اللحظية: تحديث المتغير وتصفير المراحل حياً بناءً على الحروف المكتوبة لمنع التداخل
+if raw_search.strip() != st.session_state.custom_search_input:
+    st.session_state.custom_search_input = raw_search.strip()
+    st.session_state.current_stage = 2  # فرض إعادة الفحص للمرحلة الثانية عند أي تغيير حركي
 
 if st.session_state.custom_search_input:
     current_search = st.session_state.custom_search_input
@@ -248,7 +233,7 @@ if st.session_state.custom_search_input:
             sensor_grp
         )
 
-        # إنتاج الأقسام الملونة بالكامل (ملء الخلفية بالألوان المحددة)
+        # إنتاج الأقسام الملونة بالكامل (ملء الخلفية بالألوان المحددة مصمتة)
         draw_neon_section(
             "مطابقة للمقاس تماماً (Exact Matches)",
             compat_results["exact"],
@@ -282,7 +267,7 @@ if st.session_state.custom_search_input:
         )
 
     # -------------------------------------------------------------
-    # 📌 المرحلة الثانية والثالثة: تدار بشكل صارم ومستقل لحظر تداخل الواجهات والنوافذ مسبقاً
+    # 📌 المرحلة الثانية والثالثة بشكل مستقل وصارم كلياً (التحويل التلقائي الذكي)
     # -------------------------------------------------------------
     else:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -290,7 +275,7 @@ if st.session_state.custom_search_input:
             f"⚠️ الموديل [{current_search}] غير مسجل داخل النظام حالياً."
         )
 
-        # استدعاء دالة المنطق المعزولة لحماية وتدفق المراحل الفنية خطوة بخطوة
+        # استدعاء دالة المنطق المعزولة بالأعلى لضمان التتابع وعزل النوافذ تماماً
         process_new_model_form(
             db_data,
             current_search
