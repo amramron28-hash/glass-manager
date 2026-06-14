@@ -10,7 +10,7 @@ from logic_engine import (
 from streamlit_searchbox import st_searchbox
 from rapidfuzz import process, fuzz
 
-# استيراد الأدوات والمكونات المحدثة كلياً للأصالة البصرية
+# استيراد الأدوات المحدثة كلياً للأصالة البصرية
 from ui_components import inject_pwa_and_styles, draw_technical_coords, draw_neon_section
 from app_init import initialize_system_data
 
@@ -64,10 +64,10 @@ with st.sidebar:
 # 📱 واجهة خطة العمل التتابعية الموحدة النظيفة (أ، ب، ج)
 # ==========================================
 
-# 🎯 التحديث النهائي: حذف علامة البحث 🔍 وضبط النص الإنجليزي الاحترافي الصافي في سطرين مدمجين كلياً
+# العنوان الصافي الأصلي والفاخر وبدون أي علامات أو عدسات زائدة
 st.markdown("""
-<h1 class='app-main-title'>
-    ZEGAAR AMMAR<br>GLASS MANAGER
+<h1 style='text-align:center;color:#00bfff; font-weight: 900; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 191, 255, 0.6);'>
+    ZEGAAR AMMAR GLASS MANAGER
 </h1>
 """, unsafe_allow_html=True)
 
@@ -99,7 +99,7 @@ if st.session_state.custom_search_input:
         # [الواجهة ب]: بطاقة تحليل الأبعاد الفنية التتابعية لهاتف الزبون
         draw_technical_coords(size_grp, panel_grp, sensor_grp)
         
-        # [الواجهة ج]: بطاقات النيون الفاخرة الملونة الأربعة المقسمة وعزل الحساسات
+        # [الواجهة ج]: بطاقات النيون الفاخرة الملونة الأربعة المقسمة وعزل الحساسات الأصلية العريضة
         draw_neon_section("مطابقة للمقاس تماماً (Exact Matches)", compat_results["exact"], "#2ecc71", "🎯", current_search)
         draw_neon_section("أكبر بقليل بمقدار 0.01 إلى 0.03 (Plus Sizes)", compat_results["plus"], "#3498db", "➕", current_search)
         draw_neon_section("أصغر بقليل بمقدار 0.01 إلى 0.03 (Minus Sizes)", compat_results["minus"], "#e67e22", "➖", current_search)
