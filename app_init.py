@@ -1,6 +1,9 @@
 from database import load_db
 
 def initialize_system_data():
+    """
+    قراءة قاعدة البيانات وتطهيرها من المسافات، وحساب حصص الـ RAM للبراندات بدقة
+    """
     db_data = load_db()
     all_flat_models = []
     all_available_sizes = []
@@ -22,7 +25,11 @@ def initialize_system_data():
                     total_models += len(models_list)
                     for model in models_list:
                         all_flat_models.append(model.strip())
-                        first_word = model.split() if model.split() else "Unknown"
+                        
+                        # 🎯 الإصلاح الجذري: أخذ الكلمة الأولى فقط [0] كمفتاح نصي (String) لمنع الـ TypeError
+                        words = model.split()
+                        first_word = words[0] if words else "Unknown"
+                        
                         brand_counts[first_word] = brand_counts.get(first_word, 0) + 1
         if not size_has_models: 
             empty_groups_count += 1
