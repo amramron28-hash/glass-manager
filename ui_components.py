@@ -14,7 +14,6 @@ def inject_pwa_and_styles():
     </head>
     """, unsafe_allow_html=True)
 
-    # قراءة الصورة محلياً وتحويلها لنص بايتات لفرضها داخل الحاويات العميقة للـ iframe
     bg_image_base64 = ""
     paths_to_check = [
         "phone_image.webp", 
@@ -41,8 +40,8 @@ def inject_pwa_and_styles():
     html, body, [data-testid="stAppViewContainer"] {{
         background-image:
             linear-gradient(
-                rgba(10,14,23,0.55),
-                rgba(10,14,23,0.55)
+                rgba(10,14,23,0.45),
+                rgba(10,14,23,0.45)
             ),
             url('data:image/webp;base64,{bg_image_base64}') !important;
         background-size: cover !important;
@@ -78,22 +77,29 @@ def draw_neon_section(title, models_list, color_hex, badge_icon, current_search)
     st.markdown(f"<h4 class='section-title' style='color:{color_hex};'>{badge_icon} {title} ({len(models_list)}):</h4>", unsafe_allow_html=True)
     
     for comp_model in models_list:
-        is_current = comp_model.lower().strip() == current_search.lower().strip()
+        # تأمين فلترة الحروف لمنع تداخل الأخطاء
+        model_name_clean = comp_model.strip()
+        
+        # إذا تسرب كود بالخطأ في الاسم، نقوم بتنظيفه برمجياً حركياً لحماية الواجهة من التشوه
+        if "<div" in model_name_clean:
+            continue
+            
+        is_current = model_name_clean.lower() == current_search.lower().strip()
         card_class = "flat-warning-card" if color_hex == "#ef4444" else "ammar-flat-card"
         specific_style = f"border: 2px solid #00bfff; box-shadow: 0px 0px 12px rgba(0, 191, 255, 0.5);" if is_current else f"border: 1px solid {color_hex};"
         bg_style = "background: linear-gradient(135deg, #0f172a, #1e293b);" if is_current else ""
         
-        # 🎯 محرك الاستدعاء التلقائي الفوري والمصحح: تنظيف الاسم البرمجي وتركيبه داخل الرابط العالمي للصور
-        clean_name_url = comp_model.strip().replace(" ", "-").lower()
+        # 🎯 محرك الاستدعاء التلقائي الفوري والمصحح للروابط: تحويل الفراغات لشرطات وتوجيهه للخادم العالمي الصحيح لصور الماركات
+        clean_name_url = model_name_clean.replace(" ", "-").lower()
         auto_phone_image_url = f"https://phonearena.com{clean_name_url}.jpg"
         
-        # هندسة بناء الكرت المفرغ: حجز مساحة الصورة في جهة اليمين والاسم بالإنجليزية ملتصق باليسار
+        # هندسة بناء الكرت المفرغ: حجز مساحة الصورة في جهة اليمين والاسم بالإنجليزية ملتصق باليسار كلياً
         st.markdown(f"""
             <div class="{card_class}" style="{bg_style} {specific_style}">
                 <!-- الإنجليزية أقصى اليسار لاسم الهاتف النظيف -->
-                <span class="flat-phone-text">{'⭐ ' if is_current else ''}{comp_model}</span>
+                <span class="flat-phone-text">{'⭐ ' if is_current else ''}{model_name_clean}</span>
                 
-                <!-- 🖼️ نزول صورة الهاتف المجلوبة تلقائياً وبشكل مصحح أقصى اليمين في المربع النيوني المحجوز مسبقاً -->
+                <!-- 🖼️ نزول صورة الهاتف المجلوبة تلقائياً وبشكل مصحح ومحمي أقصى اليمين في المربع النيوني المحجوز مسبقاً -->
                 <div class="image-placeholder-box" style="overflow: hidden; width: 55px; height: 55px;">
                     <img src="{auto_phone_image_url}" 
                          onerror="this.onerror=null; this.src='https://icons8.com'; this.style.opacity='0.4';" 
