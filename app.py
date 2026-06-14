@@ -10,16 +10,20 @@ from logic_engine import (
 from streamlit_searchbox import st_searchbox
 from rapidfuzz import process, fuzz
 
+# استيراد الأدوات والمكونات المحدثة كلياً للأصالة البصرية
 from ui_components import inject_pwa_and_styles, draw_technical_coords, draw_neon_section
 from app_init import initialize_system_data
 
 st.set_page_config(layout="wide", page_title="ZEGAAR AMMAR GLASS MANAGER", page_icon="🔍")
 
+# تفعيل الهوية البصرية الأصلية الممتدة بكامل تفاصيل زجاج الخلفية
 inject_pwa_and_styles()
 
+# استدعاء بيانات الجرد السحابي وتغذية الـ RAM من الجزء الأول
 db_data, unique_models, total_models, empty_groups_count, brand_counts = initialize_system_data()
 
 def search_models_callback(search_term: str, **kwargs):
+    """المراقب الصامت: تأمين كامل للمدخلات بـ **kwargs لابتلاع أي معاملات زائدة ومنع الـ TypeError"""
     if not search_term or not search_term.strip(): 
         return []
     search_normalized = normalize_text(search_term.strip().lower())
@@ -27,7 +31,7 @@ def search_models_callback(search_term: str, **kwargs):
     return [match for match, score, _ in fuzzy_results if score > 60]
 
 # ==========================================
-# 🛠️ اللوحة الجانبية (المراقب الصامت)
+# 🛠️ اللوحة الجانبية (غرفة عمليات المراقب الصامت)
 # ==========================================
 with st.sidebar:
     st.markdown("<h2 style='text-align:right;color:#00bfff;'>🛠️ المراقب الصامت</h2>", unsafe_allow_html=True)
@@ -37,7 +41,7 @@ with st.sidebar:
         st.info("💡 النظام سحابي مستقر 100% والبحث اللحظي الخارق نشط.")
     
     with st.expander("⚙️ الإعدادات والتحكم بالـ RAM", expanded=True):
-        st.write(f"📅 تاريخ اليوم: **{datetime.date.today().strftime('%Y-%m-%d')}**")
+        st.write(f"📅 تاريخ اليوم الفني: **{datetime.date.today().strftime('%Y-%m-%d')}**")
         st.metric(label="📈 إجمالي الهواتف بالسيستم", value=total_models)
         st.markdown("---")
         if brand_counts:
@@ -57,14 +61,22 @@ with st.sidebar:
                 st.toast("🎯 السيستم نظيف ومطهر كلياً مسبقاً.")
 
 # ==========================================
-# 📱 واجهة خطة العمل التتابعية (أ، ب، ج)
+# 📱 واجهة خطة العمل التتابعية الموحدة النظيفة (أ، ب، ج)
 # ==========================================
-st.markdown("<h1 class='app-main-title'>🔍 ZEGAAR AMMAR <br> GLASS MANAGER</h1>", unsafe_allow_html=True)
+
+# 🎯 التحديث النهائي: حذف علامة البحث 🔍 وضبط النص الإنجليزي الاحترافي الصافي في سطرين مدمجين كلياً
+st.markdown("""
+<h1 class='app-main-title'>
+    ZEGAAR AMMAR<br>GLASS MANAGER
+</h1>
+""", unsafe_allow_html=True)
+
 st.markdown("<br>", unsafe_allow_html=True)
 
 if "custom_search_input" not in st.session_state: 
     st.session_state.custom_search_input = ""
 
+# 🏁 [الواجهة أ]: نظافة مطلقة 100/100.. شريط البحث فقط يقف وحيداً في المنتصف
 selected_phone = st_searchbox(
     search_function=search_models_callback,
     placeholder="🔍 ادخل اسم هاتف الزبون هنا لفحص التوافق والمجموعات الحية...",
@@ -84,8 +96,10 @@ if st.session_state.custom_search_input:
         st.markdown("<br>", unsafe_allow_html=True)
         st.success(f"🎯 الموديل [{real_name}] مسجل ومتوافق حياً!")
         
+        # [الواجهة ب]: بطاقة تحليل الأبعاد الفنية التتابعية لهاتف الزبون
         draw_technical_coords(size_grp, panel_grp, sensor_grp)
         
+        # [الواجهة ج]: بطاقات النيون الفاخرة الملونة الأربعة المقسمة وعزل الحساسات
         draw_neon_section("مطابقة للمقاس تماماً (Exact Matches)", compat_results["exact"], "#2ecc71", "🎯", current_search)
         draw_neon_section("أكبر بقليل بمقدار 0.01 إلى 0.03 (Plus Sizes)", compat_results["plus"], "#3498db", "➕", current_search)
         draw_neon_section("أصغر بقليل بمقدار 0.01 إلى 0.03 (Minus Sizes)", compat_results["minus"], "#e67e22", "➖", current_search)
