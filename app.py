@@ -1,6 +1,13 @@
 import streamlit as st
 import datetime
 
+# 🔒 تأمين وإصلاح الذاكرة المؤقتة فوراً في أول السطر قبل قراءتها لمنع الانهيار
+if "custom_search_input" not in st.session_state:
+    st.session_state.custom_search_input = ""
+
+if "current_stage" not in st.session_state:
+    st.session_state.current_stage = 2
+
 from database import save_db
 from logic_engine import (
     normalize_text,
@@ -21,7 +28,7 @@ from app_init import initialize_system_data
 from rapidfuzz import process, fuzz
 
 # ==========================================
-# 🧠 دمج منطق التحكم وفصل المراحل حياً داخل الملف لمنع خطأ الـ Import
+# 🧠 منطق التحكم وفصل المراحل حياً داخل الملف
 # ==========================================
 
 def search_models_callback(search_term, unique_models):
@@ -43,9 +50,6 @@ def process_new_model_form(db_data, current_search):
     إدارة المرحلة الثانية والمرحلة الثالثة بفصل صارم يمنع ظهور النوافذ بشكل متداخل مسبقاً،
     مع تفعيل عين وأذن 'المراقب الصامت' لحماية البيانات من التكرار العشوائي.
     """
-    if "current_stage" not in st.session_state:
-        st.session_state.current_stage = 2  
-
     norm_model = normalize_text(current_search)
 
     # 📌 المرحلة الثانية: البحث عن المقاس والمواصفات داخل المجموعات الحالية فقط
@@ -165,7 +169,7 @@ def process_new_model_form(db_data, current_search):
             st.rerun()
 
 # ==========================================
-# ⚙️ بدء تهيئة بيانات النظام الأساسية
+# ⚙️ بدء تهيئة الواجهة والبيانات
 # ==========================================
 st.set_page_config(
     layout="wide",
@@ -207,26 +211,24 @@ with st.sidebar:
             else:
                 st.toast("🎯 السيستم مطهر ونظيف بالكامل مسبقاً.")
 # ==========================================
-# 📱 الواجهة الرئيسية (العنوان الممتد بالكامل على طول الشاشة يمين ويسار)
+# 📱 الواجهة الرئيسية (العنوان الإنجليزي الممتد بالكامل باللون الأزرق السماوي)
 # ==========================================
 
-# 🌆 السطر الأول للعنوان بكامل عرض الشاشة الفعلي وبحجم ضخم
+# 🌆 السطر الأول للعنوان بكامل عرض الشاشة الفعلي باللون الأزرق السماوي وبدون ترجمة عربية
 st.markdown(
     """
-    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; padding: 0px 5px; border-bottom: 1px solid rgba(0, 191, 255, 0.2);">
-        <span style="font-size: 40px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 1px;">ZEGAAR AMMAR</span>
-        <span style="font-size: 40px; font-weight: 900; color: #00bfff; font-family: 'Cairo', sans-serif;" dir="rtl">زغار عمار</span>
+    <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 2px; padding: 0px 5px; border-bottom: 2px solid rgba(0, 191, 255, 0.3);">
+        <span style="font-size: 42px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 2px;">ZEGAAR AMMAR</span>
     </div>
     """, 
     unsafe_allow_html=True
 )
 
-# 🌆 السطر الثاني للعنوان متناظر وممتد تماماً وبنفس مقاس الخط الفخم
+# 🌆 السطر الثاني للعنوان متناظر وممتد تماماً بنفس المقاس الفخم واللون المضيء
 st.markdown(
     """
-    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0px 5px;">
-        <span style="font-size: 40px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 1px;">GLASS MANAGER</span>
-        <span style="font-size: 40px; font-weight: 900; color: #00bfff; font-family: 'Cairo', sans-serif;" dir="rtl">مدير الشاشات والزجاج</span>
+    <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 30px; padding: 0px 5px;">
+        <span style="font-size: 42px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 2px;">GLASS MANAGER</span>
     </div>
     """, 
     unsafe_allow_html=True
@@ -238,7 +240,7 @@ selected_phone = st_searchbox(
         q,
         unique_models
     ),
-    placeholder="🔍 ادخل اسم هاتف الزبون هنا لفحص التوافق اللحظي...",
+    placeholder="🔍 Enter customer phone model here for live compatibility check...",
     key="phone_search_autocomplete",
     label=""
 )
@@ -280,7 +282,7 @@ if st.session_state.custom_search_input:
         draw_neon_section(
             "مطابقة للمقاس تماماً (Exact Matches)",
             compat_results["exact"],
-            "#2ecc71", # أخضر مصمت
+            "#2ecc71", # أخضر مصمت بالكامل
             "🎯",
             current_search
         )
@@ -288,7 +290,7 @@ if st.session_state.custom_search_input:
         draw_neon_section(
             "أكبر بقليل (Plus Sizes)",
             compat_results["plus"],
-            "#3498db", # أزرق مصمت
+            "#3498db", # أزرق مصمت بالكامل
             "➕",
             current_search
         )
@@ -296,7 +298,7 @@ if st.session_state.custom_search_input:
         draw_neon_section(
             "أصغر بقليل (Minus Sizes)",
             compat_results["minus"],
-            "#e67e22", # برتقالي مصمت
+            "#e67e22", # برتقالي مصمت بالكامل
             "➖",
             current_search
         )
@@ -304,7 +306,7 @@ if st.session_state.custom_search_input:
         draw_neon_section(
             "مستشعر مختلف (Warning)",
             compat_results["warn"],
-            "#ef4444", # أحمر مصمت للتحذير
+            "#ef4444", # أحمر مصمت بالكامل للتحذير
             "⚠️",
             current_search
         )
@@ -323,4 +325,3 @@ if st.session_state.custom_search_input:
             db_data,
             current_search
         )
-
