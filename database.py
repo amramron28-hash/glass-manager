@@ -1,66 +1,61 @@
-import json
-import os
-import shutil
+from supabase import create_client
 
-DB_FILE = "models_db.json"
-BACKUP_FILE = "models_db_backup.json"
+SUPABASE_URL = "YOUR_URL"
+SUPABASE_KEY = "YOUR_KEY"
 
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+# =========================
+# ✔ حفظ آمن مع منع البيانات الخاطئة
+# =========================
+def add_model(size, panel, sensor, model):
+
+    # 🛡️ حماية من البيانات الفارغة
+    if not all([size, panel, sensor, model]):
+        return False
+
+    # 🛡️ منع التكرار
+    existing = supabase.table("phones") \
+        .select("*") \
+        .eq("size", size) \
+        .eq("panel", panel) \
+        .eq("sensor", sensor) \
+        .eq("model", model) \
+        .execute()
+
+    if existing.data:
+        return False
+
+    supabase.table("phones").insert({
+        "size": size,
+        "panel": panel,
+        "sensor": sensor,
+        "model": model
+    }).execute()
+
+    return True
+
+
+# =========================
+# ✔ تحميل البيانات بنفس بنية JSON القديمة
+# =========================
 def load_db():
-    """
-    قراءة قاعدة البيانات بأمان كلي. 
-    في حال تلف الملف الرئيسي، يقوم النظام تلقائياً باسترجاع آخر نسخة احتياطية سليمة.
-    """
-    if not os.path.exists(DB_FILE) or os.path.getsize(DB_FILE) == 0:
-        # 🛡️ عين المراقب الصامت: الملف الرئيسي غائب أو فارغ، نبحث عن النسخة الاحتياطية
-        if os.path.exists(BACKUP_FILE) and os.path.getsize(BACKUP_FILE) > 0:
-            shutil.copy(BACKUP_FILE, DB_FILE)
-        else:
-            # إذا لم يوجد أي ملف مسبقاً، ننشئ قاموساً فارغاً لإقلاع السيستم
-            return {}
+    res = supabase.table("phones").select("*").execute()
 
-    try:
-        with open(DB_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, TypeError):
-        # 🛡️ أذن المراقب الصامت: الملف الرئيسي معطوب، نقوم بالإنقاذ الفوري عبر الاحتياطي
-        if os.path.exists(BACKUP_FILE) and os.path.getsize(BACKUP_FILE) > 0:
-            shutil.copy(BACKUP_FILE, DB_FILE)
-            with open(DB_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        return {}
+    db = {}
 
-def save_db(data):
-    """
-    دالة الحماية والنسخ الاحتياطي التلقائي الصامت (صمام أمان Glass Manager):
-    تأخذ نسخة احتياطية فورية قبل الكتابة، وتمنع حفظ أي ملفات فارغة أو معطوبة كلياً.
-    """
-    if not data:
-        return False
+    for r in res.data:
+        size = r["size"]
+        panel = r["panel"]
+        sensor = r["sensor"]
+        model = r["model"]
 
-    try:
-        # 1. صناعة نسخة احتياطية فورية (Shadow Backup) من الملف الحالي السليم قبل لمسه
-        if os.path.exists(DB_FILE) and os.path.getsize(DB_FILE) > 0:
-            shutil.copy(DB_FILE, BACKUP_FILE)
+        db.setdefault(size, {})
+        db[size].setdefault(panel, {})
+        db[size][panel].setdefault(sensor, {"models": []})
 
-        # 2. الكتابة الآمنة داخل ملف مؤقت أولاً للتأكد من عدم حدوث انقطاع طاقة أو انهيار
-        temp_file = "db_temp.json"
-        with open(temp_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+        if model not in db[size][panel][sensor]["models"]:
+            db[size][panel][sensor]["models"].append(model)
 
-        # 3. حماية الـ Zero-Byte: التحقق من أن الملف الجديد يحتوي على بيانات وليس فارغاً
-        if os.path.exists(temp_file) and os.path.getsize(temp_file) > 0:
-            # استبدال الملف المؤقت بالملف الرئيسي رسمياً بنجاح كلي
-            if os.path.exists(DB_FILE):
-                os.remove(DB_FILE)
-            os.rename(temp_file, DB_FILE)
-            return True
-        else:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
-            return False
-
-    except Exception:
-        # في حال حدوث أي خلل عشوائي أثناء الكتابة، يتم إلغاء العملية لحماية شجرة البيانات
-        if os.path.exists("db_temp.json"):
-            os.remove("db_temp.json")
-        return False
+    return db
