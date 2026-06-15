@@ -1,103 +1,66 @@
 import json
 import os
-import requests
-import streamlit as st
+import shutil
 
-# =========================
-# 🌐 مصادر البيانات (HF + GitHub)
-# =========================
-
-HUGGINGFACE_URL = "https://huggingface.co/datasets/YOUR_USERNAME/YOUR_REPO/resolve/main/models_db.json"
-
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/amramron28-hash/glass-manager/main/models_db.json"
-
-# =========================
-# 💾 ملف النسخة المحلية
-# =========================
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_FILE = os.path.join(BASE_DIR, "models_db.json")
-
-# =========================
-# 🔧 تحميل من رابط
-# =========================
-
-def load_from_url(url):
-    try:
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            return response.json()
-    except Exception:
-        pass
-    return None
-
-# =========================
-# 📥 تحميل قاعدة البيانات
-# =========================
+DB_FILE = "db.json"
+BACKUP_FILE = "db_backup.json"
 
 def load_db():
     """
-    تحميل قاعدة البيانات بترتيب ذكي:
-    1. Hugging Face (أساسي)
-    2. GitHub (احتياطي)
-    3. Local (إنقاذ)
+    قراءة قاعدة البيانات بأمان كلي. 
+    في حال تلف الملف الرئيسي، يقوم النظام تلقائياً باسترجاع آخر نسخة احتياطية سليمة.
     """
+    if not os.path.exists(DB_FILE) or os.path.getsize(DB_FILE) == 0:
+        # 🛡️ عين المراقب الصامت: الملف الرئيسي غائب أو فارغ، نبحث عن النسخة الاحتياطية
+        if os.path.exists(BACKUP_FILE) and os.path.getsize(BACKUP_FILE) > 0:
+            shutil.copy(BACKUP_FILE, DB_FILE)
+        else:
+            # إذا لم يوجد أي ملف مسبقاً، ننشئ قاموساً فارغاً لإقلاع السيستم
+            return {}
 
-    # 🔵 1. Hugging Face
-    data = load_from_url(HUGGINGFACE_URL)
-    if isinstance(data, dict):
-        _save_local_backup(data)
-        return data
-
-    # 🟡 2. GitHub
-    data = load_from_url(GITHUB_RAW_URL)
-    if isinstance(data, dict):
-        _save_local_backup(data)
-        return data
-
-    # 🔴 3. Local fallback
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, dict):
-                    return data
-        except Exception:
-            pass
-
-    return {}
-
-# =========================
-# 💾 حفظ نسخة محلية
-# =========================
-
-def _save_local_backup(data):
     try:
-        with open(DB_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-# =========================
-# 💾 حفظ التعديلات محلياً
-# =========================
+        with open(DB_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, TypeError):
+        # 🛡️ أذن المراقب الصامت: الملف الرئيسي معطوب، نقوم بالإنقاذ الفوري عبر الاحتياطي
+        if os.path.exists(BACKUP_FILE) and os.path.getsize(BACKUP_FILE) > 0:
+            shutil.copy(BACKUP_FILE, DB_FILE)
+            with open(DB_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        return {}
 
 def save_db(data):
-    try:
-        _save_local_backup(data)
-        return True
-    except Exception:
+    """
+    دالة الحماية والنسخ الاحتياطي التلقائي الصامت (صمام أمان Glass Manager):
+    تأخذ نسخة احتياطية فورية قبل الكتابة، وتمنع حفظ أي ملفات فارغة أو معطوبة كلياً.
+    """
+    if not data:
         return False
 
-# =========================
-# 🔔 نظام الإشعارات (Streamlit)
-# =========================
+    try:
+        # 1. صناعة نسخة احتياطية فورية (Shadow Backup) من الملف الحالي السليم قبل لمسه
+        if os.path.exists(DB_FILE) and os.path.getsize(DB_FILE) > 0:
+            shutil.copy(DB_FILE, BACKUP_FILE)
 
-def add_notification(message, level="info"):
-    if "notifications" not in st.session_state:
-        st.session_state["notifications"] = []
+        # 2. الكتابة الآمنة داخل ملف مؤقت أولاً للتأكد من عدم حدوث انقطاع طاقة أو انهيار
+        temp_file = "db_temp.json"
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
 
-    st.session_state["notifications"].append({
-        "message": message,
-        "level": level
-    })
+        # 3. حماية الـ Zero-Byte: التحقق من أن الملف الجديد يحتوي على بيانات وليس فارغاً
+        if os.path.exists(temp_file) and os.path.getsize(temp_file) > 0:
+            # استبدال الملف المؤقت بالملف الرئيسي رسمياً بنجاح كلي
+            if os.path.exists(DB_FILE):
+                os.remove(DB_FILE)
+            os.rename(temp_file, DB_FILE)
+            return True
+        else:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+            return False
+
+    except Exception:
+        # في حال حدوث أي خلل عشوائي أثناء الكتابة، يتم إلغاء العملية لحماية شجرة البيانات
+        if os.path.exists("db_temp.json"):
+            os.remove("db_temp.json")
+        return False
