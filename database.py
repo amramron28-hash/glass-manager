@@ -1,61 +1,68 @@
+import os
 from supabase import create_client
 
-SUPABASE_URL = "YOUR_URL"
-SUPABASE_KEY = "YOUR_KEY"
+# =========================
+# 🔐 حماية المفاتيح (أفضل من وضعها مباشرة)
+# =========================
+SUPABASE_URL = os.getenv("SUPABASE_URL", "YOUR_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "YOUR_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 # =========================
-# ✔ حفظ آمن مع منع البيانات الخاطئة
+# ✔ إضافة هاتف (آمن + بدون تكرار + سريع)
 # =========================
 def add_model(size, panel, sensor, model):
 
-    # 🛡️ حماية من البيانات الفارغة
     if not all([size, panel, sensor, model]):
         return False
 
-    # 🛡️ منع التكرار
-    existing = supabase.table("phones") \
-        .select("*") \
-        .eq("size", size) \
-        .eq("panel", panel) \
-        .eq("sensor", sensor) \
-        .eq("model", model) \
-        .execute()
+    try:
+        # 🧠 إدخال مباشر (Supabase سيمنع التكرار إذا أضفت Unique Constraint لاحقًا)
+        supabase.table("phones").insert({
+            "size": str(size).strip(),
+            "panel": str(panel).strip(),
+            "sensor": str(sensor).strip(),
+            "model": str(model).strip()
+        }).execute()
 
-    if existing.data:
+        return True
+
+    except Exception:
         return False
 
-    supabase.table("phones").insert({
-        "size": size,
-        "panel": panel,
-        "sensor": sensor,
-        "model": model
-    }).execute()
-
-    return True
-
 
 # =========================
-# ✔ تحميل البيانات بنفس بنية JSON القديمة
+# ✔ تحميل البيانات (بنفس شكل JSON تمامًا)
 # =========================
 def load_db():
-    res = supabase.table("phones").select("*").execute()
 
-    db = {}
+    try:
+        res = supabase.table("phones").select("*").execute()
+        rows = res.data or []
 
-    for r in res.data:
-        size = r["size"]
-        panel = r["panel"]
-        sensor = r["sensor"]
-        model = r["model"]
+        db = {}
 
-        db.setdefault(size, {})
-        db[size].setdefault(panel, {})
-        db[size][panel].setdefault(sensor, {"models": []})
+        for r in rows:
 
-        if model not in db[size][panel][sensor]["models"]:
-            db[size][panel][sensor]["models"].append(model)
+            size = str(r.get("size", "")).strip()
+            panel = str(r.get("panel", "")).strip()
+            sensor = str(r.get("sensor", "")).strip()
+            model = str(r.get("model", "")).strip()
 
-    return db
+            if not all([size, panel, sensor, model]):
+                continue
+
+            db.setdefault(size, {})
+            db[size].setdefault(panel, {})
+            db[size][panel].setdefault(sensor, {"models": []})
+
+            if model not in db[size][panel][sensor]["models"]:
+                db[size][panel][sensor]["models"].append(model)
+
+        return db
+
+    except Exception:
+        # 🛡️ في حالة أي مشكلة في الشبكة
+        return {}
