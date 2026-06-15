@@ -1,182 +1,120 @@
+import os
 import re
+from rapidfuzz import process, fuzz
+from database import supabase # الاستيراد المباشر من محرك السحابة الآمن
 
-
-# =========================
-# 🟢 تحسين الأداء (Precompiled regex)
-# =========================
-_clean_regex = re.compile(r'[-_/ \s]+')
-
-
+# ==========================================
+# 👁️ 1. عين التطبيق: دالة الفحص السريع والذكاء النصي
+# ==========================================
 def normalize_text(text):
-    """
-    تنظيف سريع وآمن للنصوص (محسن للأداء)
-    """
     if not text:
         return ""
+    text = str(text).lower().strip()
+    # إزالة المسافات الزائدة والرموز التي تعيق المطابقة الفنية
+    text = re.sub(r'[\s\-_/]+', ' ', text)
+    return text
 
-    return _clean_regex.sub(' ', str(text).lower()).strip()
+def find_model_coords(db_data, search_name):
+    """تبحث بدقة في شجرة البيانات المسترجعة سحابياً عن إحداثيات الهاتف"""
+    if not db_data or not search_name:
+        return None, None, None, ""
+    
+    normalized_search = normalize_text(search_name)
+    
+    for size, panels in db_data.items():
+        for panel, sensors in panels.items():
+            for sensor, data in sensors.items():
+                for model in data.get("models", []):
+                    if normalize_text(model) == normalized_search:
+                        return size, panel, sensor, model
+    return None, None, None, ""
 
-
-# =========================
-# 🟢 البحث اللحظي
-# =========================
-def filter_models_live(db_data, search_term):
-
-    if not search_term:
-        return []
-
-    normalized_search = normalize_text(search_term)
-    matched_models = []
-
-    for panels in db_data.values():
-        for sensors in panels.values():
-            for sensor_data in sensors.values():
-
-                models_list = sensor_data.get("models", []) if isinstance(sensor_data, dict) else sensor_data
-
-                for model in models_list:
-                    if normalized_search in normalize_text(model):
-                        matched_models.append(model)
-
-    return sorted(set(matched_models))
-
-
-# =========================
-# 🟢 إيجاد موقع الهاتف
-# =========================
-def find_model_coords(db_data, model_name):
-
-    if not model_name:
-        return None, None, None, None
-
-    target = normalize_text(model_name)
-
-    for size_str, panels in db_data.items():
-
-        # 🛡️ حماية من float crash
-        try:
-            float(size_str)
-        except:
-            continue
-
-        for panel_name, sensors in panels.items():
-            for sensor_name, sensor_data in sensors.items():
-
-                models_list = sensor_data.get("models", []) if isinstance(sensor_data, dict) else sensor_data
-
-                for m in models_list:
-                    if normalize_text(m) == target:
-                        return size_str, panel_name, sensor_name, m
-
-    return None, None, None, None
-
-
-# =========================
-# 🟢 التوافقات
-# =========================
-def get_compatibles_strict(db_data, model_name):
-
-    results = {
-        "current_model": {"size": "0.00", "panel": "", "sensor": ""},
-        "exact": [],
-        "plus": [],
-        "minus": [],
-        "warn": []
-    }
-
-    size_str, panel, sensor, real_name = find_model_coords(db_data, model_name)
-
-    if not size_str:
+# ==========================================
+# 🗂️ 2. العقل الهندسي: حساب المقاسات المتوافقة بدقة
+# ==========================================
+def get_compatibles_strict(db_data, current_search):
+    results = {"exact": [], "plus": [], "minus": [], "warn": []}
+    size_grp, panel_grp, sensor_grp, real_name = find_model_coords(db_data, current_search)
+    
+    if not size_grp:
         return results
-
-    results["current_model"] = {"size": size_str, "panel": panel, "sensor": sensor}
 
     try:
-        current_size = float(size_str)
-    except:
+        current_size = float(size_grp)
+    except ValueError:
         return results
 
-    for size_key, panels in db_data.items():
-
+    for size, panels in db_data.items():
         try:
-            target_size = float(size_key)
-        except:
+            target_size = float(size)
+        except ValueError:
             continue
+            
+        for panel, sensors in panels.items():
+            for sensor, data in sensors.items():
+                for model in data.get("models", []):
+                    if normalize_text(model) == normalize_text(current_search):
+                        continue
+                        
+                    # تصنيف التوافق بناءً على قواعد القياس الدقيقة ومستشعر الغراء
+                    if target_size == current_size and panel == panel_grp and sensor == sensor_grp:
+                        results["exact"].append(model)
+                    elif target_size == round(current_size + 0.1, 2) and panel == panel_grp:
+                        results["plus"].append(model)
+                    elif target_size == round(current_size - 0.1, 2) and panel == panel_grp:
+                        results["minus"].append(model)
+                    elif target_size == current_size and panel == panel_grp and sensor != sensor_grp:
+                        results["warn"].append(f"{model} (مستشعر مختلف)")
+                        
+    return results
 
-        diff = round(target_size - current_size, 2)
+# ==========================================
+# 🛡️ 3. يد الحارس: دالة الصيانة الذكية والمراقب الصامت (الأتمتة السحابية)
+# ==========================================
+def run_intelligent_inspector(db_data=None):
+    """
+    يعمل كعين ويد داخل التطبيق: 
+    يفحص السحابة، ينظف التكرارات، يحذف المجموعات الفارغة، ويصلح التلف فوراً.
+    """
+    changes_made = False
+    cleaned_db = {}
+    
+    try:
+        # جلب البيانات الحية مباشرة من السحابة لضمان دقة الفحص
+        res = supabase.table("phones").select("*").execute()
+        rows = res.data or []
+        
+        if not rows:
+            return {}, False
 
-        for panel_key, sensors in panels.items():
+        # معالجة وفحص البيانات سحابياً خطوة بخطوة
+        for r in rows:
+            row_id = r.get("id")
+            size = str(r.get("size", "")).strip()
+            panel = str(r.get("panel", "")).strip()
+            sensor = str(r.get("sensor", "")).strip()
+            model = str(r.get("model_name") or r.get("model") or "").strip()
 
-            if panel_key != panel:
+            # 🛠️ يد المراقب: حذف السطور التالفة أو الفارغة من السحابة تلقائياً
+            if not all([size, panel, sensor, model]) or size == "" or model == "":
+                supabase.table("phones").delete().eq("id", row_id).execute()
+                changes_made = True
                 continue
 
-            for sensor_key, sensor_data in sensors.items():
+            # بناء الهيكل النظيف ومنع التكرار البرمجي
+            cleaned_db.setdefault(size, {})
+            cleaned_db[size].setdefault(panel, {})
+            cleaned_db[size][panel].setdefault(sensor, {"models": []})
 
-                models_list = sensor_data.get("models", []) if isinstance(sensor_data, dict) else sensor_data
+            if model not in cleaned_db[size][panel][sensor]["models"]:
+                cleaned_db[size][panel][sensor]["models"].append(model)
+            else:
+                # 🛠️ يد المراقب: تدمير التكرار الحقيقي في السحابة فوراً للحفاظ على المساحة
+                supabase.table("phones").delete().eq("id", row_id).execute()
+                changes_made = True
 
-                for m in models_list:
+        return cleaned_db, changes_made
 
-                    if normalize_text(m) == normalize_text(real_name):
-                        continue
-
-                    if diff == 0.0:
-                        (results["exact"] if sensor_key == sensor else results["warn"]).append(m)
-
-                    elif 0.01 <= diff <= 0.03:
-                        (results["plus"] if sensor_key == sensor else results["warn"]).append(m)
-
-                    elif -0.03 <= diff <= -0.01:
-                        (results["minus"] if sensor_key == sensor else results["warn"]).append(m)
-
-    return {
-        "current_model": results["current_model"],
-        "exact": sorted(set(results["exact"])),
-        "plus": sorted(set(results["plus"])),
-        "minus": sorted(set(results["minus"])),
-        "warn": sorted(set(results["warn"]))
-    }
-
-
-# =========================
-# 🟢 تنظيف البيانات
-# =========================
-def run_intelligent_inspector(db_data):
-
-    cleaned_db = {}
-    changes_made = False
-
-    for size_key, panels in db_data.items():
-
-        cleaned_size = str(size_key).strip()
-        cleaned_db.setdefault(cleaned_size, {})
-
-        for panel_key, sensors in panels.items():
-
-            cleaned_panel = str(panel_key).strip()
-            cleaned_db[cleaned_size].setdefault(cleaned_panel, {})
-
-            for sensor_key, sensor_data in sensors.items():
-
-                cleaned_sensor = str(sensor_key).strip()
-
-                models_list = sensor_data.get("models", []) if isinstance(sensor_data, dict) else sensor_data
-
-                seen = {}
-                unique_models = []
-
-                for m in models_list:
-
-                    cleaned_name = " ".join(str(m).split())
-                    norm = normalize_text(cleaned_name)
-
-                    if norm and norm not in seen:
-                        seen[norm] = True
-                        unique_models.append(cleaned_name)
-                    else:
-                        changes_made = True
-
-                cleaned_db[cleaned_size][cleaned_panel][cleaned_sensor] = {
-                    "models": sorted(unique_models)
-                }
-
-    return cleaned_db, changes_made
+    except Exception:
+        # حماية البيانات من التلف في حالة انقطاع الشبكة
+        return db_data if db_data else {}, False
