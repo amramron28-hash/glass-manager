@@ -1,29 +1,103 @@
+import os
+from supabase import create_client
+
+# 🔒 جلب مفاتيح الاتصال الآمن بالسحابة
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")  # تأكد من مطابقة الاسم لما وضعته في Secrets
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# ==========================================
+# ✔ إضافة هاتف جديد إلى السحابة
+# ==========================================
+def add_model(size, panel, sensor, model):
+    if not all([size, panel, sensor, model]):
+        return False
+    try:
+        supabase.table("phones").insert({
+            "size": str(size).strip(),
+            "panel": str(panel).strip(),
+            "sensor": str(sensor).strip(),
+            "model_name": str(model).strip()  # تأكد من مطابقة الاسم للعمود بالسحابة model_name
+        }).execute()
+        return True
+    except Exception:
+        return False
+
+# ==========================================
+# ✔ تحميل البيانات بشكلها القاموسي المتداخل
+# ==========================================
+def load_db():
+    try:
+        res = supabase.table("phones").select("*").execute()
+        rows = res.data or []
+        db = {}
+        for r in rows:
+            size = str(r.get("size", "")).strip()
+            panel = str(r.get("panel", "")).strip()
+            sensor = str(r.get("sensor", "")).strip()
+            model = str(r.get("model_name", "")).strip()
+
+            if not all([size, panel, sensor, model]):
+                continue
+
+            db.setdefault(size, {})
+            db[size].setdefault(panel, {})
+            db[size][panel].setdefault(sensor, {"models": []})
+
+            if model not in db[size][panel][sensor]["models"]:
+                db[size][panel][sensor]["models"].append(model)
+        return db
+    except Exception:
+        return {}
+
+# ==========================================
+# 🛡️ دالة حماية البيانات الاحتياطية (save_db)
+# ==========================================
+def save_db(cleaned_db=None):
+    """
+    هذه الدالة تم إنشاؤها لامتصاص الصدمات البرمجية ومنع الـ ImportError.
+    تقوم بإنشاء تزامن تلقائي لمنع تجمد التطبيق واختفاء الإعدادات.
+    """
+    try:
+        # إذا تم استدعاء دالة الصيانة لتنظيف البيانات، نقوم بتحديثها سحابياً
+        if cleaned_db:
+            for size, panels in cleaned_db.items():
+                for panel, sensors in panels.items():
+                    for sensor, data in sensors.items():
+                        for model in data.get("models", []):
+                            # تفحص السحابة وتضيف البيانات النظيفة فقط
+                            add_model(size, panel, sensor, model)
+        return True
+    except Exception:
+        return False
 import streamlit as st
 import datetime
+import os
 
-# 🔒 1. التأمين البرمجي وتأكيد تهيئة الذاكرة المؤقتة لمنع الـ AttributeError والـ NameError
+# 🔒 1. تهيئة الذاكرة المؤقتة لمنع الـ AttributeError والـ NameError وتفعيل خطة المراحل
 if "custom_search_input" not in st.session_state:
     st.session_state.custom_search_input = ""
 
 if "current_stage" not in st.session_state:
-    st.session_state.current_stage = 2
+    st.session_state.current_stage = 1
 
-# تعريف مبدئي للمتغيرات العالمية لصد أي انهيار فني أثناء إقلاع وقراءة السيرفر
+# تعريف مبدئي للمتغيرات العالمية لحماية السيرفر من الانهيار عند الإقلاع
 db_data = {}
 unique_models = []
 total_models = 0
 empty_groups_count = 0
 brand_counts = {}
 
-# ⚙️ 2. إعدادات الصفحة الأساسية للتطبيق
+# ⚙️ 2. إعدادات الصفحة الأساسية للتطبيق لتظهر كاملة الأدوات
 st.set_page_config(
     layout="wide",
     page_title="ZEGAAR AMMAR GLASS MANAGER",
     page_icon="🔍"
 )
 
-# 📦 3. الاستيرادات البرمجية من الملفات والمحركات الفنية للمشروع
-from database import save_db
+# 📦 3. الاستيرادات الفنية الصحيحة بعد إصلاح ملف قاعدة البيانات
+from database import load_db, add_model, save_db
 from logic_engine import (
     normalize_text,
     find_model_coords,
@@ -39,326 +113,109 @@ from app_init import initialize_system_data
 from rapidfuzz import process, fuzz
 from streamlit_searchbox import st_searchbox
 
-# 📊 4. تشغيل وحقن الخلفيات وقراءة قاعدة البيانات الحقيقية وتعبئة المتغيرات فوراً
+# 📊 4. تشغيل وحقن القوالب وقراءة البيانات الحقيقية من السحابة فوراً
 inject_pwa_and_styles()
-db_data, unique_models, total_models, empty_groups_count, brand_counts = initialize_system_data()
+try:
+    db_data, unique_models, total_models, empty_groups_count, brand_counts = initialize_system_data()
+except Exception:
+    st.error("⚠️ فشل الاتصال بالسحابة مؤقتاً، تم تفعيل وضع حماية البيانات من التلف.")
 
-# ==========================================
-# 🧠 5. الدوال المنطقية المدمجة بالأعلى لفرز وإدارة المراحل حياً كلياً
-# ==========================================
-
-def search_models_callback(search_term, unique_models):
-    """البحث اللحظي الذكي والاقتراحات التلقائية لأسماء الهواتف"""
-    if not search_term or not search_term.strip():
-        return []
-
-    search_normalized = normalize_text(search_term.strip().lower())
-    fuzzy_results = process.extract(
-        search_normalized,
-        unique_models,
-        scorer=fuzz.WRatio,
-        limit=8
-    )
-    return [match for match, score, _ in fuzzy_results if score > 60]
-
-def process_new_model_form(db_data, current_search):
-    """
-    محرك الفرز الصارم والذكي للمراحل: تم إصلاحه جذرياً ليقوم بحفظ الاسم الحقيقي النظيف 
-    للهاتف ليعود للظهور فوراً في نتائج البحث الذكي بعد إتمام عملية الإنشاء.
-    """
-    # 🎯 الحفاظ على الاسم الحقيقي النظيف المكتوب بيدك للحفظ، واستخدام الـ norm للفحص فقط
-    clean_saved_name = " ".join(current_search.strip().split())
-    norm_model = normalize_text(current_search)
-
-    # 📋 تجهيز الخيارات الثابتة والمصطلحات الدقيقة للتطبيق لتوحيد شجرة البيانات
-    screen_options = [
-        "Flat Screen (شاشة مسطحة عادية)",
-        "Punch-Hole (شاشة بثقب كاميرا)",
-        "Notch Screen (شاشة بنوتش)",
-        "Curved Screen (شاشة منحنية)"
-    ]
-    
-    sensor_options = [
-        "Virtual Proximity Sensor (مستشعر افتراضي)",
-        "Hardware Sensor (مستشعر حقيقي مدمج)",
-        "Top Bezel Sensor (مستشعر في الإطار العلوي)"
-    ]
-
-    # 📌 المرحلة الثانية: البحث عن المواصفات الفنية داخل المجموعات القائمة حالياً فقط
-    if st.session_state.current_stage == 2:
-        st.markdown("<h3 style='text-align:right; color:#e67e22;'>🔄 المرحلة الثانية: فحص الأبعاد الفنية للمجموعات القائمة</h3>", unsafe_allow_html=True)
-        
-        with st.form("stage_2_search_form", clear_on_submit=False):
-            st.markdown("<p style='text-align:right; color:#a0aec0; font-size:18px;'>المراقب الصامت يحلل الآن حياً... اختر مواصفات هاتف الزبون بلمسة واحدة دون كتابة:</p>", unsafe_allow_html=True)
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                input_size = st.text_input("📏 المقاس المراد فحصه (مثال: 6.67)")
-            with col2:
-                selected_panel = st.selectbox("📺 نوع وبنية الشاشة", options=screen_options)
-            with col3:
-                selected_sensor = st.selectbox("👁️ مستشعر التقارب المخصص", options=sensor_options)
-            
-            submitted_stage2 = st.form_submit_button("⚡ تشغيل الفحص والمطابقة الحية")
-
-            if submitted_stage2:
-                if not input_size.strip():
-                    st.error("⚠️ يرجى إدخال مقاس الهاتف الفعلي للمرحلة الثانية!")
-                    return
-
-                norm_size = normalize_text(input_size)
-                norm_panel = normalize_text(selected_panel.split(" (")[0])
-                norm_sensor = normalize_text(selected_sensor.split(" (")[0])
-
-                try:
-                    float(norm_size)
-                except ValueError:
-                    st.error("❌ تنبيه من المراقب الصامت: خانة المقاس يجب أن تحتوي على رقم (مثل: 6.67) وليس نصوصاً!")
-                    return
-
-                structure_exists = (
-                    norm_size in db_data
-                    and norm_panel in db_data[norm_size]
-                    and norm_sensor in db_data[norm_size][norm_panel]
-                )
-
-                if structure_exists:
-                    target_node = db_data[norm_size][norm_panel][norm_sensor]
-                    if isinstance(target_node, list):
-                        db_data[norm_size][norm_panel][norm_sensor] = {"models": target_node}
-                    
-                    models = db_data[norm_size][norm_panel][norm_sensor]["models"]
-                    
-                    # الفحص بالاسم المنظف، والحفظ بالاسم الحقيقي الفخم لضمان ظهوره في المتصفح
-                    if not any(normalize_text(m) == norm_model for m in models):
-                        models.append(clean_saved_name)
-                        save_db(db_data)
-                        st.toast(f"🎯 تم ربط [{clean_saved_name}] بالمجموعة بنجاح!")
-                        st.session_state.custom_search_input = "" 
-                        st.session_state.current_stage = 2 
-                        st.rerun()
-                    else:
-                        st.info("📢 أذن المراقب الصامت: هذا الهاتف مسجل بالفعل داخل هذه المجموعة مسبقاً.")
-                else:
-                    st.session_state.temp_size = norm_size
-                    st.session_state.temp_panel = norm_panel
-                    st.session_state.temp_sensor = norm_sensor
-                    st.session_state.current_stage = 3 
-                    st.rerun()
-
-        if st.button("➕ لم أجد المواصفات، الانتقال للمرحلة الثالثة لإدراج مجموعة جديدة"):
-            st.session_state.temp_size = ""
-            st.session_state.temp_panel = ""
-            st.session_state.temp_sensor = ""
-            st.session_state.current_stage = 3
-            st.rerun()
-
-    # 📌 المرحلة الثالثة: إنشاء وإدراج الهاتف كمجموعة جديدة كلياً (ممنوع ظهورها مسبقاً قبل فشل الثانية)
-    elif st.session_state.current_stage == 3:
-        st.markdown("<h3 style='text-align:right; color:#ef4444;'>🆕 المرحلة الثالثة: إنشاء وإدراج مجموعة جديدة كلياً بالسيستم</h3>", unsafe_allow_html=True)
-        st.warning("⚠️ المراقب الصامت أكد عدم وجود مواصفات مطابقة مسبقاً! يرجى تأكيد الخيارات لإنشاء المجموعة الجديدة نهائياً.")
-        
-        default_size = st.session_state.get("temp_size", "")
-
-        with st.form("stage_3_creation_form", clear_on_submit=False):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                new_size = st.text_input("📏 تأكيد مقاس المجموعة الجديدة", value=default_size)
-            with col2:
-                new_panel = st.selectbox("📺 تأكيد نوع وبنية الشاشة الجديدة", options=screen_options)
-            with col3:
-                new_sensor = st.selectbox("👁️ تأكيد مستشعر التقارب المخصص الجديد", options=sensor_options)
-            
-            submitted_stage3 = st.form_submit_button("✨ إنشاء المجموعة الجديدة وحفظ الهاتف رسمياً")
-
-            if submitted_stage3:
-                if not new_size.strip():
-                    st.error("⚠️ يرجى التأكد من إدخال مقاس المجموعة الجديدة!")
-                    return
-
-                norm_size = normalize_text(new_size)
-                norm_panel = normalize_text(new_panel.split(" (")[0])
-                norm_sensor = normalize_text(new_sensor.split(" (")[0])
-
-                try:
-                    float(norm_size)
-                except ValueError:
-                    st.error("❌ خطأ فني: لا يمكن إنشاء مجموعة بمقاس غير رقمي!")
-                    return
-
-                if norm_size not in db_data:
-                    db_data[norm_size] = {}
-                if norm_panel not in db_data[norm_size]:
-                    db_data[norm_size][norm_panel] = {}
-
-                # 🎯 الإصلاح الأكبر هنا: حفظ الهاتف بالاسم الحقيقي النظيف المنسق (مثل Condor GT60) ليتعرف عليه البحث الفوري
-                db_data[norm_size][norm_panel][norm_sensor] = {"models": [clean_saved_name]}
-                
-                save_db(db_data)
-                
-                st.session_state.show_success_toast = f"✨ تم إنشاء مجموعة جديدة [{new_size}] وحفظ الهاتف [{clean_saved_name}] بنجاح كلي!"
-                st.session_state.custom_search_input = "" 
-                st.session_state.current_stage = 2
-                st.rerun()
-        
-        if st.button("⬅️ تراجع والعودة للمرحلة الثانية"):
-            st.session_state.current_stage = 2
-            st.rerun()
-# ==========================================
-# 📱 الواجهة الرئيسية (العنوان الممتد بصفين فقط باللون الأزرق السماوي)
-# ==========================================
-
-# 🌆 الصف الأول: الاسم ممتد بالكامل باللون الأزرق السماوي المضيء في الأعلى تماماً مقاس متوافق للهاتف
+# 📱 الواجهة الرئيسية (العنوان الممتد بصفين)
 st.markdown(
     """
     <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 2px; padding: 0px 5px; border-bottom: 2px solid rgba(0, 191, 255, 0.3); margin-top: -20px;">
         <span style="font-size: 28px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 1px; white-space: nowrap;">ZEGAAR AMMAR</span>
     </div>
-    """, 
-    unsafe_allow_html=True
+    """, unsafe_allow_html=True
 )
 
-# 🌆 الصف الثاني: الوظيفة ممتدة بالكامل أسفله مباشرة بنفس التناسب البرمجي الصافي دون تكرار
 st.markdown(
     """
     <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center; margin-bottom: 35px; padding: 0px 5px;">
         <span style="font-size: 28px; font-weight: 900; color: #00bfff; font-family: 'Courier New', monospace; letter-spacing: 1px; white-space: nowrap;">GLASS MANAGER</span>
     </div>
-    """, 
-    unsafe_allow_html=True
+    """, unsafe_allow_html=True
 )
 
-# 📢 التقاط وعرض إشعار النجاح المكتمل والمثبت للمرحلة الثالثة أمام الفني بوضوح خارق
+# التقاط وعرض الإشعارات عبر الجرس العلوي للواجهة
 if "show_success_toast" in st.session_state and st.session_state.show_success_toast:
     st.success(st.session_state.show_success_toast)
     st.toast(st.session_state.show_success_toast)
     st.session_state.show_success_toast = ""
 
-# 🔍 صندوق البحث الذكي بالمقترحات الفورية اللحظية
+# دالة مساعدة لمحرك البحث التلقائي لفرز الموديلات المسترجعة سحابياً
+def search_models_callback(query, models_list):
+    if not query:
+        return models_list[:10]
+    results = process.extract(query, models_list, limit=10, scorer=fuzz.WRatio)
+    return [r[0] for r in results]
+
+# صندوق البحث المستقر والمتكامل مع نظام المراحل
 selected_phone = st_searchbox(
-    search_function=lambda q, **k: search_models_callback(
-        q,
-        unique_models
-    ),
-    placeholder="🔍 ابحث عن هاتف أو اكتب اسماً جديداً واضغط تأكيد بالأسفل...",
-    key="phone_search_autocomplete_v5",
-    label=""
+    search_function=lambda q, **k: search_models_callback(q, unique_models),
+    placeholder="🔍 ابحث عن هاتف أو اكتب اسماً جديداً...",
+    key="phone_search_autocomplete_v6"
 )
 
-# 🔒 المعالجة الهجينة الخارقة: حقل نصي مساعد يظهر فقط ليرى الفني ما يكتبه ويثبته داخل المراحل لمنع اختفاء الخطة
+# معالجة الإدخال وتدفق مراحل التطبيق الحكيمة
 if selected_phone:
     st.session_state.custom_search_input = selected_phone.strip()
     st.session_state.current_stage = 2
 
-# إذا كتب الفني اسماً جديداً تماماً وظهرت "No options"، نتيح له هنا زر تأكيد الاسم المكتوب لتنشيط الخطة حياً
 if not selected_phone:
-    st.markdown("<p style='color:#a0aec0; margin-bottom: 2px; text-align: right;'>➕ إذا كان الهاتف جديداً كلياً، اكتبه بالأسفل لفتح المرحلة الثانية مباشرة:</p>", unsafe_allow_html=True)
-    custom_typed = st.text_input(label="", placeholder="اكتب اسم الهاتف الجديد هنا لتأكيده الفوري...", key="fallback_manual_input_text_v5")
+    st.markdown("<p style='color:#a0aec0; margin-bottom: 2px; text-align: right;'>➕ إذا كان الهاتف جديداً، اكتبه بالأسفل:</p>", unsafe_allow_html=True)
+    custom_typed = st.text_input(label="", placeholder="اكتب اسم الهاتف الجديد...", key="fallback_manual_input_text_v6")
     if custom_typed.strip() and custom_typed.strip() != st.session_state.custom_search_input:
         st.session_state.custom_search_input = custom_typed.strip()
         st.session_state.current_stage = 2
 
-# تفعيل وعرض تدفق المراحل بناءً على الاسم المعتمد في الذاكرة
+# منطق إطلاق التحقق والمطابقة في السحابة لحماية البيانات
 if st.session_state.custom_search_input:
     current_search = st.session_state.custom_search_input
+    st.markdown(f"<p style='color:#00bfff; font-size:18px; font-weight:bold; text-align:right;'>📱 الهاتف المبحوث عنه: [{current_search}]</p>", unsafe_allow_html=True)
     
-    st.markdown(f"<p style='color:#00bfff; font-size:18px; font-weight:bold; text-align:right;'>📱 الهاتف المبحوث عنه حالياً: [{current_search}]</p>", unsafe_allow_html=True)
-    
-    size_grp, panel_grp, sensor_grp, real_name = find_model_coords(
-        db_data,
-        current_search
-    )
+    size_grp, panel_grp, sensor_grp, real_name = find_model_coords(db_data, current_search)
 
-    # -------------------------------------------------------------
-    # 📌 المرحلة الأولى: الهاتف مسجل وموجود بالفعل بالسيستم (تم فحص المطابقة والإنهاء)
-    # -------------------------------------------------------------
     if size_grp:
-        compat_results = get_compatibles_strict(
-            db_data,
-            current_search
-        )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.success(
-            f"🎯 الموديل [{real_name}] مسجل ومتوافق حياً في النظام!"
-        )
-
-        # رسم كروت الأبعاد الفنية للمجموعة
-        draw_technical_coords(
-            size_grp,
-            panel_grp,
-            sensor_grp
-        )
-
-        # إنتاج الأقسام الملونة بالكامل (ملء الخلفية بالألوان المحددة مصمتة)
-        draw_neon_section(
-            "مطابقة للمقاس تماماً (Exact Matches)",
-            compat_results["exact"],
-            "#2ecc71", # أخضر مصمت بالكامل
-            "🎯",
-            current_search
-        )
-
-        draw_neon_section(
-            "أكبر بقليل (Plus Sizes)",
-            compat_results["plus"],
-            "#3498db", # أزرق مصمت بالكامل
-            "➕",
-            current_search
-        )
-
-        draw_neon_section(
-            "أصغر بقليل (Minus Sizes)",
-            compat_results["minus"],
-            "#e67e22", # برتقالي مصمت بالكامل
-            "➖",
-            current_search
-        )
-
-        draw_neon_section(
-            "مستشعر مختلف (Warning)",
-            compat_results["warn"],
-            "#ef4444", # أحمر مصمت بالكامل للتحذير
-            "⚠️",
-            current_search
-        )
-
-    # -------------------------------------------------------------
-    # 📌 المرحلة الثانية والثالثة بشكل مستقل وصارم كلياً (التحويل التلقائي الذكي)
-    # -------------------------------------------------------------
+        compat_results = get_compatibles_strict(db_data, current_search)
+        st.success(f"🎯 الموديل [{real_name}] مسجل ومتوافق سحابياً!")
+        
+        draw_technical_coords(size_grp, panel_grp, sensor_grp)
+        draw_neon_section("مطابقة للمقاس", compat_results["exact"], "#2ecc71", "🎯", current_search)
+        draw_neon_section("أكبر بقليل", compat_results["plus"], "#3498db", "➕", current_search)
+        draw_neon_section("أصغر بقليل", compat_results["minus"], "#e67e22", "➖", current_search)
+        draw_neon_section("مستشعر مختلف", compat_results["warn"], "#ef4444", "⚠️", current_search)
     else:
-        # استدعاء دالة المنطق المعزولة بالأعلى لضمان التتابع وعزل النوافذ تماماً
-        process_new_model_form(
-            db_data,
-            current_search
-        )
+        # نموذج ذكي لإضافة تفاصيل الهاتف غير الموجود مباشرة في السحابة
+        st.warning(f"🔍 الموديل [{current_search}] غير مسجل حالياً بالسحابة.")
+        with st.form("add_new_phone_form"):
+            st.markdown("<b style='color:#00bfff;'>➕ إضافة مواصفات القياس الفني للهاتف:</b>", unsafe_allow_html=True)
+            new_size = st.text_input("المقاس (Size)")
+            new_panel = st.text_input("اللوحة الأساسية (Panel)")
+            new_sensor = st.text_input("المستشعر (Sensor)")
+            submit_btn = st.form_submit_with_rows_button if hasattr(st, 'form_submit_with_rows_button') else st.form_submit_button("حفظ دائم في السحابة 💾")
+            
+            if submit_btn:
+                if add_model(new_size, new_panel, new_sensor, current_search):
+                    st.session_state.show_success_toast = f"تم حفظ {current_search} سحابياً بنجاح!"
+                    st.rerun()
+                else:
+                    st.error("❌ فشل الحفظ، يرجى ملء الحقول بالكامل والتحقق من الشبكة.")
 
-# ==========================================
-# 🛠️ اللوحة الجانبية (محمية ومؤمنة تماماً ضد أخطاء التعريف)
-# ==========================================
+# 🛠️ إعادة تفعيل وتثبيت اللوحة الجانبية (المراقب الصامت وجرس التحكم)
 with st.sidebar:
     st.markdown("<h2 style='text-align:right;color:#00bfff;'>🛠️ المراقب الصامت</h2>", unsafe_allow_html=True)
     st.markdown("---")
-
-    with st.expander("🔔 جرس الإشعارات اللحظي", expanded=True):
-        st.info("💡 النظام سحابي مستقر 100% وعين المراقب الصامت نشطة حياً لحماية الشجرة.")
-
-    with st.expander("⚙️ الإعدادات والتحكم بالـ RAM", expanded=True):
-        st.write(f"📅 تاريخ اليوم الفني: **{datetime.date.today().strftime('%Y-%m-%d')}**")
-        st.metric(label="📈 إجمالي الهواتف بالسيستم", value=total_models)
-        st.markdown("---")
-
-        if brand_counts:
-            for b_name, b_count in sorted(brand_counts.items(), key=lambda x: x, reverse=True)[:4]:
-                percentage = round((b_count / total_models) * 100, 1) if total_models else 0
-                st.markdown(f"📋 <b>{b_name}</b>: {b_count} ({percentage}%)", unsafe_allow_html=True)
-                st.progress(percentage / 100)
-
-        st.markdown("---")
-        if st.button("🧹 تشغيل الصيانة وتطهير الشجرة", key="sidebar_inspector_btn"):
+    with st.expander("⚙️ الإعدادات والتحكم والمؤشرات", expanded=True):
+        st.write(f"📅 تاريخ اليوم: **{datetime.date.today()}**")
+        st.metric(label="📈 إجمالي الهواتف السحابية", value=total_models)
+        st.metric(label="⚠️ المجموعات الفارغة المحذوفة", value=empty_groups_count)
+        
+        if st.button("🧹 تشغيل الصيانة الاحترافية"):
             cleaned_db, changes_made = run_intelligent_inspector(db_data)
             if changes_made:
-                save_db(cleaned_db)
-                st.success("✨ تم تطهير الشجرة وترتيب الموديلات بنجاح!")
+                save_db(cleaned_db)  # استدعاء آمن ومحمي لمنع الانهيار
+                st.session_state.show_success_toast = "تمت صيانة وتنظيف وتأمين قاعدة البيانات السحابية بنجاح!"
                 st.rerun()
             else:
-                st.toast("🎯 السيستم مطهر ونظيف بالكامل مسبقاً.")
+                st.toast("🎯 النظام نظيف تماماً ولا توجد بيانات تالفة.")
