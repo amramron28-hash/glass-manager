@@ -2,10 +2,14 @@ import os
 import json
 from supabase import create_client
 
+# 🔒 الاتصال بالسحابة عبر الأسرار الآمنة
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# ==========================================
+# 📤 دالة رفع هاتف جديد للسحابة مع منع التكرار
+# ==========================================
 def add_model(size, panel, sensor, model):
     if not all([size, panel, sensor, model]):
         return False
@@ -21,34 +25,34 @@ def add_model(size, panel, sensor, model):
         return False
 
 # ==========================================
-# 🔄 دالة ذكية تقرأ السحابة، وإذا كانت فارغة تسحب البيانات من JSON وترفعها
+# 🔄 دالة جلب البيانات مع ميزة النقل التلقائي من الـ JSON
 # ==========================================
 def load_db():
     try:
-        # 1. محاولة جلب البيانات من السحابة أولاً
+        # 1. جلب البيانات الموجودة في السحابة حالياً
         res = supabase.table("phones").select("*").execute()
         rows = res.data or []
         
-        # 2. إذا كانت السحابة فارغة تماماً، نقرأ ملف JSON القديم لإنقاذ البيانات
+        # 2. ⚡ إذا كانت السحابة فارغة، نقوم بقراءة ملف JSON ونقل محتواه فوراً
         if not rows and os.path.exists("models_db.json"):
             try:
                 with open("models_db.json", "r", encoding="utf-8") as f:
                     old_data = json.load(f)
                 
-                # رفع البيانات القديمة إلى السحابة تلقائياً في الخلفية
+                # تفكيك هيكل الـ JSON المتداخل وضخه في جداول السحابة
                 for size, panels in old_data.items():
                     for panel, sensors in panels.items():
                         for sensor, data in sensors.items():
                             for model in data.get("models", []):
                                 add_model(size, panel, sensor, model)
                 
-                # إعادة قراءة السحابة بعد الرفع مباشرة
+                # إعادة قراءة السحابة مجدداً بعد اكتمال النقل
                 res = supabase.table("phones").select("*").execute()
                 rows = res.data or []
             except Exception:
                 pass
 
-        # 3. ترتيب البيانات في القاموس المتداخل ليعمل التطبيق كالمعتاد
+        # 3. ترتيب البيانات في القاموس البرمجي المتداخل ليعمل التطبيق كالمعتاد
         db = {}
         for r in rows:
             size = str(r.get("size", "")).strip()
