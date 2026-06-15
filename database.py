@@ -1,9 +1,9 @@
 import os
 from supabase import create_client
 
-# 🔒 جلب مفاتيح الاتصال الآمن بالسحابة
+# 🔒 الاتصال الآمن بالسحابة
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")  # تأكد من مطابقة الاسم لما وضعته في Secrets
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -14,11 +14,13 @@ def add_model(size, panel, sensor, model):
     if not all([size, panel, sensor, model]):
         return False
     try:
+        # قمنا بتأمين كتابة الاسم لإرساله للعمودين المتوقعين لضمان التعرف عليه
         supabase.table("phones").insert({
             "size": str(size).strip(),
             "panel": str(panel).strip(),
             "sensor": str(sensor).strip(),
-            "model_name": str(model).strip()  # تأكد من مطابقة الاسم للعمود بالسحابة model_name
+            "model_name": str(model).strip(),
+            "model": str(model).strip()
         }).execute()
         return True
     except Exception:
@@ -36,7 +38,10 @@ def load_db():
             size = str(r.get("size", "")).strip()
             panel = str(r.get("panel", "")).strip()
             sensor = str(r.get("sensor", "")).strip()
-            model = str(r.get("model_name", "")).strip()
+            
+            # محاولة قراءة الحقل بأي سبلنج متوقع (model_name أو model أو اسم_النموذج)
+            model = r.get("model_name") or r.get("model") or r.get("اسم_النموذج") or ""
+            model = str(model).strip()
 
             if not all([size, panel, sensor, model]):
                 continue
@@ -55,18 +60,12 @@ def load_db():
 # 🛡️ دالة حماية البيانات الاحتياطية (save_db)
 # ==========================================
 def save_db(cleaned_db=None):
-    """
-    هذه الدالة تم إنشاؤها لامتصاص الصدمات البرمجية ومنع الـ ImportError.
-    تقوم بإنشاء تزامن تلقائي لمنع تجمد التطبيق واختفاء الإعدادات.
-    """
     try:
-        # إذا تم استدعاء دالة الصيانة لتنظيف البيانات، نقوم بتحديثها سحابياً
         if cleaned_db:
             for size, panels in cleaned_db.items():
                 for panel, sensors in panels.items():
                     for sensor, data in sensors.items():
                         for model in data.get("models", []):
-                            # تفحص السحابة وتضيف البيانات النظيفة فقط
                             add_model(size, panel, sensor, model)
         return True
     except Exception:
