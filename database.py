@@ -1,9 +1,9 @@
 import os
 from supabase import create_client
 
-# 🔒 الاتصال الآمن بالسحابة - جلب المفتاح بأي مسمى محتمل لمنع التصفير
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY") or os.getenv("anon") or ""
+# 🔒 الاتصال السحابي المباشر والمستقر لكسر حاجز الصفر والانهيار
+SUPABASE_URL = "https://mgmphimlcdchtbiyhhbt.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nbXBoaW1sY2RjaHRiaXloeGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwNDAyNzAsImV4cCI6MjA1NTYxNjI3MH0.7_yZ7e5tG-tN0V33A6D_3P2qD2D9H-V8N6R0W8Y2Z1A"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -26,12 +26,12 @@ def add_model(size, panel, sensor, model):
 
 def load_db():
     try:
-        # جلب البيانات الحية من السحابة
+        # جلب البيانات مباشرة بكود صريح ومباشر
         res = supabase.table("phones").select("*").execute()
         rows = res.data or []
         
-        # ⚡ إذا كانت السحابة تعود بـ 0، نقوم بضخ الـ 176 هاتفاً فوراً في ثانية واحدة
-        if len(rows) <= 1: # قمنا بتعديل الشرط ليشمل وجود الهاتف التجريبي الفردي أيضاً
+        # ⚡ تعبئة أوتوماتيكية سريعة وشاملة للسحابة عند رصد جدول فارغ
+        if len(rows) <= 1:
             try:
                 bulk_records = []
                 for size, panels in RAW_JSON_DATA.items():
@@ -46,7 +46,7 @@ def load_db():
                                 })
                 if bulk_records:
                     supabase.table("phones").insert(bulk_records).execute()
-                    # إعادة القراءة الفورية للامتلاء الكامل
+                    # استرجاع حافز للتحقق الفوري من نجاح الضخ الدفعي
                     res = supabase.table("phones").select("*").execute()
                     rows = res.data or []
             except Exception:
