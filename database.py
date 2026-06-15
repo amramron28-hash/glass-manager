@@ -1,15 +1,15 @@
 import os
 from supabase import create_client
 
-# 🔒 الاتصال السحابي المباشر والمستقر
-SUPABASE_URL = "https://mgmphimlcdchtbiyhhbt.supabase.co"
+# 🔒 الاتصال السحابي الصريح والمستقر لكسر حاجز الصفر والانهيار
+SUPABASE_URL = "https://supabase.co"
 SUPABASE_KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# قاعدة البيانات الحقيقية كاملة لضمان الهجرة السليمة
-RAW_JSON_DATA = {"6.40":{"Notch Screen":{"under_display_fingerprint":{"models":["Oppo A74 4G","Oppo A78 4G","Oppo A93 4G","Oppo A94 4G","Oppo A95 4G","Oppo F17 Pro","Oppo F19","Oppo F19 Pro","Oppo F19 Pro Plus","Oppo F19s","Oppo F21 Pro 4G","Oppo F21 Pro 5G","Oppo F21s Pro","Oppo Reno 2","Oppo Reno 4","Oppo Reno 4 5G","Oppo Reno 4 F","Oppo Reno 4 Lite","Oppo Reno 4 SE","Oppo Reno 5 4G","Oppo Reno 5 F","Oppo Reno 5 Lite","Oppo Reno 5 Z","Oppo Reno 6 4G","Oppo Reno 6 Lite","Oppo Reno 6Z","Oppo Reno 7 4G","Oppo Reno 7 5G","Oppo Reno 7 Lite","Oppo Reno 7 SE 5G","Oppo Reno 7Z 5G","Oppo Reno 8 4G","Oppo Reno 8 5G","Oppo Reno 8 Lite","Oppo Reno 8T","Oppo Reno 8Z 5G","Oppo Find X5 Lite 5G","Realme 7 Pro","Realme 8 4G","Realme 8 Pro","Realme 9 4G","Realme 9 Pro Plus","Realme 10 4G","Realme 11 4G","Realme X7","Realme Q2 Pro","Realme V15 5G","Realme Narzo 50 Pro 5G","Realme Narzo 60","OnePlus Nord CE2 5G"]}}},"6.50":{"Notch Screen":{"hardware_top_sensor":{"models":["Oppo A11","Oppo A15","Oppo A15s","Oppo A16","Oppo A16s","Oppo A16K","Oppo A16E","Oppo A31","Oppo A35","Oppo A5 2020","Oppo A8","Oppo A9 2020","Oppo A53s 5G","Oppo A54s","Oppo A55 5G","Oppo A56 5G","Oppo A57 4G","Oppo A57 5G","Oppo A57e","Oppo A57s","Oppo A77 4G","Oppo A77 5G","Oppo A77s","Oppo A78 5G","Oppo A97 5G","Oppo K10 5G","Realme 5","Realme 5i","Realme 5s","Realme 6i","Realme C3","Realme C3i","Realme C11","Realme C11 2021","Realme C12","Realme C15","Realme C20","Realme C20A","Realme C21","Realme C21Y","Realme C25","Realme C25s","Realme C25Y","Realme C30","Realme C30s","Realme C31","Realme C33","Realme C33 2023","Realme C35","Realme 9i 5G","Realme 10 5G","Realme 10s","Realme 10T","Realme V3","Realme V11 5G","Realme V20","Realme V23 5G","Realme Q21","Realme Narzo 10","Realme Narzo 10A","Realme Narzo 20","Realme Narzo 20A","Realme Narzo 30A","Realme Narzo 50 5G","Realme Narzo 50A","Realme Narzo 50i","Realme Narzo 50i Prime","Realme Narzo 50A Prime","Samsung Galaxy A02","Samsung Galaxy A02s","Samsung Galaxy A03","Samsung Galaxy A03s","Samsung Galaxy A04","Samsung Galaxy A04s","Samsung Galaxy A04e","Samsung Galaxy M02","Samsung Galaxy M02s"]}}},"6.51":{"Notch Screen":{"hardware_top_sensor":{"models":["Oppo A17","Oppo A17k"]}}},"6.53":{"Notch Screen":{"hardware_top_sensor":{"models":["Redmi 9","Poco M2"]},"virtual_camera_sensor":{"models":["Redmi 9A","Redmi 9C","Redmi 10A","Redmi 9 Activ","Poco C3","Poco C31","Poco C50","Poco C51"]}},"Punch-Hole Screen":{"hardware_top_sensor":{"models":["Redmi Note 9 4G","Redmi Note 10 5G","Redmi Note 10T 5G","Redmi 10 5G","Redmi 10 2022","Redmi 10 Prime 2021","Redmi 10 Prime 2022","Redmi Note 11SE 5G","Poco M3 Pro","Poco M3 Pro 5G","Oppo A74 5G","Realme 6","Realme 6s","Realme 7","Realme 8 5G","Realme 8s 5G","Realme 9 5G India","Realme V5 5G","Realme V13 5G","Realme Q2","Realme Q3 5G","Realme Q3i 5G","Realme K7X 5G","Realme K9X 5G","Realme Narzo","Realme Narzo 20 Pro","Realme Narzo 30","Realme Narzo 30 Pro","Samsung Galaxy A11","Samsung Galaxy M11","OnePlus Nord N10","OnePlus Nord N200"]}}},"6.56":{"Notch Screen":{"hardware_top_sensor":{"models":["Oppo A18","Oppo A38","Oppo A2x 5G","Oppo A58 5G China","Oppo A58x 5G","Oppo A59 5G","Oppo A78 5G","Oppo A56s 5G","Oppo A1x 5G","Oppo A3X China","Oppo A3X 4G","Oppo A3X","Oppo A40","Oppo A40M","Oppo A5X","Oppo A5I","Oppo A5I Pro","Oppo A5 Pro 5G"]}}},"6.60":{"Notch Screen":{"hardware_top_sensor":{"models":["Samsung Galaxy A12","Samsung Galaxy A13 4G","Samsung Galaxy A13 5G","Samsung Galaxy A23 4G","Samsung Galaxy M12","Samsung Galaxy M14","Samsung Galaxy F12","Samsung Galaxy F14"]}},"Punch-Hole Screen":{"hardware_top_sensor":{"models":["Oppo A96","Realme 8i","Realme 9i"]}}},"6.65":{"Notch Screen":{"under_display_fingerprint":{"models":["Samsung Galaxy A15 4G","Samsung Galaxy A15 5G","Samsung Galaxy A24 4G","Samsung Galaxy A25 5G","Samsung Galaxy A34 5G","Samsung Galaxy M15 5G","Samsung Galaxy M34"]}}},"6.67":{"Punch-Hole Screen":{"hardware_top_sensor":{"models":["Redmi Note 9 Pro 4G","Redmi Note 9S","Redmi Note 9 Pro Max","Redmi Note 10 Pro","Redmi Note 10 Pro Max","Redmi Note 11 Pro 4G","Redmi Note 11 Pro 5G","Redmi Note 11 Pro Plus 5G","Redmi Note 11S 5G","Redmi Note 12S","Redmi Note 12 Pro 4G","Redmi Note 12 Pro 5G","Redmi Note 13 Pro 4G","Redmi Note 11 Pro","Redmi Note 12 Pro 5G","Poco X6 Neo","Redmi Note 11 Pro 4G","Redmi Note 11 Pro 5G","Redmi Note 11S 5G","Poco X4 Pro 5G","Poco F3","Poco F4","Poco M6 Pro 4G","Infinix Hot 30","Infinix Hot 40","Infinix Hot 40 Pro","Tecno Spark 20","Tecno Spark 20 Pro","Itel S23 Plus","Infinix Smart 7","Infinix Smart 7 HD","Infinix Smart 8","Infinix Smart 8 Pro","Tecno Pop 7","Tecno Pop 8","Itel A70","Infinix Note 30","Infinix Note 30 Pro","Infinix Note 40","Infinix Note 40 Pro 4G","Tecno Pova 5","Tecno Pova 6 Neo","Tecno Spark Go 1","Tecno Spark Go 1S","Tecno Spark Go 2","Tecno Spark Go 2025","Tecno Spark 40","Tecno Spark 40C","Tecno Spark 30","Tecno Spark 30C","Tecno Spark 30 5G","Infinix Hot 50 5G","Infinix Hot 50i X6531","Infinix Hot 60i X6728","Infinix Hot 60","Infinix Smart 9","Infinix Smart 10","Infinix Smart 10 Plus X6725","Infinix Smart 10 Plus X6725B","Infinix Smart 10 Plus X6725C","Infinix Note 50X","Pova 6 Neo 5G","Moto One 5G Ace","Moto G 5G","Itel A80","Itel P65","Poco M3 Pro 5G","Redmi Note 10T 5G","Redmi 10","Redmi 10 2022","Redmi 10 Prime 2021","Redmi 10 Prime 2022","Redmi Note 11 SE 5G","Oppo A74 5G","Realme 8 5G","Realme 7","Realme 6","Realme 9 5G India","Realme K9X 5G","Realme K7X 5G","Realme 6S","Narzo","Realme V5 5G","Realme Note 13 4G","Realme Note 14","Huawei Y9A","Huawei Nova 10 SE","Huawei Nova 11 SE","Huawei Nova 12 SE","Oppo Reno 12F","Oppo F27","Oppo A3 China","Realme 12 4G","Realme 13 4G","Realme C53","Realme Narzo N55","Realme Narzo 60X","Realme 12 5G","Realme 12X","Realme Narzo 70X","Realme Narzo N65","Realme 12 Lite","Realme C67 4G","Realme C65","Realme C63 5G","Realme 13 5G","Realme C75","Realme C75X","Realme P3X","Realme 14X","Realme V60 Pro","Realme Narzo 80X 5G","Realme C71","Realme Narzo 8 Lite 5G","Vivo T3X","iQOO Z9X","Vivo Y200i","Vivo Y38","Vivo Y200T","Vivo Y58","Vivo Y28 4G","Vivo Y37 Pro","Vivo Y19S","Vivo Y29","Vivo Y29 4G","Vivo T4X","Vivo Y300i","Vivo Y39","Vivo Y300T","iQOO Z10X","Moto G05","Moto G15","Moto G15 Power","Moto E15","Moto Edge 20 Lite","Moto Edge 20 Fusion","Moto G66J","Moto G66Y","OnePlus Nord N30","OnePlus Nord N30 SE","Spark 30 Pro","Hot 50 Pro"]}}},"6.74":{"Punch-Hole Screen":{"hardware_top_sensor":{"models":["Realme C51","Realme C53","Realme C61","Realme C63","Realme Note 50","Realme Note 60","Realme Narzo N53","Realme Narzo N61","Realme Narzo N63"]}}},"6.75":{"Notch Screen":{"hardware_top_sensor":{"models":["Huawei Nova Y70","Huawei Nova Y70 Plus"]}}},"6.79":{"Punch-Hole Screen":{"hardware_top_sensor":{"models":["Redmi 12 4G","Redmi Note 12 5G","Poco X5 5G","Redmi Note 12R Pro","Redmi Note 12 5G China","Redmi Note 12 4G"]}}}}
-
+# ==========================================
+# ✔ إضافة هاتف جديد إلى السحابة
+# ==========================================
 def add_model(size, panel, sensor, model):
     if not all([size, panel, sensor, model]):
         return False
@@ -24,39 +24,14 @@ def add_model(size, panel, sensor, model):
     except Exception:
         return False
 
+# ==========================================
+# ✔ تحميل البيانات بشكلها القاموسي المتداخل
+# ==========================================
 def load_db():
     try:
-        # جلب البيانات الحية الحالية
         res = supabase.table("phones").select("*").execute()
         rows = res.data or []
         
-        # ⚡ حماية التوقيت: الضخ على مجموعات صغيرة (Chunks) لمنع الـ BodyStreamBuffer Error
-        if len(rows) < 10:
-            try:
-                all_records = []
-                for size, panels in RAW_JSON_DATA.items():
-                    for panel, sensors in panels.items():
-                        for sensor, data in sensors.items():
-                            for model in data.get("models", []):
-                                all_records.append({
-                                    "size": str(size).strip(),
-                                    "panel": str(panel).strip(),
-                                    "sensor": str(sensor).strip(),
-                                    "model_name": str(model).strip()
-                                })
-                
-                # إرسال 25 هاتفاً فقط في كل دفعة (خفيف جداً على السيرفر والشبكة)
-                chunk_size = 25
-                for i in range(0, len(all_records), chunk_size):
-                    chunk = all_records[i:i + chunk_size]
-                    supabase.table("phones").insert(chunk).execute()
-                
-                # استرجاع البيانات النهائية المستقرة
-                res = supabase.table("phones").select("*").execute()
-                rows = res.data or []
-            except Exception:
-                pass
-
         db = {}
         for r in rows:
             size = str(r.get("size", "")).strip()
