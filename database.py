@@ -2,8 +2,8 @@ import json
 import os
 import shutil
 
-DB_FILE = "db.json"
-BACKUP_FILE = "db_backup.json"
+DB_FILE = "models_db.json"
+BACKUP_FILE = "models_db_backup.json"
 
 def load_db():
     """
