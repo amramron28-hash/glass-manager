@@ -63,9 +63,11 @@ def search_models_callback(search_term, unique_models):
 
 def process_new_model_form(db_data, current_search):
     """
-    محرك الفرز الصارم والذكي للمراحل: تم ترقيته بالكامل ليحتوي على قوائم خيارات منسدلة 
-    تمنع الفني من الأخطاء الإملائية مع تثبيت إشعارات النجاح والتأكيد اللحظي.
+    محرك الفرز الصارم والذكي للمراحل: تم إصلاحه جذرياً ليقوم بحفظ الاسم الحقيقي النظيف 
+    للهاتف ليعود للظهور فوراً في نتائج البحث الذكي بعد إتمام عملية الإنشاء.
     """
+    # 🎯 الحفاظ على الاسم الحقيقي النظيف المكتوب بيدك للحفظ، واستخدام الـ norm للفحص فقط
+    clean_saved_name = " ".join(current_search.strip().split())
     norm_model = normalize_text(current_search)
 
     # 📋 تجهيز الخيارات الثابتة والمصطلحات الدقيقة للتطبيق لتوحيد شجرة البيانات
@@ -104,8 +106,6 @@ def process_new_model_form(db_data, current_search):
                     return
 
                 norm_size = normalize_text(input_size)
-                
-                # 🛠️ الإصلاح الجذري الفوري: التقاط [0] لمنع الـ AttributeError وقراءة النصوص كلياً كسرير نظيف
                 norm_panel = normalize_text(selected_panel.split(" (")[0])
                 norm_sensor = normalize_text(selected_sensor.split(" (")[0])
 
@@ -127,11 +127,13 @@ def process_new_model_form(db_data, current_search):
                         db_data[norm_size][norm_panel][norm_sensor] = {"models": target_node}
                     
                     models = db_data[norm_size][norm_panel][norm_sensor]["models"]
-                    if norm_model not in models:
-                        models.append(norm_model)
+                    
+                    # الفحص بالاسم المنظف، والحفظ بالاسم الحقيقي الفخم لضمان ظهوره في المتصفح
+                    if not any(normalize_text(m) == norm_model for m in models):
+                        models.append(clean_saved_name)
                         save_db(db_data)
-                        st.toast(f"🎯 تم ربط [{norm_model}] بالمجموعة بنجاح!")
-                        st.session_state.custom_search_input = "" # تصفير الحقل للعودة
+                        st.toast(f"🎯 تم ربط [{clean_saved_name}] بالمجموعة بنجاح!")
+                        st.session_state.custom_search_input = "" 
                         st.session_state.current_stage = 2 
                         st.rerun()
                     else:
@@ -174,8 +176,6 @@ def process_new_model_form(db_data, current_search):
                     return
 
                 norm_size = normalize_text(new_size)
-                
-                # 🛠️ دمج وتطهير أمان مصفوفات السلسلة للمرحلة الثالثة لمنع أخطاء التوجيه
                 norm_panel = normalize_text(new_panel.split(" (")[0])
                 norm_sensor = normalize_text(new_sensor.split(" (")[0])
 
@@ -190,12 +190,12 @@ def process_new_model_form(db_data, current_search):
                 if norm_panel not in db_data[norm_size]:
                     db_data[norm_size][norm_panel] = {}
 
-                db_data[norm_size][norm_panel][norm_sensor] = {"models": [norm_model]}
+                # 🎯 الإصلاح الأكبر هنا: حفظ الهاتف بالاسم الحقيقي النظيف المنسق (مثل Condor GT60) ليتعرف عليه البحث الفوري
+                db_data[norm_size][norm_panel][norm_sensor] = {"models": [clean_saved_name]}
                 
                 save_db(db_data)
                 
-                # تثبيت إشعار الحفظ بنجاح كلي أمام عين الفني
-                st.session_state.show_success_toast = f"✨ تم إنشاء مجموعة جديدة [{new_size}] وحفظ الهاتف [{current_search}] بنجاح كلي!"
+                st.session_state.show_success_toast = f"✨ تم إنشاء مجموعة جديدة [{new_size}] وحفظ الهاتف [{clean_saved_name}] بنجاح كلي!"
                 st.session_state.custom_search_input = "" 
                 st.session_state.current_stage = 2
                 st.rerun()
@@ -240,7 +240,7 @@ selected_phone = st_searchbox(
         unique_models
     ),
     placeholder="🔍 ابحث عن هاتف أو اكتب اسماً جديداً واضغط تأكيد بالأسفل...",
-    key="phone_search_autocomplete_v4",
+    key="phone_search_autocomplete_v5",
     label=""
 )
 
@@ -252,7 +252,7 @@ if selected_phone:
 # إذا كتب الفني اسماً جديداً تماماً وظهرت "No options"، نتيح له هنا زر تأكيد الاسم المكتوب لتنشيط الخطة حياً
 if not selected_phone:
     st.markdown("<p style='color:#a0aec0; margin-bottom: 2px; text-align: right;'>➕ إذا كان الهاتف جديداً كلياً، اكتبه بالأسفل لفتح المرحلة الثانية مباشرة:</p>", unsafe_allow_html=True)
-    custom_typed = st.text_input(label="", placeholder="اكتب اسم الهاتف الجديد هنا لتأكيده الفوري...", key="fallback_manual_input_text_v4")
+    custom_typed = st.text_input(label="", placeholder="اكتب اسم الهاتف الجديد هنا لتأكيده الفوري...", key="fallback_manual_input_text_v5")
     if custom_typed.strip() and custom_typed.strip() != st.session_state.custom_search_input:
         st.session_state.custom_search_input = custom_typed.strip()
         st.session_state.current_stage = 2
