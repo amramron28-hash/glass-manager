@@ -22,7 +22,6 @@ from rapidfuzz import process, fuzz
 from streamlit_searchbox import st_searchbox
 
 
-
 st.set_page_config(
     layout="wide",
     page_title="ZEGAAR AMMAR GLASS MANAGER",
@@ -30,14 +29,9 @@ st.set_page_config(
 )
 
 
-
 inject_pwa_and_styles()
 
 
-
-# ==========================
-# كاش البيانات
-# ==========================
 
 @st.cache_data(ttl=300)
 def load_system_data():
@@ -46,24 +40,18 @@ def load_system_data():
 
 
 
-# ==========================
-# الحالة
-# ==========================
-
 if "custom_search_input" not in st.session_state:
     st.session_state.custom_search_input = ""
 
+
 if "notifications" not in st.session_state:
     st.session_state.notifications = []
+
 
 if "show_success" not in st.session_state:
     st.session_state.show_success = ""
 
 
-
-# ==========================
-# الخيارات
-# ==========================
 
 ALL_PANELS = [
 
@@ -89,10 +77,6 @@ ALL_SENSORS = [
 
 
 
-# ==========================
-# البيانات
-# ==========================
-
 (
     db_data,
     unique_models,
@@ -116,9 +100,6 @@ unique_models = [
     if x
 
 ]
-
-
-
 # ==========================
 # الشعار
 # ==========================
@@ -135,7 +116,6 @@ white-space:nowrap;
 overflow:hidden;
 ">
 
-
 <div style="
 font-size:28px;
 font-weight:900;
@@ -147,7 +127,6 @@ line-height:1;
 ">
 ZEGAAR AMMAR
 </div>
-
 
 <div style="
 font-size:28px;
@@ -163,7 +142,6 @@ line-height:1;
 GLASS MANAGER
 </div>
 
-
 </div>
 """,
 unsafe_allow_html=True
@@ -172,7 +150,7 @@ unsafe_allow_html=True
 
 
 # ==========================
-# نجاح
+# رسالة نجاح
 # ==========================
 
 if st.session_state.show_success:
@@ -189,9 +167,8 @@ if st.session_state.show_success:
 
 
 
-
 # ==========================
-# البحث
+# البحث الموحد
 # ==========================
 
 def search_models(q):
@@ -231,8 +208,6 @@ def search_models(q):
 
 
 
-
-
 selected = st_searchbox(
 
     search_function=lambda q, **k:
@@ -247,7 +222,7 @@ selected = st_searchbox(
 
 
 
-if isinstance(selected,str):
+if isinstance(selected, str):
 
     selected = selected.strip()
 
@@ -257,24 +232,7 @@ if isinstance(selected,str):
 
 
 
-
-manual = st.text_input(
-    "اكتب اسم الهاتف"
-)
-
-
-
-if manual.strip():
-
-    st.session_state.custom_search_input = manual.strip()
-
-
-
 phone = st.session_state.custom_search_input
-
-
-
-
 # ==========================
 # البحث والنتائج
 # ==========================
@@ -299,7 +257,6 @@ if phone:
         )
 
 
-
         draw_technical_coords(
 
             size,
@@ -309,7 +266,6 @@ if phone:
             sensor
 
         )
-
 
 
         results = get_compatibles_strict(
@@ -337,7 +293,6 @@ if phone:
         )
 
 
-
         draw_neon_section(
 
             "أكبر بقليل ±0.03",
@@ -353,7 +308,6 @@ if phone:
         )
 
 
-
         draw_neon_section(
 
             "أصغر بقليل ±0.03",
@@ -367,7 +321,6 @@ if phone:
             phone
 
         )
-
 
 
         draw_neon_section(
@@ -394,7 +347,6 @@ if phone:
         )
 
 
-
         final_size = st.text_input(
 
             "📏 المقاس",
@@ -402,7 +354,6 @@ if phone:
             placeholder="مثال 6.78"
 
         )
-
 
 
         final_panel = ""
@@ -427,7 +378,6 @@ if phone:
                 + ["➕ إضافة جديد"]
 
             )
-
 
 
             if final_panel == "➕ إضافة جديد":
@@ -457,13 +407,11 @@ if phone:
             )
 
 
-
             if final_sensor == "➕ إضافة جديد":
 
                 final_sensor = st.text_input(
                     "اكتب المستشعر"
                 )
-
 
 
 
@@ -489,7 +437,6 @@ if phone:
                 .get(final_sensor,{})
 
             )
-
 
 
             models = group.get(
@@ -548,6 +495,7 @@ if phone:
                 )
 
 
+
                 if st.button(
                     "إنشاء مجموعة جديدة"
                 ):
@@ -587,4 +535,4 @@ draw_control_panel(
 
     empty_groups_count=empty_groups_count
 
-)
+        )
