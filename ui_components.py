@@ -8,7 +8,7 @@ _bg_cache = None
 
 
 # ==========================================
-# 🎨 الخلفية والتصميم
+# 🎨 التصميم والخلفية
 # ==========================================
 
 def inject_pwa_and_styles():
@@ -17,7 +17,6 @@ def inject_pwa_and_styles():
 
 
     if _bg_cache is None:
-
 
         paths = [
             "phone_image.webp",
@@ -48,38 +47,43 @@ def inject_pwa_and_styles():
 
     st.markdown(
     f"""
-    <style>
+<style>
 
-    html,body,[data-testid="stAppViewContainer"] {{
+html,body,[data-testid="stAppViewContainer"] {{
 
-        background-image:
-        linear-gradient(
-        rgba(10,14,23,.45),
-        rgba(10,14,23,.45)
-        ),
-        url(
-        'data:image/webp;base64,{_bg_cache}'
-        );
+background-image:
 
-        background-size:cover;
-        background-attachment:fixed;
+linear-gradient(
+rgba(10,14,23,.45),
+rgba(10,14,23,.45)
+),
 
-    }}
+url(
+'data:image/webp;base64,{_bg_cache}'
+);
 
 
+background-size:cover;
+background-attachment:fixed;
 
-    .neon-card-text {{
+}}
 
-        font-size:24px;
-        font-weight:900;
-        color:white;
 
-    }}
 
-    </style>
-    """,
-    unsafe_allow_html=True
-    )
+.neon-card-text {{
+
+font-size:22px;
+font-weight:900;
+color:white;
+
+}}
+
+</style>
+
+""",
+unsafe_allow_html=True
+)
+
 
 
 
@@ -100,61 +104,80 @@ def draw_technical_coords(
     f"""
 
 <div style="
-background:rgba(15,23,42,.85);
-padding:25px;
-border-radius:12px;
-border:2px dashed #00bfff;
+background:rgba(15,23,42,.90);
+padding:20px;
+border-radius:14px;
+border:2px solid #00bfff;
+margin-top:15px;
 ">
 
+
 <h3 style="
-text-align:center;
+text-align:right;
+direction:rtl;
 color:#00bfff;
+margin-bottom:20px;
 ">
+
 📋 تحليل الإحداثيات الفنية
+
 </h3>
 
 
+
 <div style="
-display:flex;
-justify-content:space-around;
-text-align:center;
 direction:rtl;
+text-align:right;
+font-size:22px;
+line-height:2;
 ">
 
 
-<div>
-<p>📏 المقاس</p>
-<h4>{size_grp}</h4>
-</div>
-
 
 <div>
-<p>📺 نوع الشاشة</p>
-<h4>{panel_grp}</h4>
+📏 <b>المقاس</b>
+<br>
+{size_grp}
 </div>
+
+
+<hr>
 
 
 <div>
-<p>👁️ المستشعر التقارب</p>
-<h4>{sensor_grp}</h4>
+📺 <b>نوع الشاشة</b>
+<br>
+{panel_grp}
+</div>
+
+
+<hr>
+
+
+<div>
+👁️ <b>المستشعر التقارب</b>
+<br>
+{sensor_grp}
+</div>
+
+
+
 </div>
 
 
 </div>
 
+""",
+unsafe_allow_html=True
+)
 
-</div>
-
-    """,
-    unsafe_allow_html=True
-    )
 
 
 
 
 
 # ==========================================
-# 🟦 كروت النتائج
+# 📱 بطاقات النتائج
 # ==========================================
 
 def draw_neon_section(
@@ -173,43 +196,94 @@ def draw_neon_section(
 
 
     st.markdown(
+
     f"""
-    <h3 style="color:{color_hex}">
-    {badge_icon} {title}
-    </h3>
-    """,
+
+<h3 style="
+color:{color_hex};
+text-align:right;
+direction:rtl;
+">
+
+{badge_icon} {title}
+
+</h3>
+
+""",
+
     unsafe_allow_html=True
+
     )
 
 
 
-    cols = st.columns(4)
+
+    for model in models_list:
 
 
+        st.markdown(
 
-    for i,model in enumerate(models_list):
+        f"""
 
+<div style="
 
-        with cols[i%4]:
+background:rgba(10,14,23,.85);
 
-            st.markdown(
-            f"""
+border:1px solid {color_hex};
 
-<div class="neon-card-text"
-style="
-background:{color_hex};
+border-radius:12px;
+
 padding:15px;
-border-radius:10px;
-text-align:center;
+
+margin-bottom:8px;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+direction:ltr;
+
+box-shadow:0 0 12px {color_hex};
+
+">
+
+
+
+<div style="
+text-align:left;
+font-size:22px;
+font-weight:900;
+color:white;
 ">
 
 🔹 {model}
 
 </div>
 
-            """,
-            unsafe_allow_html=True
-            )
+
+
+
+<div style="
+width:65px;
+height:65px;
+border:1px dashed rgba(0,191,255,.5);
+border-radius:10px;
+">
+
+</div>
+
+
+
+</div>
+
+""",
+
+        unsafe_allow_html=True
+
+        )
+
 
 
 
@@ -233,16 +307,20 @@ def draw_control_panel(
     with st.sidebar:
 
 
-
         st.markdown(
         """
-        <h2 style="
-        text-align:center;
-        color:#00bfff;
-        ">
-        🛠️ المراقب الصامت
-        </h2>
-        """,
+
+<h2 style="
+text-align:center;
+color:#00bfff;
+">
+
+🛠️ المراقب الصامت
+
+</h2>
+
+""",
+
         unsafe_allow_html=True
         )
 
@@ -269,36 +347,38 @@ def draw_control_panel(
 
 
 
+
         with st.expander(
             "⚙️ الإعدادات"
         ):
 
 
             st.toggle(
-                "🧠 تفعيل المراقب الذكي",
+                "تفعيل المراقب الذكي",
                 True
             )
 
 
 
+
         with st.expander(
-            "🛡️ حالة المراقب الصامت",
+            "🛡️ حالة المراقب",
             expanded=True
         ):
 
 
             st.metric(
-                "📱 إجمالي الهواتف",
+                "📱 الهواتف",
                 total_models
             )
 
 
             st.metric(
-                "🧹 مجموعات للمراجعة",
+                "🧹 مراجعة",
                 empty_groups_count
             )
 
 
             st.caption(
-                "المراقب جاهز للتحليل قبل الإدراج"
+                "المراقب جاهز"
             )
