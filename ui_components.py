@@ -6,9 +6,8 @@ import base64
 _bg_cache = None
 
 
-
 # ==========================================
-# 🎨 الخلفية والتصميم
+# 🎨 الخلفية + التنسيق
 # ==========================================
 
 def inject_pwa_and_styles():
@@ -19,16 +18,12 @@ def inject_pwa_and_styles():
     if _bg_cache is None:
 
         paths = [
-
             "phone_image.webp",
             "./phone_image.webp",
             "/app/phone_image.webp"
-
         ]
 
-
-        image = ""
-
+        img = ""
 
         for p in paths:
 
@@ -36,14 +31,14 @@ def inject_pwa_and_styles():
 
                 with open(p, "rb") as f:
 
-                    image = base64.b64encode(
+                    img = base64.b64encode(
                         f.read()
                     ).decode()
 
                 break
 
 
-        _bg_cache = image
+        _bg_cache = img
 
 
 
@@ -65,20 +60,8 @@ url(
 );
 
 background-size:cover;
-
+background-position:center;
 background-attachment:fixed;
-
-}}
-
-
-
-.neon-card-text {{
-
-font-size:20px;
-
-font-weight:800;
-
-color:white;
 
 }}
 
@@ -86,22 +69,38 @@ color:white;
 
 div.stMainBlockContainer {{
 
-padding-top:25px !important;
+padding-top:20px !important;
 
 }}
 
 
+
 </style>
 """,
+    unsafe_allow_html=True
+    )
 
-unsafe_allow_html=True
-)
+
+
+    if os.path.exists("style.css"):
+
+        with open(
+            "style.css",
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            st.markdown(
+                f"<style>{f.read()}</style>",
+                unsafe_allow_html=True
+            )
+
 
 
 
 
 # ==========================================
-# 📋 تحليل الإحداثيات الفنية
+# 📋 بطاقة الإحداثيات الفنية
 # ==========================================
 
 def draw_technical_coords(
@@ -115,32 +114,18 @@ def draw_technical_coords(
     f"""
 <div style="
 background:rgba(15,23,42,.85);
-padding:12px;
-border-radius:12px;
+padding:8px 15px;
+border-radius:10px;
 border:1px solid #00bfff;
-margin-bottom:15px;
+margin-bottom:10px;
 ">
-
-
-<h4 style="
-text-align:right;
-direction:rtl;
-color:#00bfff;
-margin:0 0 8px 0;
-font-size:21px;
-">
-
-📋 الإحداثيات الفنية
-
-</h4>
-
 
 
 <div style="
 direction:rtl;
 text-align:right;
-font-size:17px;
-line-height:1.9;
+font-size:16px;
+line-height:1.7;
 ">
 
 
@@ -159,11 +144,10 @@ line-height:1.9;
 
 
 </div>
-
 """,
+    unsafe_allow_html=True
+    )
 
-unsafe_allow_html=True
-)
 
 
 
@@ -188,7 +172,6 @@ def draw_neon_section(
 
 
     st.markdown(
-
     f"""
 <h4 style="
 color:{color_hex};
@@ -200,12 +183,9 @@ margin:8px 0;
 {badge_icon} {title}
 
 </h4>
-
 """,
-
     unsafe_allow_html=True
     )
-
 
 
 
@@ -213,42 +193,25 @@ margin:8px 0;
 
 
         st.markdown(
-
         f"""
-
 <div style="
-
 background:rgba(10,14,23,.90);
-
 border:1px solid {color_hex};
-
 border-radius:10px;
-
 padding:10px;
-
 margin-bottom:8px;
-
 display:flex;
-
 direction:ltr;
-
 justify-content:space-between;
-
 align-items:center;
-
 ">
 
 
 <div style="
-
 font-size:18px;
-
 font-weight:800;
-
 color:white;
-
 text-align:left;
-
 ">
 
 {model}
@@ -258,15 +221,10 @@ text-align:left;
 
 
 <div style="
-
 width:45px;
-
 height:45px;
-
 border-radius:8px;
-
 border:1px dashed #00bfff;
-
 ">
 
 </div>
@@ -274,12 +232,8 @@ border:1px dashed #00bfff;
 
 
 </div>
-
-
 """,
-
         unsafe_allow_html=True
-
         )
 
 
@@ -306,24 +260,16 @@ def draw_control_panel(
 
 
         st.markdown(
-
         """
-
 <h3 style="
 text-align:center;
 color:#00bfff;
 ">
-
 🛠️ لوحة التحكم
-
 </h3>
-
 """,
-
         unsafe_allow_html=True
-
         )
-
 
 
 
@@ -333,7 +279,6 @@ color:#00bfff;
 
 
             if notifications:
-
 
                 for n in notifications:
 
@@ -355,7 +300,7 @@ color:#00bfff;
 
             st.checkbox(
                 "تفعيل المراقب الصامت",
-                True
+                value=True
             )
 
 
@@ -381,4 +326,4 @@ color:#00bfff;
 
             st.caption(
                 "المراقب يعمل"
-            )
+)
