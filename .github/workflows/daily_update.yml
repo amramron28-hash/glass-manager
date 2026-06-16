@@ -1,4 +1,5 @@
 name: Sync to Hugging Face
+
 on:
   push:
     branches: [ main ]
@@ -8,9 +9,12 @@ jobs:
   sync-to-hub:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          lfs: true
+
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -18,18 +22,12 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           
-          # إنشاء مجلد مستقل مؤقت لنقل ملفات الأكواد فقط
+          # إنشاء مجلد مؤقت للمزامنة
           mkdir sync_dir
           cp -r * sync_dir/ || true
           rm -rf sync_dir/sync_dir
           rm -rf sync_dir/.git
           rm -rf sync_dir/.github
-          
-          # إزالة أي ملفات صور تماماً من المجلد المؤقت لمنع فشل الرفع
-          rm -f sync_dir/*.webp
-          rm -f sync_dir/*.jpg
-          rm -f sync_dir/*.png
-          rm -f sync_dir/*.jpeg
           
           # تهيئة مستودع جديد تماماً بداخل المجلد المؤقت
           cd sync_dir
@@ -37,7 +35,7 @@ jobs:
           git config --global init.defaultBranch main
           git checkout -b main || true
           
-          # إضافة الأكواد فقط ورفعها بشكل نظيف ومباشر
+          # إضافة كافة الأكواد والمجلدات بما فيها المجلد phone_image_webp وصور الـ webp
           git add .
-          git commit -m "Clean sync without binary images"
+          git commit -m "Sync all files including webp images to Hugging Face"
           git push --force https://amramron28-hash:$HF_TOKEN@huggingface.co/spaces/amramron28/Zegaarammar main
