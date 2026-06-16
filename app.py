@@ -1,7 +1,7 @@
 import streamlit as st
 import datetime
 
-from database import load_db, add_model, save_db
+from database import add_model
 
 from logic_engine import (
     find_model_coords,
@@ -12,7 +12,8 @@ from logic_engine import (
 from ui_components import (
     inject_pwa_and_styles,
     draw_technical_coords,
-    draw_neon_section
+    draw_neon_section,
+    draw_control_panel
 )
 
 from app_init import initialize_system_data
@@ -30,7 +31,6 @@ st.set_page_config(
     page_title="ZEGAAR AMMAR GLASS MANAGER",
     page_icon="🔍"
 )
-
 
 inject_pwa_and_styles()
 
@@ -87,13 +87,15 @@ ALL_SENSORS = [
     live_sizes,
     live_panels,
     live_sensors
+
 ) = initialize_system_data()
+
 
 
 unique_models = [
     str(x).strip()
     for x in unique_models
-    if x
+    if x is not None
 ]
 
 
@@ -105,17 +107,15 @@ unique_models = [
 st.markdown(
 """
 <div style="
-direction:rtl;
+direction:ltr;
 text-align:right;
 width:100%;
-margin-top:-25px;
 ">
 
 <div style="
 font-size:34px;
 font-weight:900;
 color:#00bfff;
-font-family:Arial;
 ">
 ZEGAAR AMMAR
 </div>
@@ -124,7 +124,6 @@ ZEGAAR AMMAR
 font-size:34px;
 font-weight:900;
 color:#00bfff;
-font-family:Arial;
 border-bottom:2px solid rgba(0,191,255,.3);
 padding-bottom:8px;
 ">
@@ -175,8 +174,8 @@ def search_models(q):
         )
 
         return [
-            x[0]
-            for x in result
+            r[0]
+            for r in result
         ]
 
     except:
@@ -193,6 +192,7 @@ selected = st_searchbox(
     placeholder="🔍 ابحث عن هاتف",
 
     key="phone_search"
+
 )
 
 
@@ -208,22 +208,24 @@ if isinstance(selected, str):
 
 
 manual = st.text_input(
-    "أو اكتب اسم الهاتف"
+    "اكتب اسم الهاتف"
 )
 
 
-if manual.strip():
+
+if manual:
 
     st.session_state.custom_search_input = manual.strip()
+
+
+
+phone = st.session_state.custom_search_input
 
 
 
 # ==========================
 # الخطة 1
 # ==========================
-
-phone = st.session_state.custom_search_input
-
 
 if phone:
 
@@ -264,6 +266,33 @@ if phone:
         )
 
 
+        draw_neon_section(
+            "أكبر بقليل",
+            results["plus"],
+            "#3498db",
+            "➕",
+            phone
+        )
+
+
+        draw_neon_section(
+            "أصغر بقليل",
+            results["minus"],
+            "#e67e22",
+            "➖",
+            phone
+        )
+
+
+        draw_neon_section(
+            "تحذير مستشعر مختلف",
+            results["warn"],
+            "#ef4444",
+            "⚠️",
+            phone
+        )
+
+
 
 # ==========================
 # الخطة 2 و 3
@@ -273,43 +302,37 @@ if phone:
 
 
         st.warning(
-            "الهاتف غير موجود"
-        )
-
-
-        st.info(
-            "أدخل مواصفات الزجاج"
+            "الهاتف غير موجود في المجموعة"
         )
 
 
         final_size = st.text_input(
-            "📏 مقاس الهاتف",
+            "📏 المقاس",
             placeholder="مثال 6.78"
         )
 
 
         final_panel = ""
-
         final_sensor = ""
 
 
 
-        if final_size:
+        if final_size.strip():
 
 
-            panel = st.selectbox(
+            panel_choice = st.selectbox(
 
                 "📺 نوع الشاشة",
 
                 [""] +
                 ALL_PANELS +
-                list(set(live_panels)) +
+                live_panels +
                 ["➕ إضافة جديد"]
 
             )
 
 
-            if panel == "➕ إضافة جديد":
+            if panel_choice == "➕ إضافة جديد":
 
                 final_panel = st.text_input(
                     "اكتب نوع الشاشة"
@@ -317,26 +340,27 @@ if phone:
 
             else:
 
-                final_panel = panel
+                final_panel = panel_choice
 
 
 
-        if final_size and final_panel:
+
+        if final_size.strip() and final_panel.strip():
 
 
-            sensor = st.selectbox(
+            sensor_choice = st.selectbox(
 
-                "👁️ المستشعر",
+                "👁️ المستشعر التقارب",
 
                 [""] +
                 ALL_SENSORS +
-                list(set(live_sensors)) +
+                live_sensors +
                 ["➕ إضافة جديد"]
 
             )
 
 
-            if sensor == "➕ إضافة جديد":
+            if sensor_choice == "➕ إضافة جديد":
 
                 final_sensor = st.text_input(
                     "اكتب المستشعر"
@@ -344,7 +368,7 @@ if phone:
 
             else:
 
-                final_sensor = sensor
+                final_sensor = sensor_choice
 
 
 
@@ -358,12 +382,10 @@ if phone:
 
 
             group = (
-
                 db_data
                 .get(final_size,{})
                 .get(final_panel,{})
                 .get(final_sensor,{})
-
             )
 
 
@@ -373,33 +395,35 @@ if phone:
             )
 
 
+
             if models:
 
 
                 st.success(
-                    "🤝 توجد مجموعة مطابقة"
+                    "🤝 توجد مجموعة مشابهة"
                 )
 
                 st.write(models)
 
 
                 if st.button(
-                    "إضافة الهاتف للمجموعة"
+                    "إضافة للهذه المجموعة"
                 ):
 
 
-                    if add_model(
+                    add_model(
                         final_size,
                         final_panel,
                         final_sensor,
                         phone
-                    ):
+                    )
 
-                        st.session_state.show_success = (
-                            "تمت الإضافة بنجاح"
-                        )
 
-                        st.rerun()
+                    st.session_state.show_success = (
+                        "تمت الإضافة بنجاح"
+                    )
+
+                    st.rerun()
 
 
 
@@ -407,7 +431,7 @@ if phone:
 
 
                 st.error(
-                    "لا توجد مجموعة مطابقة"
+                    "لا توجد مجموعة"
                 )
 
 
@@ -416,86 +440,35 @@ if phone:
                 ):
 
 
-                    if add_model(
+                    add_model(
                         final_size,
                         final_panel,
                         final_sensor,
                         phone
-                    ):
+                    )
 
 
-                        st.session_state.show_success = (
-                            "تم إنشاء المجموعة"
-                        )
+                    st.session_state.show_success = (
+                        "تم إنشاء المجموعة"
+                    )
 
-                        st.rerun()
+                    st.rerun()
 
 
 
 # ==========================
-# المراقب الصامت
+# لوحة التحكم
 # ==========================
 
-with st.sidebar:
+draw_control_panel(
 
+    notifications=
+    st.session_state.notifications,
 
-    st.markdown(
-        "## 🛠️ المراقب الصامت"
-    )
+    total_models=
+    total_models,
 
+    empty_groups_count=
+    empty_groups_count
 
-    st.metric(
-        "📱 الهواتف",
-        total_models
-    )
-
-
-    st.metric(
-        "⚠️ مجموعات فارغة",
-        empty_groups_count
-    )
-
-
-    st.write(
-        datetime.date.today()
-    )
-
-
-    if st.button(
-        "🧹 تنظيف القاعدة"
-    ):
-
-        run_intelligent_inspector(
-            db_data
-        )
-
-
-        st.success(
-            "تم الفحص والتنظيف"
-        )
-
-
-    st.divider()
-
-
-    st.write(
-        "🔔 الإشعارات"
-    )
-
-
-    if st.session_state.notifications:
-
-        for n in st.session_state.notifications:
-
-            st.info(n)
-
-    else:
-
-        st.caption(
-            "لا توجد تنبيهات"
-        )
-
-
-    st.write(
-        "⚙️ الإعدادات"
-            )
+                )
