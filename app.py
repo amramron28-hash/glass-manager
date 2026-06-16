@@ -74,7 +74,7 @@ ALL_SENSORS = [
 
 
 # ==========================
-# البيانات
+# تحميل البيانات
 # ==========================
 
 (
@@ -86,6 +86,7 @@ ALL_SENSORS = [
     live_sizes,
     live_panels,
     live_sensors
+
 ) = initialize_system_data()
 
 
@@ -93,7 +94,7 @@ ALL_SENSORS = [
 unique_models = [
     str(x).strip()
     for x in unique_models
-    if x is not None
+    if x
 ]
 
 
@@ -105,30 +106,37 @@ unique_models = [
 st.markdown(
 """
 <div style="
+width:100%;
 direction:ltr;
 text-align:right;
-width:100%;
+padding:0 10px;
+margin-top:-20px;
 ">
 
 <div style="
-font-size:34px;
+font-size:36px;
 font-weight:900;
+letter-spacing:2px;
 color:#00bfff;
+font-family:Arial,sans-serif;
+text-shadow:0 0 12px rgba(0,191,255,.7);
 ">
 ZEGAAR AMMAR
 </div>
 
 
 <div style="
-font-size:34px;
+font-size:36px;
 font-weight:900;
+letter-spacing:2px;
 color:#00bfff;
-border-bottom:2px solid rgba(0,191,255,.3);
+font-family:Arial,sans-serif;
+text-shadow:0 0 12px rgba(0,191,255,.7);
+border-bottom:2px solid rgba(0,191,255,.35);
 padding-bottom:8px;
 ">
 GLASS MANAGER
 </div>
-
 
 </div>
 """,
@@ -138,10 +146,11 @@ unsafe_allow_html=True
 
 
 # ==========================
-# رسالة نجاح
+# نجاح
 # ==========================
 
 if st.session_state.show_success:
+
 
     st.success(
         st.session_state.show_success
@@ -188,12 +197,14 @@ def search_models(q):
 
 
 selected = st_searchbox(
+
     search_function=lambda q, **k:
     search_models(q),
 
     placeholder="🔍 ابحث عن هاتف",
 
     key="phone_search"
+
 )
 
 
@@ -261,7 +272,7 @@ if phone:
 
 
         draw_neon_section(
-            "مطابق",
+            "مطابق (0.00)",
             results["exact"],
             "#2ecc71",
             "🎯",
@@ -270,7 +281,7 @@ if phone:
 
 
         draw_neon_section(
-            "أكبر بقليل",
+            "أكبر بقليل (+0.03 كحد أقصى)",
             results["plus"],
             "#3498db",
             "➕",
@@ -279,7 +290,7 @@ if phone:
 
 
         draw_neon_section(
-            "أصغر بقليل",
+            "أصغر بقليل (-0.03 كحد أقصى)",
             results["minus"],
             "#e67e22",
             "➖",
@@ -317,7 +328,6 @@ if phone:
         )
 
 
-
         final_panel = ""
 
         final_sensor = ""
@@ -329,7 +339,7 @@ if phone:
 
             panel_choice = st.selectbox(
 
-                "نوع الشاشة",
+                "📺 نوع الشاشة",
 
                 [""] +
                 ALL_PANELS +
@@ -337,7 +347,6 @@ if phone:
                 ["➕ إضافة جديد"]
 
             )
-
 
 
             if panel_choice == "➕ إضافة جديد":
@@ -358,7 +367,7 @@ if phone:
 
             sensor_choice = st.selectbox(
 
-                "المستشعر التقارب",
+                "👁️ المستشعر التقارب",
 
                 [""] +
                 ALL_SENSORS +
@@ -366,7 +375,6 @@ if phone:
                 ["➕ إضافة جديد"]
 
             )
-
 
 
             if sensor_choice == "➕ إضافة جديد":
@@ -381,16 +389,16 @@ if phone:
 
 
 
+
         final_size = str(final_size).strip()
         final_panel = str(final_panel).strip()
         final_sensor = str(final_sensor).strip()
 
 
 
+
         if final_size and final_panel and final_sensor:
 
-
-            # 🧠 المراقب الصامت
 
             warnings = smart_proximity_guard(
                 db_data,
@@ -408,18 +416,19 @@ if phone:
 
                 for w in warnings:
 
-
                     st.session_state.notifications.append(
-                        f"⚠️ {w['type']} | مقاس {w['size']} | {w['models']}"
+                        f"⚠️ {w['type']} | {w['size']} | {w['models']}"
                     )
 
 
 
             group = (
+
                 db_data
                 .get(final_size,{})
                 .get(final_panel,{})
                 .get(final_sensor,{})
+
             )
 
 
@@ -462,11 +471,12 @@ if phone:
 
 
 
+
             else:
 
 
                 st.warning(
-                    "لا توجد مجموعة، سيتم إنشاء مجموعة جديدة"
+                    "لا توجد مجموعة"
                 )
 
 
@@ -505,4 +515,5 @@ draw_control_panel(
 
     empty_groups_count=
     empty_groups_count
-                 )
+
+                )
