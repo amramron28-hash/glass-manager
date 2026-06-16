@@ -21,20 +21,9 @@ from rapidfuzz import process, fuzz
 from streamlit_searchbox import st_searchbox
 
 
-# ===============================
-# SESSION
-# ===============================
-
-if "custom_search_input" not in st.session_state:
-    st.session_state.custom_search_input = ""
-
-if "show_success_toast" not in st.session_state:
-    st.session_state.show_success_toast = ""
-
-
-# ===============================
-# PAGE
-# ===============================
+# ==========================
+# إعداد الصفحة
+# ==========================
 
 st.set_page_config(
     layout="wide",
@@ -46,9 +35,52 @@ inject_pwa_and_styles()
 
 
 
-# ===============================
-# LOAD DATA
-# ===============================
+# ==========================
+# الحالة
+# ==========================
+
+if "custom_search_input" not in st.session_state:
+    st.session_state.custom_search_input = ""
+
+if "notifications" not in st.session_state:
+    st.session_state.notifications = []
+
+if "show_success" not in st.session_state:
+    st.session_state.show_success = ""
+
+
+
+# ==========================
+# المكتبات الخاصة بالزجاج
+# ==========================
+
+ALL_PANELS = [
+
+    "Notch Screen",
+    "Punch-Hole Screen",
+    "Waterdrop Notch",
+    "Full Screen",
+    "Flat Screen",
+    "Curved Screen"
+
+]
+
+
+ALL_SENSORS = [
+
+    "hardware_top_sensor",
+    "virtual_camera_sensor",
+    "under_display_sensor",
+    "side_sensor",
+    "no_visible_sensor"
+
+]
+
+
+
+# ==========================
+# تحميل البيانات
+# ==========================
 
 (
     db_data,
@@ -59,63 +91,51 @@ inject_pwa_and_styles()
     live_sizes,
     live_panels,
     live_sensors
+
 ) = initialize_system_data()
 
 
 
-# ===============================
-# SILENT GUARD
-# ===============================
-
 unique_models = [
     str(x).strip()
     for x in unique_models
-    if isinstance(x, str)
-]
-
-live_panels = [
-    str(x).strip()
-    for x in live_panels
-    if x
-]
-
-live_sensors = [
-    str(x).strip()
-    for x in live_sensors
     if x
 ]
 
 
 
-# ===============================
-# HEADER
-# ===============================
+# ==========================
+# الشعار
+# ==========================
 
 st.markdown(
 """
 <div style="
-direction:rtl;
+direction:ltr;
 text-align:right;
 width:100%;
+margin-top:-25px;
 ">
 
-<span style="
-font-size:32px;
+<div style="
+font-size:34px;
 font-weight:900;
 color:#00bfff;
+font-family:Arial;
 ">
 ZEGAAR AMMAR
-</span>
+</div>
 
-<br>
-
-<span style="
-font-size:32px;
+<div style="
+font-size:34px;
 font-weight:900;
 color:#00bfff;
+font-family:Arial;
+border-bottom:2px solid rgba(0,191,255,.3);
+padding-bottom:8px;
 ">
 GLASS MANAGER
-</span>
+</div>
 
 </div>
 """,
@@ -124,49 +144,46 @@ unsafe_allow_html=True
 
 
 
-# ===============================
-# TOAST
-# ===============================
+# ==========================
+# رسالة نجاح
+# ==========================
 
-if st.session_state.show_success_toast:
+if st.session_state.show_success:
 
     st.success(
-        st.session_state.show_success_toast
+        st.session_state.show_success
     )
 
     st.toast(
-        st.session_state.show_success_toast
+        st.session_state.show_success
     )
 
-    st.session_state.show_success_toast = ""
+    st.session_state.show_success = ""
 
 
 
-# ===============================
-# SEARCH ENGINE
-# ===============================
+# ==========================
+# البحث
+# ==========================
 
-def search_models_callback(query, models):
+def search_models(q):
+
+    if not q:
+        return unique_models[:10]
 
     try:
 
-        if not query:
-            return models[:10]
-
-
-        results = process.extract(
-            query,
-            models,
+        result = process.extract(
+            q,
+            unique_models,
             limit=10,
             scorer=fuzz.WRatio
         )
 
-
         return [
-            str(r[0])
-            for r in results
+            x[0]
+            for x in result
         ]
-
 
     except:
 
@@ -174,83 +191,77 @@ def search_models_callback(query, models):
 
 
 
-selected_phone = st_searchbox(
-    search_function=lambda q, **k:
-    search_models_callback(q, unique_models),
+selected = st_searchbox(
 
-    placeholder=
-    "🔍 ابحث عن هاتف أو اكتب اسماً جديداً",
+    search_function=lambda q, **k:
+    search_models(q),
+
+    placeholder="🔍 ابحث عن هاتف",
 
     key="phone_search"
+
 )
 
 
 
-if isinstance(selected_phone, str):
+if isinstance(selected,str):
 
-    selected_phone = selected_phone.strip()
+    selected = selected.strip()
 
-    if selected_phone:
+    if selected:
 
-        st.session_state.custom_search_input = selected_phone
-
-
-
-# ===============================
-# MANUAL INPUT
-# ===============================
-
-if not selected_phone:
-
-
-    manual = st.text_input(
-        "اسم الهاتف الجديد"
-    )
-
-
-    manual = str(manual).strip()
-
-
-    if manual:
-
-        st.session_state.custom_search_input = manual
+        st.session_state.custom_search_input = selected
 
 
 
-# ===============================
-# PLAN 1
-# ===============================
-
-if st.session_state.custom_search_input:
+manual = st.text_input(
+    "أو اكتب اسم الهاتف"
+)
 
 
-    phone = st.session_state.custom_search_input
+
+if manual.strip():
+
+    st.session_state.custom_search_input = manual.strip()
 
 
-    size_grp, panel_grp, sensor_grp, real_name = find_model_coords(
+
+# ==========================
+# خطة 1
+# ==========================
+
+
+phone = st.session_state.custom_search_input
+
+
+
+if phone:
+
+
+    size, panel, sensor, real = find_model_coords(
         db_data,
         phone
     )
 
 
-    if size_grp:
+    if size:
 
 
         st.success(
-            f"🎯 الهاتف موجود: {real_name}"
+            f"🎯 الهاتف موجود : {real}"
+        )
+
+
+        draw_technical_coords(
+            size,
+            panel,
+            sensor
         )
 
 
         results = get_compatibles_strict(
             db_data,
             phone
-        )
-
-
-        draw_technical_coords(
-            size_grp,
-            panel_grp,
-            sensor_grp
         )
 
 
@@ -264,82 +275,91 @@ if st.session_state.custom_search_input:
 
 
 
-# ===============================
-# PLAN 2 + PLAN 3
-# ===============================
+# ==========================
+# خطة 2 و 3
+# ==========================
+
 
     else:
 
 
         st.warning(
-            "الهاتف غير موجود - أدخل المواصفات"
+            "الهاتف غير موجود"
         )
 
 
-        # 1 SIZE FREE
+        st.info(
+            "أدخل مواصفات الزجاج"
+        )
+
+
+        # المقاس حر
 
         final_size = st.text_input(
-            "📏 أدخل مقاس الهاتف:",
-            placeholder="مثال: 6.78"
+            "📏 مقاس الهاتف",
+            placeholder="مثال 6.78"
         )
+
 
 
         final_panel = ""
+
         final_sensor = ""
 
 
 
-        # 2 PANEL
-
         if final_size.strip():
 
 
-            panel_choice = st.selectbox(
-                "📺 اختر نوع الشاشة:",
+            panel = st.selectbox(
+
+                "📺 نوع الواجهة",
+
                 [""] +
+                ALL_PANELS +
                 live_panels +
-                ["➕ إضافة نوع شاشة جديد"]
+                ["➕ إضافة جديد"]
+
             )
 
 
-            if panel_choice == "➕ إضافة نوع شاشة جديد":
-
+            if panel == "➕ إضافة جديد":
 
                 final_panel = st.text_input(
-                    "اكتب نوع الشاشة"
+                    "اكتب النوع"
                 )
-
 
             else:
 
-                final_panel = panel_choice
+                final_panel = panel
 
 
 
-        # 3 SENSOR
 
         if final_size.strip() and final_panel.strip():
 
 
-            sensor_choice = st.selectbox(
-                "👁️ اختر مستشعر التقارب:",
+            sensor = st.selectbox(
+
+                "👁️ مكان المستشعر",
+
                 [""] +
+                ALL_SENSORS +
                 live_sensors +
-                ["➕ إضافة مستشعر جديد"]
+                ["➕ إضافة جديد"]
+
             )
 
 
-            if sensor_choice == "➕ إضافة مستشعر جديد":
-
+            if sensor == "➕ إضافة جديد":
 
                 final_sensor = st.text_input(
                     "اكتب المستشعر"
                 )
 
-
             else:
 
-                final_sensor = sensor_choice
+                final_sensor = sensor
 
 
 
@@ -349,16 +369,17 @@ if st.session_state.custom_search_input:
 
 
 
-        # MATCH GROUP
-
         if final_size and final_panel and final_sensor:
 
 
+
             group = (
+
                 db_data
                 .get(final_size,{})
                 .get(final_panel,{})
                 .get(final_sensor,{})
+
             )
 
 
@@ -368,13 +389,13 @@ if st.session_state.custom_search_input:
             )
 
 
+
             if models:
 
 
                 st.success(
-                    "🤝 وجدت مجموعة مطابقة"
+                    "🤝 توجد مجموعة مطابقة"
                 )
-
 
                 st.write(models)
 
@@ -393,10 +414,9 @@ if st.session_state.custom_search_input:
                     )
 
 
-                    st.success(
+                    st.session_state.show_success = (
                         "تمت الإضافة"
                     )
-
 
                     st.rerun()
 
@@ -406,7 +426,7 @@ if st.session_state.custom_search_input:
 
 
                 st.error(
-                    "لا توجد مجموعة مطابقة"
+                    "لا توجد مجموعة"
                 )
 
 
@@ -423,8 +443,8 @@ if st.session_state.custom_search_input:
                     )
 
 
-                    st.success(
-                        "تم إنشاء مجموعة جديدة"
+                    st.session_state.show_success = (
+                        "تم إنشاء المجموعة"
                     )
 
 
@@ -432,9 +452,11 @@ if st.session_state.custom_search_input:
 
 
 
-# ===============================
-# SILENT MONITOR
-# ===============================
+
+# ==========================
+# لوحة المراقب
+# ==========================
+
 
 with st.sidebar:
 
@@ -444,13 +466,8 @@ with st.sidebar:
     )
 
 
-    st.write(
-        f"📅 {datetime.date.today()}"
-    )
-
-
     st.metric(
-        "📱 عدد الهواتف",
+        "📱 الهواتف",
         total_models
     )
 
@@ -462,26 +479,48 @@ with st.sidebar:
 
 
 
+    st.write(
+        datetime.date.today()
+    )
+
+
     if st.button(
-        "🧹 تشغيل الفحص والتنظيف"
+        "🧹 تنظيف القاعدة"
     ):
 
 
-        cleaned, changes = run_intelligent_inspector(
+        result = run_intelligent_inspector(
             db_data
         )
 
 
-        if changes:
-
-            st.success(
-                "تم تنظيف البيانات"
-            )
-
-            st.rerun()
-
-        else:
-
-            st.info(
-                "قاعدة البيانات سليمة"
+        st.success(
+            "تم الفحص"
         )
+
+
+
+    st.divider()
+
+
+    st.write(
+        "🔔 الإشعارات"
+    )
+
+
+    if st.session_state.notifications:
+
+        for n in st.session_state.notifications:
+
+            st.info(n)
+
+    else:
+
+        st.caption(
+            "لا توجد تنبيهات"
+        )
+
+
+    st.write(
+        "⚙️ الإعدادات"
+    )
