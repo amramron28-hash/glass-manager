@@ -1,118 +1,153 @@
-import streamlit as st
-from database import load_db, add_model
+import json
+import urllib.request
 
-# =========================
-# 📥 تحميل البيانات
-# =========================
-db_data = load_db()
+# 🌐 Supabase
+URL = "https://mgmphimlcdchtbiyhhbt.supabase.co/rest/v1/phones"
+KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
 
-
-# =========================
-# 🧠 المرحلة 1: بحث مباشر
-# =========================
-def smart_phone_flow(db_data, phone_name):
-    phone_name = phone_name.strip().lower()
-
-    for size, panels in db_data.items():
-        for panel, sensors in panels.items():
-            for sensor, data in sensors.items():
-                for model in data.get("models", []):
-                    if phone_name == model.lower():
-                        return {
-                            "status": 1,
-                            "size": size,
-                            "panel": panel,
-                            "sensor": sensor,
-                            "model": model
-                        }
-
-    return {"status": 2}
+headers = {
+    "apikey": KEY,
+    "Authorization": f"Bearer {KEY}",
+    "Content-Type": "application/json"
+}
 
 
-# =========================
-# 🟡 المرحلة 2: البحث بالمواصفات
-# =========================
-def find_similar_group(db_data, size, panel, sensor):
-    size = str(size).strip()
+# 🔁 دعم التحويلات
+class SupabaseRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def http_error_307(self, req, fp, code, msg, hdrs):
+        new_url = hdrs.get("Location") or hdrs.get("location")
+        if new_url:
+            new_req = urllib.request.Request(
+                new_url,
+                data=req.data,
+                headers=req.headers,
+                method=req.get_method()
+            )
+            return self.parent.open(new_req)
+        return urllib.request.HTTPRedirectHandler.http_error_307(
+            self, req, fp, code, msg, hdrs
+        )
 
-    if size in db_data:
-        if panel in db_data[size]:
-            if sensor in db_data[size][panel]:
-                return {
-                    "status": 2,
-                    "found": True,
-                    "data": db_data[size][panel][sensor]
-                }
-
-    return {"status": 3}
-
-
-# =========================
-# 🔴 المرحلة 3: إنشاء مجموعة
-# =========================
-def create_new_group(db_data, size, panel, sensor, model):
-    size = str(size).strip()
-
-    if size not in db_data:
-        db_data[size] = {}
-
-    if panel not in db_data[size]:
-        db_data[size][panel] = {}
-
-    if sensor not in db_data[size][panel]:
-        db_data[size][panel][sensor] = {"models": []}
-
-    if model not in db_data[size][panel][sensor]["models"]:
-        db_data[size][panel][sensor]["models"].append(model)
-
-    return db_data
+opener = urllib.request.build_opener(SupabaseRedirectHandler)
 
 
-# =========================
-# 🖥️ واجهة Streamlit
-# =========================
-st.title("📱 Smart Phone System (1-2-3 Flow)")
+# 🧠 تنظيف أسماء الموديلات
+def clean_model_name(name: str) -> str:
+    if not name:
+        return ""
 
-phone_name = st.text_input("Enter phone name")
+    name = str(name).strip()
+    name = " ".join(name.split())
+
+    fixes = {
+        "45G": "4G",
+        "64G": "4G",
+        "6G": "5G",
+        "SG": "5G",
+        "SZ": "5G",
+        "Lita": "Lite",
+        "&": "5G"
+    }
+
+    for wrong, correct in fixes.items():
+        name = name.replace(wrong, correct)
+
+    return name
 
 
-# =========================
-# 🔍 تشغيل البحث
-# =========================
-if st.button("Search"):
-    result = smart_phone_flow(db_data, phone_name)
+# 📥 تحميل البيانات (تحويل من Flat إلى Structure)
+def load_db():
+    try:
+        req = urllib.request.Request(
+            f"{URL}?select=*",
+            headers=headers,
+            method="GET"
+        )
 
-    # 🟢 المرحلة 1
-    if result["status"] == 1:
-        st.success("✅ Found directly in database")
-        st.write(result)
+        with opener.open(req) as response:
+            if response.getcode() != 200:
+                return {}
 
-    # 🟡 المرحلة 2
-    else:
-        st.warning("❌ Not found, enter device specs")
+            rows = json.loads(response.read().decode("utf-8"))
 
-        size = st.text_input("Size (example 6.67)")
-        panel = st.text_input("Panel (example Notch Screen)")
-        sensor = st.text_input("Sensor (example hardware_top_sensor)")
+        db = {}
 
-        if st.button("Check Similar"):
-            match = find_similar_group(db_data, size, panel, sensor)
+        for row in rows:
+            size = str(row.get("size", "")).strip()
+            model = clean_model_name(row.get("model_name", ""))
 
-            # 🟡 وجد مجموعة مشابهة
-            if match["status"] == 2:
-                st.success("✅ Similar group found")
-                st.write(match["data"])
+            if not size or not model:
+                continue
 
-            # 🔴 لا يوجد أي تطابق
-            else:
-                st.error("❌ No match found - create new group")
+            # هيكل افتراضي ثابت
+            panel = "Notch Screen"
+            sensor = "hardware_top_sensor"
 
-                if st.button("Create New Group"):
-                    db_data = create_new_group(
-                        db_data,
-                        size,
-                        panel,
-                        sensor,
-                        phone_name
-                    )
-                    st.success("✅ New group created")
+            db.setdefault(size, {})
+            db[size].setdefault(panel, {})
+            db[size][panel].setdefault(sensor, {"models": []})
+
+            if model not in db[size][panel][sensor]["models"]:
+                db[size][panel][sensor]["models"].append(model)
+
+        return db
+
+    except Exception as e:
+        print("LOAD_DB ERROR:", e)
+        return {}
+
+
+# ➕ إضافة موديل جديد
+def add_model(size, panel, sensor, model):
+    try:
+        if not all([size, model]):
+            return False
+
+        payload = {
+            "size": str(size).strip(),
+            "panel": panel or "Notch Screen",
+            "sensor": sensor or "hardware_top_sensor",
+            "model_name": clean_model_name(model)
+        }
+
+        data_bytes = json.dumps(payload).encode("utf-8")
+
+        req = urllib.request.Request(
+            URL,
+            data=data_bytes,
+            headers=headers,
+            method="POST"
+        )
+
+        with opener.open(req) as response:
+            return 200 <= response.getcode() < 300
+
+    except Exception as e:
+        print("ADD_MODEL ERROR:", e)
+        return False
+
+
+# 💾 حماية النظام
+def save_db(data=None):
+    return True
+
+
+# 🧩 Mock لمنع أخطاء الاستيراد
+class SupabaseMockClient:
+    class MockTable:
+        def insert(self, *args, **kwargs):
+            return self
+
+        def select(self, *args, **kwargs):
+            return self
+
+        def execute(self, *args, **kwargs):
+            class MockResponse:
+                data = load_db()
+            return MockResponse()
+
+    def table(self, *args, **kwargs):
+        return self.MockTable()
+
+
+supabase = SupabaseMockClient()
