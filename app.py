@@ -36,7 +36,7 @@ inject_pwa_and_styles()
 
 
 # ==========================
-# كاش البيانات لتسريع التطبيق
+# كاش البيانات
 # ==========================
 
 @st.cache_data(ttl=300)
@@ -53,10 +53,8 @@ def load_system_data():
 if "custom_search_input" not in st.session_state:
     st.session_state.custom_search_input = ""
 
-
 if "notifications" not in st.session_state:
     st.session_state.notifications = []
-
 
 if "show_success" not in st.session_state:
     st.session_state.show_success = ""
@@ -92,7 +90,7 @@ ALL_SENSORS = [
 
 
 # ==========================
-# تحميل البيانات
+# البيانات
 # ==========================
 
 (
@@ -130,35 +128,41 @@ st.markdown(
 <div style="
 width:100%;
 direction:ltr;
-text-align:right;
-padding:0 10px;
-margin-top:-20px;
+text-align:left;
+margin-top:-55px;
+padding:0;
+white-space:nowrap;
+overflow:hidden;
 ">
 
+
 <div style="
-font-size:36px;
+font-size:28px;
 font-weight:900;
-letter-spacing:2px;
+letter-spacing:1px;
 color:#00bfff;
-font-family:Arial;
+font-family:Arial,sans-serif;
 text-shadow:0 0 12px rgba(0,191,255,.7);
+line-height:1;
 ">
 ZEGAAR AMMAR
 </div>
 
 
 <div style="
-font-size:36px;
+font-size:28px;
 font-weight:900;
-letter-spacing:2px;
+letter-spacing:1px;
 color:#00bfff;
-font-family:Arial;
+font-family:Arial,sans-serif;
 text-shadow:0 0 12px rgba(0,191,255,.7);
-border-bottom:2px solid rgba(0,191,255,.35);
-padding-bottom:8px;
+border-bottom:1px solid rgba(0,191,255,.35);
+padding-bottom:3px;
+line-height:1;
 ">
 GLASS MANAGER
 </div>
+
 
 </div>
 """,
@@ -168,11 +172,10 @@ unsafe_allow_html=True
 
 
 # ==========================
-# رسالة نجاح
+# نجاح
 # ==========================
 
 if st.session_state.show_success:
-
 
     st.success(
         st.session_state.show_success
@@ -192,7 +195,6 @@ if st.session_state.show_success:
 # ==========================
 
 def search_models(q):
-
 
     if not q:
 
@@ -234,6 +236,7 @@ def search_models(q):
 selected = st_searchbox(
 
     search_function=lambda q, **k:
+
     search_models(q),
 
     placeholder="🔍 ابحث عن هاتف",
@@ -246,9 +249,7 @@ selected = st_searchbox(
 
 if isinstance(selected,str):
 
-
     selected = selected.strip()
-
 
     if selected:
 
@@ -275,7 +276,7 @@ phone = st.session_state.custom_search_input
 
 
 # ==========================
-# الخطة 1
+# البحث والنتائج
 # ==========================
 
 if phone:
@@ -296,6 +297,7 @@ if phone:
         st.success(
             f"🎯 الهاتف موجود : {real}"
         )
+
 
 
         draw_technical_coords(
@@ -322,7 +324,7 @@ if phone:
 
         draw_neon_section(
 
-            "مطابق (0.00)",
+            "مطابق ±0.03",
 
             results["exact"],
 
@@ -335,9 +337,10 @@ if phone:
         )
 
 
+
         draw_neon_section(
 
-            "أكبر بقليل (+0.03 كحد أقصى)",
+            "أكبر بقليل ±0.03",
 
             results["plus"],
 
@@ -350,9 +353,10 @@ if phone:
         )
 
 
+
         draw_neon_section(
 
-            "أصغر بقليل (-0.03 كحد أقصى)",
+            "أصغر بقليل ±0.03",
 
             results["minus"],
 
@@ -363,6 +367,7 @@ if phone:
             phone
 
         )
+
 
 
         draw_neon_section(
@@ -389,6 +394,7 @@ if phone:
         )
 
 
+
         final_size = st.text_input(
 
             "📏 المقاس",
@@ -396,6 +402,7 @@ if phone:
             placeholder="مثال 6.78"
 
         )
+
 
 
         final_panel = ""
@@ -411,13 +418,13 @@ if phone:
 
                 "📺 نوع الشاشة",
 
-                [""] +
+                [""]
 
-                ALL_PANELS +
+                + ALL_PANELS
 
-                live_panels +
+                + live_panels
 
-                ["➕ إضافة جديد"]
+                + ["➕ إضافة جديد"]
 
             )
 
@@ -431,6 +438,7 @@ if phone:
 
 
 
+
         if final_size.strip() and final_panel.strip():
 
 
@@ -438,13 +446,13 @@ if phone:
 
                 "👁️ المستشعر التقارب",
 
-                [""] +
+                [""]
 
-                ALL_SENSORS +
+                + ALL_SENSORS
 
-                live_sensors +
+                + live_sensors
 
-                ["➕ إضافة جديد"]
+                + ["➕ إضافة جديد"]
 
             )
 
@@ -458,6 +466,7 @@ if phone:
 
 
 
+
         final_size = str(final_size).strip()
 
         final_panel = str(final_panel).strip()
@@ -467,7 +476,6 @@ if phone:
 
 
         if final_size and final_panel and final_sensor:
-
 
 
             group = (
@@ -483,9 +491,13 @@ if phone:
             )
 
 
+
             models = group.get(
+
                 "models",
+
                 []
+
             )
 
 
@@ -522,15 +534,7 @@ if phone:
 
                     st.session_state.custom_search_input = ""
 
-                    st.session_state.phone_search = None
-
-
-                    st.session_state.show_success = (
-
-                        "تمت الإضافة"
-
-                    )
-
+                    st.session_state.show_success = "تمت الإضافة"
 
                     st.rerun()
 
@@ -544,11 +548,9 @@ if phone:
                 )
 
 
-
                 if st.button(
                     "إنشاء مجموعة جديدة"
                 ):
-
 
 
                     add_model(
@@ -564,18 +566,9 @@ if phone:
                     )
 
 
-
                     st.session_state.custom_search_input = ""
 
-                    st.session_state.phone_search = None
-
-
-                    st.session_state.show_success = (
-
-                        "تم إنشاء المجموعة"
-
-                    )
-
+                    st.session_state.show_success = "تم إنشاء المجموعة"
 
                     st.rerun()
 
@@ -588,18 +581,10 @@ if phone:
 
 draw_control_panel(
 
-    notifications=
+    notifications=st.session_state.notifications,
 
-    st.session_state.notifications,
+    total_models=total_models,
 
+    empty_groups_count=empty_groups_count
 
-    total_models=
-
-    total_models,
-
-
-    empty_groups_count=
-
-    empty_groups_count
-
-            )
+)
