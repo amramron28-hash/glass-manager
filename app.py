@@ -6,7 +6,8 @@ from database import add_model
 from logic_engine import (
     find_model_coords,
     get_compatibles_strict,
-    run_intelligent_inspector
+    run_intelligent_inspector,
+    smart_proximity_guard
 )
 
 from ui_components import (
@@ -22,21 +23,19 @@ from rapidfuzz import process, fuzz
 from streamlit_searchbox import st_searchbox
 
 
-# ==========================
-# إعداد الصفحة
-# ==========================
-
 st.set_page_config(
     layout="wide",
     page_title="ZEGAAR AMMAR GLASS MANAGER",
     page_icon="🔍"
 )
 
+
 inject_pwa_and_styles()
 
 
+
 # ==========================
-# Session
+# الحالة
 # ==========================
 
 if "custom_search_input" not in st.session_state:
@@ -75,7 +74,7 @@ ALL_SENSORS = [
 
 
 # ==========================
-# تحميل البيانات
+# البيانات
 # ==========================
 
 (
@@ -87,7 +86,6 @@ ALL_SENSORS = [
     live_sizes,
     live_panels,
     live_sensors
-
 ) = initialize_system_data()
 
 
@@ -120,6 +118,7 @@ color:#00bfff;
 ZEGAAR AMMAR
 </div>
 
+
 <div style="
 font-size:34px;
 font-weight:900;
@@ -130,6 +129,7 @@ padding-bottom:8px;
 GLASS MANAGER
 </div>
 
+
 </div>
 """,
 unsafe_allow_html=True
@@ -138,7 +138,7 @@ unsafe_allow_html=True
 
 
 # ==========================
-# نجاح
+# رسالة نجاح
 # ==========================
 
 if st.session_state.show_success:
@@ -155,14 +155,16 @@ if st.session_state.show_success:
 
 
 
+
 # ==========================
-# البحث الذكي
+# البحث
 # ==========================
 
 def search_models(q):
 
     if not q:
         return unique_models[:10]
+
 
     try:
 
@@ -174,8 +176,8 @@ def search_models(q):
         )
 
         return [
-            r[0]
-            for r in result
+            x[0]
+            for x in result
         ]
 
     except:
@@ -184,20 +186,19 @@ def search_models(q):
 
 
 
-selected = st_searchbox(
 
+selected = st_searchbox(
     search_function=lambda q, **k:
     search_models(q),
 
     placeholder="🔍 ابحث عن هاتف",
 
     key="phone_search"
-
 )
 
 
 
-if isinstance(selected, str):
+if isinstance(selected,str):
 
     selected = selected.strip()
 
@@ -212,8 +213,7 @@ manual = st.text_input(
 )
 
 
-
-if manual:
+if manual.strip():
 
     st.session_state.custom_search_input = manual.strip()
 
@@ -236,6 +236,7 @@ if phone:
     )
 
 
+
     if size:
 
 
@@ -251,10 +252,12 @@ if phone:
         )
 
 
+
         results = get_compatibles_strict(
             db_data,
             phone
         )
+
 
 
         draw_neon_section(
@@ -294,6 +297,7 @@ if phone:
 
 
 
+
 # ==========================
 # الخطة 2 و 3
 # ==========================
@@ -302,8 +306,9 @@ if phone:
 
 
         st.warning(
-            "الهاتف غير موجود في المجموعة"
+            "الهاتف غير موجود"
         )
+
 
 
         final_size = st.text_input(
@@ -312,7 +317,9 @@ if phone:
         )
 
 
+
         final_panel = ""
+
         final_sensor = ""
 
 
@@ -322,7 +329,7 @@ if phone:
 
             panel_choice = st.selectbox(
 
-                "📺 نوع الشاشة",
+                "نوع الشاشة",
 
                 [""] +
                 ALL_PANELS +
@@ -330,6 +337,7 @@ if phone:
                 ["➕ إضافة جديد"]
 
             )
+
 
 
             if panel_choice == "➕ إضافة جديد":
@@ -350,7 +358,7 @@ if phone:
 
             sensor_choice = st.selectbox(
 
-                "👁️ المستشعر التقارب",
+                "المستشعر التقارب",
 
                 [""] +
                 ALL_SENSORS +
@@ -358,6 +366,7 @@ if phone:
                 ["➕ إضافة جديد"]
 
             )
+
 
 
             if sensor_choice == "➕ إضافة جديد":
@@ -381,6 +390,31 @@ if phone:
         if final_size and final_panel and final_sensor:
 
 
+            # 🧠 المراقب الصامت
+
+            warnings = smart_proximity_guard(
+                db_data,
+                final_size,
+                final_panel,
+                final_sensor
+            )
+
+
+            if warnings:
+
+
+                st.session_state.notifications = []
+
+
+                for w in warnings:
+
+
+                    st.session_state.notifications.append(
+                        f"⚠️ {w['type']} | مقاس {w['size']} | {w['models']}"
+                    )
+
+
+
             group = (
                 db_data
                 .get(final_size,{})
@@ -400,14 +434,15 @@ if phone:
 
 
                 st.success(
-                    "🤝 توجد مجموعة مشابهة"
+                    "🤝 توجد مجموعة مطابقة"
                 )
 
                 st.write(models)
 
 
+
                 if st.button(
-                    "إضافة للهذه المجموعة"
+                    "إضافة الهاتف للمجموعة"
                 ):
 
 
@@ -420,7 +455,7 @@ if phone:
 
 
                     st.session_state.show_success = (
-                        "تمت الإضافة بنجاح"
+                        "تمت الإضافة"
                     )
 
                     st.rerun()
@@ -430,8 +465,8 @@ if phone:
             else:
 
 
-                st.error(
-                    "لا توجد مجموعة"
+                st.warning(
+                    "لا توجد مجموعة، سيتم إنشاء مجموعة جديدة"
                 )
 
 
@@ -470,5 +505,4 @@ draw_control_panel(
 
     empty_groups_count=
     empty_groups_count
-
-                )
+                 )
