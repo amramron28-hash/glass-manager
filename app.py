@@ -1,39 +1,7 @@
 import streamlit as st
 import datetime
-import os
-import sys
 
-
-# ==================================
-# تثبيت مسار المشروع
-# ==================================
-
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)
-
-if BASE_DIR not in sys.path:
-    sys.path.insert(
-        0,
-        BASE_DIR
-    )
-
-
-# ==================================
-# قواعد البيانات
-# ==================================
-
-from database import (
-    load_db,
-    add_model,
-    save_db
-)
-
-
-
-# ==================================
-# محرك البحث
-# ==================================
+from database import load_db, add_model, save_db
 
 from logic_engine import (
     find_model_coords,
@@ -41,146 +9,105 @@ from logic_engine import (
     run_intelligent_inspector
 )
 
-
-
-# ==================================
-# الواجهة
-# ==================================
-
 from ui_components import (
     inject_pwa_and_styles,
     draw_technical_coords,
     draw_neon_section
 )
 
+from app_init import initialize_system_data
+
+from rapidfuzz import process, fuzz
+from streamlit_searchbox import st_searchbox
 
 
-# ==================================
-# تهيئة البيانات
-# ==================================
-
-from app_init import (
-    initialize_system_data
-)
-
-
-
-# ==================================
-# المراقب الصامت
-# ==================================
-
-try:
-
-    from smart_guard import (
-        check_before_save,
-        clean_database
-    )
-
-    SMART_GUARD_ACTIVE = True
-
-
-except Exception as error:
-
-
-    SMART_GUARD_ACTIVE = False
-
-
-    def check_before_save(
-        db,
-        size,
-        panel,
-        sensor,
-        model
-    ):
-
-        return True, "المراقب غير مفعل"
-
-
-
-    def clean_database(db):
-
-        return db,0
-
-
-
-# ==================================
-# مكتبات البحث
-# ==================================
-
-from rapidfuzz import (
-    process,
-    fuzz
-)
-
-from streamlit_searchbox import (
-    st_searchbox
-)
-
-
-
-# ==================================
+# ==========================
 # إعداد الصفحة
-# ==================================
+# ==========================
 
 st.set_page_config(
-
     layout="wide",
-
     page_title="ZEGAAR AMMAR GLASS MANAGER",
-
     page_icon="🔍"
-
 )
-
 
 
 inject_pwa_and_styles()
 
 
-
-# ==================================
-# جلسة التطبيق
-# ==================================
+# ==========================
+# Session
+# ==========================
 
 if "custom_search_input" not in st.session_state:
-
     st.session_state.custom_search_input = ""
 
+if "notifications" not in st.session_state:
+    st.session_state.notifications = []
 
 if "show_success" not in st.session_state:
-
     st.session_state.show_success = ""
 
 
 
-# ==================================
+# ==========================
+# خيارات الزجاج
+# ==========================
+
+ALL_PANELS = [
+    "Notch Screen",
+    "Punch-Hole Screen",
+    "Waterdrop Notch",
+    "Full Screen",
+    "Flat Screen",
+    "Curved Screen"
+]
+
+
+ALL_SENSORS = [
+    "hardware_top_sensor",
+    "virtual_camera_sensor",
+    "under_display_sensor",
+    "side_sensor",
+    "no_visible_sensor"
+]
+
+
+
+# ==========================
 # تحميل البيانات
-# ==================================
+# ==========================
 
 (
-db_data,
-unique_models,
-total_models,
-empty_groups_count,
-brand_counts,
-live_sizes,
-live_panels,
-live_sensors
-
+    db_data,
+    unique_models,
+    total_models,
+    empty_groups_count,
+    brand_counts,
+    live_sizes,
+    live_panels,
+    live_sensors
 ) = initialize_system_data()
 
 
+unique_models = [
+    str(x).strip()
+    for x in unique_models
+    if x
+]
 
-# ==================================
-# عنوان التطبيق
-# ==================================
+
+
+# ==========================
+# الشعار
+# ==========================
 
 st.markdown(
-
 """
 <div style="
-direction:ltr;
+direction:rtl;
 text-align:right;
+width:100%;
 margin-top:-25px;
 ">
 
@@ -188,45 +115,387 @@ margin-top:-25px;
 font-size:34px;
 font-weight:900;
 color:#00bfff;
+font-family:Arial;
 ">
-
 ZEGAAR AMMAR
-
 </div>
-
 
 <div style="
 font-size:34px;
 font-weight:900;
 color:#00bfff;
+font-family:Arial;
 border-bottom:2px solid rgba(0,191,255,.3);
+padding-bottom:8px;
 ">
-
 GLASS MANAGER
-
 </div>
 
 </div>
 """,
-
 unsafe_allow_html=True
-
 )
 
 
 
-# ==================================
-# حالة المراقب
-# ==================================
+# ==========================
+# نجاح
+# ==========================
 
-if SMART_GUARD_ACTIVE:
+if st.session_state.show_success:
 
-    st.sidebar.success(
-        "🛡️ المراقب الصامت يعمل"
+    st.success(
+        st.session_state.show_success
     )
 
-else:
-
-    st.sidebar.warning(
-        "⚠️ المراقب الصامت غير محمل"
+    st.toast(
+        st.session_state.show_success
     )
+
+    st.session_state.show_success = ""
+
+
+
+# ==========================
+# البحث الذكي
+# ==========================
+
+def search_models(q):
+
+    if not q:
+        return unique_models[:10]
+
+    try:
+
+        result = process.extract(
+            q,
+            unique_models,
+            limit=10,
+            scorer=fuzz.WRatio
+        )
+
+        return [
+            x[0]
+            for x in result
+        ]
+
+    except:
+
+        return []
+
+
+
+selected = st_searchbox(
+
+    search_function=lambda q, **k:
+    search_models(q),
+
+    placeholder="🔍 ابحث عن هاتف",
+
+    key="phone_search"
+)
+
+
+
+if isinstance(selected, str):
+
+    selected = selected.strip()
+
+    if selected:
+
+        st.session_state.custom_search_input = selected
+
+
+
+manual = st.text_input(
+    "أو اكتب اسم الهاتف"
+)
+
+
+if manual.strip():
+
+    st.session_state.custom_search_input = manual.strip()
+
+
+
+# ==========================
+# الخطة 1
+# ==========================
+
+phone = st.session_state.custom_search_input
+
+
+if phone:
+
+
+    size, panel, sensor, real = find_model_coords(
+        db_data,
+        phone
+    )
+
+
+    if size:
+
+
+        st.success(
+            f"🎯 الهاتف موجود : {real}"
+        )
+
+
+        draw_technical_coords(
+            size,
+            panel,
+            sensor
+        )
+
+
+        results = get_compatibles_strict(
+            db_data,
+            phone
+        )
+
+
+        draw_neon_section(
+            "مطابق",
+            results["exact"],
+            "#2ecc71",
+            "🎯",
+            phone
+        )
+
+
+
+# ==========================
+# الخطة 2 و 3
+# ==========================
+
+    else:
+
+
+        st.warning(
+            "الهاتف غير موجود"
+        )
+
+
+        st.info(
+            "أدخل مواصفات الزجاج"
+        )
+
+
+        final_size = st.text_input(
+            "📏 مقاس الهاتف",
+            placeholder="مثال 6.78"
+        )
+
+
+        final_panel = ""
+
+        final_sensor = ""
+
+
+
+        if final_size:
+
+
+            panel = st.selectbox(
+
+                "📺 نوع الشاشة",
+
+                [""] +
+                ALL_PANELS +
+                list(set(live_panels)) +
+                ["➕ إضافة جديد"]
+
+            )
+
+
+            if panel == "➕ إضافة جديد":
+
+                final_panel = st.text_input(
+                    "اكتب نوع الشاشة"
+                )
+
+            else:
+
+                final_panel = panel
+
+
+
+        if final_size and final_panel:
+
+
+            sensor = st.selectbox(
+
+                "👁️ المستشعر",
+
+                [""] +
+                ALL_SENSORS +
+                list(set(live_sensors)) +
+                ["➕ إضافة جديد"]
+
+            )
+
+
+            if sensor == "➕ إضافة جديد":
+
+                final_sensor = st.text_input(
+                    "اكتب المستشعر"
+                )
+
+            else:
+
+                final_sensor = sensor
+
+
+
+        final_size = str(final_size).strip()
+        final_panel = str(final_panel).strip()
+        final_sensor = str(final_sensor).strip()
+
+
+
+        if final_size and final_panel and final_sensor:
+
+
+            group = (
+
+                db_data
+                .get(final_size,{})
+                .get(final_panel,{})
+                .get(final_sensor,{})
+
+            )
+
+
+            models = group.get(
+                "models",
+                []
+            )
+
+
+            if models:
+
+
+                st.success(
+                    "🤝 توجد مجموعة مطابقة"
+                )
+
+                st.write(models)
+
+
+                if st.button(
+                    "إضافة الهاتف للمجموعة"
+                ):
+
+
+                    if add_model(
+                        final_size,
+                        final_panel,
+                        final_sensor,
+                        phone
+                    ):
+
+                        st.session_state.show_success = (
+                            "تمت الإضافة بنجاح"
+                        )
+
+                        st.rerun()
+
+
+
+            else:
+
+
+                st.error(
+                    "لا توجد مجموعة مطابقة"
+                )
+
+
+                if st.button(
+                    "إنشاء مجموعة جديدة"
+                ):
+
+
+                    if add_model(
+                        final_size,
+                        final_panel,
+                        final_sensor,
+                        phone
+                    ):
+
+
+                        st.session_state.show_success = (
+                            "تم إنشاء المجموعة"
+                        )
+
+                        st.rerun()
+
+
+
+# ==========================
+# المراقب الصامت
+# ==========================
+
+with st.sidebar:
+
+
+    st.markdown(
+        "## 🛠️ المراقب الصامت"
+    )
+
+
+    st.metric(
+        "📱 الهواتف",
+        total_models
+    )
+
+
+    st.metric(
+        "⚠️ مجموعات فارغة",
+        empty_groups_count
+    )
+
+
+    st.write(
+        datetime.date.today()
+    )
+
+
+    if st.button(
+        "🧹 تنظيف القاعدة"
+    ):
+
+        run_intelligent_inspector(
+            db_data
+        )
+
+
+        st.success(
+            "تم الفحص والتنظيف"
+        )
+
+
+    st.divider()
+
+
+    st.write(
+        "🔔 الإشعارات"
+    )
+
+
+    if st.session_state.notifications:
+
+        for n in st.session_state.notifications:
+
+            st.info(n)
+
+    else:
+
+        st.caption(
+            "لا توجد تنبيهات"
+        )
+
+
+    st.write(
+        "⚙️ الإعدادات"
+            )
