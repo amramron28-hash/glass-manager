@@ -8,7 +8,7 @@ _bg_cache = None
 
 
 # ==========================================
-# 🎨 التصميم والخلفية
+# 🎨 الخلفية والتصميم
 # ==========================================
 
 def inject_pwa_and_styles():
@@ -19,29 +19,31 @@ def inject_pwa_and_styles():
     if _bg_cache is None:
 
         paths = [
+
             "phone_image.webp",
             "./phone_image.webp",
             "/app/phone_image.webp"
+
         ]
 
 
-        img = ""
+        image = ""
 
 
         for p in paths:
 
             if os.path.exists(p):
 
-                with open(p,"rb") as f:
+                with open(p, "rb") as f:
 
-                    img = base64.b64encode(
+                    image = base64.b64encode(
                         f.read()
                     ).decode()
 
                 break
 
 
-        _bg_cache = img
+        _bg_cache = image
 
 
 
@@ -62,8 +64,8 @@ url(
 'data:image/webp;base64,{_bg_cache}'
 );
 
-
 background-size:cover;
+
 background-attachment:fixed;
 
 }}
@@ -72,25 +74,34 @@ background-attachment:fixed;
 
 .neon-card-text {{
 
-font-size:22px;
-font-weight:900;
+font-size:20px;
+
+font-weight:800;
+
 color:white;
 
 }}
 
-</style>
 
+
+div.stMainBlockContainer {{
+
+padding-top:25px !important;
+
+}}
+
+
+</style>
 """,
+
 unsafe_allow_html=True
 )
 
 
 
 
-
-
 # ==========================================
-# 📋 بطاقة التحليل الفني
+# 📋 تحليل الإحداثيات الفنية
 # ==========================================
 
 def draw_technical_coords(
@@ -102,64 +113,46 @@ def draw_technical_coords(
 
     st.markdown(
     f"""
-
 <div style="
-background:rgba(15,23,42,.90);
-padding:20px;
-border-radius:14px;
-border:2px solid #00bfff;
-margin-top:15px;
+background:rgba(15,23,42,.85);
+padding:12px;
+border-radius:12px;
+border:1px solid #00bfff;
+margin-bottom:15px;
 ">
 
 
-<h3 style="
+<h4 style="
 text-align:right;
 direction:rtl;
 color:#00bfff;
-margin-bottom:20px;
+margin:0 0 8px 0;
+font-size:21px;
 ">
 
-📋 تحليل الإحداثيات الفنية
+📋 الإحداثيات الفنية
 
-</h3>
+</h4>
 
 
 
 <div style="
 direction:rtl;
 text-align:right;
-font-size:22px;
-line-height:2;
+font-size:17px;
+line-height:1.9;
 ">
 
 
+📏 <b>المقاس:</b> {size_grp}
 
-<div>
-📏 <b>المقاس</b>
 <br>
-{size_grp}
-</div>
 
+📺 <b>نوع الشاشة:</b> {panel_grp}
 
-<hr>
-
-
-<div>
-📺 <b>نوع الشاشة</b>
 <br>
-{panel_grp}
-</div>
 
-
-<hr>
-
-
-<div>
-👁️ <b>المستشعر التقارب</b>
-<br>
-{sensor_grp}
-</div>
-
+👁️ <b>المستشعر التقارب:</b> {sensor_grp}
 
 
 </div>
@@ -168,10 +161,9 @@ line-height:2;
 </div>
 
 """,
+
 unsafe_allow_html=True
 )
-
-
 
 
 
@@ -198,21 +190,20 @@ def draw_neon_section(
     st.markdown(
 
     f"""
-
-<h3 style="
+<h4 style="
 color:{color_hex};
-text-align:right;
 direction:rtl;
+text-align:right;
+margin:8px 0;
 ">
 
 {badge_icon} {title}
 
-</h3>
+</h4>
 
 """,
 
     unsafe_allow_html=True
-
     )
 
 
@@ -227,49 +218,55 @@ direction:rtl;
 
 <div style="
 
-background:rgba(10,14,23,.85);
+background:rgba(10,14,23,.90);
 
 border:1px solid {color_hex};
 
-border-radius:12px;
+border-radius:10px;
 
-padding:15px;
+padding:10px;
 
 margin-bottom:8px;
 
 display:flex;
 
+direction:ltr;
+
 justify-content:space-between;
 
 align-items:center;
 
-direction:ltr;
-
-box-shadow:0 0 12px {color_hex};
-
 ">
 
 
-
 <div style="
-text-align:left;
-font-size:22px;
-font-weight:900;
+
+font-size:18px;
+
+font-weight:800;
+
 color:white;
+
+text-align:left;
+
 ">
 
-🔹 {model}
+{model}
 
 </div>
-
 
 
 
 <div style="
-width:65px;
-height:65px;
-border:1px dashed rgba(0,191,255,.5);
-border-radius:10px;
+
+width:45px;
+
+height:45px;
+
+border-radius:8px;
+
+border:1px dashed #00bfff;
+
 ">
 
 </div>
@@ -277,6 +274,7 @@ border-radius:10px;
 
 
 </div>
+
 
 """,
 
@@ -308,21 +306,24 @@ def draw_control_panel(
 
 
         st.markdown(
+
         """
 
-<h2 style="
+<h3 style="
 text-align:center;
 color:#00bfff;
 ">
 
-🛠️ المراقب الصامت
+🛠️ لوحة التحكم
 
-</h2>
+</h3>
 
 """,
 
         unsafe_allow_html=True
+
         )
+
 
 
 
@@ -338,10 +339,9 @@ color:#00bfff;
 
                     st.warning(n)
 
-
             else:
 
-                st.success(
+                st.caption(
                     "لا توجد تنبيهات"
                 )
 
@@ -353,8 +353,8 @@ color:#00bfff;
         ):
 
 
-            st.toggle(
-                "تفعيل المراقب الذكي",
+            st.checkbox(
+                "تفعيل المراقب الصامت",
                 True
             )
 
@@ -362,7 +362,7 @@ color:#00bfff;
 
 
         with st.expander(
-            "🛡️ حالة المراقب",
+            "🛡️ المراقب الصامت",
             expanded=True
         ):
 
@@ -380,5 +380,5 @@ color:#00bfff;
 
 
             st.caption(
-                "المراقب جاهز"
+                "المراقب يعمل"
             )
