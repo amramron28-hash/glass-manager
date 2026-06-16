@@ -11,28 +11,31 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          lfs: true
 
-      - name: Push to hub
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Hugging Face Hub
+        run: pip install huggingface_hub
+
+      - name: Upload Entire Repository
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
+          python -c "
+          from huggingface_hub import HfApi
+          import os
           
-          mkdir sync_dir
-          cp -r * sync_dir/ || true
-          rm -rf sync_dir/sync_dir
-          rm -rf sync_dir/.git
-          rm -rf sync_dir/.github
+          api = HfApi(token=os.environ['HF_TOKEN'])
           
-          cd sync_dir
-          git init
-          git config --global init.defaultBranch main
-          git checkout -b main || true
-          
-          git add .
-          git commit -m "Sync all files including webp images to Hugging Face"
-          git push --force https://amramron28:$HF_TOKEN@huggingface.co/spaces/amramron28/Zegaarammar main
+          # رفع كل محتويات المستودع بما فيها مجلد الصور بشكل آمن ومباشر
+          api.upload_folder(
+              folder_path='.',
+              repo_id='amramron28/Zegaarammar',
+              repo_type='space',
+              ignore_patterns=['.git/*', '.github/*']
+          )
+          print('تم رفع جميع الملفات والمجلدات بنجاح!')
+          "
