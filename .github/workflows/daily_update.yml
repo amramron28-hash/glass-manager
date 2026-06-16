@@ -22,20 +22,17 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           
-          # إنشاء مجلد مؤقت للمزامنة
           mkdir sync_dir
           cp -r * sync_dir/ || true
           rm -rf sync_dir/sync_dir
           rm -rf sync_dir/.git
           rm -rf sync_dir/.github
           
-          # تهيئة مستودع جديد تماماً بداخل المجلد المؤقت
           cd sync_dir
           git init
           git config --global init.defaultBranch main
           git checkout -b main || true
           
-          # إضافة كافة الأكواد والمجلدات بما فيها المجلد phone_image_webp وصور الـ webp
           git add .
           git commit -m "Sync all files including webp images to Hugging Face"
-          git push --force https://amramron28-hash:$HF_TOKEN@huggingface.co/spaces/amramron28/Zegaarammar main
+          git push --force https://amramron28:$HF_TOKEN@huggingface.co/spaces/amramron28/Zegaarammar main
