@@ -1,5 +1,6 @@
 # ==========================================
-# 🛠️ لوحة التحكم الذكية (الإشعارات + الإعدادات + المراقب)
+# 🛠️ لوحة التحكم الذكية
+# 🔔 إشعارات + ⚙️ إعدادات + 🛡️ مراقب صامت
 # ==========================================
 
 def draw_control_panel(
@@ -10,60 +11,121 @@ def draw_control_panel(
 
     notifications = notifications or []
 
+
     with st.sidebar:
+
 
         st.markdown(
             """
-            <h2 style="
+            <div style="
             text-align:center;
             color:#00bfff;
+            font-size:26px;
+            font-weight:900;
             ">
-            ⚙️ لوحة التحكم
-            </h2>
+            🛠️ المراقب الصامت
+            </div>
             """,
             unsafe_allow_html=True
         )
 
 
-        with st.expander("🔔 الإشعارات", expanded=False):
+        st.divider()
+
+
+
+        # ==========================
+        # 🔔 الجرس
+        # ==========================
+
+        with st.expander(
+            "🔔 مركز الإشعارات",
+            expanded=False
+        ):
+
 
             if notifications:
 
+
                 for note in notifications:
+
                     st.warning(note)
+
 
             else:
 
-                st.info(
-                    "لا توجد تنبيهات حالياً"
+                st.success(
+                    "✅ لا توجد أخطاء مكتشفة"
                 )
 
 
-        with st.expander("⚙️ الإعدادات", expanded=False):
 
-            st.write(
-                "إعدادات التطبيق"
-            )
+        # ==========================
+        # ⚙️ الإعدادات
+        # ==========================
 
-            st.checkbox(
-                "تفعيل تنبيهات المراقب الصامت",
+        with st.expander(
+            "⚙️ إعدادات التطبيق",
+            expanded=False
+        ):
+
+
+            guard_active = st.toggle(
+                "🧠 تشغيل المراقب الذكي",
                 value=True
             )
 
 
-        with st.expander("🛠️ المراقب الصامت", expanded=True):
+            if guard_active:
 
-            st.metric(
-                "📱 إجمالي الهواتف",
-                total_models
-            )
+                st.success(
+                    "المراقب مفعل"
+                )
 
-            st.metric(
-                "🧹 مجموعات تحتاج مراجعة",
-                empty_groups_count
-            )
+            else:
+
+                st.error(
+                    "المراقب متوقف"
+                )
+
 
 
             st.caption(
-                "المراقب جاهز لمتابعة الإدخالات الجديدة"
+                "يقوم بفحص المقاسات القريبة واختلاف المستشعرات قبل الإدراج"
+            )
+
+
+
+        # ==========================
+        # 🛡️ المراقب الصامت
+        # ==========================
+
+        with st.expander(
+            "🛡️ حالة المراقب الصامت",
+            expanded=True
+        ):
+
+
+            col1, col2 = st.columns(2)
+
+
+            with col1:
+
+                st.metric(
+                    "📱 الهواتف",
+                    total_models
+                )
+
+
+            with col2:
+
+                st.metric(
+                    "🧹 مراجعة",
+                    empty_groups_count
+                )
+
+
+
+            st.info(
+                "المراقب يراقب الإدخالات الجديدة ويمنع تشابهات خطرة مثل اختلاف الحساس مع نفس الزجاج"
             )
