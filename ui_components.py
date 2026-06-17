@@ -60,7 +60,7 @@ url(
 );
 
 
-background-size:60% auto !important;
+background-size:85% auto !important;
 background-position:center !important;
 background-repeat:no-repeat !important;
 background-attachment:fixed !important;
@@ -269,11 +269,7 @@ color:#00bfff;
         )
 
 
-
-        with st.expander(
-            "🔔 الإشعارات"
-        ):
-
+        with st.expander("🔔 الإشعارات"):
 
             if notifications:
 
@@ -283,17 +279,11 @@ color:#00bfff;
 
             else:
 
-                st.caption(
-                    "لا توجد تنبيهات"
-                )
+                st.caption("لا توجد تنبيهات")
 
 
 
-
-        with st.expander(
-            "⚙️ الإعدادات"
-        ):
-
+        with st.expander("⚙️ الإعدادات"):
 
             st.checkbox(
                 "تفعيل المراقب الصامت",
@@ -302,12 +292,10 @@ color:#00bfff;
 
 
 
-
         with st.expander(
             "🛡️ المراقب الصامت",
             expanded=True
         ):
-
 
             st.metric(
                 "📱 الهواتف",
