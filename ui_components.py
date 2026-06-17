@@ -60,8 +60,8 @@ url(
 );
 
 
-/* تصغير صورة الهاتف مع الحفاظ على ظهورها */
-background-size:75% auto !important;
+/* تصغير الصورة مع الحفاظ على ظهورها */
+background-size:85% auto !important;
 background-position:center center !important;
 background-repeat:no-repeat !important;
 background-attachment:fixed !important;
