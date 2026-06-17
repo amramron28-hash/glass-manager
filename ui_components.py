@@ -42,10 +42,10 @@ def inject_pwa_and_styles():
 
 
 
-    style_content = f"""
+    style_content = """
 <style>
 
-html,body,[data-testid="stAppViewContainer"] {{
+html,body,[data-testid="stAppViewContainer"] {
 
 background-color:#0a0e17 !important;
 
@@ -56,9 +56,7 @@ rgba(10,14,23,.20),
 rgba(10,14,23,.20)
 ),
 
-url(
-'data:image/webp;base64,{_bg_cache}'
-);
+url('data:image/webp;base64,BG_IMAGE');
 
 background-size:92% auto !important;
 
@@ -68,17 +66,23 @@ background-repeat:no-repeat !important;
 
 background-attachment:fixed !important;
 
-}}
+}
 
 
-div.stMainBlockContainer {{
+div.stMainBlockContainer {
 
 padding-top:20px !important;
 
-}}
+}
 
 </style>
 """
+
+
+    style_content = style_content.replace(
+        "BG_IMAGE",
+        _bg_cache
+    )
 
 
     st.markdown(
@@ -115,50 +119,46 @@ def draw_technical_coords(
     sensor_grp
 ):
 
-    st.markdown(
-    f"""
+    html = """
 <div style="
 background:rgba(15,23,42,.85);
-
 padding:8px 15px;
-
 border-radius:10px;
-
 border:1px solid #00bfff;
-
 margin-bottom:10px;
-
 ">
-
 
 <div style="
 direction:rtl;
-
 text-align:right;
-
 font-size:16px;
-
 line-height:1.7;
-
 ">
 
-📏 <b>المقاس:</b> {size_grp}
+📏 <b>المقاس:</b> SIZE
 
 <br>
 
-📺 <b>نوع الشاشة:</b> {panel_grp}
+📺 <b>نوع الشاشة:</b> PANEL
 
 <br>
 
-👁️ <b>المستشعر التقارب:</b> {sensor_grp}
+👁️ <b>المستشعر التقارب:</b> SENSOR
 
 </div>
 
-
 </div>
+"""
 
-""",
-    unsafe_allow_html=True
+
+    html = html.replace("SIZE", str(size_grp))
+    html = html.replace("PANEL", str(panel_grp))
+    html = html.replace("SENSOR", str(sensor_grp))
+
+
+    st.markdown(
+        html,
+        unsafe_allow_html=True
     )
 
 
@@ -178,7 +178,6 @@ def draw_neon_section(
 ):
 
     if not models_list:
-
         return
 
 
@@ -187,17 +186,11 @@ def draw_neon_section(
     f"""
 <h4 style="
 color:{color_hex};
-
 direction:rtl;
-
 text-align:right;
-
 margin:8px 0;
-
 ">
-
 {badge_icon} {title}
-
 </h4>
 """,
     unsafe_allow_html=True
@@ -208,17 +201,17 @@ margin:8px 0;
     for model in models_list:
 
 
-        html_card = f"""
+        card = """
 
 <div style="
 
 background:linear-gradient(
 135deg,
-{color_hex}55,
-{color_hex}20
+COLOR55,
+COLOR20
 );
 
-border:1.5px solid {color_hex};
+border:1.5px solid COLOR;
 
 border-radius:18px;
 
@@ -237,7 +230,7 @@ box-shadow:
 
 0 8px 24px rgba(0,0,0,.30),
 
-0 0 14px {color_hex}55;
+0 0 14px COLOR55;
 
 
 backdrop-filter:saturate(180%);
@@ -266,7 +259,7 @@ text-shadow:
 
 ">
 
-{model}
+MODEL
 
 </div>
 
@@ -276,8 +269,20 @@ text-shadow:
 """
 
 
+        card = card.replace(
+            "COLOR",
+            str(color_hex)
+        )
+
+
+        card = card.replace(
+            "MODEL",
+            str(model)
+        )
+
+
         st.markdown(
-            html_card,
+            card,
             unsafe_allow_html=True
         )
 
@@ -314,9 +319,7 @@ color:#00bfff;
         )
 
 
-
         with st.expander("🔔 الإشعارات"):
-
 
             if notifications:
 
@@ -333,7 +336,6 @@ color:#00bfff;
 
 
         with st.expander("⚙️ الإعدادات"):
-
 
             st.checkbox(
                 "تفعيل المراقب الصامت",
