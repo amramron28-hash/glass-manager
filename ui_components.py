@@ -46,16 +46,24 @@ def inject_pwa_and_styles():
     f"""
 <style>
 
-[data-testid="stAppViewContainer"] {{
+html,body,[data-testid="stAppViewContainer"] {{
 
 background-image:
-url('data:image/webp;base64,{_bg_cache}') !important;
+
+linear-gradient(
+rgba(10,14,23,.45),
+rgba(10,14,23,.45)
+),
+
+url(
+'data:image/webp;base64,{_bg_cache}'
+);
 
 
-background-size:cover !important;
+background-size:90% auto !important;
 background-position:center !important;
-background-repeat:no-repeat !important;
 background-attachment:fixed !important;
+background-repeat:no-repeat !important;
 
 
 }}
@@ -103,7 +111,6 @@ def draw_technical_coords(
     panel_grp,
     sensor_grp
 ):
-
 
     st.markdown(
     f"""
@@ -158,7 +165,6 @@ def draw_neon_section(
     badge_icon,
     current_search
 ):
-
 
     if not models_list:
 
@@ -246,9 +252,7 @@ def draw_control_panel(
     empty_groups_count=0
 ):
 
-
     notifications = notifications or []
-
 
 
     with st.sidebar:
@@ -287,7 +291,6 @@ color:#00bfff;
 
 
 
-
         with st.expander(
             "⚙️ الإعدادات"
         ):
@@ -297,7 +300,6 @@ color:#00bfff;
                 "تفعيل المراقب الصامت",
                 value=True
             )
-
 
 
 
