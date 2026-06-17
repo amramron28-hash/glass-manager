@@ -48,6 +48,9 @@ def inject_pwa_and_styles():
 
 html,body,[data-testid="stAppViewContainer"] {{
 
+background-color:#0a0e17 !important;
+
+
 background-image:
 
 linear-gradient(
@@ -60,8 +63,8 @@ url(
 );
 
 
-background-size:85% auto !important;
-background-position:center !important;
+background-size:92% auto !important;
+background-position:center center !important;
 background-repeat:no-repeat !important;
 background-attachment:fixed !important;
 
@@ -170,6 +173,7 @@ def draw_neon_section(
         return
 
 
+
     st.markdown(
     f"""
 <h4 style="
@@ -189,6 +193,7 @@ margin:8px 0;
 
 
     for model in models_list:
+
 
         st.markdown(
         f"""
@@ -269,7 +274,11 @@ color:#00bfff;
         )
 
 
-        with st.expander("🔔 الإشعارات"):
+
+        with st.expander(
+            "🔔 الإشعارات"
+        ):
+
 
             if notifications:
 
@@ -279,11 +288,17 @@ color:#00bfff;
 
             else:
 
-                st.caption("لا توجد تنبيهات")
+                st.caption(
+                    "لا توجد تنبيهات"
+                )
 
 
 
-        with st.expander("⚙️ الإعدادات"):
+
+        with st.expander(
+            "⚙️ الإعدادات"
+        ):
+
 
             st.checkbox(
                 "تفعيل المراقب الصامت",
@@ -292,10 +307,12 @@ color:#00bfff;
 
 
 
+
         with st.expander(
             "🛡️ المراقب الصامت",
             expanded=True
         ):
+
 
             st.metric(
                 "📱 الهواتف",
