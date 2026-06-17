@@ -59,9 +59,12 @@ url(
 'data:image/webp;base64,{_bg_cache}'
 );
 
-background-size:cover;
-background-position:center;
-background-attachment:fixed;
+
+background-size:60% auto !important;
+background-position:center !important;
+background-repeat:no-repeat !important;
+background-attachment:fixed !important;
+
 
 }}
 
@@ -108,7 +111,6 @@ def draw_technical_coords(
     panel_grp,
     sensor_grp
 ):
-
 
     st.markdown(
     f"""
@@ -164,11 +166,8 @@ def draw_neon_section(
     current_search
 ):
 
-
     if not models_list:
-
         return
-
 
 
     st.markdown(
@@ -190,7 +189,6 @@ margin:8px 0;
 
 
     for model in models_list:
-
 
         st.markdown(
         f"""
@@ -250,7 +248,6 @@ def draw_control_panel(
     total_models=0,
     empty_groups_count=0
 ):
-
 
     notifications = notifications or []
 
@@ -326,4 +323,4 @@ color:#00bfff;
 
             st.caption(
                 "المراقب يعمل"
-)
+            )
