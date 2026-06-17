@@ -59,12 +59,9 @@ url(
 'data:image/webp;base64,{_bg_cache}'
 );
 
-
-background-size:auto 90vh !important;
-background-position:center center !important;
-background-repeat:no-repeat !important;
-background-attachment:fixed !important;
-
+background-size:cover;
+background-position:center;
+background-attachment:fixed;
 
 }}
 
@@ -111,6 +108,7 @@ def draw_technical_coords(
     panel_grp,
     sensor_grp
 ):
+
 
     st.markdown(
     f"""
@@ -166,8 +164,11 @@ def draw_neon_section(
     current_search
 ):
 
+
     if not models_list:
+
         return
+
 
 
     st.markdown(
@@ -250,10 +251,13 @@ def draw_control_panel(
     empty_groups_count=0
 ):
 
+
     notifications = notifications or []
 
 
+
     with st.sidebar:
+
 
         st.markdown(
         """
@@ -268,20 +272,31 @@ color:#00bfff;
         )
 
 
-        with st.expander("🔔 الإشعارات"):
+
+        with st.expander(
+            "🔔 الإشعارات"
+        ):
+
 
             if notifications:
 
                 for n in notifications:
+
                     st.warning(n)
 
             else:
 
-                st.caption("لا توجد تنبيهات")
+                st.caption(
+                    "لا توجد تنبيهات"
+                )
 
 
 
-        with st.expander("⚙️ الإعدادات"):
+
+        with st.expander(
+            "⚙️ الإعدادات"
+        ):
+
 
             st.checkbox(
                 "تفعيل المراقب الصامت",
@@ -290,21 +305,25 @@ color:#00bfff;
 
 
 
+
         with st.expander(
             "🛡️ المراقب الصامت",
             expanded=True
         ):
+
 
             st.metric(
                 "📱 الهواتف",
                 total_models
             )
 
+
             st.metric(
                 "🧹 مراجعة",
                 empty_groups_count
             )
 
+
             st.caption(
                 "المراقب يعمل"
-        )
+)
