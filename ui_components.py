@@ -2,366 +2,99 @@ import streamlit as st
 import os
 import base64
 
-
 _bg_cache = None
 
-
 # ==========================================
-# 🎨 الخلفية + التنسيق
+# 🎨 الخلفية + التنسيق (تم إضافة الـ CSS للزجاج هنا)
 # ==========================================
-
 def inject_pwa_and_styles():
-
     global _bg_cache
-
-
     if _bg_cache is None:
-
-        paths = [
-            "phone_image.webp",
-            "./phone_image.webp",
-            "/app/phone_image.webp"
-        ]
-
+        paths = ["phone_image.webp", "./phone_image.webp", "/app/phone_image.webp"]
         img = ""
-
         for p in paths:
-
             if os.path.exists(p):
-
                 with open(p, "rb") as f:
-
-                    img = base64.b64encode(
-                        f.read()
-                    ).decode()
-
+                    img = base64.b64encode(f.read()).decode()
                 break
-
-
         _bg_cache = img
 
-
-
-    style_content = """
-<style>
-
-html,body,[data-testid="stAppViewContainer"] {
-
-background-color:#0a0e17 !important;
-
-background-image:
-
-linear-gradient(
-rgba(10,14,23,.20),
-rgba(10,14,23,.20)
-),
-
-url('data:image/webp;base64,BG_IMAGE');
-
-background-size:92% auto !important;
-
-background-position:center center !important;
-
-background-repeat:no-repeat !important;
-
-background-attachment:fixed !important;
-
-}
-
-
-div.stMainBlockContainer {
-
-padding-top:20px !important;
-
-}
-
-</style>
-"""
-
-
-    style_content = style_content.replace(
-        "BG_IMAGE",
-        _bg_cache
-    )
-
-
-    st.markdown(
-        style_content,
-        unsafe_allow_html=True
-    )
-
-
-
-    if os.path.exists("style.css"):
-
-        with open(
-            "style.css",
-            "r",
-            encoding="utf-8"
-        ) as f:
-
-            st.markdown(
-                f"<style>{f.read()}</style>",
-                unsafe_allow_html=True
-            )
-
-
-
-
+    st.markdown(f"""
+    <style>
+    html,body,[data-testid="stAppViewContainer"] {{
+        background-color:#0a0e17 !important;
+        background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,{_bg_cache}');
+        background-size:92% auto !important;
+        background-position:center center !important;
+        background-repeat:no-repeat !important;
+        background-attachment:fixed !important;
+    }}
+    /* التعديل الجوهري: تأثير الزجاج الصافي */
+    .glass-window-card {{
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 12px 20px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }}
+    </style>
+    """, unsafe_allow_html=True)
 
 # ==========================================
-# 📋 بطاقة الإحداثيات الفنية
+# 📋 بطاقة الإحداثيات الفنية (تم التعديل لتتناسب مع التصميم)
 # ==========================================
-
-def draw_technical_coords(
-    size_grp,
-    panel_grp,
-    sensor_grp
-):
-
-    html = """
-<div style="
-background:rgba(15,23,42,.85);
-padding:8px 15px;
-border-radius:10px;
-border:1px solid #00bfff;
-margin-bottom:10px;
-">
-
-<div style="
-direction:rtl;
-text-align:right;
-font-size:16px;
-line-height:1.7;
-">
-
-📏 <b>المقاس:</b> SIZE
-
-<br>
-
-📺 <b>نوع الشاشة:</b> PANEL
-
-<br>
-
-👁️ <b>المستشعر التقارب:</b> SENSOR
-
-</div>
-
-</div>
-"""
-
-
-    html = html.replace("SIZE", str(size_grp))
-    html = html.replace("PANEL", str(panel_grp))
-    html = html.replace("SENSOR", str(sensor_grp))
-
-
-    st.markdown(
-        html,
-        unsafe_allow_html=True
-    )
-
-
-
-
+def draw_technical_coords(size_grp, panel_grp, sensor_grp):
+    st.markdown(f"""
+    <div class="glass-window-card" style="background:rgba(15,23,42,.6);">
+        <div style="direction:rtl; text-align:right; font-size:16px; line-height:1.7; color:white;">
+            📏 <b>المقاس:</b> {size_grp} <br>
+            📺 <b>نوع الشاشة:</b> {panel_grp} <br>
+            👁️ <b>المستشعر التقارب:</b> {sensor_grp}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ==========================================
-# 📱 بطاقات النتائج
+# 📱 بطاقات النتائج (هنا تم حذف المربع المتقطع وتفعيل الزجاج والـ Bold)
 # ==========================================
-
-def draw_neon_section(
-    title,
-    models_list,
-    color_hex,
-    badge_icon,
-    current_search
-):
-
+def draw_neon_section(title, models_list, color_hex, badge_icon, current_search):
     if not models_list:
         return
 
-
-
-    st.markdown(
-    f"""
-<h4 style="
-color:{color_hex};
-direction:rtl;
-text-align:right;
-margin:8px 0;
-">
-{badge_icon} {title}
-</h4>
-""",
-    unsafe_allow_html=True
-    )
-
-
+    st.markdown(f"""
+    <h4 style="color:{color_hex}; direction:rtl; text-align:right; margin:8px 0; font-weight:bold;">
+    {badge_icon} {title}
+    </h4>
+    """, unsafe_allow_html=True)
 
     for model in models_list:
-
-
-        card = """
-
-<div style="
-
-background:linear-gradient(
-135deg,
-COLOR55,
-COLOR20
-);
-
-border:1.5px solid COLOR;
-
-border-radius:18px;
-
-padding:14px 18px;
-
-margin-bottom:10px;
-
-display:flex;
-
-align-items:center;
-
-overflow:hidden;
-
-
-box-shadow:
-
-0 8px 24px rgba(0,0,0,.30),
-
-0 0 14px COLOR55;
-
-
-backdrop-filter:saturate(180%);
-
--webkit-backdrop-filter:saturate(180%);
-
-">
-
-
-<div style="
-
-font-size:19px;
-
-font-weight:900;
-
-color:white;
-
-width:100%;
-
-text-align:left;
-
-
-text-shadow:
-
-0 1px 2px rgba(0,0,0,.35);
-
-">
-
-MODEL
-
-</div>
-
-
-</div>
-
-"""
-
-
-        card = card.replace(
-            "COLOR",
-            str(color_hex)
-        )
-
-
-        card = card.replace(
-            "MODEL",
-            str(model)
-        )
-
-
-        st.markdown(
-            card,
-            unsafe_allow_html=True
-        )
-
-
-
-
+        # هنا البطاقة تظهر كزجاج نافذة ملون بحد جانبي مميز، بدون مربعات متقطعة
+        st.markdown(f"""
+        <div class="glass-window-card" style="border-left: 6px solid {color_hex}; background: {color_hex}25;">
+            <div style="font-size: 18px; font-weight: 800; color: #ffffff; text-align: left;">
+                {model}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================
-# 🛠️ لوحة التحكم
+# 🛠️ لوحة التحكم (تم الإبقاء عليها كما هي)
 # ==========================================
-
-def draw_control_panel(
-    notifications=None,
-    total_models=0,
-    empty_groups_count=0
-):
-
+def draw_control_panel(notifications=None, total_models=0, empty_groups_count=0):
     notifications = notifications or []
-
-
     with st.sidebar:
-
-
-        st.markdown(
-        """
-<h3 style="
-text-align:center;
-color:#00bfff;
-">
-🛠️ لوحة التحكم
-</h3>
-""",
-        unsafe_allow_html=True
-        )
-
-
+        st.markdown('<h3 style="text-align:center; color:#00bfff;">🛠️ لوحة التحكم</h3>', unsafe_allow_html=True)
         with st.expander("🔔 الإشعارات"):
-
             if notifications:
-
-                for n in notifications:
-
-                    st.warning(n)
-
-            else:
-
-                st.caption(
-                    "لا توجد تنبيهات"
-                )
-
-
-
+                for n in notifications: st.warning(n)
+            else: st.caption("لا توجد تنبيهات")
         with st.expander("⚙️ الإعدادات"):
-
-            st.checkbox(
-                "تفعيل المراقب الصامت",
-                value=True
-            )
-
-
-
-        with st.expander(
-            "🛡️ المراقب الصامت",
-            expanded=True
-        ):
-
-
-            st.metric(
-                "📱 الهواتف",
-                total_models
-            )
-
-
-            st.metric(
-                "🧹 مراجعة",
-                empty_groups_count
-            )
-
-
-            st.caption(
-                "المراقب يعمل"
-            )
+            st.checkbox("تفعيل المراقب الصامت", value=True)
+        with st.expander("🛡️ المراقب الصامت", expanded=True):
+            st.metric("📱 الهواتف", total_models)
+            st.metric("🧹 مراجعة", empty_groups_count)
+            st.caption("المراقب يعمل")
