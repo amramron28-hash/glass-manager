@@ -59,11 +59,10 @@ url(
 'data:image/webp;base64,{_bg_cache}'
 );
 
-/* التعديل المسؤول عن الحجم والأبعاد فقط ليتناسب مع إطار الهاتف */
-background-size: contain;
-background-position: top center;
-background-repeat: no-repeat;
-background-attachment: scroll;
+/* التعديل الجديد لضبط الصورة بأبعاد الشاشة تماماً ومنع تمددها للخارج */
+background-size: 100% 100%;
+background-position: center;
+background-attachment: fixed;
 
 }}
 
@@ -235,8 +234,8 @@ border:1px dashed #00bfff;
 
 </div>
 """,
-    unsafe_allow_html=True
-    )
+        unsafe_allow_html=True
+        )
 
 
 
