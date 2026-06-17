@@ -125,12 +125,14 @@ border:1px solid #00bfff;
 margin-bottom:10px;
 ">
 
+
 <div style="
 direction:rtl;
 text-align:right;
 font-size:16px;
 line-height:1.7;
 ">
+
 
 📏 <b>المقاس:</b> {size_grp}
 
@@ -142,7 +144,9 @@ line-height:1.7;
 
 👁️ <b>المستشعر التقارب:</b> {sensor_grp}
 
+
 </div>
+
 
 </div>
 """,
@@ -167,6 +171,7 @@ def draw_neon_section(
 
     if not models_list:
         return
+
 
 
     st.markdown(
@@ -271,7 +276,9 @@ def draw_control_panel(
     empty_groups_count=0
 ):
 
+
     notifications = notifications or []
+
 
 
     with st.sidebar:
@@ -344,4 +351,4 @@ color:#00bfff;
 
             st.caption(
                 "المراقب يعمل"
-            )
+                )
