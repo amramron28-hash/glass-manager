@@ -60,9 +60,8 @@ url(
 );
 
 
-/* ضبط حجم صورة 1280x960 */
-background-size:80% auto !important;
-background-position:center !important;
+background-size:auto 90vh !important;
+background-position:center center !important;
 background-repeat:no-repeat !important;
 background-attachment:fixed !important;
 
@@ -191,6 +190,7 @@ margin:8px 0;
 
     for model in models_list:
 
+
         st.markdown(
         f"""
 <div style="
@@ -277,9 +277,8 @@ color:#00bfff;
 
             else:
 
-                st.caption(
-                    "لا توجد تنبيهات"
-                )
+                st.caption("لا توجد تنبيهات")
+
 
 
         with st.expander("⚙️ الإعدادات"):
@@ -288,6 +287,7 @@ color:#00bfff;
                 "تفعيل المراقب الصامت",
                 value=True
             )
+
 
 
         with st.expander(
@@ -300,13 +300,11 @@ color:#00bfff;
                 total_models
             )
 
-
             st.metric(
                 "🧹 مراجعة",
                 empty_groups_count
             )
 
-
             st.caption(
                 "المراقب يعمل"
-            )
+        )
