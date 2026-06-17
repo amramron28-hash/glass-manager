@@ -6,7 +6,9 @@ from database import add_model
 from logic_engine import (
     find_model_coords,
     get_compatibles_strict,
-    run_intelligent_inspector
+    run_intelligent_inspector,
+    detect_self_conflicts,
+    normalize_text
 )
 
 from ui_components import (
@@ -33,12 +35,20 @@ inject_pwa_and_styles()
 
 
 
+# ==========================
+# الكاش الأساسي
+# ==========================
+
 @st.cache_data(ttl=300)
 def load_system_data():
 
     return initialize_system_data()
 
 
+
+# ==========================
+# جلسة التطبيق
+# ==========================
 
 if "custom_search_input" not in st.session_state:
     st.session_state.custom_search_input = ""
@@ -52,6 +62,10 @@ if "show_success" not in st.session_state:
     st.session_state.show_success = ""
 
 
+
+# ==========================
+# قوائم ثابتة
+# ==========================
 
 ALL_PANELS = [
 
@@ -77,6 +91,10 @@ ALL_SENSORS = [
 
 
 
+# ==========================
+# تحميل البيانات
+# ==========================
+
 (
     db_data,
     unique_models,
@@ -91,6 +109,43 @@ ALL_SENSORS = [
 
 
 
+# ==========================
+# تشغيل المفتش والمراقب
+# ==========================
+
+try:
+
+    inspected_db, changes = run_intelligent_inspector(
+        db_data
+    )
+
+    if inspected_db:
+
+        db_data = inspected_db
+
+
+
+except Exception:
+
+    pass
+
+
+
+try:
+
+    st.session_state.notifications = (
+        detect_self_conflicts()
+    )
+
+
+except Exception:
+
+    st.session_state.notifications = []
+
+
+
+
+
 unique_models = [
 
     str(x).strip()
@@ -100,6 +155,9 @@ unique_models = [
     if x
 
 ]
+
+
+
 # ==========================
 # الشعار
 # ==========================
@@ -150,7 +208,7 @@ unsafe_allow_html=True
 
 
 # ==========================
-# رسالة نجاح
+# رسالة النجاح
 # ==========================
 
 if st.session_state.show_success:
@@ -168,7 +226,7 @@ if st.session_state.show_success:
 
 
 # ==========================
-# البحث الموحد
+# البحث
 # ==========================
 
 def search_models(q):
@@ -226,6 +284,7 @@ if isinstance(selected, str):
 
     selected = selected.strip()
 
+
     if selected:
 
         st.session_state.custom_search_input = selected
@@ -249,7 +308,7 @@ if phone:
     )
 
 
-    if size:
+    if size and normalize_text(phone) == normalize_text(real):
 
 
         st.success(
@@ -275,7 +334,6 @@ if phone:
             phone
 
         )
-
 
 
         draw_neon_section(
@@ -358,6 +416,7 @@ if phone:
 
         final_panel = ""
 
+
         final_sensor = ""
 
 
@@ -380,10 +439,14 @@ if phone:
             )
 
 
+
             if final_panel == "➕ إضافة جديد":
 
+
                 final_panel = st.text_input(
+
                     "اكتب نوع الشاشة"
+
                 )
 
 
@@ -407,11 +470,16 @@ if phone:
             )
 
 
+
             if final_sensor == "➕ إضافة جديد":
 
+
                 final_sensor = st.text_input(
+
                     "اكتب المستشعر"
+
                 )
+
 
 
 
@@ -424,6 +492,7 @@ if phone:
 
 
         if final_size and final_panel and final_sensor:
+
 
 
             group = (
@@ -439,6 +508,7 @@ if phone:
             )
 
 
+
             models = group.get(
 
                 "models",
@@ -452,8 +522,11 @@ if phone:
             if models:
 
 
+
                 st.success(
+
                     "🤝 توجد مجموعة مطابقة"
+
                 )
 
 
@@ -462,8 +535,11 @@ if phone:
 
 
                 if st.button(
+
                     "إضافة الهاتف للمجموعة"
+
                 ):
+
 
 
                     add_model(
@@ -481,7 +557,13 @@ if phone:
 
                     st.session_state.custom_search_input = ""
 
-                    st.session_state.show_success = "تمت الإضافة"
+
+                    st.session_state.show_success = (
+
+                        "تمت الإضافة"
+
+                    )
+
 
                     st.rerun()
 
@@ -490,15 +572,21 @@ if phone:
             else:
 
 
+
                 st.warning(
+
                     "لا توجد مجموعة"
+
                 )
 
 
 
                 if st.button(
+
                     "إنشاء مجموعة جديدة"
+
                 ):
+
 
 
                     add_model(
@@ -516,7 +604,13 @@ if phone:
 
                     st.session_state.custom_search_input = ""
 
-                    st.session_state.show_success = "تم إنشاء المجموعة"
+
+                    st.session_state.show_success = (
+
+                        "تم إنشاء المجموعة"
+
+                    )
+
 
                     st.rerun()
 
@@ -535,4 +629,4 @@ draw_control_panel(
 
     empty_groups_count=empty_groups_count
 
-        )
+)
