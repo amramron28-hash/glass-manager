@@ -51,34 +51,12 @@ def inject_pwa_and_styles():
 background-image:
 url('data:image/webp;base64,{_bg_cache}') !important;
 
+
 background-size:cover !important;
 background-position:center !important;
 background-repeat:no-repeat !important;
 background-attachment:fixed !important;
 
-}}
-
-
-
-[data-testid="stAppViewContainer"]::before {{
-
-content:"";
-position:fixed;
-inset:0;
-
-background:rgba(10,14,23,.15);
-
-z-index:0;
-pointer-events:none;
-
-}}
-
-
-
-[data-testid="stAppViewContainer"] > .main {{
-
-position:relative;
-z-index:1;
 
 }}
 
@@ -181,6 +159,7 @@ def draw_neon_section(
     current_search
 ):
 
+
     if not models_list:
 
         return
@@ -266,6 +245,7 @@ def draw_control_panel(
     total_models=0,
     empty_groups_count=0
 ):
+
 
     notifications = notifications or []
 
