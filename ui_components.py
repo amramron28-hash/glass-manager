@@ -1,4 +1,4 @@
-import streamlit as st
+hereimport streamlit as st
 import os
 import base64
 
@@ -40,11 +40,11 @@ def inject_pwa_and_styles():
         _bg_cache = img
 
 
-    # تم عزل التنسيق تماماً لضمان عدم حدوث تداخل أو ظهور نصوص على الشاشة
+    # بناء آمن للخلفية بدون استخدام f-string أو % لمنع الأخطاء البنائية
     style_content = """
 html,body,[data-testid="stAppViewContainer"] {
     background-color:#0a0e17 !important;
-    background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,""" + str(_bg_cache) + """');
+    background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,BG_IMAGE_PLACEHOLDER');
     background-size:92% auto !important;
     background-position:center center !important;
     background-repeat:no-repeat !important;
@@ -53,7 +53,7 @@ html,body,[data-testid="stAppViewContainer"] {
 div.stMainBlockContainer {
     padding-top:20px !important;
 }
-"""
+""".replace("BG_IMAGE_PLACEHOLDER", str(_bg_cache))
 
     st.markdown(f"<style>{style_content}</style>", unsafe_allow_html=True)
 
@@ -154,17 +154,17 @@ margin:8px 0;
 
     for model in models_list:
 
-        # استخدام صيغة النسبة المئوية % لضمان بناء كود الـ HTML والـ CSS بشكل نقي 100% دون كسر الأقواس
+        # استخدام الإحلال الصريح بالنصوص النظيفة لحماية كود الـ CSS والنسب المئوية 180% بالكامل
         html_card = """
 <div style="
-background: linear-gradient(135deg, %(color)s55, %(color)s20);
-border: 1.5px solid %(color)s;
+background: linear-gradient(135deg, COLOR_HEX_PLACEHOLDER55, COLOR_HEX_PLACEHOLDER20);
+border: 1.5px solid COLOR_HEX_PLACEHOLDER;
 border-radius: 18px;
 padding: 14px 18px;
 margin-bottom: 10px;
 display: flex;
 align-items: center;
-box-shadow: 0 8px 24px rgba(0,0,0,.30), 0 0 14px %(color)s55;
+box-shadow: 0 8px 24px rgba(0,0,0,.30), 0 0 14px COLOR_HEX_PLACEHOLDER55;
 backdrop-filter: saturate(180%);
 -webkit-backdrop-filter: saturate(180%);
 ">
@@ -177,11 +177,14 @@ width: 100%;
 text-align: left;
 text-shadow: 0 1px 2px rgba(0,0,0,.35);
 ">
-%(model_name)s
+MODEL_NAME_PLACEHOLDER
 </div>
 
 </div>
-""" % {"color": color_hex, "model_name": model}
+"""
+        # دمج آمن كلياً ومقاوم للأخطاء الصياغية
+        html_card = html_card.replace("COLOR_HEX_PLACEHOLDER", str(color_hex))
+        html_card = html_card.replace("MODEL_NAME_PLACEHOLDER", str(model))
 
         st.markdown(html_card, unsafe_allow_html=True)
 
