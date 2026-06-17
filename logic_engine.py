@@ -23,6 +23,29 @@ def normalize_text(text):
 
 
 # ==========================
+# هوية الهاتف
+# ==========================
+
+def build_phone_identity(row):
+
+    brand = normalize_text(
+        row.get("brand", "")
+    )
+
+    model = normalize_text(
+        row.get("model_name")
+        or row.get("model")
+        or ""
+    )
+
+    if brand:
+        return f"{brand} {model}"
+
+    return model
+
+
+
+# ==========================
 # البحث عن الهاتف
 # ==========================
 
@@ -64,9 +87,8 @@ def find_model_coords(db_data, model_name):
 
 
 
-
 # ==========================
-# المقاسات القريبة ±0.03
+# المقاسات القريبة
 # ==========================
 
 def get_compatibles_strict(db_data, model_name):
@@ -89,28 +111,21 @@ def get_compatibles_strict(db_data, model_name):
         return results
 
 
-
     try:
-
         current_size = float(size_str)
 
     except:
-
         return results
 
 
 
     for size_key, panels in db_data.items():
 
-
         try:
-
             target_size = float(size_key)
 
         except:
-
             continue
-
 
 
         diff = round(
@@ -119,24 +134,19 @@ def get_compatibles_strict(db_data, model_name):
         )
 
 
-
         for panel_key, sensors in panels.items():
-
 
             if panel_key != panel:
                 continue
 
 
-
             for sensor_key, sensor_data in sensors.items():
-
 
                 models_list = (
                     sensor_data.get("models", [])
                     if isinstance(sensor_data, dict)
                     else sensor_data
                 )
-
 
 
                 for m in models_list:
@@ -146,29 +156,23 @@ def get_compatibles_strict(db_data, model_name):
                         continue
 
 
-
                     if diff == 0.0:
 
-
                         if sensor_key == sensor:
-
                             results["exact"].append(m)
 
                         else:
-
                             results["warn"].append(m)
 
 
 
                     elif 0.01 <= diff <= 0.03:
 
-
                         results["plus"].append(m)
 
 
 
                     elif -0.03 <= diff <= -0.01:
-
 
                         results["minus"].append(m)
 
@@ -179,9 +183,104 @@ def get_compatibles_strict(db_data, model_name):
 
 
 
+# ==========================================
+# كشف تعارض نفس الهاتف
+# ==========================================
+
+def detect_self_conflicts():
+
+    alerts = []
+
+
+    try:
+
+        res = supabase.table(
+            "phones"
+        ).select("*").execute()
+
+
+        rows = res.data or []
+
+
+        grouped = {}
+
+
+        for row in rows:
+
+
+            phone_key = build_phone_identity(row)
+
+
+            if not phone_key:
+                continue
+
+
+            grouped.setdefault(
+                phone_key,
+                []
+            ).append(row)
+
+
+
+        for phone, items in grouped.items():
+
+
+            sensors = set()
+            sizes = set()
+
+
+            for item in items:
+
+                sensor = normalize_text(
+                    item.get("sensor","")
+                )
+
+                size = normalize_text(
+                    item.get("size","")
+                )
+
+
+                if sensor:
+                    sensors.add(sensor)
+
+
+                if size:
+                    sizes.add(size)
+
+
+
+            if len(sensors) > 1:
+
+
+                alerts.append(
+                    {
+                        "type":
+                        "self_conflict",
+
+                        "phone":
+                        phone,
+
+                        "sensors":
+                        list(sensors),
+
+                        "sizes":
+                        list(sizes)
+                    }
+                )
+
+
+    except Exception:
+
+        return []
+
+
+    return alerts
+
+
+
 
 # ==========================
-# 🛡️ تنظيف قاعدة البيانات
+# تنظيف وبناء الهيكل
 # ==========================
 
 def run_intelligent_inspector(db_data=None):
@@ -209,17 +308,17 @@ def run_intelligent_inspector(db_data=None):
 
 
             size = str(
-                r.get("size", "")
+                r.get("size","")
             ).strip()
 
 
             panel = str(
-                r.get("panel", "")
+                r.get("panel","")
             ).strip()
 
 
             sensor = str(
-                r.get("sensor", "")
+                r.get("sensor","")
             ).strip()
 
 
@@ -255,7 +354,6 @@ def run_intelligent_inspector(db_data=None):
 
 
 
-
             cleaned_db.setdefault(
                 size,
                 {}
@@ -274,7 +372,6 @@ def run_intelligent_inspector(db_data=None):
                     "models":[]
                 }
             )
-
 
 
 
@@ -319,8 +416,7 @@ def run_intelligent_inspector(db_data=None):
 
 
 # ==========================================
-# 🧠 المراقب الصامت الذكي
-# يكشف حالات مثل Redmi 9 / Redmi 9A
+# المراقب الصامت للمقاسات
 # ==========================================
 
 def smart_proximity_guard(
@@ -368,17 +464,12 @@ def smart_proximity_guard(
 
             for panel_key, sensors in panels.items():
 
-
-
                 if panel_key != panel:
-
                     continue
 
 
 
-
                 for sensor_key, data in sensors.items():
-
 
 
                     models = data.get(
@@ -389,7 +480,6 @@ def smart_proximity_guard(
 
 
                     if sensor_key != sensor:
-
 
 
                         alerts.append(
@@ -407,29 +497,6 @@ def smart_proximity_guard(
                                 models
                             }
                         )
-
-
-
-                    else:
-
-
-
-                        alerts.append(
-                            {
-                                "type":
-                                "near_size",
-
-                                "size":
-                                size_key,
-
-                                "sensor":
-                                sensor_key,
-
-                                "models":
-                                models
-                            }
-                        )
-
 
 
     return alerts
