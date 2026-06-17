@@ -207,7 +207,6 @@ align-items:center;
 
 overflow:hidden;
 
-
 box-shadow:
 
 0 8px 24px rgba(0,0,0,.30),
@@ -233,7 +232,6 @@ color:white;
 width:100%;
 
 text-align:left;
-
 
 text-shadow:
 
@@ -272,8 +270,6 @@ MODEL_NAME_PLACEHOLDER
 
 
 
-
-
 # ==========================================
 # 🛠️ لوحة التحكم
 # ==========================================
@@ -301,7 +297,6 @@ color:#00bfff;
 """,
         unsafe_allow_html=True
         )
-
 
 
         with st.expander(
@@ -355,4 +350,5 @@ color:#00bfff;
 
             st.caption(
                 "المراقب يعمل"
-            )
+)
+    
