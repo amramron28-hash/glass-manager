@@ -54,8 +54,8 @@ background-color:#0a0e17 !important;
 background-image:
 
 linear-gradient(
-rgba(10,14,23,.45),
-rgba(10,14,23,.45)
+rgba(10,14,23,.20),
+rgba(10,14,23,.20)
 ),
 
 url(
@@ -173,7 +173,6 @@ def draw_neon_section(
         return
 
 
-
     st.markdown(
     f"""
 <h4 style="
@@ -255,7 +254,6 @@ def draw_control_panel(
 ):
 
     notifications = notifications or []
-
 
 
     with st.sidebar:
