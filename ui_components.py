@@ -125,14 +125,12 @@ border:1px solid #00bfff;
 margin-bottom:10px;
 ">
 
-
 <div style="
 direction:rtl;
 text-align:right;
 font-size:16px;
 line-height:1.7;
 ">
-
 
 📏 <b>المقاس:</b> {size_grp}
 
@@ -144,9 +142,7 @@ line-height:1.7;
 
 👁️ <b>المستشعر التقارب:</b> {sensor_grp}
 
-
 </div>
-
 
 </div>
 """,
@@ -160,8 +156,7 @@ line-height:1.7;
 # ==========================================
 # 📱 بطاقات النتائج
 # ==========================================
-(
-def draw_neon_section(
+
 def draw_neon_section(
     title,
     models_list,
@@ -201,7 +196,7 @@ margin:8px 0;
 
 background:linear-gradient(
 135deg,
-{color_hex}45,
+{color_hex}55,
 {color_hex}20
 );
 
@@ -217,12 +212,16 @@ display:flex;
 
 align-items:center;
 
+
 box-shadow:
-0 8px 24px rgba(0,0,0,.25),
+
+0 8px 24px rgba(0,0,0,.30),
+
 0 0 14px {color_hex}55;
 
 
 backdrop-filter:saturate(180%);
+
 -webkit-backdrop-filter:saturate(180%);
 
 ">
@@ -242,6 +241,7 @@ text-align:left;
 
 
 text-shadow:
+
 0 1px 2px rgba(0,0,0,.35);
 
 ">
@@ -255,6 +255,12 @@ text-shadow:
 """,
         unsafe_allow_html=True
         )
+
+
+
+
+
+
 # ==========================================
 # 🛠️ لوحة التحكم
 # ==========================================
