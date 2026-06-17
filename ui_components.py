@@ -60,8 +60,7 @@ url(
 );
 
 
-/* تصغير الصورة مع الحفاظ على ظهورها */
-background-size:85% auto !important;
+background-size:contain !important;
 background-position:center center !important;
 background-repeat:no-repeat !important;
 background-attachment:fixed !important;
@@ -112,7 +111,6 @@ def draw_technical_coords(
     panel_grp,
     sensor_grp
 ):
-
 
     st.markdown(
     f"""
@@ -167,7 +165,6 @@ def draw_neon_section(
     badge_icon,
     current_search
 ):
-
 
     if not models_list:
 
@@ -255,13 +252,10 @@ def draw_control_panel(
     empty_groups_count=0
 ):
 
-
     notifications = notifications or []
 
 
-
     with st.sidebar:
-
 
         st.markdown(
         """
@@ -276,31 +270,19 @@ color:#00bfff;
         )
 
 
-
-        with st.expander(
-            "🔔 الإشعارات"
-        ):
-
+        with st.expander("🔔 الإشعارات"):
 
             if notifications:
 
                 for n in notifications:
-
                     st.warning(n)
 
             else:
 
-                st.caption(
-                    "لا توجد تنبيهات"
-                )
+                st.caption("لا توجد تنبيهات")
 
 
-
-
-        with st.expander(
-            "⚙️ الإعدادات"
-        ):
-
+        with st.expander("⚙️ الإعدادات"):
 
             st.checkbox(
                 "تفعيل المراقب الصامت",
@@ -308,13 +290,10 @@ color:#00bfff;
             )
 
 
-
-
         with st.expander(
             "🛡️ المراقب الصامت",
             expanded=True
         ):
-
 
             st.metric(
                 "📱 الهواتف",
