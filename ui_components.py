@@ -1,4 +1,4 @@
-hereimport streamlit as st
+import streamlit as st
 import os
 import base64
 
@@ -40,24 +40,48 @@ def inject_pwa_and_styles():
         _bg_cache = img
 
 
-    # بناء آمن تماماً بدون أي علامات مئوية أو f-string تسبب تعارضاً
     style_content = """
 html,body,[data-testid="stAppViewContainer"] {
-    background-color:#0a0e17 !important;
-    background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,BG_IMAGE_PLACEHOLDER');
-    background-size:92_PERCENT_ auto !important;
-    background-position:center center !important;
-    background-repeat:no-repeat !important;
-    background-attachment:fixed !important;
-}
-div.stMainBlockContainer {
-    padding-top:20px !important;
-}
-"""
-    style_content = style_content.replace("BG_IMAGE_PLACEHOLDER", str(_bg_cache))
-    style_content = style_content.replace("_PERCENT_", "%")
 
-    st.markdown(f"<style>{style_content}</style>", unsafe_allow_html=True)
+background-color:#0a0e17 !important;
+
+background-image:
+linear-gradient(
+rgba(10,14,23,.20),
+rgba(10,14,23,.20)
+),
+url('data:image/webp;base64,BG_IMAGE_PLACEHOLDER');
+
+background-size:92% auto !important;
+
+background-position:center center !important;
+
+background-repeat:no-repeat !important;
+
+background-attachment:fixed !important;
+
+}
+
+
+div.stMainBlockContainer {
+
+padding-top:20px !important;
+
+}
+
+"""
+
+    style_content = style_content.replace(
+        "BG_IMAGE_PLACEHOLDER",
+        str(_bg_cache)
+    )
+
+
+    st.markdown(
+        f"<style>{style_content}</style>",
+        unsafe_allow_html=True
+    )
+
 
 
     if os.path.exists("style.css"):
@@ -120,6 +144,11 @@ line-height:1.7;
 """,
     unsafe_allow_html=True
     )
+
+
+
+
+
 # ==========================================
 # 📱 بطاقات النتائج
 # ==========================================
@@ -151,45 +180,94 @@ margin:8px 0;
 """,
     unsafe_allow_html=True
     )
+for model in models_list:
 
 
-
-    for model in models_list:
-
-        # إزالة علامة % البرمجية نهائياً من كتابة النص لقطع الطريق على أي خطأ صياغي
         html_card = """
-<div style="
-background: linear-gradient(135deg, COLOR_HEX_PLACEHOLDER55, COLOR_HEX_PLACEHOLDER20);
-border: 1.5px solid COLOR_HEX_PLACEHOLDER;
-border-radius: 18px;
-padding: 14px 18px;
-margin-bottom: 10px;
-display: flex;
-align-items: center;
-box-shadow: 0 8px 24px rgba(0,0,0,.30), 0 0 14px COLOR_HEX_PLACEHOLDER55;
-backdrop-filter: saturate(180_PERCENT_);
--webkit-backdrop-filter: saturate(180_PERCENT_);
-">
 
 <div style="
-font-size: 19px;
-font-weight: 900;
-color: white;
-width: 100%;
-text-align: left;
-text-shadow: 0 1px 2px rgba(0,0,0,.35);
+
+background:linear-gradient(
+135deg,
+COLOR_HEX_PLACEHOLDER55,
+COLOR_HEX_PLACEHOLDER20
+);
+
+border:1.5px solid COLOR_HEX_PLACEHOLDER;
+
+border-radius:18px;
+
+padding:14px 18px;
+
+margin-bottom:10px;
+
+display:flex;
+
+align-items:center;
+
+overflow:hidden;
+
+
+box-shadow:
+
+0 8px 24px rgba(0,0,0,.30),
+
+0 0 14px COLOR_HEX_PLACEHOLDER55;
+
+
+backdrop-filter:saturate(180%);
+
+-webkit-backdrop-filter:saturate(180%);
+
 ">
+
+
+<div style="
+
+font-size:19px;
+
+font-weight:900;
+
+color:white;
+
+width:100%;
+
+text-align:left;
+
+
+text-shadow:
+
+0 1px 2px rgba(0,0,0,.35);
+
+">
+
 MODEL_NAME_PLACEHOLDER
-</div>
 
 </div>
+
+
+</div>
+
 """
-        # استبدال النصوص الآمن ثم إعادة دمج علامة النسبة المئوية في خطوة معزولة
-        html_card = html_card.replace("COLOR_HEX_PLACEHOLDER", str(color_hex))
-        html_card = html_card.replace("MODEL_NAME_PLACEHOLDER", str(model))
-        html_card = html_card.replace("_PERCENT_", "%")
 
-        st.markdown(html_card, unsafe_allow_html=True)
+
+        html_card = html_card.replace(
+            "COLOR_HEX_PLACEHOLDER",
+            str(color_hex)
+        )
+
+
+        html_card = html_card.replace(
+            "MODEL_NAME_PLACEHOLDER",
+            str(model)
+        )
+
+
+        st.markdown(
+            html_card,
+            unsafe_allow_html=True
+        )
+
 
 
 
