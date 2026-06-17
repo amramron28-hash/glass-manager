@@ -40,12 +40,12 @@ def inject_pwa_and_styles():
         _bg_cache = img
 
 
-    # بناء آمن للخلفية بدون استخدام f-string أو % لمنع الأخطاء البنائية
+    # بناء آمن تماماً بدون أي علامات مئوية أو f-string تسبب تعارضاً
     style_content = """
 html,body,[data-testid="stAppViewContainer"] {
     background-color:#0a0e17 !important;
     background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,BG_IMAGE_PLACEHOLDER');
-    background-size:92% auto !important;
+    background-size:92_PERCENT_ auto !important;
     background-position:center center !important;
     background-repeat:no-repeat !important;
     background-attachment:fixed !important;
@@ -53,7 +53,9 @@ html,body,[data-testid="stAppViewContainer"] {
 div.stMainBlockContainer {
     padding-top:20px !important;
 }
-""".replace("BG_IMAGE_PLACEHOLDER", str(_bg_cache))
+"""
+    style_content = style_content.replace("BG_IMAGE_PLACEHOLDER", str(_bg_cache))
+    style_content = style_content.replace("_PERCENT_", "%")
 
     st.markdown(f"<style>{style_content}</style>", unsafe_allow_html=True)
 
@@ -154,7 +156,7 @@ margin:8px 0;
 
     for model in models_list:
 
-        # استخدام الإحلال الصريح بالنصوص النظيفة لحماية كود الـ CSS والنسب المئوية 180% بالكامل
+        # إزالة علامة % البرمجية نهائياً من كتابة النص لقطع الطريق على أي خطأ صياغي
         html_card = """
 <div style="
 background: linear-gradient(135deg, COLOR_HEX_PLACEHOLDER55, COLOR_HEX_PLACEHOLDER20);
@@ -165,8 +167,8 @@ margin-bottom: 10px;
 display: flex;
 align-items: center;
 box-shadow: 0 8px 24px rgba(0,0,0,.30), 0 0 14px COLOR_HEX_PLACEHOLDER55;
-backdrop-filter: saturate(180%);
--webkit-backdrop-filter: saturate(180%);
+backdrop-filter: saturate(180_PERCENT_);
+-webkit-backdrop-filter: saturate(180_PERCENT_);
 ">
 
 <div style="
@@ -182,9 +184,10 @@ MODEL_NAME_PLACEHOLDER
 
 </div>
 """
-        # دمج آمن كلياً ومقاوم للأخطاء الصياغية
+        # استبدال النصوص الآمن ثم إعادة دمج علامة النسبة المئوية في خطوة معزولة
         html_card = html_card.replace("COLOR_HEX_PLACEHOLDER", str(color_hex))
         html_card = html_card.replace("MODEL_NAME_PLACEHOLDER", str(model))
+        html_card = html_card.replace("_PERCENT_", "%")
 
         st.markdown(html_card, unsafe_allow_html=True)
 
