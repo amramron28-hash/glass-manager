@@ -60,8 +60,8 @@ url(
 );
 
 
-/* ضبط حجم صورة الهاتف */
-background-size:60vh auto !important;
+/* تصغير صورة الهاتف مع الحفاظ على ظهورها */
+background-size:75% auto !important;
 background-position:center center !important;
 background-repeat:no-repeat !important;
 background-attachment:fixed !important;
