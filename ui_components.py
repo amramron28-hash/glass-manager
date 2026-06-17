@@ -40,49 +40,22 @@ def inject_pwa_and_styles():
         _bg_cache = img
 
 
-    # تم تصحيح الأقواس بمضاعفتها {{ }} ليفهمها الـ f-string كنص CSS عادي
-    st.markdown(
-    f"""
-<style>
+    # تم عزل التنسيق تماماً لضمان عدم حدوث تداخل أو ظهور نصوص على الشاشة
+    style_content = """
+html,body,[data-testid="stAppViewContainer"] {
+    background-color:#0a0e17 !important;
+    background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,""" + str(_bg_cache) + """');
+    background-size:92% auto !important;
+    background-position:center center !important;
+    background-repeat:no-repeat !important;
+    background-attachment:fixed !important;
+}
+div.stMainBlockContainer {
+    padding-top:20px !important;
+}
+"""
 
-html,body,[data-testid="stAppViewContainer"] {{
-
-background-color:#0a0e17 !important;
-
-background-image:
-
-linear-gradient(
-rgba(10,14,23,.20),
-rgba(10,14,23,.20)
-),
-
-url(
-'data:image/webp;base64,{_bg_cache}'
-);
-
-background-size:92% auto !important;
-background-position:center center !important;
-background-repeat:no-repeat !important;
-background-attachment:fixed !important;
-
-
-}}
-
-
-
-div.stMainBlockContainer {{
-
-padding-top:20px !important;
-
-}}
-
-
-
-</style>
-""",
-    unsafe_allow_html=True
-    )
-
+    st.markdown(f"<style>{style_content}</style>", unsafe_allow_html=True)
 
 
     if os.path.exists("style.css"):
@@ -181,70 +154,36 @@ margin:8px 0;
 
     for model in models_list:
 
-
-        # تم تصحيح الأقواس هنا أيضاً لضمان ظهور الألوان والتأثيرات النيونية بشكل رسومي صحيح
-        st.markdown(
-        f"""
+        # استخدام صيغة النسبة المئوية % لضمان بناء كود الـ HTML والـ CSS بشكل نقي 100% دون كسر الأقواس
+        html_card = """
 <div style="
-
-background:linear-gradient(
-135deg,
-{color_hex}55,
-{color_hex}20
-);
-
-border:1.5px solid {color_hex};
-
-border-radius:18px;
-
-padding:14px 18px;
-
-margin-bottom:10px;
-
-display:flex;
-
-align-items:center;
-
-box-shadow:
-
-0 8px 24px rgba(0,0,0,.30),
-
-0 0 14px {color_hex}55;
-
-backdrop-filter:saturate(180%);
-
--webkit-backdrop-filter:saturate(180%);
-
+background: linear-gradient(135deg, %(color)s55, %(color)s20);
+border: 1.5px solid %(color)s;
+border-radius: 18px;
+padding: 14px 18px;
+margin-bottom: 10px;
+display: flex;
+align-items: center;
+box-shadow: 0 8px 24px rgba(0,0,0,.30), 0 0 14px %(color)s55;
+backdrop-filter: saturate(180%);
+-webkit-backdrop-filter: saturate(180%);
 ">
 
-
 <div style="
-
-font-size:19px;
-
-font-weight:900;
-
-color:white;
-
-width:100%;
-
-text-align:left;
-
-text-shadow:
-
-0 1px 2px rgba(0,0,0,.35);
-
+font-size: 19px;
+font-weight: 900;
+color: white;
+width: 100%;
+text-align: left;
+text-shadow: 0 1px 2px rgba(0,0,0,.35);
 ">
-
-{model}
-
+%(model_name)s
 </div>
 
-
 </div>
-""",
-        unsafe_allow_html=True
-        )
+""" % {"color": color_hex, "model_name": model}
+
+        st.markdown(html_card, unsafe_allow_html=True)
 
 
 
