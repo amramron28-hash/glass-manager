@@ -46,25 +46,39 @@ def inject_pwa_and_styles():
     f"""
 <style>
 
-html,body,[data-testid="stAppViewContainer"] {{
+[data-testid="stAppViewContainer"] {{
 
 background-image:
+url('data:image/webp;base64,{_bg_cache}') !important;
 
-linear-gradient(
-rgba(10,14,23,.45),
-rgba(10,14,23,.45)
-),
-
-url(
-'data:image/webp;base64,{_bg_cache}'
-);
-
-
-background-size:contain !important;
-background-position:center center !important;
+background-size:cover !important;
+background-position:center !important;
 background-repeat:no-repeat !important;
 background-attachment:fixed !important;
 
+}}
+
+
+
+[data-testid="stAppViewContainer"]::before {{
+
+content:"";
+position:fixed;
+inset:0;
+
+background:rgba(10,14,23,.45);
+
+z-index:0;
+pointer-events:none;
+
+}}
+
+
+
+[data-testid="stAppViewContainer"] > .main {{
+
+position:relative;
+z-index:1;
 
 }}
 
@@ -111,6 +125,7 @@ def draw_technical_coords(
     panel_grp,
     sensor_grp
 ):
+
 
     st.markdown(
     f"""
@@ -165,6 +180,7 @@ def draw_neon_section(
     badge_icon,
     current_search
 ):
+
 
     if not models_list:
 
@@ -252,10 +268,13 @@ def draw_control_panel(
     empty_groups_count=0
 ):
 
+
     notifications = notifications or []
 
 
+
     with st.sidebar:
+
 
         st.markdown(
         """
@@ -270,19 +289,31 @@ color:#00bfff;
         )
 
 
-        with st.expander("🔔 الإشعارات"):
+
+        with st.expander(
+            "🔔 الإشعارات"
+        ):
+
 
             if notifications:
 
                 for n in notifications:
+
                     st.warning(n)
 
             else:
 
-                st.caption("لا توجد تنبيهات")
+                st.caption(
+                    "لا توجد تنبيهات"
+                )
 
 
-        with st.expander("⚙️ الإعدادات"):
+
+
+        with st.expander(
+            "⚙️ الإعدادات"
+        ):
+
 
             st.checkbox(
                 "تفعيل المراقب الصامت",
@@ -290,10 +321,13 @@ color:#00bfff;
             )
 
 
+
+
         with st.expander(
             "🛡️ المراقب الصامت",
             expanded=True
         ):
+
 
             st.metric(
                 "📱 الهواتف",
