@@ -59,9 +59,11 @@ url(
 'data:image/webp;base64,{_bg_cache}'
 );
 
-background-size:cover;
-background-position:center;
-background-attachment:fixed;
+/* التعديل المسؤول عن الحجم والأبعاد فقط ليتناسب مع إطار الهاتف */
+background-size: contain;
+background-position: top center;
+background-repeat: no-repeat;
+background-attachment: scroll;
 
 }}
 
@@ -233,8 +235,8 @@ border:1px dashed #00bfff;
 
 </div>
 """,
-        unsafe_allow_html=True
-        )
+    unsafe_allow_html=True
+    )
 
 
 
@@ -326,4 +328,4 @@ color:#00bfff;
 
             st.caption(
                 "المراقب يعمل"
-)
+            )
