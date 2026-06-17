@@ -225,3 +225,191 @@ def run_silent_check():
 
 
     return alerts
+# ==========================
+# 🔎 كشف نفس الهاتف بمواصفات مختلفة
+# ==========================
+
+def detect_conflicts():
+
+    rows = fetch_phones()
+
+
+    conflicts = []
+
+    models_map = {}
+
+
+
+    for row in rows:
+
+
+        model = clean_text(
+            row.get("model_name")
+        )
+
+
+        if not model:
+
+            continue
+
+
+
+        data = {
+
+            "size":
+            clean_text(row.get("size")),
+
+            "panel":
+            clean_text(row.get("panel")),
+
+            "sensor":
+            clean_text(row.get("sensor"))
+
+        }
+
+
+
+        if model not in models_map:
+
+
+            models_map[model] = []
+
+
+        models_map[model].append(data)
+
+
+
+
+
+    for model, items in models_map.items():
+
+
+        unique = []
+
+
+        for item in items:
+
+
+            if item not in unique:
+
+                unique.append(item)
+
+
+
+
+        if len(unique) > 1:
+
+
+            conflicts.append(
+
+                {
+
+                "type":
+                "conflict",
+
+                "time":
+                str(datetime.now()),
+
+                "message":
+                f"اختلاف بيانات للهاتف: {model}",
+
+                "details":
+                unique
+
+                }
+
+            )
+
+
+
+    return conflicts
+
+
+
+
+
+# ==========================
+# 🧠 تشغيل الفحص الكامل
+# ==========================
+
+def watcher_cycle():
+
+
+    alerts = []
+
+
+    alerts.extend(
+        run_silent_check()
+    )
+
+
+    alerts.extend(
+        detect_conflicts()
+    )
+
+
+
+    save_alerts(alerts)
+
+
+
+# ==========================
+# 🔁 الخيط الخلفي
+# ==========================
+
+def start_watcher(
+    interval=300
+):
+
+
+    def loop():
+
+
+        while True:
+
+
+            try:
+
+                watcher_cycle()
+
+
+            except Exception:
+
+
+                pass
+
+
+
+            time.sleep(
+                interval
+            )
+
+
+
+    thread = threading.Thread(
+
+        target=loop,
+
+        daemon=True
+
+    )
+
+
+    thread.start()
+
+
+
+    return thread
+
+
+
+
+
+# ==========================
+# 📤 قراءة التنبيهات للواجهة
+# ==========================
+
+def get_watcher_alerts():
+
+
+    return load_alerts()
