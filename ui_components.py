@@ -7,7 +7,7 @@ _bg_cache = None
 
 
 # ==========================================
-# 🎨 الخلفية + تنسيق
+# 🎨 الخلفية + التنسيق
 # ==========================================
 
 def inject_pwa_and_styles():
@@ -61,7 +61,7 @@ url(
 
 
 /* ضبط حجم صورة الهاتف */
-background-size:75% auto !important;
+background-size:60vh auto !important;
 background-position:center center !important;
 background-repeat:no-repeat !important;
 background-attachment:fixed !important;
@@ -74,7 +74,6 @@ background-attachment:fixed !important;
 div.stMainBlockContainer {{
 
 padding-top:20px !important;
-max-width:100% !important;
 
 }}
 
@@ -331,4 +330,4 @@ color:#00bfff;
 
             st.caption(
                 "المراقب يعمل"
-    )
+            )
