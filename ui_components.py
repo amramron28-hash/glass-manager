@@ -162,6 +162,7 @@ line-height:1.7;
 # ==========================================
 
 def draw_neon_section(
+def draw_neon_section(
     title,
     models_list,
     color_hex,
@@ -197,23 +198,52 @@ margin:8px 0;
         st.markdown(
         f"""
 <div style="
-background:rgba(10,14,23,.90);
-border:1px solid {color_hex};
-border-radius:10px;
-padding:10px;
-margin-bottom:8px;
+
+background:linear-gradient(
+135deg,
+{color_hex}45,
+{color_hex}20
+);
+
+border:1.5px solid {color_hex};
+
+border-radius:18px;
+
+padding:14px 18px;
+
+margin-bottom:10px;
+
 display:flex;
-direction:ltr;
-justify-content:space-between;
+
 align-items:center;
+
+box-shadow:
+0 8px 24px rgba(0,0,0,.25),
+0 0 14px {color_hex}55;
+
+
+backdrop-filter:saturate(180%);
+-webkit-backdrop-filter:saturate(180%);
+
 ">
 
 
 <div style="
-font-size:18px;
-font-weight:800;
+
+font-size:19px;
+
+font-weight:900;
+
 color:white;
+
+width:100%;
+
 text-align:left;
+
+
+text-shadow:
+0 1px 2px rgba(0,0,0,.35);
+
 ">
 
 {model}
@@ -221,28 +251,10 @@ text-align:left;
 </div>
 
 
-
-<div style="
-width:45px;
-height:45px;
-border-radius:8px;
-border:1px dashed #00bfff;
-">
-
-</div>
-
-
-
 </div>
 """,
         unsafe_allow_html=True
         )
-
-
-
-
-
-
 # ==========================================
 # 🛠️ لوحة التحكم
 # ==========================================
