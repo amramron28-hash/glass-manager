@@ -60,10 +60,11 @@ url(
 );
 
 
-background-size:90% auto !important;
-background-position:center !important;
-background-attachment:fixed !important;
-background-repeat:no-repeat !important;
+/* التعديل هنا فقط */
+background-size: cover, 90% auto !important;
+background-position: center, center !important;
+background-repeat: no-repeat !important;
+background-attachment: fixed !important;
 
 
 }}
@@ -167,9 +168,7 @@ def draw_neon_section(
 ):
 
     if not models_list:
-
         return
-
 
 
     st.markdown(
@@ -191,7 +190,6 @@ margin:8px 0;
 
 
     for model in models_list:
-
 
         st.markdown(
         f"""
@@ -271,16 +269,11 @@ color:#00bfff;
         )
 
 
-
-        with st.expander(
-            "🔔 الإشعارات"
-        ):
-
+        with st.expander("🔔 الإشعارات"):
 
             if notifications:
 
                 for n in notifications:
-
                     st.warning(n)
 
             else:
@@ -290,11 +283,7 @@ color:#00bfff;
                 )
 
 
-
-        with st.expander(
-            "⚙️ الإعدادات"
-        ):
-
+        with st.expander("⚙️ الإعدادات"):
 
             st.checkbox(
                 "تفعيل المراقب الصامت",
@@ -302,24 +291,20 @@ color:#00bfff;
             )
 
 
-
         with st.expander(
             "🛡️ المراقب الصامت",
             expanded=True
         ):
-
 
             st.metric(
                 "📱 الهواتف",
                 total_models
             )
 
-
             st.metric(
                 "🧹 مراجعة",
                 empty_groups_count
             )
-
 
             st.caption(
                 "المراقب يعمل"
