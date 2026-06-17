@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import base64
 
+
 _bg_cache = None
 
 
@@ -40,17 +41,24 @@ def inject_pwa_and_styles():
         _bg_cache = img
 
 
-    style_content = """
-html,body,[data-testid="stAppViewContainer"] {
+
+    style_content = f"""
+<style>
+
+html,body,[data-testid="stAppViewContainer"] {{
 
 background-color:#0a0e17 !important;
 
 background-image:
+
 linear-gradient(
 rgba(10,14,23,.20),
 rgba(10,14,23,.20)
 ),
-url('data:image/webp;base64,BG_IMAGE_PLACEHOLDER');
+
+url(
+'data:image/webp;base64,{_bg_cache}'
+);
 
 background-size:92% auto !important;
 
@@ -60,25 +68,21 @@ background-repeat:no-repeat !important;
 
 background-attachment:fixed !important;
 
-}
+}}
 
 
-div.stMainBlockContainer {
+div.stMainBlockContainer {{
 
 padding-top:20px !important;
 
-}
+}}
 
+</style>
 """
-
-    style_content = style_content.replace(
-        "BG_IMAGE_PLACEHOLDER",
-        str(_bg_cache)
-    )
 
 
     st.markdown(
-        f"<style>{style_content}</style>",
+        style_content,
         unsafe_allow_html=True
     )
 
@@ -115,17 +119,27 @@ def draw_technical_coords(
     f"""
 <div style="
 background:rgba(15,23,42,.85);
+
 padding:8px 15px;
+
 border-radius:10px;
+
 border:1px solid #00bfff;
+
 margin-bottom:10px;
+
 ">
+
 
 <div style="
 direction:rtl;
+
 text-align:right;
+
 font-size:16px;
+
 line-height:1.7;
+
 ">
 
 📏 <b>المقاس:</b> {size_grp}
@@ -140,7 +154,9 @@ line-height:1.7;
 
 </div>
 
+
 </div>
+
 """,
     unsafe_allow_html=True
     )
@@ -162,16 +178,22 @@ def draw_neon_section(
 ):
 
     if not models_list:
+
         return
+
 
 
     st.markdown(
     f"""
 <h4 style="
 color:{color_hex};
+
 direction:rtl;
+
 text-align:right;
+
 margin:8px 0;
+
 ">
 
 {badge_icon} {title}
@@ -180,20 +202,23 @@ margin:8px 0;
 """,
     unsafe_allow_html=True
     )
-for model in models_list:
 
 
-        html_card = """
+
+    for model in models_list:
+
+
+        html_card = f"""
 
 <div style="
 
 background:linear-gradient(
 135deg,
-COLOR_HEX_PLACEHOLDER55,
-COLOR_HEX_PLACEHOLDER20
+{color_hex}55,
+{color_hex}20
 );
 
-border:1.5px solid COLOR_HEX_PLACEHOLDER;
+border:1.5px solid {color_hex};
 
 border-radius:18px;
 
@@ -207,11 +232,12 @@ align-items:center;
 
 overflow:hidden;
 
+
 box-shadow:
 
 0 8px 24px rgba(0,0,0,.30),
 
-0 0 14px COLOR_HEX_PLACEHOLDER55;
+0 0 14px {color_hex}55;
 
 
 backdrop-filter:saturate(180%);
@@ -233,13 +259,14 @@ width:100%;
 
 text-align:left;
 
+
 text-shadow:
 
 0 1px 2px rgba(0,0,0,.35);
 
 ">
 
-MODEL_NAME_PLACEHOLDER
+{model}
 
 </div>
 
@@ -247,18 +274,6 @@ MODEL_NAME_PLACEHOLDER
 </div>
 
 """
-
-
-        html_card = html_card.replace(
-            "COLOR_HEX_PLACEHOLDER",
-            str(color_hex)
-        )
-
-
-        html_card = html_card.replace(
-            "MODEL_NAME_PLACEHOLDER",
-            str(model)
-        )
 
 
         st.markdown(
@@ -299,9 +314,8 @@ color:#00bfff;
         )
 
 
-        with st.expander(
-            "🔔 الإشعارات"
-        ):
+
+        with st.expander("🔔 الإشعارات"):
 
 
             if notifications:
@@ -318,9 +332,7 @@ color:#00bfff;
 
 
 
-        with st.expander(
-            "⚙️ الإعدادات"
-        ):
+        with st.expander("⚙️ الإعدادات"):
 
 
             st.checkbox(
@@ -350,5 +362,4 @@ color:#00bfff;
 
             st.caption(
                 "المراقب يعمل"
-)
-    
+            )
