@@ -60,11 +60,11 @@ url(
 );
 
 
-/* التعديل هنا فقط */
-background-size: cover, 90% auto !important;
-background-position: center, center !important;
-background-repeat: no-repeat !important;
-background-attachment: fixed !important;
+/* ضبط حجم صورة 1280x960 */
+background-size:80% auto !important;
+background-position:center !important;
+background-repeat:no-repeat !important;
+background-attachment:fixed !important;
 
 
 }}
@@ -255,7 +255,6 @@ def draw_control_panel(
 
     with st.sidebar:
 
-
         st.markdown(
         """
 <h3 style="
@@ -301,10 +300,12 @@ color:#00bfff;
                 total_models
             )
 
+
             st.metric(
                 "🧹 مراجعة",
                 empty_groups_count
             )
+
 
             st.caption(
                 "المراقب يعمل"
