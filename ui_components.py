@@ -50,7 +50,6 @@ html,body,[data-testid="stAppViewContainer"] {{
 
 background-color:#0a0e17 !important;
 
-
 background-image:
 
 linear-gradient(
@@ -61,7 +60,6 @@ rgba(10,14,23,.20)
 url(
 'data:image/webp;base64,{_bg_cache}'
 );
-
 
 background-size:92% auto !important;
 background-position:center center !important;
@@ -125,14 +123,12 @@ border:1px solid #00bfff;
 margin-bottom:10px;
 ">
 
-
 <div style="
 direction:rtl;
 text-align:right;
 font-size:16px;
 line-height:1.7;
 ">
-
 
 📏 <b>المقاس:</b> {size_grp}
 
@@ -144,9 +140,7 @@ line-height:1.7;
 
 👁️ <b>المستشعر التقارب:</b> {sensor_grp}
 
-
 </div>
-
 
 </div>
 """,
@@ -171,7 +165,6 @@ def draw_neon_section(
 
     if not models_list:
         return
-
 
 
     st.markdown(
@@ -217,13 +210,11 @@ display:flex;
 
 align-items:center;
 
-
 box-shadow:
 
 0 8px 24px rgba(0,0,0,.30),
 
 0 0 14px {color_hex}55;
-
 
 backdrop-filter:saturate(180%);
 
@@ -243,7 +234,6 @@ color:white;
 width:100%;
 
 text-align:left;
-
 
 text-shadow:
 
@@ -276,9 +266,7 @@ def draw_control_panel(
     empty_groups_count=0
 ):
 
-
     notifications = notifications or []
-
 
 
     with st.sidebar:
@@ -317,7 +305,6 @@ color:#00bfff;
 
 
 
-
         with st.expander(
             "⚙️ الإعدادات"
         ):
@@ -327,7 +314,6 @@ color:#00bfff;
                 "تفعيل المراقب الصامت",
                 value=True
             )
-
 
 
 
@@ -351,4 +337,4 @@ color:#00bfff;
 
             st.caption(
                 "المراقب يعمل"
-                )
+            )
