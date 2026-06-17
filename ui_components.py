@@ -66,7 +66,7 @@ content:"";
 position:fixed;
 inset:0;
 
-background:rgba(10,14,23,.45);
+background:rgba(10,14,23,.15);
 
 z-index:0;
 pointer-events:none;
@@ -181,7 +181,6 @@ def draw_neon_section(
     current_search
 ):
 
-
     if not models_list:
 
         return
@@ -267,7 +266,6 @@ def draw_control_panel(
     total_models=0,
     empty_groups_count=0
 ):
-
 
     notifications = notifications or []
 
