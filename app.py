@@ -21,7 +21,7 @@ st.set_page_config(
     page_icon="🔍"
 )
 
-# text-align filter: تفعيل الخلفية الأصلية وتأثير الزجاج وتنسيقات الألوان من ملف الـ UI الخاص بك فوراً
+# تفعيل الخلفية الأصلية وتأثير الزجاج وتنسيقات الألوان من ملف الـ UI الخاص بك فوراً
 inject_pwa_and_styles()
 
 db_data = load_db()
@@ -67,7 +67,7 @@ for size, panels in db_data.items():
                 for m in models_list:
                     all_flat_models.append(m)
                     words = m.split()
-                    first_word = words if words else "Unknown"
+                    first_word = words[0] if words else "Unknown"
                     brand_counts[first_word] = brand_counts.get(first_word, 0) + 1
     if not size_has_models:
         empty_groups_count += 1
@@ -222,5 +222,4 @@ elif final_search_term and not is_exact_match:
 # صياغة أحادية ذكية ومحمية تمنع خطأ الـ IndentationError نهائياً في السيرفر
 st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
 
-draw_control_panel(
 
