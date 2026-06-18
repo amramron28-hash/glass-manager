@@ -192,4 +192,3 @@ if phone and size_str and is_exact_match:
             models_list = [m for m in results[cat] if m not in results.get('warn', [])]
             if models_list:
                 st.markdown(f"<div class='section-title'>{title}</div>", unsafe_allow_html=True)
-                for model in models_list:
