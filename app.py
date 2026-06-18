@@ -218,18 +218,27 @@ def phone_search(searchterm):
     return (starts_with + contains)[:10]
 
 
-
-phone = st_searchbox(
-    phone_search,
+phone = st.text_input(
+    "البحث والمطابقة الفورية للموديلات:",
     placeholder="اكتب اسم الهاتف المستهدف هنا بحرية...",
-    key="free_smart_search_input",
-    clear_on_submit=False
+    label_visibility="collapsed",
+    key="free_smart_search_input"
 )
 
 
+phone = phone.strip()
 
-phone = (phone or "").strip()
 
+if phone:
+
+    suggestions = phone_search(phone)
+
+    if suggestions:
+
+        st.caption("💡 اقتراحات البحث:")
+
+        for s in suggestions:
+            st.write(f"• {s}")
 
 
 size_str = None
