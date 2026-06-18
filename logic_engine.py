@@ -182,3 +182,4 @@ def smart_proximity_guard(db_data, size, panel, sensor):
                             }
                         )
     return alerts
+
