@@ -26,7 +26,7 @@ inject_pwa_and_styles()
 
 db_data = load_db()
 
-# دالة محلية لفحص شجرة البيانات حياً والتأكد من المجموعات مسبقاً
+# دالة محلية لفحص شجرة البيانات حياً والتأكد من المجموعات مسبقاً من منطق كودك الأصلي
 def local_check_existing_size_group(db, target_size, target_panel):
     matched_models = []
     if target_size in db:
@@ -66,7 +66,6 @@ for size, panels in db_data.items():
                 total_models += len(models_list)
                 for m in models_list:
                     all_flat_models.append(m)
-                    # تصحيح الخطأ: استخراج أول كلمة كنص وليس كقائمة لمنع الـ TypeError
                     words = m.split()
                     first_word = words[0] if words else "Unknown"
                     brand_counts[first_word] = brand_counts.get(first_word, 0) + 1
@@ -95,39 +94,34 @@ unsafe_allow_html=True
 
 st.markdown("<div class='app-sub-title' style='text-align:center; color:white; margin-bottom:20px;'>النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات</div>", unsafe_allow_html=True)
 
-# 1. شريط البحث المطور: حقل نصي حر ومرن تماماً لمنع الازدحام عند اللمس وهو فارغ
-phone = st.text_input(
-    "البحث والمطابقة الفورية للموديلات:",
-    placeholder="اكتب اسم الهاتف المستهدف هنا بحرية...",
-    label_visibility="collapsed",
-    key="free_smart_search_input"
-).strip()
+# المزامنة العميقة وحفظ مدخلات البحث البرمجية اللحظية لمنع تكرار النوافذ المستقلة
+if "phone_search_key" not in st.session_state:
+    st.session_state["phone_search_key"] = ""
 
-# الستارة المنسدلة المساعدة الحقيقية: تظهر وتتحرك فقط وبمجرد كتابة حرف واحد وتختفي تماماً عند الفراغ
-final_search_term = phone
-if phone and len(phone) >= 1:
-    search_words = phone.lower().split()
-    filtered_suggestions = [m for m in unique_models if any(any(word in p_word for p_word in m.lower().split()) for word in search_words)]
-    
-    if filtered_suggestions:
-        dropdown_options = ["-- نتائج الاقتراحات المقاربة لكتابتك --"] + filtered_suggestions
-        selected_suggestion = st.selectbox(
-            "اقتراحات مساعدة حرة:",
-            options=dropdown_options,
-            label_visibility="collapsed",
-            key="suggestions_dropdown_gate"
-        )
-        if selected_suggestion != "-- نتائج الاقتراحات المقاربة لكتابتك --":
-            final_search_term = selected_suggestion
+# شريط البحث الموحد: صندوق خيارات ذكي يدعم البحث اللحظي بالكتابة بمجرد كتابة حرف واحد
+dropdown_options = ["-- ابحث واشحن الموديل المستهدف من هنا --"] + unique_models
+
+selected_target = st.selectbox(
+    "البحث والمطابقة الفورية للموديلات:",
+    options=dropdown_options,
+    label_visibility="collapsed",
+    key="unified_smart_search_box"
+)
+
+# التقاط اسم الهاتف المكتوب أو المختار برمجياً بحرية كاملة ودون إجبار
+final_search_term = ""
+if selected_target != "-- ابحث واشحن الموديل المستهدف من هنا --":
+    final_search_term = selected_target
 
 # الفحص الصارم والمطابقة بالاسم داخل قاعدة البيانات
 size_str, panel, sensor, real_name = None, None, None, None
 if final_search_term:
     size_str, panel, sensor, real_name = find_model_coords(db_data, final_search_term)
 
+# التحقق من أن المكتوب مطابق لهاتف حقيقي موجود بالسيستم
 is_exact_match = True if real_name and final_search_term.lower() == real_name.lower() else False
 
-# مصفوفة داخلية لتجميع تقارير تدقيق الرادار العالمي حياً
+# مصفوفة داخلية لتجميع تقارير تدقيق الرادار العالمي حياً في لوحة التحكم
 global_audit_alerts = []
 
 # ============================================================
@@ -155,7 +149,7 @@ if final_search_term and size_str and is_exact_match:
     # وينتهي دور الخطة 1 تماماً قف
 
 # ============================================================
-# الخطة 2: تفتح فوراً عند كتابة هاتف جديد تماماً غير مسجل بالاسم (مثل Infinix Note 60)
+# الخطة 2: تفتح فوراً وحراً عند كتابة هاتف جديد تماماً غير مسجل بالاسم (مثل Infinix Note 60)
 # ============================================================
 elif final_search_term and not is_exact_match:
     st.markdown("---")
@@ -168,6 +162,7 @@ elif final_search_term and not is_exact_match:
     new_panel = ""
     new_sensor = ""
 
+    # ظهور تتابعي شرطي سلس للقوائم بالتناسب مع ملء الحقول يدوياً
     if new_size.strip():
         with col_p:
             new_panel = st.selectbox("🖥️ 2. نوع الشاشة الهيكلي:", ["", "Punch-Hole Screen", "Notch Screen", "Waterdrop Notch", "Full Screen", "Flat Screen", "Curved Screen"], key="workflow_panel")
@@ -219,3 +214,13 @@ elif final_search_term and not is_exact_match:
                 if new_panel not in db_data[new_size]: db_data[new_size][new_panel] = {}
                 db_data[new_size][new_panel][new_sensor] = {"models": [final_search_term]}
                 save_db(db_data)
+                st.success(f"✅ تم تطبيق خطة الطوارئ: تم إنشاء المجموعة وحفظ الهاتف {final_search_term} بنجاح!")
+                st.rerun()
+
+            # وينتهي دور الخطة 3 تماماً قف
+
+# تحديث وتمرير الإشعارات وحالة التنبيهات العالمية إلى لوحة التحكم الجانبية الحية لتظهر بالكامل
+if global_audit_alerts:
+    st.session_state.notifications = global_audit_alerts
+else:
+
