@@ -1,5 +1,4 @@
 import streamlit as st
-import requests
 from database import add_model
 from logic_engine import (
     find_model_coords,
@@ -48,24 +47,6 @@ ALL_SENSORS = [
 
 unique_models = [str(x).strip() for x in unique_models if x]
 
-# دالة محاكاة الاتصال بالإنترنت من الذكاء الاصطناعي لجلب المواصفات الحقيقية الصارمة (3 مواصفات فقط)
-def ai_fetch_specs_from_internet(phone_name):
-    name_lower = phone_name.lower()
-    # قواعد استخراج ذكية ومباشرة مستندة إلى قاعدة بيانات مواصفات الهواتف عبر الشبكة
-    if "infinix" in name_lower:
-        if "note 40" in name_lower or "note 60" in name_lower:
-            return "6.78", "Punch-Hole Screen", "virtual_camera_sensor"
-        return "6.7", "Punch-Hole Screen", "virtual_camera_sensor"
-    elif "samsung" in name_lower:
-        if "ultra" in name_lower:
-            return "6.8", "Flat Screen", "under_display_sensor"
-        return "6.6", "Punch-Hole Screen", "virtual_camera_sensor"
-    elif "iphone" in name_lower:
-        return "6.7", "Punch-Hole Screen", "no_visible_sensor"
-    
-    # قيم افتراضية طارئة لأحدث الهواتف بالسوق في حال لم تكن الماركة مشهورة
-    return "6.67", "Punch-Hole Screen", "virtual_camera_sensor"
-
 st.markdown("""
     <div style="font-size:28px; font-weight:900; color:#00bfff; text-shadow:0 0 12px rgba(0,191,255,.7);">
     ZEGAAR AMMAR<br>GLASS MANAGER
@@ -78,20 +59,24 @@ if st.session_state.show_success:
 
 phone = st.text_input("📱 اسم الهاتف", placeholder="مثال: Infinix Note 60").strip()
 
-# الخطة 1: عرض الاقتراحات الذكية للأسماء فوراً أثناء كتابة المستخدم
+# الخطة 1: الستارة الحية التفاعلية تظهر فقط عند وجود كلمات مطابقة حقيقية وتختفي فوراً عند انعدامها
+show_plan_2 = True
 if phone:
     suggestions = [m for m in unique_models if all(w in m.lower() for w in phone.lower().split())]
     if suggestions:
+        show_plan_2 = False # طالما هناك اقتراحات قريبة في الستارة، لا تظهر الخطة 2
         st.caption("🔍 هواتف مقترحة مطابقة في النظام:")
         for s in suggestions[:3]:
-            st.write(f"• {s}")
+            # جعل الاقتراحات تفاعلية عند الضغط عليها لملء الحقل تلقائياً
+            if st.button(f"📋 {s}", key=f"sug_{s}"):
+                st.session_state["phone_input_val"] = s
+                st.rerun()
 
-# تنفيذ الخطة 1: البحث الصارم والمطابقة بالاسم فقط
-if phone:
+# تنفيذ البحث الصارم بالاسم بالخطة 1
+if phone and not show_plan_2:
     size, panel, sensor, real = find_model_coords(db_data, phone)
     is_exact_match = True if real and phone.lower() in real.lower() else False
 
-    # إذا وجد الاسم تماماً يتم إنهاء الدورة هنا
     if size and is_exact_match:
         st.success(f"🎯 الهاتف موجود : {real}")
         draw_technical_coords(size, panel, sensor)
@@ -106,39 +91,61 @@ if phone:
         # وينتهي دور الخطة 1 تماماً قف
 
     else:
-        # الخطة 2: تبدأ هنا فوراً عند غياب الاسم بالكامل عن النظام
-        st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم. جاري تفعيل الخطة 2 للبحث بالمواصفات الحقيقية عبر الإنترنت...")
+        # الخطة 2: تظهر مباشرة وبقوة عند كتابة هاتف غير موجود مثل (infinix note 60) وتختفي الستارة تماماً
+        st.warning(f"⚠️ الهاتف ({phone}) غير مسجل. يرجى إدخال مواصفاته يدوياً بالتتابع:")
         
-        # يتصل بالإنترنت ويجلب 3 مواصفات فقط لا رابع لها
-        ai_size, ai_panel, ai_sensor = ai_fetch_specs_from_internet(phone)
-        st.info(f"🤖 **الذكاء الاصطناعي جلب المواصفات الحقيقية من الإنترنت:**\n"
-                f"📏 المقاس: `{ai_size}` | 📺 الشاشة: `{ai_panel}` | 👁️ المستشعر: `{ai_sensor}`")
-        
-        # البحث داخل المجموعات بناءً على المواصفات الحقيقية المجلوبة
-        group = db_data.get(ai_size, {}).get(ai_panel, {}).get(ai_sensor, {})
-        models = group.get("models", [])
+        final_size = st.text_input("📏 1. أدخل المقاس", placeholder="مثال 6.78")
+        final_panel = ""
+        final_sensor = ""
 
-        if models:
-            st.success("🤝 تم العثور على مجموعة مطابقة لهذه المواصفات الحقيقية داخل المكتبة!")
-            st.write("📋 الهواتف الحالية المشتركة في هذه المجموعة:", models)
-            
-            if st.button(f"📥 إدراج {phone} في هذه المجموعة المطابقة"):
-                add_model(ai_size, ai_panel, ai_sensor, phone)
-                st.session_state.show_success = f"تم إدراج {phone} بنجاح في المجموعة المطابقة!"
-                st.rerun()
-            
-            # وينتهي دور الخطة 2 تماماً قف
+        # ظهور تتابعي وتفاعلي للقائمة الثانية بناءً على المقاس
+        if final_size.strip():
+            final_panel = st.selectbox(
+                "📺 2. اختر شكل الشاشة",
+                [""] + ALL_PANELS + live_panels + ["➕ إضافة جديد"]
+            )
+            if final_panel == "➕ إضافة جديد":
+                final_panel = st.text_input("اكتب شكل الشاشة الجديد")
 
-        else:
-            # الخطة 3: خطة الطوارئ النهائية تبدأ هنا عند فشل الخطتين 1 و 2 بالكامل
-            st.error("❌ خطة الطوارئ (الخطة 3): لم يتم العثور على أي مجموعة مطابقة لهذه المواصفات الحقيقية في مكتبتك.")
-            
-            if st.button(f"✨ إنشاء مجموعة جديدة بالكامل وإدراج {phone} فيها"):
-                add_model(ai_size, ai_panel, ai_sensor, phone)
-                st.session_state.show_success = f"تم تطبيق خطة الطوارئ: تم إنشاء المجموعة الجديدة وإدراج {phone}!"
-                st.rerun()
-            
-            # وينتهي دور الخطة 3 تماماً قف
+        # ظهور تفاعلي للقائمة الأخيرة يبدأ البحث والفرز فوراً وبمجرد الضغط والاختيار منها
+        if final_size.strip() and str(final_panel).strip():
+            final_sensor = st.selectbox(
+                "👁️ 3. اختر مستشعر التقارب (يبدأ البحث فوراً عند الاختيار)",
+                [""] + ALL_SENSORS + live_sensors + ["➕ إضافة جديد"]
+            )
+            if final_sensor == "➕ إضافة جديد":
+                final_sensor = st.text_input("اكتب المستشعر الجديد")
+
+        final_size = str(final_size).strip()
+        final_panel = str(final_panel).strip()
+        final_sensor = str(final_sensor).strip()
+
+        # تشغيل محرك البحث والمطابقة في المكتبة فور امتلاء القائمة الأخيرة التفاعلية
+        if final_size and final_panel and final_sensor:
+            group = db_data.get(final_size, {}).get(final_panel, {}).get(final_sensor, {})
+            models = group.get("models", [])
+
+            if models:
+                st.success("🤝 تم العثور الفوري على مجموعة مطابقة لهذه المواصفات!")
+                st.write("📋 الهواتف المشتركة حالياً في المجموعة:", models)
+                
+                if st.button(f"📥 تأكيد إدراج {phone} في هذه المجموعة المطابقة"):
+                    add_model(final_size, final_panel, final_sensor, phone)
+                    st.session_state.show_success = f"تم إدراج {phone} بنجاح!"
+                    st.rerun()
+                
+                # وينتهي دور الخطة 2 تماماً قف
+
+            else:
+                # الخطة 3: خطة الطوارئ النهائية تفتح فوراً في حال عدم وجود أي تطابق للمواصفات المدخلة
+                st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة تطابق هذه المواصفات في المكتبة.")
+                
+                if st.button(f"✨ إنشاء مجموعة جديدة بالكامل وإدراج {phone} فيها"):
+                    add_model(final_size, final_panel, final_sensor, phone)
+                    st.session_state.show_success = f"تم تطبيق خطة الطوارئ: تم إنشاء المجموعة وإدراج {phone}!"
+                    st.rerun()
+                
+                # وينتهي دور الخطة 3 تماماً قف
 
 # ==========================
 # لوحة التحكم
