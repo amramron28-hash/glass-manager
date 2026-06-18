@@ -6,7 +6,6 @@ from logic_engine import (
     normalize_text,
     find_model_coords,
     get_compatibles_strict,
-    check_existing_size_group,
     run_intelligent_inspector
 )
 
@@ -16,14 +15,14 @@ st.set_page_config(
     page_icon="🔍"
 )
 
-# حقن ملف الـ Manifest لتفعيل خاصية التثبيت الفوري PWA على الهاتف
+# حقن ملف الـ Manifest لتفعيل خاصية PWA والتثبيت على شاشة الهاتف
 st.markdown("""
 <head>
     <link rel="manifest" href="./manifest.json">
 </head>
 """, unsafe_allow_html=True)
 
-# معالجة وحقن الخلفية بنسبة تعتيم مخففة (0.45) لتكون مشرقة وواضحة جداً
+# معالجة وحقن الخلفية بنسبة تعتيم مخففة (0.45) لتكون واضحة ومشرقة
 bg_image_base64 = ""
 if os.path.exists("phone_image.webp"):
     with open("phone_image.webp", "rb") as f:
@@ -48,7 +47,18 @@ if os.path.exists("style.css"):
 
 db_data = load_db()
 
-# بناء الفهرس المسطح للهواتف المتوفرة بالسيستم من شجرة البيانات
+# دالة محلية بديلة ومصححة لفحص وجود المجموعات مسبقاً لمنع أي تعارض برميجي
+def local_check_existing_size_group(db, target_size, target_panel):
+    matched_models = []
+    if target_size in db:
+        if target_panel in db[target_size]:
+            for sensor, s_data in db[target_size][target_panel].items():
+                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+                for m in models_list:
+                    matched_models.append(m)
+    return matched_models
+
+# بناء الفهرس المسطح للهواتف المتوفرة بالسيستم من شجرة البيانات الكلية
 all_flat_models = []
 total_models, brand_counts, empty_groups_count = 0, {}, 0
 
@@ -82,7 +92,7 @@ with st.sidebar:
         st.metric(label="📈 إجمالي الهواتف المراقبة بالسيستم", value=total_models)
         st.markdown("---")
         
-        # خوارزمية الفحص الدوري الذكي كاشف الأخطاء والتشوهات البنائية داخل المجموعات
+        # خوارزمية الفحص الدوري الذكي كاشف الأخطاء والتشوهات البنائية داخل المجموعات حياً
         suspicious_models = []
         for size, panels in db_data.items():
             try:
@@ -144,7 +154,7 @@ st.markdown("<div class='app-sub-title'>النظام السحابي الذكي �
 # حقل البحث النصي الحر (الخطة 1) مع الستارة المرنة والذكية غير الإلزامية
 phone = st.text_input("📱 الباب الرئيسي: اكتب اسم الهاتف المستهدف هنا للبحث الفوري:", placeholder="مثال: Infinix Note 60").strip()
 
-# الستارة التفاعلية الحية: تظهر اقتراحات مساعدة فقط لتوجيه المستخدم ولا تعيق إضافة هاتف جديد نهائياً
+# الستارة التفاعلية الحية: تظهر اقتراحات مساعدة لتوجيه المستخدم ولا تعيق إضافة هاتف جديد نهائياً
 if phone:
     suggestions = [m for m in unique_models if all(w in m.lower() for w in phone.lower().split())]
     if suggestions:
@@ -154,7 +164,7 @@ if phone:
                 st.session_state["phone_input_val"] = s
                 st.rerun()
 
-# التحقق والمطابقة بالاسم بشكل صارم وحرفي (لمنع الخلط والتشابه بين براندات الهواتف)
+# التحقق والمطابقة بالاسم بشكل صارم وحرفي (لمنع الخلط والتشابه بين براندات الهواتف المختلفة)
 size_str, panel, sensor, real_name = None, None, None, None
 if phone:
     size_str, panel, sensor, real_name = find_model_coords(db_data, phone)
@@ -183,15 +193,3 @@ if phone and size_str and is_exact_match:
     if results['warn']:
         st.markdown("<div class='section-title'>⚠️ تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:</div>", unsafe_allow_html=True)
         for model in results['warn']:
-            st.markdown(f"<div class='flat-warning-card'><span class='flat-warn-text'>{model} (انتبه: حساس مختلف تماماً)</span></div>", unsafe_allow_html=True)
-
-    # وينتهي دور الخطة 1 تماماً قف
-
-# ============================================================
-# الخطة 2: تظهر فوراً وتلقائياً عند كتابة اسم غير موجود نهائياً (مثل Infinix Note 60)
-# ============================================================
-elif phone and not is_exact_match:
-    st.markdown("---")
-    st.warning(f"⚠️ الهاتف ({phone}) غير مدرج بالنظام بالاسم الحفر هذا. تم فتح الخطة 2 لإدخال مواصفاته يدوياً بالتتابع:")
-    
-    col_s, col_p, col_se = st.columns(3)
