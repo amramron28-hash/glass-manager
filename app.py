@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 import requests
-from streamlit_searchbox import st_searchbox
 
 from database import load_db, save_db
 
@@ -33,10 +32,13 @@ inject_pwa_and_styles()
 db_data = load_db()
 
 
+
 def local_check_existing_size_group(db, target_size, target_panel):
+
     matched_models = []
 
     if target_size in db:
+
         if target_panel in db[target_size]:
 
             for sensor, s_data in db[target_size][target_panel].items():
@@ -48,9 +50,11 @@ def local_check_existing_size_group(db, target_size, target_panel):
                 )
 
                 for m in models_list:
+
                     matched_models.append(m)
 
     return matched_models
+
 
 
 
@@ -93,6 +97,7 @@ def ai_background_global_verify(phone_name):
 
             }
 
+
     except:
 
         pass
@@ -102,10 +107,13 @@ def ai_background_global_verify(phone_name):
 
 
 
+
 all_flat_models = []
 
 total_models = 0
+
 brand_counts = {}
+
 empty_groups_count = 0
 
 
@@ -121,9 +129,13 @@ for size, panels in db_data.items():
 
 
             models_list = (
+
                 s_data.get("models", [])
+
                 if isinstance(s_data, dict)
+
                 else s_data
+
             )
 
 
@@ -141,16 +153,21 @@ for size, panels in db_data.items():
                     words = m.split()
 
                     first_word = (
+
                         words[0]
+
                         if words
+
                         else "Unknown"
+
                     )
 
 
                     brand_counts[first_word] = (
-                        brand_counts.get(first_word, 0) + 1
-                    )
 
+                        brand_counts.get(first_word, 0) + 1
+
+                    )
 
 
     if not size_has_models:
@@ -197,48 +214,74 @@ unsafe_allow_html=True
 
 
 
+# 🔎 البحث الذكي + الكتابة الحرة بدون تعارض
+
 def phone_search(searchterm):
 
     if not searchterm:
+
         return []
+
 
     term = searchterm.lower().strip()
 
+
     starts_with = [
+
         m for m in unique_models
+
         if m.lower().startswith(term)
+
     ]
 
+
     contains = [
+
         m for m in unique_models
+
         if term in m.lower()
+
         and m not in starts_with
+
     ]
+
 
     return (starts_with + contains)[:10]
 
 
+
 phone = st.text_input(
+
     "البحث والمطابقة الفورية للموديلات:",
+
     placeholder="اكتب اسم الهاتف المستهدف هنا بحرية...",
+
     label_visibility="collapsed",
+
     key="free_smart_search_input"
+
 )
 
 
+
 phone = phone.strip()
+
 
 
 if phone:
 
     suggestions = phone_search(phone)
 
+
     if suggestions:
 
         st.caption("💡 اقتراحات البحث:")
 
-        for s in suggestions:
-            st.write(f"• {s}")
+
+        for item in suggestions:
+
+            st.write(f"• {item}")
+
 
 
 size_str = None
@@ -260,16 +303,17 @@ if phone:
 is_exact_match = (
 
     True
+
     if real_name and phone.lower() == real_name.lower()
+
     else False
 
-)
-
-
-
+    )
 global_audit_alerts = []
+
+
 # ============================================================
-# تنفيذ الخطة 1: إذا كان الاسم متطابقاً تماماً وموجوداً في قاعدة البيانات
+# الخطة 1: الهاتف موجود بالاسم الحرفي
 # ============================================================
 
 if phone and size_str and is_exact_match:
@@ -299,7 +343,6 @@ if phone and size_str and is_exact_match:
     )
 
 
-
     if "exact" in results:
 
         exact_list = [
@@ -316,7 +359,6 @@ if phone and size_str and is_exact_match:
         )
 
 
-
     if "plus" in results:
 
         draw_neon_section(
@@ -328,7 +370,6 @@ if phone and size_str and is_exact_match:
         )
 
 
-
     if "minus" in results:
 
         draw_neon_section(
@@ -338,7 +379,6 @@ if phone and size_str and is_exact_match:
             "🟤",
             phone
         )
-
 
 
     if results.get("warn"):
@@ -354,7 +394,7 @@ if phone and size_str and is_exact_match:
 
 
 # ============================================================
-# الخطة 2: هاتف جديد غير موجود
+# الخطة 2: الهاتف غير موجود
 # ============================================================
 
 elif phone and not is_exact_match:
@@ -435,7 +475,6 @@ elif phone and not is_exact_match:
     ):
 
 
-
         new_size = new_size.strip()
 
         new_panel = str(new_panel).strip()
@@ -453,8 +492,11 @@ elif phone and not is_exact_match:
             if new_size not in global_data["size"]:
 
                 global_audit_alerts.append(
-                    f"🚨 تدقيق عالمي: هاتف `{phone}` تم إدخاله بـ {new_size} "
+
+                    f"🚨 تدقيق عالمي: هاتف `{phone}` "
+                    f"تم إدخاله بـ {new_size} "
                     f"والحقيقي {global_data['size']}"
+
                 )
 
 
@@ -474,11 +516,9 @@ elif phone and not is_exact_match:
         if matched_list:
 
 
-
             st.info(
                 "💡 تم رصد مجموعة مقاسات وشاشات متطابقة مسبقاً في النظام!"
             )
-
 
 
             st.markdown(
@@ -491,7 +531,6 @@ elif phone and not is_exact_match:
                 "🔗 موافقة: دمج الموديل الجديد وتحديث السحاب",
                 key="btn_merge_model"
             ):
-
 
 
                 if new_size not in db_data:
@@ -521,19 +560,19 @@ elif phone and not is_exact_match:
                     )
 
 
-
                 save_db(db_data)
+
 
                 st.success(
                     f"✅ تم دمج {phone} بنجاح"
                 )
+
 
                 st.rerun()
 
 
 
         else:
-
 
 
             st.error(
@@ -546,7 +585,6 @@ elif phone and not is_exact_match:
                 "➕ إنشاء مجموعة جديدة وإدراج الهاتف",
                 key="btn_create_group"
             ):
-
 
 
                 if new_size not in db_data:
@@ -577,24 +615,33 @@ elif phone and not is_exact_match:
                     f"✅ تم إنشاء المجموعة وحفظ {phone}"
                 )
 
+
                 st.rerun()
 
 
 
 # ============================================================
-# الإشعارات + إعادة لوحة التحكم
+# الإشعارات + لوحة التحكم
 # ============================================================
 
 st.session_state.notifications = (
+
     global_audit_alerts
+
     if global_audit_alerts
+
     else []
+
 )
 
 
 
 draw_control_panel(
+
     notifications=st.session_state.notifications,
+
     total_models=total_models,
+
     empty_groups_count=empty_groups_count
-)
+
+        )
