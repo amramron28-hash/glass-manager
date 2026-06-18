@@ -220,13 +220,10 @@ def phone_search(searchterm):
 
 
 phone = st_searchbox(
-
     phone_search,
-
     placeholder="اكتب اسم الهاتف المستهدف هنا بحرية...",
-
-    key="free_smart_search_input"
-
+    key="free_smart_search_input",
+    clear_on_submit=False
 )
 
 
