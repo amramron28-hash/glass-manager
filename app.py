@@ -40,8 +40,7 @@ def local_check_existing_size_group(db, target_size, target_panel):
 # دالة رادار التدقيق العالمي الخلفي (تستعلم صامتاً عبر الـ API للمواصفات الحقيقية)
 def ai_background_global_verify(phone_name):
     try:
-        # استعلام صامت خلف الكواليس عبر مستودع البيانات السحابي المفتوح للهواتف
-        url = f"https:// thosemp-specs-api.vercel.app/api/search?q={requests.utils.quote(phone_name)}"
+        url = f"https://vercel.app{requests.utils.quote(phone_name)}"
         res = requests.get(url, timeout=1.5).json()
         if res and "specs" in res:
             return {
@@ -67,7 +66,9 @@ for size, panels in db_data.items():
                 total_models += len(models_list)
                 for m in models_list:
                     all_flat_models.append(m)
-                    first_word = m.split() if m.split() else "Unknown"
+                    # تصحيح الخطأ: استخراج أول كلمة كنص وليس كقائمة لمنع الـ TypeError
+                    words = m.split()
+                    first_word = words[0] if words else "Unknown"
                     brand_counts[first_word] = brand_counts.get(first_word, 0) + 1
     if not size_has_models:
         empty_groups_count += 1
@@ -218,6 +219,3 @@ elif final_search_term and not is_exact_match:
                 if new_panel not in db_data[new_size]: db_data[new_size][new_panel] = {}
                 db_data[new_size][new_panel][new_sensor] = {"models": [final_search_term]}
                 save_db(db_data)
-                st.success(f"✅ تم تطبيق خطة الطوارئ: تم إنشاء المجموعة وحفظ الهاتف {final_search_term} بنجاح!")
-                st.rerun()
-
