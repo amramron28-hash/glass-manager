@@ -154,3 +154,4 @@ draw_control_panel(
     total_models=total_models,
     empty_groups_count=empty_groups_count
 )
+
