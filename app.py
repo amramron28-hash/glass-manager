@@ -57,7 +57,6 @@ def local_check_existing_size_group(db, target_size, target_panel):
 
 
 
-
 def ai_background_global_verify(phone_name):
 
     try:
@@ -97,14 +96,12 @@ def ai_background_global_verify(phone_name):
 
             }
 
-
     except:
 
         pass
 
 
     return None
-
 
 
 
@@ -127,15 +124,10 @@ for size, panels in db_data.items():
 
         for sensor, s_data in sensors.items():
 
-
             models_list = (
-
                 s_data.get("models", [])
-
                 if isinstance(s_data, dict)
-
                 else s_data
-
             )
 
 
@@ -153,20 +145,14 @@ for size, panels in db_data.items():
                     words = m.split()
 
                     first_word = (
-
                         words[0]
-
                         if words
-
                         else "Unknown"
-
                     )
 
 
                     brand_counts[first_word] = (
-
                         brand_counts.get(first_word, 0) + 1
-
                     )
 
 
@@ -214,7 +200,7 @@ unsafe_allow_html=True
 
 
 
-# 🔎 البحث الذكي + الكتابة الحرة بدون تعارض
+# 🔎 البحث الذكي + الكتابة الحرة
 
 def phone_search(searchterm):
 
@@ -275,12 +261,17 @@ if phone:
 
     if suggestions:
 
-        st.caption("💡 اقتراحات البحث:")
+        st.markdown(
+            "💡 اقتراحات البحث:",
+            unsafe_allow_html=True
+        )
 
 
         for item in suggestions:
 
-            st.write(f"• {item}")
+            st.markdown(
+                f"🔍 {item}"
+            )
 
 
 
@@ -308,7 +299,7 @@ is_exact_match = (
 
     else False
 
-    )
+)
 global_audit_alerts = []
 
 
@@ -350,6 +341,7 @@ if phone and size_str and is_exact_match:
             if m not in results.get("warn", [])
         ]
 
+
         draw_neon_section(
             "هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)",
             exact_list,
@@ -360,6 +352,7 @@ if phone and size_str and is_exact_match:
 
 
     if "plus" in results:
+
 
         draw_neon_section(
             "هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)",
@@ -372,6 +365,7 @@ if phone and size_str and is_exact_match:
 
     if "minus" in results:
 
+
         draw_neon_section(
             "هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)",
             results["minus"],
@@ -383,6 +377,7 @@ if phone and size_str and is_exact_match:
 
     if results.get("warn"):
 
+
         draw_neon_section(
             "تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:",
             results["warn"],
@@ -393,8 +388,9 @@ if phone and size_str and is_exact_match:
 
 
 
+
 # ============================================================
-# الخطة 2: الهاتف غير موجود
+# الخطة 2: هاتف جديد غير موجود
 # ============================================================
 
 elif phone and not is_exact_match:
@@ -424,13 +420,16 @@ elif phone and not is_exact_match:
 
 
     new_panel = ""
+
     new_sensor = ""
 
 
 
     if new_size.strip():
 
+
         with col_p:
+
 
             new_panel = st.selectbox(
                 "🖥️ 2. نوع الشاشة الهيكلي:",
@@ -450,7 +449,9 @@ elif phone and not is_exact_match:
 
     if new_size.strip() and str(new_panel).strip():
 
+
         with col_se:
+
 
             new_sensor = st.selectbox(
                 "👁️ 3. مستشعر التقارب المكتشف والمراقب:",
@@ -489,7 +490,9 @@ elif phone and not is_exact_match:
 
         if global_data and global_data["size"]:
 
+
             if new_size not in global_data["size"]:
+
 
                 global_audit_alerts.append(
 
@@ -516,9 +519,11 @@ elif phone and not is_exact_match:
         if matched_list:
 
 
+
             st.info(
                 "💡 تم رصد مجموعة مقاسات وشاشات متطابقة مسبقاً في النظام!"
             )
+
 
 
             st.markdown(
@@ -547,17 +552,22 @@ elif phone and not is_exact_match:
 
                 if new_sensor not in db_data[new_size][new_panel]:
 
+
                     db_data[new_size][new_panel][new_sensor] = {
+
                         "models": []
+
                     }
 
 
 
                 if phone not in db_data[new_size][new_panel][new_sensor]["models"]:
 
+
                     db_data[new_size][new_panel][new_sensor]["models"].append(
                         phone
                     )
+
 
 
                 save_db(db_data)
@@ -572,7 +582,9 @@ elif phone and not is_exact_match:
 
 
 
+
         else:
+
 
 
             st.error(
@@ -620,6 +632,7 @@ elif phone and not is_exact_match:
 
 
 
+
 # ============================================================
 # الإشعارات + لوحة التحكم
 # ============================================================
@@ -644,4 +657,4 @@ draw_control_panel(
 
     empty_groups_count=empty_groups_count
 
-        )
+)
