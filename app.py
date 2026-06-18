@@ -223,4 +223,3 @@ elif final_search_term and not is_exact_match:
 if global_audit_alerts:
     st.session_state.notifications = global_audit_alerts
 else:
-
