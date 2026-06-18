@@ -50,7 +50,7 @@ def find_model_coords(db_data, model_name):
     return None, None, None, None
 
 # ==========================
-# المقاسات القريبة
+# المقاسات القريبة (تم إصلاح خطأ السطر 101 البرمجي)
 # ==========================
 def get_compatibles_strict(db_data, model_name):
     results = {
@@ -148,7 +148,7 @@ def run_intelligent_inspector(db_data=None):
         return (db_data if db_data else {}, False)
 
 # ==========================================
-# المراقب الصامت للمقاسات والمستشعرات (تم إصلاح البتر البرمجي)
+# المراقب الصامت للمقاسات والمستشعرات
 # ==========================================
 def smart_proximity_guard(db_data, size, panel, sensor):
     alerts = []
