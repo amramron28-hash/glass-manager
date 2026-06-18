@@ -21,7 +21,7 @@ st.set_page_config(
     page_icon="🔍"
 )
 
-# تفعيل الخلفية الأصلية وتأثير الزجاج وتنسيقات الألوان من ملف الـ UI الخاص بك فوراً
+# text-align filter: تفعيل الخلفية الأصلية وتأثير الزجاج وتنسيقات الألوان من ملف الـ UI الخاص بك فوراً
 inject_pwa_and_styles()
 
 db_data = load_db()
@@ -67,7 +67,7 @@ for size, panels in db_data.items():
                 for m in models_list:
                     all_flat_models.append(m)
                     words = m.split()
-                    first_word = words[0] if words else "Unknown"
+                    first_word = words if words else "Unknown"
                     brand_counts[first_word] = brand_counts.get(first_word, 0) + 1
     if not size_has_models:
         empty_groups_count += 1
@@ -149,7 +149,7 @@ if final_search_term and size_str and is_exact_match:
     # وينتهي دور الخطة 1 تماماً قف
 
 # ============================================================
-# الخطة 2: تفتح فوراً وحراً عند كتابة هاتف جديد تماماً غير مسجل بالاسم (مثل Infinix Note 60)
+# الخطة 2: تظهر فوراً وحراً عند كتابة هاتف جديد تماماً غير مسجل بالاسم (مثل Infinix Note 60)
 # ============================================================
 elif final_search_term and not is_exact_match:
     st.markdown("---")
@@ -219,7 +219,8 @@ elif final_search_term and not is_exact_match:
 
             # وينتهي دور الخطة 3 تماماً قف
 
-# تحديث وتمرير الإشعارات وحالة التنبيهات العالمية إلى لوحة التحكم الجانبية الحية لتظهر بالكامل
-if global_audit_alerts:
-    st.session_state.notifications = global_audit_alerts
-else:
+# صياغة أحادية ذكية ومحمية تمنع خطأ الـ IndentationError نهائياً في السيرفر
+st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
+
+draw_control_panel(
+
