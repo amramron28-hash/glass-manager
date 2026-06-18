@@ -74,7 +74,7 @@ for size, panels in db_data.items():
 
 unique_models = sorted(list(set(all_flat_models)))
 
-# الشعار ذو السطرين وعرض الشاشة الكامل بتوهج نيون أزرق فخم
+# الشعار ذو السطرين وعرض الشاشة الكامل بتوهج نيون أزرق فخم كما أمرت حرفياً
 st.markdown(
 """
 <div style="
@@ -94,38 +94,42 @@ unsafe_allow_html=True
 
 st.markdown("<div class='app-sub-title' style='text-align:center; color:white; margin-bottom:20px;'>النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات</div>", unsafe_allow_html=True)
 
-# حل مشكلة الفراغ: حقل إدخال نصي حر ونظيف تماماً يمنع فتح القائمة عشوائياً عند اللمس
+# تفعيل الستارة المنسدلة الحية والاحترافية عبر الـ Datalist التفاعلي اللحظي بمجرد كتابة حرف واحد
+options_html = "".join([f'<option value="{m}">' for m in unique_models])
+
+st.markdown(f"""
+<datalist id="smart-phones-datalist">
+    {options_html}
+</datalist>
+""", unsafe_allow_html=True)
+
+# مكون البحث النصي المرن المتصل بالستارة المنسدلة المدمجة دون نوافذ مستقلة
 phone = st.text_input(
     "البحث والمطابقة الفورية للموديلات:",
     placeholder="اكتب اسم الهاتف المستهدف هنا بحرية...",
     label_visibility="collapsed",
     key="free_smart_search_input"
-).strip()
+)
 
-# الستارة المنسدلة المساعدة الحقيقية: مقفلة ومحميّة تماماً، لا تفتح إلا إذا كتب المستخدم حرفاً واحداً على الأقل
-final_search_term = phone
-if phone and len(phone) >= 1:
-    search_words = phone.lower().split()
-    filtered_suggestions = [m for m in unique_models if any(any(word in p_word for p_word in m.lower().split()) for word in search_words)]
-    
-    if filtered_suggestions:
-        dropdown_options = ["-- نتائج الاقتراحات المقاربة لكتابتك --"] + filtered_suggestions
-        selected_suggestion = st.selectbox(
-            "اقتراحات مساعدة حرة:",
-            options=dropdown_options,
-            label_visibility="collapsed",
-            key="suggestions_dropdown_gate"
-        )
-        if selected_suggestion != "-- نتائج الاقتراحات المقاربة لكتابتك --":
-            final_search_term = selected_suggestion
+# ربط الحقل النصي بالستارة برمجياً من خلال لغة جاوا سكريبت خفيفة لمنع فرض القوائم عند الفراغ
+st.markdown("""
+<script>
+    var input = window.parent.document.querySelector('input[aria-label="البحث والمطابقة الفورية للموديلات:"]');
+    if (input) {
+        input.setAttribute("list", "smart-phones-datalist");
+        input.setAttribute("autocomplete", "off");
+    }
+</script>
+""", unsafe_allow_html=True)
+
+phone = phone.strip()
 
 # الفحص الصارم والمطابقة بالاسم داخل قاعدة البيانات
 size_str, panel, sensor, real_name = None, None, None, None
-if final_search_term:
-    size_str, panel, sensor, real_name = find_model_coords(db_data, final_search_term)
+if phone:
+    size_str, panel, sensor, real_name = find_model_coords(db_data, phone)
 
-# التحقق من أن المكتوب مطابق لهاتف حقيقي موجود بالسيستم
-is_exact_match = True if real_name and final_search_term.lower() == real_name.lower() else False
+is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
 
 # مصفوفة داخلية لتجميع تقارير تدقيق الرادار العالمي حياً في لوحة التحكم
 global_audit_alerts = []
@@ -133,33 +137,33 @@ global_audit_alerts = []
 # ============================================================
 # تنفيذ الخطة 1: إذا كان الاسم متطابقاً تماماً وموجوداً في قاعدة البيانات
 # ============================================================
-if final_search_term and size_str and is_exact_match:
+if phone and size_str and is_exact_match:
     st.markdown(f"<div class='section-title' style='text-align:right; color:white;'>📊 نتائج التوافق والمقاسات للهاتف: {real_name}</div>", unsafe_allow_html=True)
     
     draw_technical_coords(size_str, panel, sensor)
-    results = get_compatibles_strict(db_data, final_search_term)
+    results = get_compatibles_strict(db_data, phone)
     
     if "exact" in results:
         exact_list = [m for m in results["exact"] if m not in results.get("warn", [])]
-        draw_neon_section("هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)", exact_list, "#2ecc71", "🟢", final_search_term)
+        draw_neon_section("هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)", exact_list, "#2ecc71", "🟢", phone)
         
     if "plus" in results:
-        draw_neon_section("هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)", results["plus"], "#3498db", "🔵", final_search_term)
+        draw_neon_section("هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)", results["plus"], "#3498db", "🔵", phone)
         
     if "minus" in results:
-        draw_neon_section("هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)", results["minus"], "#e67e22", "🟤", final_search_term)
+        draw_neon_section("هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)", results["minus"], "#e67e22", "🟤", phone)
         
     if results.get("warn"):
-        draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", final_search_term)
+        draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", phone)
 
     # وينتهي دور الخطة 1 تماماً قف
 
 # ============================================================
 # الخطة 2: تفتح فوراً وحراً عند كتابة هاتف جديد تماماً غير مسجل بالاسم (مثل Infinix Note 60)
 # ============================================================
-elif final_search_term and not is_exact_match:
+elif phone and not is_exact_match:
     st.markdown("---")
-    st.warning(f"⚠️ الهاتف ({final_search_term}) غير مسجل بالاسم الحرفي هذا. تم فتح الخطة 2 لإدخال مواصفاته يدوياً بالتتابع:")
+    st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي هذا. تم فتح الخطة 2 لإدخال مواصفاته يدوياً بالتتابع:")
     
     col_s, col_p, col_se = st.columns(3)
     with col_s:
@@ -183,10 +187,10 @@ elif final_search_term and not is_exact_match:
         new_sensor = str(new_sensor).strip()
         
         # رادار التدقيق العالمي يحلل صامتاً البيانات هنا خلف الكواليس
-        global_data = ai_background_global_verify(final_search_term)
+        global_data = ai_background_global_verify(phone)
         if global_data and global_data["size"]:
             if new_size not in global_data["size"]:
-                global_audit_alerts.append(f"🚨 تدقيق عالمي: هاتف `{final_search_term}` تم إدخاله بـ {new_size} والموثق سحابياً هو {global_data['size']}")
+                global_audit_alerts.append(f"🚨 تدقيق عالمي: هاتف `{phone}` تم إدخاله بـ {new_size} والموثق سحابياً هو {global_data['size']}")
 
         matched_list = local_check_existing_size_group(db_data, new_size, new_panel)
         st.markdown("---")
@@ -201,10 +205,10 @@ elif final_search_term and not is_exact_match:
                 if new_sensor not in db_data[new_size][new_panel]: db_data[new_size][new_panel][new_sensor] = {"models": []}
                 if isinstance(db_data[new_size][new_panel][new_sensor], list):
                     db_data[new_size][new_panel][new_sensor] = {"models": db_data[new_size][new_panel][new_sensor]}
-                if final_search_term not in db_data[new_size][new_panel][new_sensor]["models"]:
-                    db_data[new_size][new_panel][new_sensor]["models"].append(final_search_term)
+                if phone not in db_data[new_size][new_panel][new_sensor]["models"]:
+                    db_data[new_size][new_panel][new_sensor]["models"].append(phone)
                 save_db(db_data)
-                st.success(f"✅ تم دمج الموديل {final_search_term} وتحديث السحاب بنجاح!")
+                st.success(f"✅ تم دمج الموديل {phone} وتحديث السحاب بنجاح!")
                 st.rerun()
 
             # وينتهي دور الخطة 2 تماماً قف
@@ -218,6 +222,14 @@ elif final_search_term and not is_exact_match:
             if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف كمرجع مستقبلي", key="btn_create_group"):
                 if new_size not in db_data: db_data[new_size] = {}
                 if new_panel not in db_data[new_size]: db_data[new_size][new_panel] = {}
-                db_data[new_size][new_panel][new_sensor] = {"models": [final_search_term]}
+                db_data[new_size][new_panel][new_sensor] = {"models": [phone]}
                 save_db(db_data)
+                st.success(f"✅ تم تطبيق خطة الطوارئ: تم إنشاء المجموعة وحفظ الهاتف {phone} بنجاح!")
+                st.rerun()
 
+            # وينتهي دور الخطة 3 تماماً قف
+
+# صياغة أحادية ذكية ومحمية لتشغيل الإشعارات الجانبية حياً دون خطأ في المسافات البادئة
+st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
+
+draw_control_panel(
