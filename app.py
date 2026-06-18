@@ -144,7 +144,7 @@ draw_neon_section(
     phone
 )
 
-else:
+    else:
     st.warning("الهاتف غير موجود")
     final_size = st.text_input("📏 المقاس", placeholder="مثال 6.78")
     final_panel = ""
