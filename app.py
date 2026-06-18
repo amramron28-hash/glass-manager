@@ -59,27 +59,26 @@ if st.session_state.show_success:
 
 phone = st.text_input("📱 اسم الهاتف", placeholder="مثال: Infinix Note 60").strip()
 
-# الخطة 1: الستارة الحية التفاعلية تظهر فقط عند وجود كلمات مطابقة حقيقية وتختفي فوراً عند انعدامها
-show_plan_2 = True
+# الخطة 1: ستارة الاقتراحات تظهر فوراً وتتحرك مع كل حرف يكتبه المستخدم
 if phone:
     suggestions = [m for m in unique_models if all(w in m.lower() for w in phone.lower().split())]
     if suggestions:
-        show_plan_2 = False # طالما هناك اقتراحات قريبة في الستارة، لا تظهر الخطة 2
         st.caption("🔍 هواتف مقترحة مطابقة في النظام:")
         for s in suggestions[:3]:
-            # جعل الاقتراحات تفاعلية عند الضغط عليها لملء الحقل تلقائياً
             if st.button(f"📋 {s}", key=f"sug_{s}"):
                 st.session_state["phone_input_val"] = s
                 st.rerun()
 
-# تنفيذ البحث الصارم بالاسم بالخطة 1
-if phone and not show_plan_2:
+# التحقق والبحث الصارم بالاسم بالخطة 1
+size, panel, sensor, real = None, None, None, None
+if phone:
     size, panel, sensor, real = find_model_coords(db_data, phone)
-    is_exact_match = True if real and phone.lower() in real.lower() else False
 
-    if size and is_exact_match:
-        st.success(f"🎯 الهاتف موجود : {real}")
-        draw_technical_coords(size, panel, sensor)
+is_exact_match = True if real and phone.lower() in real.lower() else False
+
+if size and is_exact_match:
+    st.success(f"🎯 الهاتف موجود : {real}")
+    draw_technical_coords(size, panel, sensor)
         results = get_compatibles_strict(db_data, phone)
 
         if results:
@@ -91,14 +90,14 @@ if phone and not show_plan_2:
         # وينتهي دور الخطة 1 تماماً قف
 
     else:
-        # الخطة 2: تظهر مباشرة وبقوة عند كتابة هاتف غير موجود مثل (infinix note 60) وتختفي الستارة تماماً
+        # الخطة 2: تظهر فوراً وبقوة عند إدخال اسم غير موجود بالكامل مثل (infinix note 60)
         st.warning(f"⚠️ الهاتف ({phone}) غير مسجل. يرجى إدخال مواصفاته يدوياً بالتتابع:")
         
         final_size = st.text_input("📏 1. أدخل المقاس", placeholder="مثال 6.78")
         final_panel = ""
         final_sensor = ""
 
-        # ظهور تتابعي وتفاعلي للقائمة الثانية بناءً على المقاس
+        # القائمة الثانية تظهر تفاعلياً وتلقائياً بعد كتابة المقاس مباشرة
         if final_size.strip():
             final_panel = st.selectbox(
                 "📺 2. اختر شكل الشاشة",
@@ -107,7 +106,7 @@ if phone and not show_plan_2:
             if final_panel == "➕ إضافة جديد":
                 final_panel = st.text_input("اكتب شكل الشاشة الجديد")
 
-        # ظهور تفاعلي للقائمة الأخيرة يبدأ البحث والفرز فوراً وبمجرد الضغط والاختيار منها
+        # القائمة الأخيرة التفاعلية يبدأ البحث والفرز الفوري بمجرد الاختيار منها مباشرة
         if final_size.strip() and str(final_panel).strip():
             final_sensor = st.selectbox(
                 "👁️ 3. اختر مستشعر التقارب (يبدأ البحث فوراً عند الاختيار)",
@@ -120,13 +119,13 @@ if phone and not show_plan_2:
         final_panel = str(final_panel).strip()
         final_sensor = str(final_sensor).strip()
 
-        # تشغيل محرك البحث والمطابقة في المكتبة فور امتلاء القائمة الأخيرة التفاعلية
+        # معالجة المطابقة الفورية والنهائية فور اختيار القائمة الأخيرة التفاعلية
         if final_size and final_panel and final_sensor:
             group = db_data.get(final_size, {}).get(final_panel, {}).get(final_sensor, {})
             models = group.get("models", [])
 
             if models:
-                st.success("🤝 تم العثور الفوري على مجموعة مطابقة لهذه المواصفات!")
+                st.success("🤝 تم العثور الفوري على مجموعة مطابقة لهذه المواصفات المدخلة!")
                 st.write("📋 الهواتف المشتركة حالياً في المجموعة:", models)
                 
                 if st.button(f"📥 تأكيد إدراج {phone} في هذه المجموعة المطابقة"):
@@ -137,7 +136,7 @@ if phone and not show_plan_2:
                 # وينتهي دور الخطة 2 تماماً قف
 
             else:
-                # الخطة 3: خطة الطوارئ النهائية تفتح فوراً في حال عدم وجود أي تطابق للمواصفات المدخلة
+                # الخطة 3: خطة الطوارئ النهائية تفتح فوراً في حال عدم وجود مجموعة تطابق مدخلاتك
                 st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة تطابق هذه المواصفات في المكتبة.")
                 
                 if st.button(f"✨ إنشاء مجموعة جديدة بالكامل وإدراج {phone} فيها"):
