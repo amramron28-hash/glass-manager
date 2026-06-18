@@ -200,17 +200,22 @@ unsafe_allow_html=True
 def phone_search(searchterm):
 
     if not searchterm:
-
         return []
 
+    term = searchterm.lower().strip()
 
-    return [
-
+    starts_with = [
         m for m in unique_models
+        if m.lower().startswith(term)
+    ]
 
-        if searchterm.lower() in m.lower()
+    contains = [
+        m for m in unique_models
+        if term in m.lower()
+        and m not in starts_with
+    ]
 
-    ][:10]
+    return (starts_with + contains)[:10]
 
 
 
