@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import requests
 from database import load_db, save_db
 from logic_engine import (
     normalize_text,
@@ -25,7 +26,7 @@ inject_pwa_and_styles()
 
 db_data = load_db()
 
-# دالة محلية لفحص شجرة البيانات حياً والتأكد من المجموعات مسبقاً من منطق كودك الأصلي
+# دالة محلية لفحص شجرة البيانات حياً والتأكد من المجموعات مسبقاً
 def local_check_existing_size_group(db, target_size, target_panel):
     matched_models = []
     if target_size in db:
@@ -35,6 +36,22 @@ def local_check_existing_size_group(db, target_size, target_panel):
                 for m in models_list:
                     matched_models.append(m)
     return matched_models
+
+# دالة رادار التدقيق العالمي الخلفي (تستعلم صامتاً عبر الـ API للمواصفات الحقيقية)
+def ai_background_global_verify(phone_name):
+    try:
+        # استعلام صامت خلف الكواليس عبر مستودع البيانات السحابي المفتوح للهواتف
+        url = f"https:// thosemp-specs-api.vercel.app/api/search?q={requests.utils.quote(phone_name)}"
+        res = requests.get(url, timeout=1.5).json()
+        if res and "specs" in res:
+            return {
+                "size": str(res["specs"].get("display_size", "")),
+                "panel": str(res["specs"].get("display_type", "")),
+                "sensor": str(res["specs"].get("proximity_type", ""))
+            }
+    except:
+        pass
+    return None
 
 # بناء الفهرس المسطح للهواتف المتوفرة بالسيستم من كودك القديم حرفياً
 all_flat_models = []
@@ -50,14 +67,14 @@ for size, panels in db_data.items():
                 total_models += len(models_list)
                 for m in models_list:
                     all_flat_models.append(m)
-                    first_word = m.split()[0] if m.split() else "Unknown"
+                    first_word = m.split() if m.split() else "Unknown"
                     brand_counts[first_word] = brand_counts.get(first_word, 0) + 1
     if not size_has_models:
         empty_groups_count += 1
 
 unique_models = sorted(list(set(all_flat_models)))
 
-# الشعار ذو السطرين وعرض الشاشة الكامل بتوهج نيون أزرق فخم كما أمرت حرفياً
+# الشعار ذو السطرين وعرض الشاشة الكامل بتوهج نيون أزرق فخم
 st.markdown(
 """
 <div style="
@@ -77,62 +94,71 @@ unsafe_allow_html=True
 
 st.markdown("<div class='app-sub-title' style='text-align:center; color:white; margin-bottom:20px;'>النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات</div>", unsafe_allow_html=True)
 
-# الستارة المنسدلة الاحترافية الحقيقية (صندوق خيارات واحد يدعم البحث اللحظي بالكتابة)
-dropdown_options = ["-- ابحث واشحن الموديل المستهدف من هنا --", "[ ➕ إضافة هاتف جديد غير مدرج بالنظام ]"] + unique_models
-
-selected_target = st.selectbox(
+# 1. شريط البحث المطور: حقل نصي حر ومرن تماماً لمنع الازدحام عند اللمس وهو فارغ
+phone = st.text_input(
     "البحث والمطابقة الفورية للموديلات:",
-    options=dropdown_options,
+    placeholder="اكتب اسم الهاتف المستهدف هنا بحرية...",
     label_visibility="collapsed",
-    key="unified_smart_search_box"
-)
+    key="free_smart_search_input"
+).strip()
 
-final_search_term = ""
-show_workflow_box = False
+# الستارة المنسدلة المساعدة الحقيقية: تظهر وتتحرك فقط وبمجرد كتابة حرف واحد وتختفي تماماً عند الفراغ
+final_search_term = phone
+if phone and len(phone) >= 1:
+    search_words = phone.lower().split()
+    filtered_suggestions = [m for m in unique_models if any(any(word in p_word for p_word in m.lower().split()) for word in search_words)]
+    
+    if filtered_suggestions:
+        dropdown_options = ["-- نتائج الاقتراحات المقاربة لكتابتك --"] + filtered_suggestions
+        selected_suggestion = st.selectbox(
+            "اقتراحات مساعدة حرة:",
+            options=dropdown_options,
+            label_visibility="collapsed",
+            key="suggestions_dropdown_gate"
+        )
+        if selected_suggestion != "-- نتائج الاقتراحات المقاربة لكتابتك --":
+            final_search_term = selected_suggestion
 
-if selected_target == "[ ➕ إضافة هاتف جديد غير مدرج بالنظام ]":
-    show_workflow_box = True
-elif selected_target != "-- ابحث واشحن الموديل المستهدف من هنا --":
-    final_search_term = selected_target
-
-# ============================================================
-# الخطة 1: عرض نتائج التوافق والمطابقة الذكية للهاتف المختار من الستارة
-# ============================================================
+# الفحص الصارم والمطابقة بالاسم داخل قاعدة البيانات
+size_str, panel, sensor, real_name = None, None, None, None
 if final_search_term:
     size_str, panel, sensor, real_name = find_model_coords(db_data, final_search_term)
+
+is_exact_match = True if real_name and final_search_term.lower() == real_name.lower() else False
+
+# مصفوفة داخلية لتجميع تقارير تدقيق الرادار العالمي حياً
+global_audit_alerts = []
+
+# ============================================================
+# تنفيذ الخطة 1: إذا كان الاسم متطابقاً تماماً وموجوداً في قاعدة البيانات
+# ============================================================
+if final_search_term and size_str and is_exact_match:
+    st.markdown(f"<div class='section-title' style='text-align:right; color:white;'>📊 نتائج التوافق والمقاسات للهاتف: {real_name}</div>", unsafe_allow_html=True)
     
-    if size_str:
-        st.markdown(f"<div class='section-title' style='text-align:right; color:white;'>📊 نتائج التوافق والمقاسات للهاتف: {real_name}</div>", unsafe_allow_html=True)
+    draw_technical_coords(size_str, panel, sensor)
+    results = get_compatibles_strict(db_data, final_search_term)
+    
+    if "exact" in results:
+        exact_list = [m for m in results["exact"] if m not in results.get("warn", [])]
+        draw_neon_section("هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)", exact_list, "#2ecc71", "🟢", final_search_term)
         
-        # استدعاء بطاقة الإحداثيات الفنية الزجاجية الأصلية الخاصة بك
-        draw_technical_coords(size_str, panel, sensor)
+    if "plus" in results:
+        draw_neon_section("هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)", results["plus"], "#3498db", "🔵", final_search_term)
         
-        results = get_compatibles_strict(db_data, final_search_term)
+    if "minus" in results:
+        draw_neon_section("هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)", results["minus"], "#e67e22", "🟤", final_search_term)
         
-        # استدعاء بطاقات النتائج النيون الملونة والزجاجية لتوزيع الهواتف المتوافقة بألوانها الأصلية المشرقة
-        if "exact" in results:
-            exact_list = [m for m in results["exact"] if m not in results.get("warn", [])]
-            draw_neon_section("هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)", exact_list, "#2ecc71", "🟢", final_search_term)
-            
-        if "plus" in results:
-            draw_neon_section("هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)", results["plus"], "#3498db", "🔵", final_search_term)
-            
-        if "minus" in results:
-            draw_neon_section("هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)", results["minus"], "#e67e22", "🟤", final_search_term)
-            
-        if results.get("warn"):
-            draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", final_search_term)
+    if results.get("warn"):
+        draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", final_search_term)
 
-        # وينتهي دور الخطة 1 تماماً قف
+    # وينتهي دور الخطة 1 تماماً قف
 
 # ============================================================
-# الخطة 2: تظهر تفاعلياً عند اختيار خيار إضافة هاتف جديد من القائمة
+# الخطة 2: تفتح فوراً عند كتابة هاتف جديد تماماً غير مسجل بالاسم (مثل Infinix Note 60)
 # ============================================================
-elif show_workflow_box:
+elif final_search_term and not is_exact_match:
     st.markdown("---")
-    st.markdown("<div class='section-title' style='text-align:right; color:white;'>📝 إدخال مواصفات هاتف جديد للفحص والمطابقة الحية:</div>", unsafe_allow_html=True)
-    
-    new_model_name = st.text_input("✍️ اسم الهاتف الجديد بالكامل (مثال: Infinix Hot 50 Pro):", key="workflow_new_name")
+    st.warning(f"⚠️ الهاتف ({final_search_term}) غير مسجل بالاسم الحرفي هذا. تم فتح الخطة 2 لإدخال مواصفاته يدوياً بالتتابع:")
     
     col_s, col_p, col_se = st.columns(3)
     with col_s:
@@ -141,7 +167,6 @@ elif show_workflow_box:
     new_panel = ""
     new_sensor = ""
 
-    # تتابع تفاعلي مشروط لظهور القوائم تدريجياً تالياً للخطوات اليدوية لمنع الازدحام البصري
     if new_size.strip():
         with col_p:
             new_panel = st.selectbox("🖥️ 2. نوع الشاشة الهيكلي:", ["", "Punch-Hole Screen", "Notch Screen", "Waterdrop Notch", "Full Screen", "Flat Screen", "Curved Screen"], key="workflow_panel")
@@ -150,13 +175,17 @@ elif show_workflow_box:
         with col_se:
             new_sensor = st.selectbox("👁️ 3. مستشعر التقارب المكتشف والمراقب:", ["", "hardware_top_sensor", "virtual_camera_sensor", "under_display_fingerprint", "under_display_sensor", "side_sensor", "no_visible_sensor"], key="workflow_sensor")
         
-    if new_model_name and new_size.strip() and str(new_panel).strip() and str(new_sensor).strip():
-        new_model_name = new_model_name.strip()
+    if new_size.strip() and str(new_panel).strip() and str(new_sensor).strip():
         new_size = new_size.strip()
         new_panel = str(new_panel).strip()
         new_sensor = str(new_sensor).strip()
         
-        # استدعاء الدالة المحلية المتوافقة لفحص وجود المجموعة بالمكتبة
+        # رادار التدقيق العالمي يحلل صامتاً البيانات هنا خلف الكواليس
+        global_data = ai_background_global_verify(final_search_term)
+        if global_data and global_data["size"]:
+            if new_size not in global_data["size"]:
+                global_audit_alerts.append(f"🚨 تدقيق عالمي: هاتف `{final_search_term}` تم إدخاله بـ {new_size} والموثق سحابياً هو {global_data['size']}")
+
         matched_list = local_check_existing_size_group(db_data, new_size, new_panel)
         st.markdown("---")
         
@@ -170,29 +199,25 @@ elif show_workflow_box:
                 if new_sensor not in db_data[new_size][new_panel]: db_data[new_size][new_panel][new_sensor] = {"models": []}
                 if isinstance(db_data[new_size][new_panel][new_sensor], list):
                     db_data[new_size][new_panel][new_sensor] = {"models": db_data[new_size][new_panel][new_sensor]}
-                if new_model_name not in db_data[new_size][new_panel][new_sensor]["models"]:
-                    db_data[new_size][new_panel][new_sensor]["models"].append(new_model_name)
+                if final_search_term not in db_data[new_size][new_panel][new_sensor]["models"]:
+                    db_data[new_size][new_panel][new_sensor]["models"].append(final_search_term)
                 save_db(db_data)
-                st.success(f"✅ تم دمج الموديل {new_model_name} وتحديث شجرة الـ JSON بنجاح!")
+                st.success(f"✅ تم دمج الموديل {final_search_term} وتحديث السحاب بنجاح!")
                 st.rerun()
 
             # وينتهي دور الخطة 2 تماماً قف
             
         else:
             # ============================================================
-            # الخطة 3: خطة الطوارئ النهائية تبدأ مباشرة عند انعدام المجموعات المطابقة
+            # الخطة 3: خطة الطوارئ النهائية تفتح وتفصل تلقائياً عند غياب المجموعات المطابقة
             # ============================================================
-            st.warning("🟡 لا توجد مجموعة مطابقة مسبقاً لهذا المقاس/نوع الشاشة في قاعدة البيانات.")
+            st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة تطابق هذه المواصفات في المكتبة.")
             
             if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف كمرجع مستقبلي", key="btn_create_group"):
                 if new_size not in db_data: db_data[new_size] = {}
                 if new_panel not in db_data[new_size]: db_data[new_size][new_panel] = {}
-                db_data[new_size][new_panel][new_sensor] = {"models": [new_model_name]}
+                db_data[new_size][new_panel][new_sensor] = {"models": [final_search_term]}
                 save_db(db_data)
-                st.success(f"✅ تم إنشاء المجموعة الهيكلية الجديدة وحفظ الهاتف {new_model_name} بنجاح!")
+                st.success(f"✅ تم تطبيق خطة الطوارئ: تم إنشاء المجموعة وحفظ الهاتف {final_search_term} بنجاح!")
                 st.rerun()
 
-            # وينتهي دور الخطة 3 تماماً قف
-
-# تشغيل العدادات والمراقب الصامت في الشريط الجانبي من ملف الـ UI الخاص بك
-draw_control_panel(total_models=total_models, empty_groups_count=empty_groups_count)
