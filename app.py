@@ -687,3 +687,332 @@ draw_control_panel(
     empty_groups_count=empty_groups_count
 
     )
+st.success(
+
+            f"🎯 الهاتف موجود : {real}"
+
+        )
+
+
+        draw_technical_coords(
+
+            size,
+
+            panel,
+
+            sensor
+
+        )
+
+
+
+        results = get_compatibles_strict(
+
+            db_data,
+
+            phone
+
+        )
+
+
+
+        draw_neon_section(
+
+            "مطابق ±0.03",
+
+            results["exact"],
+
+            "#2ecc71",
+
+            "🎯",
+
+            phone
+
+        )
+
+
+
+        draw_neon_section(
+
+            "أكبر بقليل ±0.03",
+
+            results["plus"],
+
+            "#3498db",
+
+            "➕",
+
+            phone
+
+        )
+
+
+
+        draw_neon_section(
+
+            "أصغر بقليل ±0.03",
+
+            results["minus"],
+
+            "#e67e22",
+
+            "➖",
+
+            phone
+
+        )
+
+
+
+        draw_neon_section(
+
+            "تحذير مستشعر مختلف",
+
+            results["warn"],
+
+            "#ef4444",
+
+            "⚠️",
+
+            phone
+
+        )
+
+
+
+
+    else:
+
+
+
+        st.warning(
+
+            "الهاتف غير موجود"
+
+        )
+
+
+
+        final_size = st.text_input(
+
+            "📏 المقاس",
+
+            placeholder="مثال 6.78"
+
+        )
+
+
+
+        final_panel = ""
+
+        final_sensor = ""
+
+
+
+
+
+        if final_size.strip():
+
+
+            final_panel = st.selectbox(
+
+                "📺 نوع الشاشة",
+
+                [""]
+
+                + ALL_PANELS
+
+                + live_panels
+
+                + ["➕ إضافة جديد"]
+
+            )
+
+
+
+            if final_panel == "➕ إضافة جديد":
+
+
+                final_panel = st.text_input(
+
+                    "اكتب نوع الشاشة"
+
+                )
+
+
+
+
+
+        if final_size.strip() and final_panel.strip():
+
+
+            final_sensor = st.selectbox(
+
+                "👁️ المستشعر التقارب",
+
+                [""]
+
+                + ALL_SENSORS
+
+                + live_sensors
+
+                + ["➕ إضافة جديد"]
+
+            )
+
+
+
+            if final_sensor == "➕ إضافة جديد":
+
+
+                final_sensor = st.text_input(
+
+                    "اكتب المستشعر"
+
+                )
+
+
+
+
+
+
+        final_size = str(final_size).strip()
+
+        final_panel = str(final_panel).strip()
+
+        final_sensor = str(final_sensor).strip()
+
+
+
+
+
+        if final_size and final_panel and final_sensor:
+
+
+
+            group = (
+
+                db_data
+
+                .get(final_size, {})
+
+                .get(final_panel, {})
+
+                .get(final_sensor, {})
+
+            )
+
+
+
+            models = group.get(
+
+                "models",
+
+                []
+
+            )
+
+
+
+
+
+            if models:
+
+
+                st.success(
+
+                    "🤝 توجد مجموعة مطابقة"
+
+                )
+
+
+                st.write(models)
+
+
+
+                if st.button(
+
+                    "إضافة الهاتف للمجموعة"
+
+                ):
+
+
+
+                    add_model(
+
+                        final_size,
+
+                        final_panel,
+
+                        final_sensor,
+
+                        phone
+
+                    )
+
+
+                    st.session_state.custom_search_input = ""
+
+                    st.session_state.show_success = "تمت الإضافة"
+
+                    st.rerun()
+
+
+
+
+
+            else:
+
+
+                st.warning(
+
+                    "لا توجد مجموعة"
+
+                )
+
+
+
+                if st.button(
+
+                    "إنشاء مجموعة جديدة"
+
+                ):
+
+
+
+                    add_model(
+
+                        final_size,
+
+                        final_panel,
+
+                        final_sensor,
+
+                        phone
+
+                    )
+
+
+                    st.session_state.custom_search_input = ""
+
+                    st.session_state.show_success = "تم إنشاء المجموعة"
+
+                    st.rerun()
+
+
+
+
+
+# ==========================
+# لوحة التحكم
+# ==========================
+
+draw_control_panel(
+
+    notifications=st.session_state.notifications,
+
+    total_models=total_models,
+
+    empty_groups_count=empty_groups_count
+
+)
