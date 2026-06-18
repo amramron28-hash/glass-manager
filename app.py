@@ -177,19 +177,19 @@ is_exact_match = True if real_name and phone.lower() == real_name.lower() else F
 if phone and size_str and is_exact_match:
     st.markdown(f"<div class='section-title'>📊 نتائج التوافق والمقاسات للهاتف: {real_name}</div>", unsafe_allow_html=True)
     results = get_compatibles_strict(db_data, phone)
-    st.markdown(f"<div style='text-align:right;direction:rtl;margin-bottom:20px;'><span class='spec-badge'>📐 المقاس السحابي: {results['current_model']['size']}</span><span class='spec-badge'>🖥️ نوع الهيكل: {results['current_model']['panel']}</span><span class='spec-badge'>👁️ نوع المستشعر: {results['current_model']['sensor']}</span></div>", unsafe_allow_html=True)
+    
+    if 'current_model' in results:
+        st.markdown(f"<div style='text-align:right;direction:rtl;margin-bottom:20px;'><span class='spec-badge'>📐 المقاس السحابي: {results['current_model'].get('size', size_str)}</span><span class='spec-badge'>🖥️ نوع الهيكل: {results['current_model'].get('panel', panel)}</span><span class='spec-badge'>👁️ نوع المستشعر: {results['current_model'].get('sensor', sensor)}</span></div>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<div style='text-align:right;direction:rtl;margin-bottom:20px;'><span class='spec-badge'>📐 المقاس السحابي: {size_str}</span><span class='spec-badge'>🖥️ نوع الهيكل: {panel}</span><span class='spec-badge'>👁️ نوع المستشعر: {sensor}</span></div>", unsafe_allow_html=True)
     
     for cat, title, css in [
         ('exact', '🟢 هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)', 'flat-exact'),
         ('plus', '🔵 هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)', 'flat-plus'),
         ('minus', '🟤 هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)', 'flat-minus')
     ]:
-        models_list = [m for m in results[cat] if m not in results['warn']]
-        if models_list:
-            st.markdown(f"<div class='section-title'>{title}</div>", unsafe_allow_html=True)
-            for model in models_list:
-                st.markdown(f"<div class='ammar-flat-card {css}'><span class='flat-phone-text'>{model}</span></div>", unsafe_allow_html=True)
-    
-    if results['warn']:
-        st.markdown("<div class='section-title'>⚠️ تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:</div>", unsafe_allow_html=True)
-        for model in results['warn']:
+        if cat in results:
+            models_list = [m for m in results[cat] if m not in results.get('warn', [])]
+            if models_list:
+                st.markdown(f"<div class='section-title'>{title}</div>", unsafe_allow_html=True)
+                for model in models_list:
