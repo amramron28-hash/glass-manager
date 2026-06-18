@@ -94,24 +94,30 @@ unsafe_allow_html=True
 
 st.markdown("<div class='app-sub-title' style='text-align:center; color:white; margin-bottom:20px;'>النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات</div>", unsafe_allow_html=True)
 
-# المزامنة العميقة وحفظ مدخلات البحث البرمجية اللحظية لمنع تكرار النوافذ المستقلة
-if "phone_search_key" not in st.session_state:
-    st.session_state["phone_search_key"] = ""
-
-# شريط البحث الموحد: صندوق خيارات ذكي يدعم البحث اللحظي بالكتابة بمجرد كتابة حرف واحد
-dropdown_options = ["-- ابحث واشحن الموديل المستهدف من هنا --"] + unique_models
-
-selected_target = st.selectbox(
+# حل مشكلة الفراغ: حقل إدخال نصي حر ونظيف تماماً يمنع فتح القائمة عشوائياً عند اللمس
+phone = st.text_input(
     "البحث والمطابقة الفورية للموديلات:",
-    options=dropdown_options,
+    placeholder="اكتب اسم الهاتف المستهدف هنا بحرية...",
     label_visibility="collapsed",
-    key="unified_smart_search_box"
-)
+    key="free_smart_search_input"
+).strip()
 
-# التقاط اسم الهاتف المكتوب أو المختار برمجياً بحرية كاملة ودون إجبار
-final_search_term = ""
-if selected_target != "-- ابحث واشحن الموديل المستهدف من هنا --":
-    final_search_term = selected_target
+# الستارة المنسدلة المساعدة الحقيقية: مقفلة ومحميّة تماماً، لا تفتح إلا إذا كتب المستخدم حرفاً واحداً على الأقل
+final_search_term = phone
+if phone and len(phone) >= 1:
+    search_words = phone.lower().split()
+    filtered_suggestions = [m for m in unique_models if any(any(word in p_word for p_word in m.lower().split()) for word in search_words)]
+    
+    if filtered_suggestions:
+        dropdown_options = ["-- نتائج الاقتراحات المقاربة لكتابتك --"] + filtered_suggestions
+        selected_suggestion = st.selectbox(
+            "اقتراحات مساعدة حرة:",
+            options=dropdown_options,
+            label_visibility="collapsed",
+            key="suggestions_dropdown_gate"
+        )
+        if selected_suggestion != "-- نتائج الاقتراحات المقاربة لكتابتك --":
+            final_search_term = selected_suggestion
 
 # الفحص الصارم والمطابقة بالاسم داخل قاعدة البيانات
 size_str, panel, sensor, real_name = None, None, None, None
@@ -149,7 +155,7 @@ if final_search_term and size_str and is_exact_match:
     # وينتهي دور الخطة 1 تماماً قف
 
 # ============================================================
-# الخطة 2: تظهر فوراً وحراً عند كتابة هاتف جديد تماماً غير مسجل بالاسم (مثل Infinix Note 60)
+# الخطة 2: تفتح فوراً وحراً عند كتابة هاتف جديد تماماً غير مسجل بالاسم (مثل Infinix Note 60)
 # ============================================================
 elif final_search_term and not is_exact_match:
     st.markdown("---")
@@ -214,12 +220,4 @@ elif final_search_term and not is_exact_match:
                 if new_panel not in db_data[new_size]: db_data[new_size][new_panel] = {}
                 db_data[new_size][new_panel][new_sensor] = {"models": [final_search_term]}
                 save_db(db_data)
-                st.success(f"✅ تم تطبيق خطة الطوارئ: تم إنشاء المجموعة وحفظ الهاتف {final_search_term} بنجاح!")
-                st.rerun()
-
-            # وينتهي دور الخطة 3 تماماً قف
-
-# صياغة أحادية ذكية ومحمية تمنع خطأ الـ IndentationError نهائياً في السيرفر
-st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
-
 
