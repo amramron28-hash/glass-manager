@@ -49,9 +49,9 @@ def find_model_coords(db_data, model_name):
                         )
     return None, None, None, None
 
-# ==========================
-# المقاسات القريبة (تم إصلاح خطأ السطر 101 البرمجي)
-# ==========================
+# ============================================================
+# المقاسات القريبة (تمت إعادة صياغة السطر 101 لحل خطأ الـ Syntax الجذري)
+# ============================================================
 def get_compatibles_strict(db_data, model_name):
     results = {
         "exact": [],
@@ -98,7 +98,44 @@ def get_compatibles_strict(db_data, model_name):
                         else:
                             results["warn"].append(m)
 
-                    elif 0.01  1:
+                    # صياغة بديلة محمية لمنع تعليق أو تشويه السيرفر عند الرفع لـ Streamlit
+                    elif diff >= 0.01 and diff <= 0.03:
+                        results["plus"].append(m)
+
+                    elif diff <= -0.01 and diff >= -0.03:
+                        results["minus"].append(m)
+
+    return results
+
+# ==========================================
+# كشف تعارض نفس الهاتف
+# ==========================================
+def detect_self_conflicts():
+    alerts = []
+    try:
+        res = supabase.table("phones").select("*").execute()
+        rows = res.data or []
+        grouped = {}
+
+        for row in rows:
+            phone_key = build_phone_identity(row)
+            if not phone_key:
+                continue
+            grouped.setdefault(phone_key, []).append(row)
+
+        for phone, items in grouped.items():
+            sensors = set()
+            sizes = set()
+
+            for item in items:
+                sensor = normalize_text(item.get("sensor",""))
+                size = normalize_text(item.get("size",""))
+                if sensor:
+                    sensors.add(sensor)
+                if size:
+                    sizes.add(size)
+
+            if len(sensors) > 1:
                 alerts.append(
                     {
                         "type": "self_conflict",
@@ -182,4 +219,3 @@ def smart_proximity_guard(db_data, size, panel, sensor):
                             }
                         )
     return alerts
-
