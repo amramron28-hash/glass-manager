@@ -1,12 +1,10 @@
 import streamlit as st
-import datetime
 
 from database import add_model
 
 from logic_engine import (
     find_model_coords,
-    get_compatibles_strict,
-    run_intelligent_inspector
+    get_compatibles_strict
 )
 
 from ui_components import (
@@ -17,8 +15,6 @@ from ui_components import (
 )
 
 from app_init import initialize_system_data
-
-from rapidfuzz import process, fuzz
 
 
 
@@ -41,20 +37,11 @@ def load_system_data():
 
 
 
-if "custom_search_input" not in st.session_state:
-
-    st.session_state.custom_search_input = ""
-
-
-
 if "notifications" not in st.session_state:
-
     st.session_state.notifications = []
 
 
-
 if "show_success" not in st.session_state:
-
     st.session_state.show_success = ""
 
 
@@ -118,48 +105,16 @@ unique_models = [
 
 
 
-# ==========================
-# الشعار
-# ==========================
-
 st.markdown(
 """
 <div style="
-width:100%;
-direction:ltr;
-text-align:left;
-margin-top:-55px;
-padding:0;
-white-space:nowrap;
-overflow:hidden;
-">
-
-<div style="
 font-size:28px;
 font-weight:900;
-letter-spacing:1px;
 color:#00bfff;
-font-family:Arial,sans-serif;
 text-shadow:0 0 12px rgba(0,191,255,.7);
-line-height:1;
 ">
-ZEGAAR AMMAR
-</div>
-
-<div style="
-font-size:28px;
-font-weight:900;
-letter-spacing:1px;
-color:#00bfff;
-font-family:Arial,sans-serif;
-text-shadow:0 0 12px rgba(0,191,255,.7);
-border-bottom:1px solid rgba(0,191,255,.35);
-padding-bottom:3px;
-line-height:1;
-">
+ZEGAAR AMMAR<br>
 GLASS MANAGER
-</div>
-
 </div>
 """,
 unsafe_allow_html=True
@@ -168,22 +123,12 @@ unsafe_allow_html=True
 
 
 
-# ==========================
-# رسالة النجاح
-# ==========================
 
 if st.session_state.show_success:
-
 
     st.success(
         st.session_state.show_success
     )
-
-
-    st.toast(
-        st.session_state.show_success
-    )
-
 
     st.session_state.show_success = ""
 
@@ -208,20 +153,17 @@ phone = st.text_input(
 
 
 # ==========================
-# اقتراحات مساعدة فقط
+# عرض اقتراحات فقط
 # ==========================
 
 if phone:
 
-
     suggestions = []
 
-
-    words = phone.lower().split()
+    search_words = phone.lower().split()
 
 
     for model in unique_models:
-
 
         name = model.lower()
 
@@ -230,10 +172,9 @@ if phone:
 
             word in name
 
-            for word in words
+            for word in search_words
 
         ):
-
 
             suggestions.append(model)
 
@@ -241,24 +182,18 @@ if phone:
 
     if suggestions:
 
+        st.caption("اقتراحات مطابقة فقط:")
 
-        st.caption(
-            "اقتراحات مطابقة:"
-        )
+        for s in suggestions[:5]:
 
-
-        for item in suggestions[:5]:
-
-            st.write(
-                "• " + item
-            )
+            st.write("• " + s)
 
 
 
 
 
 # ==========================
-# البحث والنتائج
+# المحرك الرئيسي
 # ==========================
 
 if phone:
@@ -292,7 +227,7 @@ if phone:
 
             sensor
 
-        )
+)
 results = get_compatibles_strict(
 
             db_data,
@@ -368,6 +303,7 @@ results = get_compatibles_strict(
 
 
 
+
     else:
 
 
@@ -397,21 +333,28 @@ results = get_compatibles_strict(
 
 
 
-
         if final_size.strip():
 
 
             final_panel = st.selectbox(
 
-                "📺 نوع الشاشة",
+                "📺 شكل الشاشة",
 
-                [""]
+                [
+
+                    ""
+
+                ]
 
                 + ALL_PANELS
 
                 + live_panels
 
-                + ["➕ إضافة جديد"]
+                + [
+
+                    "➕ إضافة جديد"
+
+                ]
 
             )
 
@@ -422,7 +365,7 @@ results = get_compatibles_strict(
 
                 final_panel = st.text_input(
 
-                    "اكتب نوع الشاشة"
+                    "اكتب شكل الشاشة"
 
                 )
 
@@ -437,13 +380,21 @@ results = get_compatibles_strict(
 
                 "👁️ المستشعر التقارب",
 
-                [""]
+                [
+
+                    ""
+
+                ]
 
                 + ALL_SENSORS
 
                 + live_sensors
 
-                + ["➕ إضافة جديد"]
+                + [
+
+                    "➕ إضافة جديد"
+
+                ]
 
             )
 
@@ -513,7 +464,6 @@ results = get_compatibles_strict(
                 )
 
 
-
                 st.write(models)
 
 
@@ -538,8 +488,6 @@ results = get_compatibles_strict(
 
                     )
 
-
-                    st.session_state.custom_search_input = ""
 
                     st.session_state.show_success = "تمت الإضافة"
 
@@ -582,8 +530,6 @@ results = get_compatibles_strict(
                     )
 
 
-                    st.session_state.custom_search_input = ""
-
                     st.session_state.show_success = "تم إنشاء المجموعة"
 
                     st.rerun()
@@ -606,4 +552,4 @@ draw_control_panel(
 
     empty_groups_count=empty_groups_count
 
-)
+        )
