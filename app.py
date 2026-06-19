@@ -25,7 +25,7 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 🎨 حقن الخلفية الثابتة هندسياً مع الحفاظ الصارم على أبعاد النيون والمجموعات
+# 🎨 حقن الخلفية الثابتة مع إعطاء الاقتراحات المساعدة قوة الطفو المطلق فوق الصورة
 st.markdown(
     f"""
     <style>
@@ -66,7 +66,24 @@ st.markdown(
         color: white !important;
         border: 1px solid rgba(0, 191, 255, 0.3) !important;
     }}
-    /* منع تصغير أو التصاق بطاقات النيون وحماية الهوامش القياسية */
+    /* حاوية مخصصة تجبر الاقتراحات على الطفو الفلاشي فوق واجهة الشاشة والصورة الخلفية */
+    .floating-suggestions-box {{
+        padding: 15px; 
+        background: rgba(13, 17, 23, 0.95) !important; 
+        border: 1px solid #00bfff !important; 
+        border-radius: 8px; 
+        margin-top: 5px; 
+        margin-bottom: 15px;
+        box-shadow: 0 0 15px rgba(0,191,255,0.4);
+        position: relative !important;
+        z-index: 999999 !important; /* اختراق وبث الواجهة فوق الصورة */
+    }}
+    .suggestion-item {{
+        color: #ffffff !important;
+        font-size: 16px !important;
+        padding: 6px 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }}
     .neon-section {{
         margin-top: 25px !important;
         margin-bottom: 25px !important;
@@ -101,23 +118,13 @@ st.markdown(
     all_available_sensors
 ) = initialize_system_data()
 
-# 🎯 [الربط المحكم وصمام التغذية التلقائية لملف المؤشر]:
-# إذا كان ملف models_index.txt فارغاً تماماً على GitHub، يتم تعبئته وضخ الموديلات القديمة داخله فوراً دفعة واحدة لمرة واحدة فقط
+# 🔗 قفل قراءة الـ Auto-complete المباشرة الصارمة من ملف الأسماء النصي المحكم الخاص بك
 INDEX_FILE = "models_index.txt"
 if os.path.exists(INDEX_FILE):
     with open(INDEX_FILE, "r", encoding="utf-8") as f:
-        has_lines = any(line.strip() for line in f)
-        
-    if not has_lines and unique_models:
-        with open(INDEX_FILE, "w", encoding="utf-8") as f:
-            for m_name in unique_models:
-                f.write(f"{m_name}\n")
-
-    # 🔗 قفل الربط اللحظي: إجبار محرك البحث على القراءة المباشرة من أسطر ملف الأسماء النصي الخفيف
-    with open(INDEX_FILE, "r", encoding="utf-8") as f:
         unique_models = sorted(list(set([line.strip() for line in f if line.strip()])))
 
-# 🔍 محرك جلب الاقتراحات اللحظية الفلاشية المعتمد على أسطر ملف الأسماء الخفيف
+# 🔍 محرك جلب الاقتراحات اللحظية الفلاشية من ملف الأسماء
 def fast_phone_search(searchterm):
     if not searchterm:
         return []
@@ -134,23 +141,18 @@ phone = st.text_input(
     key="free_smart_search_input"
 ).strip()
 
-# جلب الاقتراحات المساعدة لحظياً أثناء الكتابة من مصفوفة الملف
+# جلب الاقتراحات المساعدة لحظياً أثناء الكتابة
 suggestions = fast_phone_search(phone) if phone else []
 
-# ⚡ [إصلاح الـ Auto-complete]: إظهار ستارة الاقتراحات المساعدة لحظياً في الواجهة الرئيسية لمنع الاختفاء
+# ⚡ [إصلاح وفك الحجب البصري]: طباعة الاقتراحات داخل حاوية الطفو العلوية الفلورية لتعمل وتظهر فوراً مئة بالمئة
 if phone and suggestions:
     is_fully_matched = any(phone.lower() == s.lower() for s in suggestions)
     if not is_fully_matched:
-        st.markdown(
-            """
-            <div style='padding:10px; background:rgba(0,191,255,0.05); border-right:4px solid #00bfff; margin-bottom:15px; border-radius:4px;'>
-                <span style='color:#00bfff; font-weight:bold;'>💡 اقتراحات البحث المساعدة لتسريع الكتابة:</span>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
+        html_suggestions = "<div class='floating-suggestions-box'><span style='color:#00bfff; font-weight:bold; font-size:16px;'>💡 اقتراحات البحث المساعدة لتسريع الكتابة:</span><br><br>"
         for item in suggestions:
-            st.markdown(f"🔍 **{item}**")
+            html_suggestions += f"<div class='suggestion-item'>🔍 <b>{item}</b></div>"
+        html_suggestions += "</div>"
+        st.markdown(html_suggestions, unsafe_allow_html=True)
 
 # 🔗 الالتحام البرمجي الكامل وتمرير البيانات لملف العمليات
 run_system_workflows(
