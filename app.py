@@ -28,24 +28,20 @@ st.set_page_config(
 # حقن أنماط الـ PWA والملفات الأساسية
 inject_pwa_and_styles()
 
-# 🎨 حل مشكلة الشعار والسرعة: دمج الأنماط وتصحيح التموضع لمنع التداخل مع الواجهة
+# 🎨 الأنماط المرئية وحاوية الشعار المحكمة لمنع التداخل مع الخلفية والصورة
 st.markdown(
     """
     <style>
-    /* تثبيت الخلفية وتناسق الأبعاد */
     .stApp {
         background-color: #0d1117;
     }
-    
-    /* حاوية موحدة ومحكمة للشعار والعنوان لمنع الارتطام والنزول العشوائي */
     .main-header-container {
         width: 100%;
         text-align: center;
-        margin-top: -20px; /* سحب لأعلى لمنع النزول على الصورة */
+        margin-top: -20px;
         margin-bottom: 20px;
         padding: 5px;
     }
-    
     .main-logo {
         font-size: 32px; 
         font-weight: 900; 
@@ -53,7 +49,6 @@ st.markdown(
         text-shadow: 0 0 15px rgba(0,191,255,0.8);
         line-height: 1.2;
     }
-    
     .main-subtitle {
         font-size: 18px;
         font-weight: 600;
@@ -62,8 +57,6 @@ st.markdown(
         margin-top: 8px;
         text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
     }
-    
-    /* تصميم بطاقات النتائج الفلورية المتوافقة */
     .glass-card {
         border-radius: 12px;
         padding: 15px;
@@ -73,13 +66,11 @@ st.markdown(
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
     }
-    
     .glass-card:hover {
         transform: translateY(-2px);
     }
     </style>
     
-    <!-- عرض الشعار والعنوان في حاوية واحدة محكمة برمجياً -->
     <div class="main-header-container">
         <div class="main-logo">ZEGAAR AMMAR<br>GLASS MANAGER</div>
         <div class="main-subtitle">النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات</div>
@@ -88,19 +79,36 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ☁️ تحميل قاعدة البيانات السحابية المركزية
+# ☁️ تحميل قاعدة البيانات السحابية المركزية (للمواصفات والخطط)
 db_data = load_db()
+
+# 🗂️ إدارة ملف المؤشر السريع المخصص للأسماء فقط (فكرتك العبقرية للسرعة الفلاشية)
+INDEX_FILE = "models_index.txt"
+
+def load_models_index():
+    """تحميل مصفوفة الأسماء فوراً من الملف النصي الخفيف"""
+    if not os.path.exists(INDEX_FILE):
+        return []
+    with open(INDEX_FILE, "r", encoding="utf-8") as f:
+        # قراءة الأسطر وتنظيفها من الفراغات
+        return sorted(list(set([line.strip() for line in f if line.strip()])))
+
+def append_to_models_index(phone_name):
+    """إضافة اسم هاتف جديد للمؤشر النصي فوراً أثناء الدمج أو الحفظ"""
+    current_models = load_models_index()
+    if phone_name not in current_models:
+        with open(INDEX_FILE, "a", encoding="utf-8") as f:
+            f.write(f"{phone_name}\n")
+
+# جلب مصفوفة الهواتف من ملف المؤشر الخفيف (استجابة فلاشية بدون تفكيك قاعدة البيانات)
+unique_models = load_models_index()
 
 def local_check_existing_size_group(db, target_size, target_panel):
     matched_models = []
     if target_size in db:
         if target_panel in db[target_size]:
             for sensor, s_data in db[target_size][target_panel].items():
-                models_list = (
-                    s_data.get("models", [])
-                    if isinstance(s_data, dict)
-                    else s_data
-                )
+                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
                 for m in models_list:
                     matched_models.append(m)
     return matched_models
@@ -119,36 +127,21 @@ def ai_background_global_verify(phone_name):
         pass
     return None
 
-# 📊 احتساب السجلات في الخلفية (تم تحسينها لتكون خفيفة)
-all_flat_models = []
-total_models = 0
-brand_counts = {}
+# حساب الإحصائيات العامة بلوحة التحكم الخلفية
+total_models = len(unique_models)
 empty_groups_count = 0
-
 for size, panels in db_data.items():
     size_has_models = False
     for panel, sensors in panels.items():
         for sensor, s_data in sensors.items():
-            models_list = (
-                s_data.get("models", [])
-                if isinstance(s_data, dict)
-                else s_data
-            )
+            models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
             if models_list:
                 size_has_models = True
-                total_models += len(models_list)
-                for m in models_list:
-                    all_flat_models.append(m)
-                    words = m.split()
-                    first_word = words[0] if words else "Unknown"
-                    brand_counts[first_word] = brand_counts.get(first_word, 0) + 1
     if not size_has_models:
         empty_groups_count += 1
 
-unique_models = sorted(list(set(all_flat_models)))
-
-# 🔍 محرك البحث السريع جداً والاقتراحات اللحظية
-def phone_search(searchterm):
+# 🔍 محرك البحث اللحظي السريع جداً المبني على ملف المؤشر النصي المسطح
+def fast_phone_search(searchterm):
     if not searchterm:
         return []
     term = searchterm.lower().strip()
@@ -164,8 +157,8 @@ phone = st.text_input(
     key="free_smart_search_input"
 ).strip()
 
-# جلب الاقتراحات فوراً بدون استدعاء أي دوال ثقيلة
-suggestions = phone_search(phone) if phone else []
+# جلب الاقتراحات المساعدة لحظياً من المؤشر المسطح فلاشياً
+suggestions = fast_phone_search(phone) if phone else []
 # ============================================================
 # حساب متغيرات التطابق (تم تأخيرها هنا لضمان السرعة اللحظية للاقتراحات)
 # ============================================================
@@ -186,7 +179,7 @@ global_audit_alerts = []
 # الخطة 1: مساعدة الكتابة الاقتراحية أو ظهور النتائج المطابقة حرفياً
 # ============================================================
 if phone:
-    # أ- مرحلة الاقتراحات الستارية (تظهر لحظياً وسريعاً جداً أثناء كتابة الحروف الأولى لتسريع العملية)
+    # أ- مرحلة الاقتراحات الستارية (تظهر لحظياً وسريعاً جداً من الملف النصي الخفيف لتسريع العملية)
     if suggestions and not is_exact_match:
         st.markdown(
             """
@@ -268,7 +261,7 @@ should_open_manual_workflow = (phone != "" and not is_exact_match and not sugges
 
 if should_open_manual_workflow:
     st.markdown("---")
-    st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي ولا توجد اقتراحات مطابقة له. تم فتح النوافذ التتابعية لإدخل مواصفاته يدوياً:")
+    st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي ولا توجد اقتراحات مطابقة له. تم فتح النوافذ التتابعية لإدخال مواصفاته يدوياً:")
 
     # عرض المدخلات اليدوية الثلاثة تباعاً عبر الأعمدة الهيكلية
     col_s, col_p, col_se = st.columns(3)
@@ -331,8 +324,13 @@ if should_open_manual_workflow:
                 if phone not in db_data[new_size][new_panel][new_sensor]["models"]:
                     db_data[new_size][new_panel][new_sensor]["models"].append(phone)
 
+                # حفظ في قاعدة البيانات الشاملة
                 save_db(db_data)
-                st.success(f"✅ تم دمج {phone} بنجاح كعنصر متوافق داخل المجموعة المكتشفة.")
+                
+                # تحديث ملف المؤشر النصي تلقائياً (فكرتك العبقرية)
+                append_to_models_index(phone)
+                
+                st.success(f"✅ تم دمج {phone} بنجاح كعنصر متوافق وتحديث مؤشر البحث الفلاشي.")
                 st.rerun()
             # (قف) - انتهاء الخطة 2 بالدمج التلقائي الناجح للمجموعة الحالية وتوقف المعالجة
 
@@ -350,8 +348,13 @@ if should_open_manual_workflow:
 
                 db_data[new_size][new_panel][new_sensor] = {"models": [phone]}
 
+                # حفظ في قاعدة البيانات الشاملة
                 save_db(db_data)
-                st.success(f"✅ تم تفعيل خطة الطوارئ بنجاح، وإنشاء مجموعة سحابية جديدة لحفظ الهاتف {phone} كأول عنصر.")
+                
+                # تحديث ملف المؤشر النصي تلقائياً (فكرتك العبقرية)
+                append_to_models_index(phone)
+                
+                st.success(f"✅ تم تفعيل خطة الطوارئ بنجاح، وإنشاء مجموعة سحابية ومؤشر نصي جديد لحفظ الهاتف {phone}.")
                 st.rerun()
             # (قف) - انتهاء الخطة 3 بتأسيس قاعدة جديدة كلياً وتوقف المعالجة
 
