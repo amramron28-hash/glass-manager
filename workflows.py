@@ -1,5 +1,4 @@
 import os
-import time
 import streamlit as st
 import requests
 from database import load_db, save_db
@@ -157,6 +156,10 @@ def run_system_workflows(phone, db_data, suggestions):
             matched_list = local_check_existing_size_group(db_data, new_size, chosen_panel)
             st.markdown("---")
 
+            # لإدارة واجهة النجاح ومنع الاختفاء الفوري لسرعة البرق
+            if f"success_saved_{phone}" not in st.session_state:
+                st.session_state[f"success_saved_{phone}"] = False
+
             # ------------------------------------------------------------
             # الخطة 2: دمج الهاتف الجديد في مجموعة هيكلية مكتشفة مسبقاً
             # ------------------------------------------------------------
@@ -164,25 +167,26 @@ def run_system_workflows(phone, db_data, suggestions):
                 st.info("💡 تم رصد مجموعة مقاسات وشاشات متطابقة مسبقاً في النظام السحابي!")
                 st.markdown(f"🎯 الموديلات المتوافقة مع هذه المجموعة: **{', '.join(matched_list)}**")
 
-                if st.button("🔗 موافقة: دمج الموديل الجديد وتحديث السحاب", key="btn_merge_model"):
-                    if new_size not in db_data: db_data[new_size] = {}
-                    if chosen_panel not in db_data[new_size]: db_data[new_size][chosen_panel] = {}
-                    if chosen_sensor not in db_data[new_size][chosen_panel]: db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
-                    
-                    if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
-                        db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
+                if not st.session_state[f"success_saved_{phone}"]:
+                    if st.button("🔗 موافقة: دمج الموديل الجديد وتحديث السحاب", key="btn_merge_model"):
+                        if new_size not in db_data: db_data[new_size] = {}
+                        if chosen_panel not in db_data[new_size]: db_data[new_size][chosen_panel] = {}
+                        if chosen_sensor not in db_data[new_size][chosen_panel]: db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
+                        
+                        if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
+                            db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
-                    # قفل الحفظ السحابي والنصي فوراً
-                    save_db(db_data)
-                    append_to_models_index(phone)
-                    
-                    # تنشيط ومزامنة تنبيهات الواجهة مع المراقبة الصامتة
-                    st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
-                    
-                    # حقن واجهة النجاح الثابتة لـ HTML
-                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px;'>✅ تم دمج الهاتف بنجاح وحفظ البيانات في السحاب الشامل!</div>", unsafe_allow_html=True)
-                    time.sleep(2.0)
-                    st.rerun()
+                        # قفل وتأمين خطوط الاتصال السحابي والنصي كاملاً أولاً
+                        save_db(db_data)
+                        append_to_models_index(phone)
+                        st.session_state[f"success_saved_{phone}"] = True
+                        st.rerun()
+                else:
+                    # تثبيت دائم وآمن لبطاقة النجاح مع زر التحديث اليدوي الحاسم
+                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px; box-shadow:0 0 10px rgba(46,204,113,0.5);'>✅ تم قفل ودمج الهاتف بنجاح في السحاب المركزي!</div>", unsafe_allow_html=True)
+                    if st.button("🔄 تحديث وتنشيط النظام الموحد", key="refresh_system_btn_2"):
+                        st.session_state[f"success_saved_{phone}"] = False
+                        st.rerun()
                 # [قف]
 
             # ------------------------------------------------------------
@@ -191,19 +195,9 @@ def run_system_workflows(phone, db_data, suggestions):
             else:
                 st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة مسبقة تطابق هذه المواصفات.")
 
-                if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف", key="btn_create_group"):
-                    if new_size not in db_data: db_data[new_size] = {}
-                    if chosen_panel not in db_data[new_size]: db_data[new_size][chosen_panel] = {}
-                    if chosen_sensor not in db_data[new_size][chosen_panel]: db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
+                if not st.session_state[f"success_saved_{phone}"]:
+                    if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف", key="btn_create_group"):
+                        if new_size not in db_data: db_data[new_size] = {}
+                        if chosen_panel not in db_data[new_size]: db_data[new_size][chosen_panel] = {}
+                        if chosen_sensor not in db_data[new_size][chosen_panel]: db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
 
-                    if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
-                        db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
-
-                    # قفل الحفظ السحابي والنصي فوراً
-                    save_db(db_data)
-                    append_to_models_index(phone)
-                    
-                    # تنشيط ومزامنة تنبيهات الواجهة مع المراقبة الصامتة
-                    st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
-                    
-                    # حقن واجهة النجاح الثابتة لـ HTML
