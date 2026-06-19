@@ -2,9 +2,9 @@ import json
 import urllib.request
 import urllib.error
 
+# إعدادات الاتصال
 URL = "https://mgmphimlcdchtbiyhhbt.supabase.co/rest/v1/phones"
-# استخدم مفتاح service_role (يبدأ بـ ey...) بدلاً من المفتاح العام للرفع بنجاح
-KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX" 
+KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
 
 headers = {
     "apikey": KEY,
@@ -13,13 +13,12 @@ headers = {
     "Prefer": "return=representation"
 }
 
+# معالج التحويلات (Redirect)
 class SupabaseRedirectHandler(urllib.request.HTTPRedirectHandler):
     def http_error_307(self, req, fp, code, msg, hdrs):
         new_url = hdrs.get('Location') or hdrs.get('location')
         if new_url:
-            new_req = urllib.request.Request(
-                new_url, data=req.data, headers=req.headers, method=req.get_method()
-            )
+            new_req = urllib.request.Request(new_url, data=req.data, headers=req.headers, method=req.get_method())
             return self.parent.open(new_req)
         return urllib.request.HTTPRedirectHandler.http_error_307(self, req, fp, code, msg, hdrs)
 
@@ -34,7 +33,6 @@ def load_db():
         req = urllib.request.Request(f"{URL}?select=*", headers=headers, method='GET')
         with opener.open(req) as response:
             rows = json.loads(response.read().decode("utf-8"))
-        
         db = {}
         for row in rows:
             size = _safe(row.get("size"))
@@ -51,7 +49,6 @@ def load_db():
         return {}
 
 def add_model(size, panel, sensor, model):
-    """دالة الإضافة مع كشف الأخطاء التلقائي"""
     try:
         payload = {
             "size": _safe(size),
@@ -60,14 +57,11 @@ def add_model(size, panel, sensor, model):
             "model_name": _safe(model)
         }
         req = urllib.request.Request(URL, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
-        
         with opener.open(req) as response:
             print(f"SUCCESS: Server responded with {response.getcode()}")
             return True
     except urllib.error.HTTPError as e:
-        error_resp = e.read().decode()
-        print(f"!!! ERROR: Supabase refused the record. Status: {e.code}")
-        print(f"!!! ERROR DETAILS: {error_resp}") # هذا السطر سيخبرك بالسبب الدقيق
+        print(f"!!! HTTP ERROR: {e.read().decode()}")
         return False
     except Exception as e:
         print(f"!!! GENERAL ERROR: {str(e)}")
@@ -77,3 +71,14 @@ def save_db(data, new_phone_name=None, size=None, panel=None, sensor=None):
     if new_phone_name and size and panel and sensor:
         return add_model(size, panel, sensor, new_phone_name)
     return True
+
+# كائن متوافق مع الكود القديم لمنع ImportError
+class SupabaseMockClient:
+    def table(self, *a, **k): return self
+    def select(self, *a, **k): return self
+    def insert(self, *a, **k): return self
+    def execute(self):
+        class R: data = load_db()
+        return R()
+
+supabase = SupabaseMockClient()
