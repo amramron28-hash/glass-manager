@@ -1,5 +1,4 @@
 import streamlit as st
-import os
 from app_init import initialize_system_data
 from workflows import run_system_workflows
 
@@ -10,19 +9,29 @@ st.set_page_config(
     page_icon="🔍"
 )
 
-# 🎨 تصميم الواجهة وتصحيح تموضع الشعار وتثبيت واجهة الزجاج والخلفية
+# 🎨 [الحل الجذري]: تحويل الصورة إلى خلفية ثابتة 100% لا تتحرك ولا تنزل لأسفل
 st.markdown(
     """
     <style>
+    /* حقن الصورة كخلفية ثابتة ممتدة على كامل الشاشة خلف العناصر */
     .stApp {
-        background-color: #0d1117;
+        background-image: url("app/static/phone_image.webp");
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-attachment: fixed; /* هذا السطر يضمن ثبات الصورة تماماً أثناء التمرير */
+        background-color: #0d1117; /* لون احتياطي في حال تأخر تحميل الصورة */
     }
+    
+    /* تصميم حاوية الشعار العلوي */
     .main-header-container {
         width: 100%;
         text-align: center;
         margin-top: -20px;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         padding: 5px;
+        background: rgba(13, 17, 23, 0.6); /* خلفية ضبابية خفيفة للشعار لزيادة الوضوح */
+        border-radius: 8px;
     }
     .main-logo {
         font-size: 32px; 
@@ -39,14 +48,12 @@ st.markdown(
         margin-top: 8px;
         text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
     }
-    .glass-card {
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 15px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
+    
+    /* جعل خانات المدخلات والبطاقات تطفو بشكل شفاف وجميل فوق الخلفية الثابتة */
+    .stTextInput>div>div>input {
+        background: rgba(255, 255, 255, 0.07) !important;
+        color: white !important;
+        border: 1px solid rgba(0, 191, 255, 0.3) !important;
     }
     </style>
     
@@ -79,7 +86,7 @@ def fast_phone_search(searchterm):
     contains = [m for m in unique_models if term in m.lower() and m not in starts_with]
     return (starts_with + contains)[:10]
 
-# 📥 خانة البحث الحر الفوري المدمج (تظهر الآن مباشرة في الأعلى تحت العنوان)
+# 📥 خانة البحث الحر الفوري في الأعلى (تطفو الآن بشكل زجاجي فوق الواجهة الثابتة)
 phone = st.text_input(
     "البحث والمطابقة الفورية للموديلات:",
     placeholder="اكتب اسم الهاتف المستهدف هنا بحرية وسرعة...",
@@ -90,7 +97,7 @@ phone = st.text_input(
 # جلب الاقتراحات المساعدة لحظياً أثناء الكتابة
 suggestions = fast_phone_search(phone) if phone else []
 
-# 🔗 الالتحام البرمجي الكامل: تمرير النص والبيانات لملف العمليات المحدث لتشغيل الخطط
+# 🔗 الالتحام البرمجي الكامل وتمرير البيانات لملف العمليات (تظهر خططه والبطاقات فوق الخلفية بثبات)
 run_system_workflows(
     phone=phone,
     db_data=db_data,
@@ -98,8 +105,3 @@ run_system_workflows(
     total_models=total_models,
     empty_groups_count=empty_groups_count
 )
-
-# 📸 [تصحيح الترتيب]: إنزال الصورة الخلفية لتظهر دائماً بالأسفل تحت خانة البحث أو تحت نتائج النيون
-image_path = "phone_image.webp"
-if os.path.exists(image_path):
-    st.image(image_path, use_container_width=True)
