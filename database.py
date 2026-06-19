@@ -1,8 +1,10 @@
 import json
 import urllib.request
+import urllib.error
 
 URL = "https://mgmphimlcdchtbiyhhbt.supabase.co/rest/v1/phones"
-KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
+# استخدم مفتاح service_role (يبدأ بـ ey...) بدلاً من المفتاح العام للرفع بنجاح
+KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX" 
 
 headers = {
     "apikey": KEY,
@@ -39,9 +41,7 @@ def load_db():
             model = _safe(row.get("model_name"))
             panel = _safe(row.get("panel")) or "Notch Screen"
             sensor = _safe(row.get("sensor")) or "hardware_top_sensor"
-
             if not size or not model: continue
-            
             db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
             if model not in db[size][panel][sensor]["models"]:
                 db[size][panel][sensor]["models"].append(model)
@@ -51,7 +51,7 @@ def load_db():
         return {}
 
 def add_model(size, panel, sensor, model):
-    """دالة الإضافة المباشرة لـ Supabase"""
+    """دالة الإضافة مع كشف الأخطاء التلقائي"""
     try:
         payload = {
             "size": _safe(size),
@@ -59,32 +59,21 @@ def add_model(size, panel, sensor, model):
             "sensor": _safe(sensor),
             "model_name": _safe(model)
         }
-        req = urllib.request.Request(
-            URL,
-            data=json.dumps(payload).encode("utf-8"),
-            headers=headers,
-            method="POST"
-        )
+        req = urllib.request.Request(URL, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
+        
         with opener.open(req) as response:
-            return 200 <= response.getcode() < 300
+            print(f"SUCCESS: Server responded with {response.getcode()}")
+            return True
+    except urllib.error.HTTPError as e:
+        error_resp = e.read().decode()
+        print(f"!!! ERROR: Supabase refused the record. Status: {e.code}")
+        print(f"!!! ERROR DETAILS: {error_resp}") # هذا السطر سيخبرك بالسبب الدقيق
+        return False
     except Exception as e:
-        print("ADD_MODEL ERROR:", e)
+        print(f"!!! GENERAL ERROR: {str(e)}")
         return False
 
 def save_db(data, new_phone_name=None, size=None, panel=None, sensor=None):
-    """تم تعديلها لتقوم بالرفع الفعلي"""
     if new_phone_name and size and panel and sensor:
         return add_model(size, panel, sensor, new_phone_name)
     return True
-
-# Mock client للحفاظ على توافقية الكود القديم
-class SupabaseMockClient:
-    class MockTable:
-        def insert(self, *a, **k): return self
-        def select(self, *a, **k): return self
-        def execute(self):
-            class R: data = load_db()
-            return R()
-    def table(self, *a, **k): return self.MockTable()
-
-supabase = SupabaseMockClient()
