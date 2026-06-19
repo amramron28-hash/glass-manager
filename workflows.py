@@ -1,25 +1,49 @@
 import os
+import requests
 import streamlit as st
 from ui_components import draw_technical_coords, draw_neon_section
 from logic_engine import find_model_coords, get_compatibles_strict
 from database import save_db
-from main_module import local_check_existing_size_group, ai_background_global_verify
+
+# -------------------------------------------------------------
+# الدوال الأساسية للنظام (مدمجة هنا لتجنب أخطاء الاستيراد)
+# -------------------------------------------------------------
+
+def local_check_existing_size_group(db, target_size, target_panel):
+    """التحقق من وجود مجموعة مقاسات وشاشة مسجلة مسبقاً."""
+    matched_models = []
+    if target_size in db and target_panel in db[target_size]:
+        for sensor, s_data in db[target_size][target_panel].items():
+            models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+            matched_models.extend(models_list)
+    return matched_models
+
+def ai_background_global_verify(phone_name):
+    """جلب بيانات الهاتف من مصدر خارجي للتدقيق."""
+    try:
+        url = f"https://vercel.app{requests.utils.quote(phone_name)}"
+        res = requests.get(url, timeout=1.5).json()
+        if res and "specs" in res:
+            return {
+                "size": str(res["specs"].get("display_size", "")), 
+                "panel": str(res["specs"].get("display_type", "")), 
+                "sensor": str(res["specs"].get("proximity_type", ""))
+            }
+    except: pass
+    return None
 
 def append_to_models_index(phone_name):
     """تحديث ملف الفهرس النصي واستقبال أسماء الهواتف تلقائياً دون تكرار."""
     INDEX_FILE = "models_index.txt"
     phone_name = phone_name.strip()
     
-    # إنشاء الملف إذا لم يكن موجوداً من قبل
     if not os.path.exists(INDEX_FILE):
         with open(INDEX_FILE, "w", encoding="utf-8") as f:
             pass
             
-    # قراءة الأسماء الحالية لتجنب التكرار
     with open(INDEX_FILE, "r", encoding="utf-8") as f: 
         current_models = [line.strip().lower() for line in f if line.strip()]
     
-    # إضافة الهاتف الجديد فقط إذا لم يكن مسجلاً مسبقاً
     if phone_name.lower() not in current_models:
         with open(INDEX_FILE, "a", encoding="utf-8") as f: 
             f.write(f"{phone_name}\n")
@@ -36,11 +60,13 @@ def create_and_save_new_group(db_data, size, panel, sensor, phone_name):
     if phone_name not in db_data[size][panel][sensor]["models"]:
         db_data[size][panel][sensor]["models"].append(phone_name)
         
-    # حفظ في قاعدة البيانات الرئيسية
     save_db(db_data)
-    # تحديث ملف الفهرس النصي تلقائياً
     append_to_models_index(phone_name)
     return True
+
+# -------------------------------------------------------------
+# المحرك الرئيسي لواجهة العمليات والخطط الثلاث
+# -------------------------------------------------------------
 
 def run_system_workflows(phone, db_data, suggestions):
     coords = find_model_coords(db_data, phone) if phone else (None, None, None, None)
@@ -58,7 +84,6 @@ def run_system_workflows(phone, db_data, suggestions):
             draw_neon_section("الهواتف المتوافقة تماماً:", results)
         else:
             st.info("لا توجد هواتف مطابقة لهذه المواصفات حالياً في قاعدة البيانات.")
-        # تحديث تلقائي للفهرس لضمان تسجيله لو كان مفقوداً
         append_to_models_index(phone)
 
     # -------------------------------------------------------------
@@ -67,12 +92,10 @@ def run_system_workflows(phone, db_data, suggestions):
     if phone != "" and not is_exact_match and not suggestions:
         st.markdown("---")
         
-        # جلب التلميحات الذكية من الـ AI في الخلفية لتسهيل الإدخال
         if f"hint_{phone}" not in st.session_state:
             st.session_state[f"hint_{phone}"] = ai_background_global_verify(phone)
         ai_hint = st.session_state[f"hint_{phone}"]
             
-        # حقول إدخال المواصفات الفنية
         col1, col2, col3 = st.columns(3)
         with col1:
             default_size = ai_hint["size"] if ai_hint else ""
@@ -85,7 +108,6 @@ def run_system_workflows(phone, db_data, suggestions):
             chosen_sensor = st.text_input("مستشعر التقارب (Proximity):", value=default_sensor, key="input_sensor").strip()
             
         if new_size and chosen_panel and chosen_sensor:
-            # التحقق من وجود مجموعة توافق هذه المواصفات محلياً
             matched_list = local_check_existing_size_group(db_data, new_size, chosen_panel)
             
             # -------------------------------------------------------------
@@ -101,7 +123,7 @@ def run_system_workflows(phone, db_data, suggestions):
                     if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
                         db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
                         save_db(db_data)
-                        append_to_models_index(phone) # ربط وتحديث الفهرس تلقائياً
+                        append_to_models_index(phone)
                         st.session_state["show_success_alert"] = f"✅ تم دمج وتحديث قاعدة البيانات بنجاح للهاتف '{phone}'!"
                         st.rerun()
             
@@ -109,13 +131,10 @@ def run_system_workflows(phone, db_data, suggestions):
             # الخطة 3: خطة الطوارئ (لا توجد أي مجموعة مطابقة - إنشاء كلي)
             # -------------------------------------------------------------
             else:
-                # رسالة خطة الطوارئ المطابقة لتصميم واجهتك تماماً
                 st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة مسبقة تطابق هذه المواصفات.")
                 
                 if st.button(f"📝 إنشاء مجموعة جديدة وإدراج الهاتف", key="force_create_new_group_btn"):
-                    # استدعاء دالة الطوارئ التي تبني الهيكل وتحدث ملف الفهرس تلقائياً
                     success = create_and_save_new_group(db_data, new_size, chosen_panel, chosen_sensor, phone)
-                    
                     if success:
                         st.session_state["show_success_alert"] = f"🎉 تم إنشاء مجموعة جديدة بنجاح وإدراج الهاتف '{phone}' وتحديث الفهرس تلقائياً!"
                         st.rerun()
@@ -127,3 +146,4 @@ def run_system_workflows(phone, db_data, suggestions):
         st.success(st.session_state["show_success_alert"])
         st.balloons()
         del st.session_state["show_success_alert"]
+
