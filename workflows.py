@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 import requests
 from database import load_db, save_db
@@ -165,6 +166,7 @@ def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups
                 st.markdown(f"🎯 الموديلات المتوافقة مع هذه المجموعة: **{', '.join(matched_list)}**")
 
                 if st.button("🔗 موافقة: دمج الموديل الجديد وتحديث السحاب", key="btn_merge_model"):
+                    # [تصحيح هندسي صلب]: إجراء عمليات الحفظ الفوري الحقيقي في أول أجزاء من الثانية قبل التنبيه أو التجميد
                     if new_size not in db_data:
                         db_data[new_size] = {}
                     if chosen_panel not in db_data[new_size]:
@@ -175,10 +177,13 @@ def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups
                     if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
                         db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
-                    # تثبيت الحفظ والتناغم
+                    # القفل النهائي وقبول البيانات سحابياً ونصياً
                     save_db(db_data)
                     append_to_models_index(phone)
-                    st.success(f"✅ تم دمج {phone} وتحديث النظام السحابي بنجاح.")
+                    
+                    # حقن واجهة النجاح الثابتة بعد تأمين الحفظ والتجميد الآمن للرؤية
+                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px;'>✅ تم دمج الهاتف بنجاح وحفظ البيانات في السحاب الشامل!</div>", unsafe_allow_html=True)
+                    time.sleep(2.0)
                     st.rerun()
                 # [قف]
 
@@ -189,6 +194,7 @@ def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups
                 st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة مسبقة تطابق هذه المواصفات.")
 
                 if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف", key="btn_create_group"):
+                    # [تصحيح هندسي صلب]: إجراء عمليات الحفظ الفوري الحقيقي في أول أجزاء من الثانية قبل التنبيه أو التجميد
                     if new_size not in db_data:
                         db_data[new_size] = {}
                     if chosen_panel not in db_data[new_size]:
@@ -199,17 +205,5 @@ def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups
                     if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
                         db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
-                    # تثبيت الحفظ والتناغم
+                    # القفل النهائي وقبول البيانات سحابياً ونصياً
                     save_db(db_data)
-                    append_to_models_index(phone)
-                    st.success(f"✅ تم تفعيل خطة الطوارئ، وتأسيس المجموعة وإدراج {phone} بنجاح.")
-                    st.rerun()
-                # [قف]
-
-    # تحديث واستدعاء لوحة التحكم الإحصائية العامة بأسفل الصفحة
-    st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
-    draw_control_panel(
-        notifications=st.session_state.notifications,
-        total_models=total_models,
-        empty_groups_count=empty_groups_count
-    )
