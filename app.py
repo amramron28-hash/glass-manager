@@ -28,7 +28,7 @@ st.set_page_config(
 # حقن أنماط الـ PWA والملفات الأساسية
 inject_pwa_and_styles()
 
-# 🎨 الأنماط المرئية وحاوية الشعار المحكمة لمنع التداخل مع الخلفية والصورة
+# 🎨 تصميم الواجهة وتصحيح تموضع الشعار لمنع التداخل مع صورة الخلفية
 st.markdown(
     """
     <style>
@@ -79,29 +79,24 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ☁️ تحميل قاعدة البيانات السحابية المركزية (للمواصفات والخطط)
+# ☁️ تحميل قاعدة البيانات السحابية المركزية
 db_data = load_db()
 
-# 🗂️ إدارة ملف المؤشر السريع المخصص للأسماء فقط (فكرتك العبقرية للسرعة الفلاشية)
-INDEX_FILE = "models_index.txt"
+# ⚡ محرك استخراج الأسماء فلاشياً في الذاكرة الحية (RAM) لتسريع الستارة
+def load_fast_models_index(db):
+    """استخراج قائمة الأسماء المسطحة فوراً من قاعدة البيانات في الذاكرة للسرعة الفلاشية"""
+    extracted_names = []
+    for size, panels in db.items():
+        for panel, sensors in panels.items():
+            for sensor, s_data in sensors.items():
+                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+                for m in models_list:
+                    if m.strip():
+                        extracted_names.append(m.strip())
+    return sorted(list(set(extracted_names)))
 
-def load_models_index():
-    """تحميل مصفوفة الأسماء فوراً من الملف النصي الخفيف"""
-    if not os.path.exists(INDEX_FILE):
-        return []
-    with open(INDEX_FILE, "r", encoding="utf-8") as f:
-        # قراءة الأسطر وتنظيفها من الفراغات
-        return sorted(list(set([line.strip() for line in f if line.strip()])))
-
-def append_to_models_index(phone_name):
-    """إضافة اسم هاتف جديد للمؤشر النصي فوراً أثناء الدمج أو الحفظ"""
-    current_models = load_models_index()
-    if phone_name not in current_models:
-        with open(INDEX_FILE, "a", encoding="utf-8") as f:
-            f.write(f"{phone_name}\n")
-
-# جلب مصفوفة الهواتف من ملف المؤشر الخفيف (استجابة فلاشية بدون تفكيك قاعدة البيانات)
-unique_models = load_models_index()
+# توليد كاش الأسماء السريع في الذاكرة فوراً عند تشغيل الصفحة
+unique_models = load_fast_models_index(db_data)
 
 def local_check_existing_size_group(db, target_size, target_panel):
     matched_models = []
@@ -127,7 +122,7 @@ def ai_background_global_verify(phone_name):
         pass
     return None
 
-# حساب الإحصائيات العامة بلوحة التحكم الخلفية
+# حساب الإحصائيات العامة من مصفوفة الذاكرة مباشرة
 total_models = len(unique_models)
 empty_groups_count = 0
 for size, panels in db_data.items():
@@ -140,7 +135,7 @@ for size, panels in db_data.items():
     if not size_has_models:
         empty_groups_count += 1
 
-# 🔍 محرك البحث اللحظي السريع جداً المبني على ملف المؤشر النصي المسطح
+# 🔍 دالة البحث اللحظي المبنية على مصفوفة الذاكرة المسطحة السريعة
 def fast_phone_search(searchterm):
     if not searchterm:
         return []
@@ -157,7 +152,7 @@ phone = st.text_input(
     key="free_smart_search_input"
 ).strip()
 
-# جلب الاقتراحات المساعدة لحظياً من المؤشر المسطح فلاشياً
+# جلب الاقتراحات المساعدة لحظياً وبسرعة خارقة من الذاكرة
 suggestions = fast_phone_search(phone) if phone else []
 # ============================================================
 # حساب متغيرات التطابق (تم تأخيرها هنا لضمان السرعة اللحظية للاقتراحات)
@@ -179,7 +174,7 @@ global_audit_alerts = []
 # الخطة 1: مساعدة الكتابة الاقتراحية أو ظهور النتائج المطابقة حرفياً
 # ============================================================
 if phone:
-    # أ- مرحلة الاقتراحات الستارية (تظهر لحظياً وسريعاً جداً من الملف النصي الخفيف لتسريع العملية)
+    # أ- مرحلة الاقتراحات الستارية (تظهر لحظياً وسريعاً جداً من مصفوفة الذاكرة الحية السريعة)
     if suggestions and not is_exact_match:
         st.markdown(
             """
@@ -285,7 +280,7 @@ if should_open_manual_workflow:
     if new_size and new_panel:
         with col_se:
             new_sensor = str(st.selectbox(
-                "👁️ 3. مستشعر التقارب المكتشف والمراقب:",
+                "👁️ 3. مستشعر التقارب Mكتشف والمراقب:",
                 ["", "hardware_top_sensor", "virtual_camera_sensor", "under_display_fingerprint", "under_display_sensor", "side_sensor", "no_visible_sensor"],
                 key="workflow_sensor"
             )).strip()
@@ -324,13 +319,10 @@ if should_open_manual_workflow:
                 if phone not in db_data[new_size][new_panel][new_sensor]["models"]:
                     db_data[new_size][new_panel][new_sensor]["models"].append(phone)
 
-                # حفظ في قاعدة البيانات الشاملة
+                # حفظ في قاعدة البيانات الشاملة والسحاب تلقائياً
                 save_db(db_data)
                 
-                # تحديث ملف المؤشر النصي تلقائياً (فكرتك العبقرية)
-                append_to_models_index(phone)
-                
-                st.success(f"✅ تم دمج {phone} بنجاح كعنصر متوافق وتحديث مؤشر البحث الفلاشي.")
+                st.success(f"✅ تم دمج {phone} بنجاح كعنصر متوافق داخل المجموعة المكتشفة وتحديث محرك البحث الحقيقي.")
                 st.rerun()
             # (قف) - انتهاء الخطة 2 بالدمج التلقائي الناجح للمجموعة الحالية وتوقف المعالجة
 
@@ -348,13 +340,10 @@ if should_open_manual_workflow:
 
                 db_data[new_size][new_panel][new_sensor] = {"models": [phone]}
 
-                # حفظ في قاعدة البيانات الشاملة
+                # حفظ في قاعدة البيانات الشاملة والسحاب تلقائياً
                 save_db(db_data)
                 
-                # تحديث ملف المؤشر النصي تلقائياً (فكرتك العبقرية)
-                append_to_models_index(phone)
-                
-                st.success(f"✅ تم تفعيل خطة الطوارئ بنجاح، وإنشاء مجموعة سحابية ومؤشر نصي جديد لحفظ الهاتف {phone}.")
+                st.success(f"✅ تم تفعيل خطة الطوارئ بنجاح، وإنشاء مجموعة سحابية ومحرك بحث جديد لحفظ الهاتف {phone}.")
                 st.rerun()
             # (قف) - انتهاء الخطة 3 بتأسيس قاعدة جديدة كلياً وتوقف المعالجة
 
@@ -370,3 +359,4 @@ draw_control_panel(
     total_models=total_models,
     empty_groups_count=empty_groups_count
 )
+
