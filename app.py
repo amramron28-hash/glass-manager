@@ -28,7 +28,7 @@ st.set_page_config(
 # حقن أنماط الـ PWA والملفات الأساسية
 inject_pwa_and_styles()
 
-# 🎨 تصميم الواجهة وتصحيح تموضع الشعار لمنع التداخل مع صورة الخلفية
+# 🎨 الأنماط المرئية وتنسيق الواجهة لمنع تداخل الشعار مع الخلفية
 st.markdown(
     """
     <style>
@@ -99,7 +99,7 @@ def append_to_models_index(phone_name):
         with open(INDEX_FILE, "a", encoding="utf-8") as f:
             f.write(f"{phone_name}\n")
 
-# جلب مصفوفة الهواتف من الملف النصي الخفيف (استجابة فلاشية للمساعدة في الكتابة)
+# جلب مصفوفة الهواتف من الملف النصي الخفيف لاستجابة الستارة اللحظية
 unique_models = load_flat_models_index()
 
 def local_check_existing_size_group(db, target_size, target_panel):
@@ -126,7 +126,7 @@ def ai_background_global_verify(phone_name):
         pass
     return None
 
-# حساب الإحصائيات العامة من مصفوفة الأسماء المساعدة مباشرة
+# حساب الإحصائيات العامة لوحة التحكم من مصفوفة الأسماء مباشرة
 total_models = len(unique_models)
 empty_groups_count = 0
 for size, panels in db_data.items():
@@ -161,8 +161,7 @@ suggestions = fast_phone_search(phone) if phone else []
 # ============================================================
 # إنهاء دور الملف الخفيف فوراً بمجرد الضغط على زر الإدخال (Enter)
 # ============================================================
-# إذا كتب المستخدم نصاً وضغط Enter (أو اختار اسماً كاملاً يطابق المؤشر)، ينتهي دور الستارة المساعدة تماماً وقف
-# هنا نتحقق هل النص المكتوب يمثل تطابقاً حرفياً كاملاً في قاعدة البيانات الحقيقية
+# إذا كتب المستخدم نصاً وضغط Enter ينتهي دور الستارة المساعدة تماماً [قف]
 size_str, panel, sensor, real_name = (
     find_model_coords(db_data, phone) 
     if phone 
@@ -177,7 +176,7 @@ global_audit_alerts = []
 # الخطة 1: مساعدة الكتابة الاقتراحية أو ظهور النتائج المطابقة حرفياً
 # ============================================================
 if phone:
-    # أ- مرحلة الاقتراحات المساعدة (تظهر فلاشياً من الملف الخفيف أثناء الكتابة فقط وقبل ضغط Enter والتطابق)
+    # أ- مرحلة الاقتراحات المساعدة (تظهر فلاشياً من الملف الخفيف أثناء الكتابة وقبل ضغط Enter)
     if suggestions and not is_exact_match:
         st.markdown(
             """
@@ -189,9 +188,9 @@ if phone:
         )
         for item in suggestions:
             st.markdown(f"🔍 **{item}**")
-        # (قف) - ينتهي دور هذه الكتلة تماماً ولا تتداخل مع أي واجهة أخرى
+        # [قف] - ينتهي دور هذه الكتلة تماماً ولا تتداخل مع أي واجهة أخرى
 
-    # b- مرحلة الهاتف موجود بالاسم الحرفي (تعرض النتائج الفورية بعد تأكيد الاسم وضغط Enter)
+    # ب- مرحلة الهاتف موجود بالاسم الحرفي (تعرض النتائج الفورية بعد تأكيد الاسم وضغط Enter)
     elif is_exact_match:
         st.markdown(
             f"""
@@ -202,10 +201,7 @@ if phone:
             unsafe_allow_html=True
         )
 
-        # رسم الإحداثيات التقنية لشاشة الهاتف المستهدف
         draw_technical_coords(size_str, panel, sensor)
-        
-        # جلب المتوافقات الصارمة وبطاقات النيون الملونة لزجاج الحماية
         results = get_compatibles_strict(db_data, phone)
 
         if "exact" in results:
@@ -220,7 +216,7 @@ if phone:
 
         if results.get("warn"):
             draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", phone)
-        # (قف) - انتهاء المسار التشغيلي الكامل للخطة 1 بنجاح
+        # [قف] - انتهاء المسار التشغيلي الكامل للخطة 1 بنجاح
 
 
 # ============================================================
@@ -233,35 +229,58 @@ if should_open_manual_workflow:
     st.markdown("---")
     st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي. تم تفعيل النوافذ التتابعية لإدخال مواصفاته:")
 
-    # رسم المدخلات الثلاثة تباعاً عبر الأعمدة الهيكلية
     col_s, col_p, col_se = st.columns(3)
 
     with col_s:
         new_size = st.text_input("📐 1. المقاس الرقمي للزبون (مثال: 6.67):", key="workflow_size").strip()
 
-    new_panel = ""
-    new_sensor = ""
+    chosen_panel = ""
+    chosen_sensor = ""
 
     # ظهور النافذة الثانية مشروط باكتمال الأولى
     if new_size:
         with col_p:
-            new_panel = str(st.selectbox(
-                "🖥️ 2. نوع الشاشة الهيكلي:",
-                ["", "Punch-Hole Screen", "Notch Screen", "Waterdrop Notch", "Full Screen", "Flat Screen", "Curved Screen"],
-                key="workflow_panel"
-            )).strip()
+            panel_options = [
+                "", 
+                "Punch-Hole Screen", 
+                "Notch Screen", 
+                "Waterdrop Notch", 
+                "Full Screen", 
+                "Flat Screen", 
+                "Curved Screen",
+                "➕ إضافة شكل جديد..."
+            ]
+            selected_panel = st.selectbox("🖥️ 2. نوع الشاشة الهيكلي:", panel_options, key="workflow_panel")
+            
+            # إذا اختار إضافة شكل جديد، يفتح له حقل نصي حر لكتابة الشكل غير المسجل
+            if selected_panel == "➕ إضافة شكل جديد...":
+                chosen_panel = st.text_input("✍️ اكتب شكل الشاشة الجديد هنا:", key="custom_panel_input").strip()
+            else:
+                chosen_panel = str(selected_panel).strip()
 
-    # ظهور النافذة الثالثة مشروط باكتمال الثانية
-    if new_size and new_panel:
+    # ظهور النافذة الثالثة مشروط باكتمال الثانية (بشكلها المدمج أو المخصص)
+    if new_size and chosen_panel:
         with col_se:
-            new_sensor = str(st.selectbox(
-                "👁️ 3. مستشعر التقارب المكتشف والمراقب:",
-                ["", "hardware_top_sensor", "virtual_camera_sensor", "under_display_fingerprint", "under_display_sensor", "side_sensor", "no_visible_sensor"],
-                key="workflow_sensor"
-            )).strip()
+            sensor_options = [
+                "", 
+                "hardware_top_sensor", 
+                "virtual_camera_sensor", 
+                "under_display_fingerprint", 
+                "under_display_sensor", 
+                "side_sensor", 
+                "no_visible_sensor",
+                "➕ إضافة مستشعر جديد..."
+            ]
+            selected_sensor = st.selectbox("👁️ 3. مستشعر التقارب المكتشف:", sensor_options, key="workflow_sensor")
+            
+            # إذا اختار إضافة مستشعر جديد، يفتح له حقل نصي حر لكتابة المستشعر غير المسجل
+            if selected_sensor == "➕ إضافة مستشعر جديد...":
+                chosen_sensor = st.text_input("✍️ اكتب نوع المستشعر الجديد هنا:", key="custom_sensor_input").strip()
+            else:
+                chosen_sensor = str(selected_sensor).strip()
 
-    # إذا اكتملت النوافذ الثلاثة بالتتابع الصارم، يبدأ الفحص السحابي وضخ البيانات تلقائياً
-    if new_size and new_panel and new_sensor:
+    # إذا اكتملت النوافذ الثلاثة بالتتابع الصارم، يبدأ الفحص السحابي والدمج
+    if new_size and chosen_panel and chosen_sensor:
         
         global_data = ai_background_global_verify(phone)
         if global_data and global_data["size"]:
@@ -270,8 +289,8 @@ if should_open_manual_workflow:
                     f"🚨 تدقيق عالمي: هاتف `{phone}` تم إدخاله بـ {new_size} والحقيقي في السحاب {global_data['size']}"
                 )
 
-        # فحص وجود مجموعات متطابقة مسبقاً في النظام
-        matched_list = local_check_existing_size_group(db_data, new_size, new_panel)
+        # فحص وجود مجموعات متطابقة مسبقاً في النظام بناءً على الاختيارات الحالية
+        matched_list = local_check_existing_size_group(db_data, new_size, chosen_panel)
 
         st.markdown("---")
 
@@ -285,47 +304,47 @@ if should_open_manual_workflow:
             if st.button("🔗 موافقة: دمج الموديل الجديد وتحديث السحاب", key="btn_merge_model"):
                 if new_size not in db_data:
                     db_data[new_size] = {}
-                if new_panel not in db_data[new_size]:
-                    db_data[new_size][new_panel] = {}
-                if new_sensor not in db_data[new_size][new_panel]:
-                    db_data[new_size][new_panel][new_sensor] = {"models": []}
+                if chosen_panel not in db_data[new_size]:
+                    db_data[new_size][chosen_panel] = {}
+                if chosen_sensor not in db_data[new_size][chosen_panel]:
+                    db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
                 
-                if phone not in db_data[new_size][new_panel][new_sensor]["models"]:
-                    db_data[new_size][new_panel][new_sensor]["models"].append(phone)
+                if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
+                    db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
-                # 1. حفظ البيانات في السحاب الشامل للمواصفات
+                # حفظ البيانات الكلية سحابياً
                 save_db(db_data)
                 
-                # 2. التناغُم والضخ الدوري: ضخ الاسم الجديد تلقائياً لملف الأسماء الخفيف ليصبح مساعداً في المرات القادمة
+                # ضخ الاسم الجديد تلقائياً لملف الأسماء الخفيف ليدخل في الستارة مستقبلاً
                 append_to_models_index(phone)
                 
                 st.success(f"✅ تم دمج {phone} وضخ اسمه تلقائياً في مؤشر المساعدة الفلاشي.")
                 st.rerun()
-            # (قف) - انتهاء الخطة 2 بالكامل
+            # [قف] - انتهاء الخطة 2 بالكامل
 
         # ------------------------------------------------------------
-        # الخطة 3: خطة الطوارئ (إنشاء مجموعة هيكلية جديدة تماماً في السحاب والمؤشر)
+        # الخطة 3: خطة الطوارئ (إنشاء مجموعة هيكلية ومواصفات جديدة تماماً في السحاب والمؤشر)
         # ------------------------------------------------------------
         else:
-            st.error("❌ خطة الطوارئ (الخطة 3): تعذر وجود تطابق في المجموعات المسبقة.")
+            st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة مسبقة تطابق هذه المواصفات. سيتم تأسيس قاعدة هيكلية جديدة.")
 
             if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف", key="btn_create_group"):
                 if new_size not in db_data:
                     db_data[new_size] = {}
-                if new_panel not in db_data[new_size]:
-                    db_data[new_size][new_panel] = {}
+                if chosen_panel not in db_data[new_size]:
+                    db_data[new_size][chosen_panel] = {}
 
-                db_data[new_size][new_panel][new_sensor] = {"models": [phone]}
+                db_data[new_size][chosen_panel][chosen_sensor] = {"models": [phone]}
 
-                # 1. حفظ البيانات وتأسيس المجموعة الجديدة في السحاب
+                # حفظ وتأسيس البيانات الجديدة سحابياً
                 save_db(db_data)
                 
-                # 2. التناغُم والضخ الدوري: ضخ الاسم الجديد تلقائياً لملف الأسماء الخفيف
+                # ضخ الاسم الجديد تلقائياً لملف الأسماء الخفيف
                 append_to_models_index(phone)
                 
-                st.success(f"✅ تم تفعيل خطة الطوارئ، وتأسيس المجموعة وضخ الهاتف {phone} في النظام.")
+                st.success(f"✅ تم تفعيل خطة الطوارئ، وتأسيس المواصفات الجديدة وضخ الهاتف {phone} بنجاح.")
                 st.rerun()
-            # (قف) - انتهاء الخطة 3 بالكامل
+            # [قف] - انتهاء الخطة 3 بالكامل
 
 
 # ============================================================
@@ -333,7 +352,6 @@ if should_open_manual_workflow:
 # ============================================================
 st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
 
-# استدعاء لوحة التحكم التابعة لـ ui_components (ثابتة في ذيل التطبيق)
 draw_control_panel(
     notifications=st.session_state.notifications,
     total_models=total_models,
