@@ -197,7 +197,6 @@ def run_system_workflows(phone, db_data, suggestions):
                         if chosen_sensor not in db_data[new_size][chosen_panel]: db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
 
                         if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
-                            st.session_state[f"success_saved_{phone}"] = True  # تأمين الحالة
                             db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
                         save_db(db_data)
