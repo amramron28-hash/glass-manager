@@ -61,16 +61,14 @@ phone = st.text_input("البحث والمطابقة الفورية للمودي
 
 suggestions = fast_phone_search(phone) if phone else []
 
-# تشغيل خطط ومعالجات الموديلات
+# ⚡ [التعديل الموحد]: استدعاء نظيف ومتطابق بالكامل مع دالة workflows.py الحالية
 run_system_workflows(
     phone=phone,
     db_data=db_data,
-    suggestions=suggestions,
-    total_models=total_models,
-    empty_groups_count=empty_groups_count
+    suggestions=suggestions
 )
 
-# 🛠️ [الدمج المركزي المستقر لوحة التحكم]: استدعاؤها لمرة واحدة فقط بأسفل الصفحة لمنع أي اختفاء أو تداخل
+# دمج مركزي لوحة التحكم بأسفل التطبيق
 draw_control_panel(
     notifications=st.session_state.get('notifications', []),
     total_models=total_models,
