@@ -105,7 +105,7 @@ def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups
         chosen_panel = ""
         chosen_sensor = ""
 
-        # تتابع النافذة الثانية: استعادة القوائم الثابتة القديمة تماماً مع تذييلها بخيار (+)
+        # تتابع النافذة الثانية: استعادة القوائم الثابتة القديمة تماماً مع زر (+)
         if new_size:
             with col_p:
                 panel_options = [
@@ -125,7 +125,7 @@ def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups
                 else:
                     chosen_panel = str(selected_panel).strip()
 
-        # تتابع النافذة الثالثة: استعادة القوائم الثابتة القديمة تماماً مع تذييلها بخيار (+)
+        # تتابع النافذة الثالثة: استعادة القوائم الثابتة القديمة تماماً مع زر (+)
         if new_size and chosen_panel:
             with col_se:
                 sensor_options = [
@@ -175,6 +175,7 @@ def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups
                     if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
                         db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
+                    # تثبيت الحفظ والتناغم
                     save_db(db_data)
                     append_to_models_index(phone)
                     st.success(f"✅ تم دمج {phone} وتحديث النظام السحابي بنجاح.")
@@ -192,9 +193,13 @@ def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups
                         db_data[new_size] = {}
                     if chosen_panel not in db_data[new_size]:
                         db_data[new_size][chosen_panel] = {}
+                    if chosen_sensor not in db_data[new_size][chosen_panel]:
+                        db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
 
-                    db_data[new_size][chosen_panel][chosen_sensor] = {"models": [phone]}
+                    if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
+                        db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
+                    # تثبيت الحفظ والتناغم
                     save_db(db_data)
                     append_to_models_index(phone)
                     st.success(f"✅ تم تفعيل خطة الطوارئ، وتأسيس المجموعة وإدراج {phone} بنجاح.")
@@ -208,4 +213,3 @@ def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups
         total_models=total_models,
         empty_groups_count=empty_groups_count
     )
-
