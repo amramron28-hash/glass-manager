@@ -1,4 +1,5 @@
-import os
+hereimport os
+import time
 import streamlit as st
 import requests
 from database import load_db, save_db
@@ -40,7 +41,7 @@ def ai_background_global_verify(phone_name):
     return None
 
 def append_to_models_index(phone_name):
-    """ضخ الاسم الجديد تلقائياً in ملف الأسماء الخفيف ليدخل في الستارة مستقبلاً"""
+    """ضخ الاسم الجديد تلقائياً في ملف الأسماء الخفيف ليدخل في الستارة مستقبلاً"""
     INDEX_FILE = "models_index.txt"
     if os.path.exists(INDEX_FILE):
         with open(INDEX_FILE, "r", encoding="utf-8") as f:
@@ -84,7 +85,6 @@ def run_system_workflows(phone, db_data, suggestions):
 
         if results.get("warn"):
             draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", phone)
-        # [قف]
 
     # ============================================================
     # شرط عزل الخطة 2 و الخطة 3 (تفتح فقط بعد الحظر التام للاقتراحات وضغط Enter)
@@ -183,7 +183,6 @@ def run_system_workflows(phone, db_data, suggestions):
                     if st.button("🔄 تحديث وتنشيط النظام الموحد", key="refresh_system_btn_2"):
                         st.session_state[f"success_saved_{phone}"] = False
                         st.rerun()
-                # [قف]
 
             # ------------------------------------------------------------
             # الخطة 3: خطة الطوارئ وإنشاء مواصفات ومجموعة جديدة كلياً
@@ -197,8 +196,8 @@ def run_system_workflows(phone, db_data, suggestions):
                         if chosen_panel not in db_data[new_size]: db_data[new_size][chosen_panel] = {}
                         if chosen_sensor not in db_data[new_size][chosen_panel]: db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
 
-                        # 🎯 إتمام الجزء المقطوع: حقن الهاتف وإقفال عمليات الحفظ بالكامل
                         if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
+                            st.session_state[f"success_saved_{phone}"] = True  # تأمين الحالة
                             db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
                         save_db(db_data)
@@ -207,4 +206,3 @@ def run_system_workflows(phone, db_data, suggestions):
                         st.session_state[f"success_saved_{phone}"] = True
                         st.rerun()
                 else:
-                    # 🎯 إتمام إغلاق الواجهة الخضراء والزر النيوني للخطة 3
