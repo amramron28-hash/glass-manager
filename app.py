@@ -28,13 +28,39 @@ st.set_page_config(
 # حقن أنماط الـ PWA والملفات الأساسية
 inject_pwa_and_styles()
 
-# 🎨 حقن تصميم الواجهة المخصص، الشعار، وألوان بطاقات الزجاج الفلورية (CSS)
+# 🎨 حل مشكلة الشعار والسرعة: دمج الأنماط وتصحيح التموضع لمنع التداخل مع الواجهة
 st.markdown(
     """
     <style>
-    /* تثبيت الخلفية المظلمة الفاخرة لتتناسب مع ألوان النيون */
+    /* تثبيت الخلفية وتناسق الأبعاد */
     .stApp {
         background-color: #0d1117;
+    }
+    
+    /* حاوية موحدة ومحكمة للشعار والعنوان لمنع الارتطام والنزول العشوائي */
+    .main-header-container {
+        width: 100%;
+        text-align: center;
+        margin-top: -20px; /* سحب لأعلى لمنع النزول على الصورة */
+        margin-bottom: 20px;
+        padding: 5px;
+    }
+    
+    .main-logo {
+        font-size: 32px; 
+        font-weight: 900; 
+        color: #00bfff; 
+        text-shadow: 0 0 15px rgba(0,191,255,0.8);
+        line-height: 1.2;
+    }
+    
+    .main-subtitle {
+        font-size: 18px;
+        font-weight: 600;
+        color: #ffffff;
+        opacity: 0.95;
+        margin-top: 8px;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
     }
     
     /* تصميم بطاقات النتائج الفلورية المتوافقة */
@@ -48,19 +74,16 @@ st.markdown(
         transition: all 0.3s ease;
     }
     
-    /* تأثير التوهج الملون عند تمرير الماوس فوق بطاقات الزجاج */
     .glass-card:hover {
         transform: translateY(-2px);
     }
-    
-    /* نمط خط العناوين الفرعية والمجموعات */
-    .app-sub-title {
-        font-size: 18px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
-    }
     </style>
+    
+    <!-- عرض الشعار والعنوان في حاوية واحدة محكمة برمجياً -->
+    <div class="main-header-container">
+        <div class="main-logo">ZEGAAR AMMAR<br>GLASS MANAGER</div>
+        <div class="main-subtitle">النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات</div>
+    </div>
     """,
     unsafe_allow_html=True
 )
@@ -69,7 +92,6 @@ st.markdown(
 db_data = load_db()
 
 def local_check_existing_size_group(db, target_size, target_panel):
-    """الخطة 2: دالة فحص وتدقيق المجموعات الهيكلية والمقاسات مسبقة الصنع"""
     matched_models = []
     if target_size in db:
         if target_panel in db[target_size]:
@@ -84,7 +106,6 @@ def local_check_existing_size_group(db, target_size, target_panel):
     return matched_models
 
 def ai_background_global_verify(phone_name):
-    """دالة التحقق الخلفي الذكي ومطابقة المواصفات عبر الـ API العالمي"""
     try:
         url = f"https://vercel.app{requests.utils.quote(phone_name)}"
         res = requests.get(url, timeout=1.5).json()
@@ -98,7 +119,7 @@ def ai_background_global_verify(phone_name):
         pass
     return None
 
-# 📊 احتساب وتحليل إحصائيات النظام السحابي الشاملة
+# 📊 احتساب السجلات في الخلفية (تم تحسينها لتكون خفيفة)
 all_flat_models = []
 total_models = 0
 brand_counts = {}
@@ -126,26 +147,7 @@ for size, panels in db_data.items():
 
 unique_models = sorted(list(set(all_flat_models)))
 
-# ⚡ واجهة المستخدم: الشعار المتوهج الفاخر (ZEGAAR AMMAR GLASS MANAGER)
-st.markdown(
-"""
-<div style="width:100%; font-size:32px; font-weight:900; color:#00bfff; text-align:center; text-shadow:0 0 15px rgba(0,191,255,0.8); margin-top:10px; margin-bottom:5px;">
-ZEGAAR AMMAR<br>GLASS MANAGER
-</div>
-""",
-unsafe_allow_html=True
-)
-
-st.markdown(
-"""
-<div class='app-sub-title' style='text-align:center; color:#ffffff; opacity:0.9; margin-bottom:25px; font-family:sans-serif;'>
-النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات
-</div>
-""",
-unsafe_allow_html=True
-)
-
-# 🔍 محرك البحث والستارة المنسدلة المساعدة لتسريع الكتابة
+# 🔍 محرك البحث السريع جداً والاقتراحات اللحظية
 def phone_search(searchterm):
     if not searchterm:
         return []
@@ -154,7 +156,7 @@ def phone_search(searchterm):
     contains = [m for m in unique_models if term in m.lower() and m not in starts_with]
     return (starts_with + contains)[:10]
 
-# خانة البحث الحر والتقاط النص المدخل فورياً
+# خانة البحث الحر الفوري
 phone = st.text_input(
     "البحث والمطابقة الفورية للموديلات:",
     placeholder="اكتب اسم الهاتف المستهدف هنا بحرية وسرعة...",
@@ -162,20 +164,29 @@ phone = st.text_input(
     key="free_smart_search_input"
 ).strip()
 
-# توليد مصفوفة الاقتراحات المساعدة للستارة بناءً على مدخلات المستخدم
+# جلب الاقتراحات فوراً بدون استدعاء أي دوال ثقيلة
 suggestions = phone_search(phone) if phone else []
+# ============================================================
+# حساب متغيرات التطابق (تم تأخيرها هنا لضمان السرعة اللحظية للاقتراحات)
+# ============================================================
+# لمنع عنق الزجاجة والبطء، لا يتم تشغيل دالة الفحص العميقة إلا إذا تم اختيار اسم أو لم تعد هناك اقتراحات مساعدة تبدأ بالنص
+should_calc_exact = True if (phone and (not suggestions or phone in unique_models)) else False
 
-# استخراج وفحص إحداثيات الطراز الحالي والتحقق من التطابق الحرفي
-size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
+size_str, panel, sensor, real_name = (
+    find_model_coords(db_data, phone) 
+    if should_calc_exact 
+    else (None, None, None, None)
+)
+
 is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
-
-# مصفوفة تخزين التنبيهات وعمليات التدقيق العالمي
 global_audit_alerts = []
+
+
 # ============================================================
 # الخطة 1: مساعدة الكتابة الاقتراحية أو ظهور النتائج المطابقة حرفياً
 # ============================================================
 if phone:
-    # أ- مرحلة الاقتراحات الستارية (تظهر فقط أثناء الكتابة وقبل التطابق الحرفي لتسريع العملية)
+    # أ- مرحلة الاقتراحات الستارية (تظهر لحظياً وسريعاً جداً أثناء كتابة الحروف الأولى لتسريع العملية)
     if suggestions and not is_exact_match:
         st.markdown(
             """
@@ -187,7 +198,7 @@ if phone:
         )
         for item in suggestions:
             st.markdown(f"🔍 **{item}**")
-        # (قف) - لا يتم عرض أي خطة أخرى أثناء ظهور الاقتراحات منعاً لتداخل الواجهات
+        # (قف) - لا يتم عرض أي خطة أخرى أثناء ظهور الاقتراحات منعا لتأخير الاستجابة أو تداخل الواجهات
 
     # ب- مرحلة الهاتف موجود بالاسم الحرفي (تعرض النتائج الفورية وبطاقات النيون الملونة)
     elif is_exact_match:
@@ -248,15 +259,16 @@ if phone:
             )
         # (قف) - انتهاء المسار التشغيلي الكامل للخطة 1 بنجاح
 
+
 # ============================================================
-# شرط عزل الخطة 2 و الخطة 3 (الحظر التام أثناء مرحلة الكتابة والاقتراحات)
+# شرط عزل الخطة 2 و الخطة 3 (الحظر التام أثناء مرحلة الكتابة والاقتراحات اللحظية)
 # ============================================================
 # لا يفتح النظام نوافذ التدقيق اليدوي إلا إذا كتب المستخدم اسماً كاملاً لا توجد له أي اقتراحات مساعدة وغير مسجل مسبقاً
 should_open_manual_workflow = (phone != "" and not is_exact_match and not suggestions)
 
 if should_open_manual_workflow:
     st.markdown("---")
-    st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي ولا توجد اقتراحات مطابقة له. تم فتح النوافذ التتابعية لإدخال مواصفاته يدوياً:")
+    st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي ولا توجد اقتراحات مطابقة له. تم فتح النوافذ التتابعية لإدخل مواصفاته يدوياً:")
 
     # عرض المدخلات اليدوية الثلاثة تباعاً عبر الأعمدة الهيكلية
     col_s, col_p, col_se = st.columns(3)
@@ -328,7 +340,7 @@ if should_open_manual_workflow:
         # الخطة 3: خطة الطوارئ الشاملة لعدم وجود الاسم والمجموعات (إنشاء مجموعة هيكلية جديدة)
         # ------------------------------------------------------------
         else:
-            st.error("❌ خطة الطوارئ (الخطة 3): تعذر وجود الاسم وتطابق المجموعات المسبقة. لا توجد أي مواصفات مماثلة.")
+            st.error("❌ خطة الطوارئ (الخطة 3): لا توجد أي مجموعة مسبقة تطابق هذه المواصفات في النظام.")
 
             if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف", key="btn_create_group"):
                 if new_size not in db_data:
@@ -342,6 +354,7 @@ if should_open_manual_workflow:
                 st.success(f"✅ تم تفعيل خطة الطوارئ بنجاح، وإنشاء مجموعة سحابية جديدة لحفظ الهاتف {phone} كأول عنصر.")
                 st.rerun()
             # (قف) - انتهاء الخطة 3 بتأسيس قاعدة جديدة كلياً وتوقف المعالجة
+
 
 # ============================================================
 # الإشعارات ولوحة التحكم الإحصائية العامة
