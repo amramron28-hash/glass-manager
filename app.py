@@ -79,32 +79,28 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ⚡ تفعيل كاش الذاكرة الحية لقراءة قاعدة البيانات وحساب الإحصائيات مرة واحدة فقط لمنع خنق السيرفر
-@st.cache_data(ttl=3600, show_spinner=False)
-def get_cached_system_data():
-    db = load_db()
-    
-    # استخراج قائمة الأسماء المسطحة فوراً في الذاكرة للسرعة الفلاشية
-    extracted_names = []
-    empty_groups = 0
-    
-    for size, panels in db.items():
-        size_has_models = False
-        for panel, sensors in panels.items():
-            for sensor, s_data in sensors.items():
-                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
-                for m in models_list:
-                    if m.strip():
-                        extracted_names.append(m.strip())
-                        size_has_models = True
-        if not size_has_models:
-            empty_groups += 1
-            
-    unique_names = sorted(list(set(extracted_names)))
-    return db, unique_names, len(unique_names), empty_groups
+# ☁️ تحميل قاعدة البيانات السحابية المركزية
+db_data = load_db()
 
-# استدعاء البيانات من الكاش الخارق (يعمل بأجزاء من الثانية أثناء الكتابة الحرة)
-db_data, unique_models, total_models, empty_groups_count = get_cached_system_data()
+# 🗂️ تحديد ملف الأسماء الخفيف (مؤشر مساعدة الكتابة)
+INDEX_FILE = "models_index.txt"
+
+def load_flat_models_index():
+    """قراءة الأسماء فقط من الملف النصي الخفيف لصناعة ستارة مساعدة فلاشية"""
+    if not os.path.exists(INDEX_FILE):
+        return []
+    with open(INDEX_FILE, "r", encoding="utf-8") as f:
+        return sorted(list(set([line.strip() for line in f if line.strip()])))
+
+def append_to_models_index(phone_name):
+    """ضخ الاسم الجديد تلقائياً في ملف الأسماء الخفيف عند الحفظ أو الدمج"""
+    current_models = load_flat_models_index()
+    if phone_name not in current_models:
+        with open(INDEX_FILE, "a", encoding="utf-8") as f:
+            f.write(f"{phone_name}\n")
+
+# جلب مصفوفة الهواتف من الملف النصي الخفيف (استجابة فلاشية للمساعدة في الكتابة)
+unique_models = load_flat_models_index()
 
 def local_check_existing_size_group(db, target_size, target_panel):
     matched_models = []
@@ -130,7 +126,20 @@ def ai_background_global_verify(phone_name):
         pass
     return None
 
-# 🔍 دالة البحث اللحظي السريع جداً المبني على كاش الذاكرة المسطحة
+# حساب الإحصائيات العامة من مصفوفة الأسماء المساعدة مباشرة
+total_models = len(unique_models)
+empty_groups_count = 0
+for size, panels in db_data.items():
+    size_has_models = False
+    for panel, sensors in panels.items():
+        for sensor, s_data in sensors.items():
+            models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+            if models_list:
+                size_has_models = True
+    if not size_has_models:
+        empty_groups_count += 1
+
+# 🔍 دالة جلب الاقتراحات اللحظية من الملف النصي الخفيف
 def fast_phone_search(searchterm):
     if not searchterm:
         return []
@@ -147,17 +156,16 @@ phone = st.text_input(
     key="free_smart_search_input"
 ).strip()
 
-# جلب الاقتراحات المساعدة لحظياً وبسرعة خارقة من ذاكرة الكاش السريع
+# جلب الاقتراحات المساعدة لحظياً وبسرعة خارقة من الملف الخفيف أثناء الكتابة فقط
 suggestions = fast_phone_search(phone) if phone else []
 # ============================================================
-# حساب متغيرات التطابق (تم تأخيرها هنا لضمان السرعة اللحظية للاقتراحات)
+# إنهاء دور الملف الخفيف فوراً بمجرد الضغط على زر الإدخال (Enter)
 # ============================================================
-# لمنع عنق الزجاجة والبطء، لا يتم تشغيل دالة الفحص العميقة إلا إذا تم اختيار اسم أو لم تعد هناك اقتراحات مساعدة تبدأ بالنص
-should_calc_exact = True if (phone and (not suggestions or phone in unique_models)) else False
-
+# إذا كتب المستخدم نصاً وضغط Enter (أو اختار اسماً كاملاً يطابق المؤشر)، ينتهي دور الستارة المساعدة تماماً وقف
+# هنا نتحقق هل النص المكتوب يمثل تطابقاً حرفياً كاملاً في قاعدة البيانات الحقيقية
 size_str, panel, sensor, real_name = (
     find_model_coords(db_data, phone) 
-    if should_calc_exact 
+    if phone 
     else (None, None, None, None)
 )
 
@@ -169,7 +177,7 @@ global_audit_alerts = []
 # الخطة 1: مساعدة الكتابة الاقتراحية أو ظهور النتائج المطابقة حرفياً
 # ============================================================
 if phone:
-    # أ- مرحلة الاقتراحات الستارية (تظهر لحظياً وسريعاً جداً من مصفوفة الذاكرة الحية السريعة)
+    # أ- مرحلة الاقتراحات المساعدة (تظهر فلاشياً من الملف الخفيف أثناء الكتابة فقط وقبل ضغط Enter والتطابق)
     if suggestions and not is_exact_match:
         st.markdown(
             """
@@ -181,9 +189,9 @@ if phone:
         )
         for item in suggestions:
             st.markdown(f"🔍 **{item}**")
-        # (قف) - لا يتم عرض أي خطة أخرى أثناء ظهور الاقتراحات منعا لتأخير الاستجابة أو تداخل الواجهات
+        # (قف) - ينتهي دور هذه الكتلة تماماً ولا تتداخل مع أي واجهة أخرى
 
-    # ب- مرحلة الهاتف موجود بالاسم الحرفي (تعرض النتائج الفورية وبطاقات النيون الملونة)
+    # b- مرحلة الهاتف موجود بالاسم الحرفي (تعرض النتائج الفورية بعد تأكيد الاسم وضغط Enter)
     elif is_exact_match:
         st.markdown(
             f"""
@@ -194,66 +202,38 @@ if phone:
             unsafe_allow_html=True
         )
 
-        # رسم الإحداثيات التقنية لشاشة الهاتف
+        # رسم الإحداثيات التقنية لشاشة الهاتف المستهدف
         draw_technical_coords(size_str, panel, sensor)
         
-        # استدعاء دالة جلب المتوافقات الصارمة من محرك المنطق
+        # جلب المتوافقات الصارمة وبطاقات النيون الملونة لزجاج الحماية
         results = get_compatibles_strict(db_data, phone)
 
-        # 🟢 بطاقة النيون الخضراء: تطابق تام في الأبعاد والقص
         if "exact" in results:
             exact_list = [m for m in results["exact"] if m not in results.get("warn", [])]
-            draw_neon_section(
-                "هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)", 
-                exact_list, 
-                "#2ecc71", 
-                "🟢", 
-                phone
-            )
+            draw_neon_section("هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)", exact_list, "#2ecc71", "🟢", phone)
 
-        # 🔵 بطاقة النيون الزرقاء: هواتف أكبر بقليل متوافقة
         if "plus" in results:
-            draw_neon_section(
-                "هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)", 
-                results["plus"], 
-                "#3498db", 
-                "🔵", 
-                phone
-            )
+            draw_neon_section("هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)", results["plus"], "#3498db", "🔵", phone)
 
-        # 🟤 بطاقة النيون البنية: هواتف أصغر بقليل متوافقة
         if "minus" in results:
-            draw_neon_section(
-                "هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)", 
-                results["minus"], 
-                "#e67e22", 
-                "🟤", 
-                phone
-            )
+            draw_neon_section("هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)", results["minus"], "#e67e22", "🟤", phone)
 
-        # ⚠️ بطاقة النيون الحمراء الفلورية للتنبيهات الحساسة
         if results.get("warn"):
-            draw_neon_section(
-                "تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", 
-                results["warn"], 
-                "#ef4444", 
-                "⚠️", 
-                phone
-            )
+            draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", phone)
         # (قف) - انتهاء المسار التشغيلي الكامل للخطة 1 بنجاح
 
 
 # ============================================================
-# شرط عزل الخطة 2 و الخطة 3 (الحظر التام أثناء مرحلة الكتابة والاقتراحات اللحظية)
+# شرط عزل الخطة 2 و الخطة 3 (حظر واجهات الإدخال اليدوي أثناء الكتابة)
 # ============================================================
-# لا يفتح النظام نوافذ التدقيق اليدوي إلا إذا كتب المستخدم اسماً كاملاً لا توجد له أي اقتراحات مساعدة وغير مسجل مسبقاً
+# بمجرد الضغط على Enter وعدم وجود أي تطابق أو اقتراح مساعد، يتم فتح واجهة المدخلات التتابعية فوراً
 should_open_manual_workflow = (phone != "" and not is_exact_match and not suggestions)
 
 if should_open_manual_workflow:
     st.markdown("---")
-    st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي ولا توجد اقتراحات مطابقة له. تم فتح النوافذ التتابعية لإدخال مواصفاته يدوياً:")
+    st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي. تم تفعيل النوافذ التتابعية لإدخال مواصفاته:")
 
-    # عرض المدخلات اليدوية الثلاثة تباعاً عبر الأعمدة الهيكلية
+    # رسم المدخلات الثلاثة تباعاً عبر الأعمدة الهيكلية
     col_s, col_p, col_se = st.columns(3)
 
     with col_s:
@@ -280,10 +260,9 @@ if should_open_manual_workflow:
                 key="workflow_sensor"
             )).strip()
 
-    # إذا اكتملت النوافذ الثلاثة تباعاً بالتتابع الصارم، تبدأ عملية الفحص السحابي للفصل بين الخطة 2 والخطة 3
+    # إذا اكتملت النوافذ الثلاثة بالتتابع الصارم، يبدأ الفحص السحابي وضخ البيانات تلقائياً
     if new_size and new_panel and new_sensor:
         
-        # إجراء عملية التدقيق والتحقق الخلفي عبر الـ API العالمي بالخلفية
         global_data = ai_background_global_verify(phone)
         if global_data and global_data["size"]:
             if new_size not in global_data["size"]:
@@ -291,17 +270,17 @@ if should_open_manual_workflow:
                     f"🚨 تدقيق عالمي: هاتف `{phone}` تم إدخاله بـ {new_size} والحقيقي في السحاب {global_data['size']}"
                 )
 
-        # فحص وجود أي قاعدة هيكلية ومجموعات متطابقة مسبقاً مدمجة في النظام
+        # فحص وجود مجموعات متطابقة مسبقاً في النظام
         matched_list = local_check_existing_size_group(db_data, new_size, new_panel)
 
         st.markdown("---")
 
         # ------------------------------------------------------------
-        # الخطة 2: الاسم غير موجود ولكن تم العثور على مجموعة ومقاسات مطابقة مسبقاً
+        # الخطة 2: دمج الهاتف الجديد تلقائياً في مجموعة مسجلة مسبقاً
         # ------------------------------------------------------------
         if matched_list:
             st.info("💡 تم رصد مجموعة مقاسات وشاشات متطابقة مسبقاً في النظام السحابي!")
-            st.markdown(f"🎯 الموديلات المتوافقة مع هذه المجموعة الحالية: **{', '.join(matched_list)}**")
+            st.markdown(f"🎯 الموديلات المتوافقة مع هذه المجموعة: **{', '.join(matched_list)}**")
 
             if st.button("🔗 موافقة: دمج الموديل الجديد وتحديث السحاب", key="btn_merge_model"):
                 if new_size not in db_data:
@@ -314,21 +293,21 @@ if should_open_manual_workflow:
                 if phone not in db_data[new_size][new_panel][new_sensor]["models"]:
                     db_data[new_size][new_panel][new_sensor]["models"].append(phone)
 
-                # حفظ في قاعدة البيانات الشاملة والسحاب
+                # 1. حفظ البيانات في السحاب الشامل للمواصفات
                 save_db(db_data)
                 
-                # تطهير الكاش تلقائياً لكي يرى الكاش التعديل فوراً بالسرعة القصوى
-                st.cache_data.clear()
+                # 2. التناغُم والضخ الدوري: ضخ الاسم الجديد تلقائياً لملف الأسماء الخفيف ليصبح مساعداً في المرات القادمة
+                append_to_models_index(phone)
                 
-                st.success(f"✅ تم دمج {phone} بنجاح كعنصر متوافق داخل المجموعة المكتشفة وتحديث محرك البحث الذكي.")
+                st.success(f"✅ تم دمج {phone} وضخ اسمه تلقائياً في مؤشر المساعدة الفلاشي.")
                 st.rerun()
-            # (قف) - انتهاء الخطة 2 بالدمج التلقائي الناجح للمجموعة الحالية وتوقف المعالجة
+            # (قف) - انتهاء الخطة 2 بالكامل
 
         # ------------------------------------------------------------
-        # الخطة 3: خطة الطوارئ الشاملة لعدم وجود الاسم والمجموعات (إنشاء مجموعة هيكلية جديدة)
+        # الخطة 3: خطة الطوارئ (إنشاء مجموعة هيكلية جديدة تماماً في السحاب والمؤشر)
         # ------------------------------------------------------------
         else:
-            st.error("❌ خطة الطوارئ (الخطة 3): لا توجد أي مجموعة مسبقة تطابق هذه المواصفات في النظام.")
+            st.error("❌ خطة الطوارئ (الخطة 3): تعذر وجود تطابق في المجموعات المسبقة.")
 
             if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف", key="btn_create_group"):
                 if new_size not in db_data:
@@ -338,15 +317,15 @@ if should_open_manual_workflow:
 
                 db_data[new_size][new_panel][new_sensor] = {"models": [phone]}
 
-                # حفظ في قاعدة البيانات الشاملة والسحاب
+                # 1. حفظ البيانات وتأسيس المجموعة الجديدة في السحاب
                 save_db(db_data)
                 
-                # تطهير الكاش تلقائياً لكي يرى الكاش التعديل فوراً بالسرعة القصوى
-                st.cache_data.clear()
+                # 2. التناغُم والضخ الدوري: ضخ الاسم الجديد تلقائياً لملف الأسماء الخفيف
+                append_to_models_index(phone)
                 
-                st.success(f"✅ تم تفعيل خطة الطوارئ بنجاح، وإنشاء مجموعة سحابية ومحرك بحث جديد لحفظ الهاتف {phone}.")
+                st.success(f"✅ تم تفعيل خطة الطوارئ، وتأسيس المجموعة وضخ الهاتف {phone} في النظام.")
                 st.rerun()
-            # (قف) - انتهاء الخطة 3 بتأسيس قاعدة جديدة كلياً وتوقف المعالجة
+            # (قف) - انتهاء الخطة 3 بالكامل
 
 
 # ============================================================
@@ -354,7 +333,7 @@ if should_open_manual_workflow:
 # ============================================================
 st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
 
-# استدعاء لوحة التحكم التابعة لـ ui_components (تظهر دائماً وبشكل ثابت في ذيل التطبيق)
+# استدعاء لوحة التحكم التابعة لـ ui_components (ثابتة في ذيل التطبيق)
 draw_control_panel(
     notifications=st.session_state.notifications,
     total_models=total_models,
