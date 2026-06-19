@@ -15,6 +15,7 @@ from ui_components import (
 )
 
 def local_check_existing_size_group(db, target_size, target_panel):
+    """فحص وتدقيق المجموعات الهيكلية مسبقة الصنع"""
     matched_models = []
     if target_size in db:
         if target_panel in db[target_size]:
@@ -25,6 +26,7 @@ def local_check_existing_size_group(db, target_size, target_panel):
     return matched_models
 
 def ai_background_global_verify(phone_name):
+    """التحقق الذكي عبر الـ API العالمي في الخلفية"""
     try:
         url = f"https://vercel.app{requests.utils.quote(phone_name)}"
         res = requests.get(url, timeout=1.5).json()
@@ -39,6 +41,7 @@ def ai_background_global_verify(phone_name):
     return None
 
 def append_to_models_index(phone_name):
+    """ضخ الاسم الجديد تلقائياً في ملف الأسماء الخفيف ليدخل في الستارة مستقبلاً"""
     INDEX_FILE = "models_index.txt"
     if os.path.exists(INDEX_FILE):
         with open(INDEX_FILE, "r", encoding="utf-8") as f:
@@ -47,12 +50,17 @@ def append_to_models_index(phone_name):
             with open(INDEX_FILE, "a", encoding="utf-8") as f:
                 f.write(f"{phone_name}\n")
 
-# ⚡ [الدالة المستقبلة]: تستقبل المعاملات الثلاثة الصافية المتوافقة تماماً مع ملف app.py
 def run_system_workflows(phone, db_data, suggestions):
+    """المحرك المركزي لإدارة الخطط الثلاث (1، 2، 3) بالتناغم الكامل"""
+    
+    # حساب متغيرات التطابق الحرفي العميقة
     size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
     is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
     global_audit_alerts = []
 
+    # ============================================================
+    # الخطة 1: نتائج التوافق الفورية للهواتف المطابقة حرفياً
+    # ============================================================
     if is_exact_match:
         st.markdown(
             f"""
@@ -78,7 +86,11 @@ def run_system_workflows(phone, db_data, suggestions):
 
         if results.get("warn"):
             draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", phone)
+        # [قف]
 
+    # ============================================================
+    # شرط عزل الخطة 2 و الخطة 3 (تفتح فقط بعد الحظر التام للاقتراحات وضغط Enter)
+    # ============================================================
     should_open_manual_workflow = (phone != "" and not is_exact_match and not suggestions)
 
     if should_open_manual_workflow:
@@ -93,33 +105,61 @@ def run_system_workflows(phone, db_data, suggestions):
         chosen_panel = ""
         chosen_sensor = ""
 
+        # تتابع النافذة الثانية: استعادة القوائم الثابتة القديمة تماماً مع زر (+)
         if new_size:
             with col_p:
-                panel_options = ["", "Punch-Hole Screen", "Notch Screen", "Waterdrop Notch", "Full Screen", "Flat Screen", "Curved Screen", "➕ إضافة شكل جديد..."]
+                panel_options = [
+                    "",
+                    "Punch-Hole Screen",
+                    "Notch Screen",
+                    "Waterdrop Notch",
+                    "Full Screen",
+                    "Flat Screen",
+                    "Curved Screen",
+                    "➕ إضافة شكل جديد..."
+                ]
                 selected_panel = st.selectbox("🖥️ 2. نوع الشاشة الهيكلي:", panel_options, key="workflow_panel")
+                
                 if selected_panel == "➕ إضافة شكل جديد...":
                     chosen_panel = st.text_input("✍️ اكتب شكل الشاشة الجديد هنا:", key="custom_panel_input").strip()
                 else:
                     chosen_panel = str(selected_panel).strip()
 
+        # تتابع النافذة الثالثة: استعادة القوائم الثابتة القديمة تماماً مع زر (+)
         if new_size and chosen_panel:
             with col_se:
-                sensor_options = ["", "hardware_top_sensor", "virtual_camera_sensor", "under_display_fingerprint", "under_display_sensor", "side_sensor", "no_visible_sensor", "➕ إضافة مستشعر جديد..."]
+                sensor_options = [
+                    "",
+                    "hardware_top_sensor",
+                    "virtual_camera_sensor",
+                    "under_display_fingerprint",
+                    "under_display_sensor",
+                    "side_sensor",
+                    "no_visible_sensor",
+                    "➕ إضافة مستشعر جديد..."
+                ]
                 selected_sensor = st.selectbox("👁️ 3. مستشعر التقارب المكتشف:", sensor_options, key="workflow_sensor")
+                
                 if selected_sensor == "➕ إضافة مستشعر جديد...":
                     chosen_sensor = st.text_input("✍️ اكتب نوع المستشعر الجديد هنا:", key="custom_sensor_input").strip()
                 else:
                     chosen_sensor = str(selected_sensor).strip()
 
+        # تشغيل الفحص السحابي والدمج بعد اكتمال النوافذ التتابعية الصارمة
         if new_size and chosen_panel and chosen_sensor:
             global_data = ai_background_global_verify(phone)
             if global_data and global_data["size"]:
                 if new_size not in global_data["size"]:
-                    global_audit_alerts.append(f"🚨 تدقيق عالمي: هاتف `{phone}` تم إدخاله بـ {new_size} والحقيقي في السحاب {global_data['size']}")
+                    global_audit_alerts.append(
+                        f"🚨 تدقيق عالمي: هاتف `{phone}` تم إدخاله بـ {new_size} والحقيقي في السحاب {global_data['size']}"
+                    )
 
             matched_list = local_check_existing_size_group(db_data, new_size, chosen_panel)
             st.markdown("---")
 
+            # ------------------------------------------------------------
+            # الخطة 2: دمج الهاتف الجديد في مجموعة هيكلية مكتشفة مسبقاً
+            # ------------------------------------------------------------
             if matched_list:
                 st.info("💡 تم رصد مجموعة مقاسات وشاشات متطابقة مسبقاً في النظام السحابي!")
                 st.markdown(f"🎯 الموديلات المتوافقة مع هذه المجموعة: **{', '.join(matched_list)}**")
@@ -132,14 +172,24 @@ def run_system_workflows(phone, db_data, suggestions):
                     if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
                         db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
+                    # قفل الحفظ السحابي والنصي فوراً
                     save_db(db_data)
                     append_to_models_index(phone)
+                    
+                    # تنشيط ومزامنة تنبيهات الواجهة مع المراقبة الصامتة
+                    st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
+                    
+                    # حقن واجهة النجاح الثابتة لـ HTML
                     st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px;'>✅ تم دمج الهاتف بنجاح وحفظ البيانات في السحاب الشامل!</div>", unsafe_allow_html=True)
                     time.sleep(2.0)
                     st.rerun()
+                # [قف]
 
+            # ------------------------------------------------------------
+            # الخطة 3: خطة الطوارئ وإنشاء مواصفات ومجموعة جديدة كلياً
+            # ------------------------------------------------------------
             else:
-                st.error("❌ لا توجد مجموعة مسبقة تطابق هذه المواصفات.")
+                st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة مسبقة تطابق هذه المواصفات.")
 
                 if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف", key="btn_create_group"):
                     if new_size not in db_data: db_data[new_size] = {}
@@ -149,10 +199,11 @@ def run_system_workflows(phone, db_data, suggestions):
                     if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
                         db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
 
+                    # قفل الحفظ السحابي والنصي فوراً
                     save_db(db_data)
                     append_to_models_index(phone)
-                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px;'>✅ تم إنشاء مجموعة سحابية جديدة بنجاح وتثبيت الهاتف المكتمل!</div>", unsafe_allow_html=True)
-                    time.sleep(2.0)
-                    st.rerun()
-
-    st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
+                    
+                    # تنشيط ومزامنة تنبيهات الواجهة مع المراقبة الصامتة
+                    st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
+                    
+                    # حقن واجهة النجاح الثابتة لـ HTML
