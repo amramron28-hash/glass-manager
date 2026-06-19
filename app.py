@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from app_init import initialize_system_data
 from workflows import run_system_workflows
 
@@ -9,7 +10,7 @@ st.set_page_config(
     page_icon="🔍"
 )
 
-# 🎨 تصميم الواجهة وحاوية الشعار الثابتة لمنع التداخل أو الارتطام بالخلفية
+# 🎨 تصميم الواجهة وتصحيح تموضع الشعار وتثبيت واجهة الزجاج والخلفية
 st.markdown(
     """
     <style>
@@ -47,9 +48,6 @@ st.markdown(
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
     }
-    .glass-card:hover {
-        transform: translateY(-2px);
-    }
     </style>
     
     <div class="main-header-container">
@@ -59,6 +57,11 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# 📸 إظهار صورة الواجهة المستهدفة وتثبيتها بالمكان الصحيح
+image_path = "phone_image.webp"
+if os.path.exists(image_path):
+    st.image(image_path, use_container_width=True)
 
 # ⚡ استدعاء دالة التهيئة لتفكيك قاعدة البيانات وجلب القوائم الحية ديناميكياً
 (
@@ -92,14 +95,11 @@ phone = st.text_input(
 # جلب الاقتراحات المساعدة لحظياً أثناء الكتابة
 suggestions = fast_phone_search(phone) if phone else []
 
-# 🔗 الالتحام البرمجي الكامل: تمرير النص والبيانات والقوائم الديناميكية المكتشفة إلى workflows.py
+# 🔗 الالتحام البرمجي الكامل: تمرير النص والبيانات لملف العمليات المحدث
 run_system_workflows(
     phone=phone,
     db_data=db_data,
     suggestions=suggestions,
-    all_available_panels=all_available_panels,
-    all_available_sensors=all_available_sensors,
     total_models=total_models,
     empty_groups_count=empty_groups_count
 )
-
