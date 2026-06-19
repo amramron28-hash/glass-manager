@@ -58,11 +58,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 📸 إظهار صورة الواجهة المستهدفة وتثبيتها بالمكان الصحيح
-image_path = "phone_image.webp"
-if os.path.exists(image_path):
-    st.image(image_path, use_container_width=True)
-
 # ⚡ استدعاء دالة التهيئة لتفكيك قاعدة البيانات وجلب القوائم الحية ديناميكياً
 (
     db_data, 
@@ -84,7 +79,7 @@ def fast_phone_search(searchterm):
     contains = [m for m in unique_models if term in m.lower() and m not in starts_with]
     return (starts_with + contains)[:10]
 
-# خانة البحث الحر الفوري المدمج
+# 📥 خانة البحث الحر الفوري المدمج (تظهر الآن مباشرة في الأعلى تحت العنوان)
 phone = st.text_input(
     "البحث والمطابقة الفورية للموديلات:",
     placeholder="اكتب اسم الهاتف المستهدف هنا بحرية وسرعة...",
@@ -95,7 +90,7 @@ phone = st.text_input(
 # جلب الاقتراحات المساعدة لحظياً أثناء الكتابة
 suggestions = fast_phone_search(phone) if phone else []
 
-# 🔗 الالتحام البرمجي الكامل: تمرير النص والبيانات لملف العمليات المحدث
+# 🔗 الالتحام البرمجي الكامل: تمرير النص والبيانات لملف العمليات المحدث لتشغيل الخطط
 run_system_workflows(
     phone=phone,
     db_data=db_data,
@@ -103,3 +98,8 @@ run_system_workflows(
     total_models=total_models,
     empty_groups_count=empty_groups_count
 )
+
+# 📸 [تصحيح الترتيب]: إنزال الصورة الخلفية لتظهر دائماً بالأسفل تحت خانة البحث أو تحت نتائج النيون
+image_path = "phone_image.webp"
+if os.path.exists(image_path):
+    st.image(image_path, use_container_width=True)
