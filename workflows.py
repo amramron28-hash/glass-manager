@@ -1,120 +1,129 @@
 import os
-import time
 import streamlit as st
-import requests
-from database import load_db, save_db
-from logic_engine import find_model_coords, get_compatibles_strict
 from ui_components import draw_technical_coords, draw_neon_section
-
-def local_check_existing_size_group(db, target_size, target_panel):
-    matched_models = []
-    if target_size in db and target_panel in db[target_size]:
-        for sensor, s_data in db[target_size][target_panel].items():
-            models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
-            for m in models_list: matched_models.append(m)
-    return matched_models
-
-def ai_background_global_verify(phone_name):
-    try:
-        url = f"https://vercel.app{requests.utils.quote(phone_name)}"
-        res = requests.get(url, timeout=1.5).json()
-        if res and "specs" in res:
-            return {"size": str(res["specs"].get("display_size", "")), "panel": str(res["specs"].get("display_type", "")), "sensor": str(res["specs"].get("proximity_type", ""))}
-    except: pass
-    return None
+from logic_engine import find_model_coords, get_compatibles_strict
+from database import save_db
+from main_module import local_check_existing_size_group, ai_background_global_verify
 
 def append_to_models_index(phone_name):
+    """تحديث ملف الفهرس النصي واستقبال أسماء الهواتف تلقائياً دون تكرار."""
     INDEX_FILE = "models_index.txt"
-    if os.path.exists(INDEX_FILE):
-        with open(INDEX_FILE, "r", encoding="utf-8") as f: current_models = [l.strip() for l in f if l.strip()]
-        if phone_name not in current_models:
-            with open(INDEX_FILE, "a", encoding="utf-8") as f: f.write(f"{phone_name}\n")
+    phone_name = phone_name.strip()
+    
+    # إنشاء الملف إذا لم يكن موجوداً من قبل
+    if not os.path.exists(INDEX_FILE):
+        with open(INDEX_FILE, "w", encoding="utf-8") as f:
+            pass
+            
+    # قراءة الأسماء الحالية لتجنب التكرار
+    with open(INDEX_FILE, "r", encoding="utf-8") as f: 
+        current_models = [line.strip().lower() for line in f if line.strip()]
+    
+    # إضافة الهاتف الجديد فقط إذا لم يكن مسجلاً مسبقاً
+    if phone_name.lower() not in current_models:
+        with open(INDEX_FILE, "a", encoding="utf-8") as f: 
+            f.write(f"{phone_name}\n")
+
+def create_and_save_new_group(db_data, size, panel, sensor, phone_name):
+    """خطة الطوارئ 3: بناء الهيكل الشجري الجديد للمجموعة وحفظها بالملف."""
+    if size not in db_data:
+        db_data[size] = {}
+    if panel not in db_data[size]:
+        db_data[size][panel] = {}
+    if sensor not in db_data[size][panel]:
+        db_data[size][panel][sensor] = {"models": []}
+        
+    if phone_name not in db_data[size][panel][sensor]["models"]:
+        db_data[size][panel][sensor]["models"].append(phone_name)
+        
+    # حفظ في قاعدة البيانات الرئيسية
+    save_db(db_data)
+    # تحديث ملف الفهرس النصي تلقائياً
+    append_to_models_index(phone_name)
+    return True
 
 def run_system_workflows(phone, db_data, suggestions):
-    size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
-    is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
-    global_audit_alerts = []
+    coords = find_model_coords(db_data, phone) if phone else (None, None, None, None)
+    size_str, panel, sensor, real_name = coords if coords else (None, None, None, None)
+    
+    is_exact_match = (real_name and phone.lower() == real_name.lower())
 
-    # الخطة 1: نتائج التوافق وبطاقات النيون والأيقونات بحجمها الأصلي
+    # -------------------------------------------------------------
+    # الخطة 1: المطابقة الدقيقة والكاملة (الهاتف مسجل مسبقاً)
+    # -------------------------------------------------------------
     if is_exact_match:
-        st.markdown(f"<div class='section-title' style='text-align: right; color: #ffffff; font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 8px;'>📊 نتائج التوافق والمقاسات للهاتف: <span style='color: #00bfff;'>{real_name}</span></div>", unsafe_allow_html=True)
         draw_technical_coords(size_str, panel, sensor)
         results = get_compatibles_strict(db_data, phone)
-        
-        if "exact" in results:
-            exact_list = [m for m in results["exact"] if m not in results.get("warn", [])]
-            draw_neon_section("هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)", exact_list, "#2ecc71", "🟢", phone)
-        if "plus" in results:
-            draw_neon_section("هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)", results["plus"], "#3498db", "🔵", phone)
-        if "minus" in results:
-            draw_neon_section("هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)", results["minus"], "#e67e22", "🟤", phone)
-        if results.get("warn"):
-            draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", phone)
+        if results:
+            draw_neon_section("الهواتف المتوافقة تماماً:", results)
+        else:
+            st.info("لا توجد هواتف مطابقة لهذه المواصفات حالياً في قاعدة البيانات.")
+        # تحديث تلقائي للفهرس لضمان تسجيله لو كان مفقوداً
+        append_to_models_index(phone)
 
-    # إصلاح الـ Auto-complete وعزل الخطة 2 و 3
-    should_open_manual_workflow = (phone != "" and not is_exact_match and not suggestions)
-
-    if should_open_manual_workflow:
+    # -------------------------------------------------------------
+    # الخطط اليدوية والطوارئ (عند عدم وجود تطابق مباشر)
+    # -------------------------------------------------------------
+    if phone != "" and not is_exact_match and not suggestions:
         st.markdown("---")
-        st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي. تم تفعيل النوافذ التتابعية لإدخال مواصفاته:")
-        col_s, col_p, col_se = st.columns(3)
         
-        with col_s: 
-            new_size = st.text_input("📐 1. المقاس الرقمي للزبون (مثال: 6.67):", key="workflow_size").strip()
-        chosen_panel, chosen_sensor = "", ""
-
-        if new_size:
-            with col_p:
-                panel_options = ["", "Punch-Hole Screen", "Notch Screen", "Waterdrop Notch", "Full Screen", "Flat Screen", "Curved Screen", "➕ إضافة شكل جديد..."]
-                selected_panel = st.selectbox("🖥️ 2. نوع الشاشة الهيكلي:", panel_options, key="workflow_panel")
-                if selected_panel == "➕ إضافة شكل جديد...":
-                    chosen_panel = st.text_input("✍️ اكتب شكل الشاشة الجديد هنا:", key="custom_panel_input").strip()
-                else: chosen_panel = str(selected_panel).strip()
-
-        if new_size and chosen_panel:
-            with col_se:
-                sensor_options = ["", "hardware_top_sensor", "virtual_camera_sensor", "under_display_fingerprint", "under_display_sensor", "side_sensor", "no_visible_sensor", "➕ إضافة مستشعر جديد..."]
-                selected_sensor = st.selectbox("👁️ 3. مستشعر التقارب المكتشف:", sensor_options, key="workflow_sensor")
-                if selected_sensor == "➕ إضافة مستشعر جديد...":
-                    chosen_sensor = st.text_input("✍️ اكتب نوع المستشعر الجديد هنا:", key="custom_sensor_input").strip()
-                else: chosen_sensor = str(selected_sensor).strip()
-
-        if new_size and chosen_panel and chosen_sensor:
-            global_data = ai_background_global_verify(phone)
-            if global_data and global_data["size"] and new_size not in global_data["size"]: 
-                global_audit_alerts.append(f"🚨 تدقيق عالمي: هاتف `{phone}` تم إدخاله بـ {new_size} والحقيقي في السحاب {global_data['size']}")
+        # جلب التلميحات الذكية من الـ AI في الخلفية لتسهيل الإدخال
+        if f"hint_{phone}" not in st.session_state:
+            st.session_state[f"hint_{phone}"] = ai_background_global_verify(phone)
+        ai_hint = st.session_state[f"hint_{phone}"]
             
+        # حقول إدخال المواصفات الفنية
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            default_size = ai_hint["size"] if ai_hint else ""
+            new_size = st.text_input("مقاس الشاشة (مثال: 6.67):", value=default_size, key="input_size").strip()
+        with col2:
+            default_panel = ai_hint["panel"] if ai_hint else ""
+            chosen_panel = st.text_input("نوع الشاشة (مثال: AMOLED):", value=default_panel, key="input_panel").strip()
+        with col3:
+            default_sensor = ai_hint["sensor"] if ai_hint else "Unknown"
+            chosen_sensor = st.text_input("مستشعر التقارب (Proximity):", value=default_sensor, key="input_sensor").strip()
+            
+        if new_size and chosen_panel and chosen_sensor:
+            # التحقق من وجود مجموعة توافق هذه المواصفات محلياً
             matched_list = local_check_existing_size_group(db_data, new_size, chosen_panel)
-            st.markdown("---")
-            if f"success_saved_{phone}" not in st.session_state: st.session_state[f"success_saved_{phone}"] = False
-
-            # الخطة 2: دمج الهاتف في مجموعة مسبقة مسجلة
+            
+            # -------------------------------------------------------------
+            # الخطة 2: التعديل والدمج (المواصفات موجودة والموديل جديد)
+            # -------------------------------------------------------------
             if matched_list:
-                st.info("💡 تم رصد مجموعة مقاسات وشاشات متطابقة مسبقاً في النظام السحابي!")
-                st.markdown(f"🎯 الموديلات المتوافقة مع هذه المجموعة: **{', '.join(matched_list)}**")
-                if not st.session_state[f"success_saved_{phone}"]:
-                    if st.button("🔗 موافقة: دمج الموديل الجديد وتحديث السحاب", key="btn_merge_model"):
-                        if new_size not in db_data: db_data[new_size] = {}
-                        if chosen_panel not in db_data[new_size]: db_data[new_size][chosen_panel] = {}
-                        if chosen_sensor not in db_data[new_size][chosen_panel]: db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
-                        if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]: db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
-                        save_db(db_data); append_to_models_index(phone); st.session_state[f"success_saved_{phone}"] = True; st.rerun()
-                else:
-                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px; box-shadow:0 0 10px rgba(46,204,113,0.5);'>✅ تم قفل ودمج الهاتف بنجاح في السحاب المركزي!</div>", unsafe_allow_html=True)
-                    if st.button("🔄 تحديث وتنشيط النظام الموحد", key="refresh_system_btn_2"): st.session_state[f"success_saved_{phone}"] = False; st.rerun()
-
-            # الخطة 3: خطة الطوارئ وإنشاء مجموعة جديدة كلياً
+                st.info(f"💡 وجدنا مجموعة تطابق هذا المقاس والشاشة تحتوي على: {', '.join(matched_list[:3])}...")
+                
+                if st.button(f"🔗 دمج '{phone}' مع المجموعة الحالية", key="merge_btn"):
+                    if chosen_sensor not in db_data[new_size][chosen_panel]:
+                        db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
+                    
+                    if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]:
+                        db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
+                        save_db(db_data)
+                        append_to_models_index(phone) # ربط وتحديث الفهرس تلقائياً
+                        st.session_state["show_success_alert"] = f"✅ تم دمج وتحديث قاعدة البيانات بنجاح للهاتف '{phone}'!"
+                        st.rerun()
+            
+            # -------------------------------------------------------------
+            # الخطة 3: خطة الطوارئ (لا توجد أي مجموعة مطابقة - إنشاء كلي)
+            # -------------------------------------------------------------
             else:
+                # رسالة خطة الطوارئ المطابقة لتصميم واجهتك تماماً
                 st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة مسبقة تطابق هذه المواصفات.")
-                if not st.session_state[f"success_saved_{phone}"]:
-                    if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف", key="btn_create_group"):
-                        if new_size not in db_data: db_data[new_size] = {}
-                        if chosen_panel not in db_data[new_size]: db_data[new_size][chosen_panel] = {}
-                        if chosen_sensor not in db_data[new_size][chosen_panel]: db_data[new_size][chosen_panel][chosen_sensor] = {"models": []}
-                        if phone not in db_data[new_size][chosen_panel][chosen_sensor]["models"]: db_data[new_size][chosen_panel][chosen_sensor]["models"].append(phone)
-                        save_db(db_data); append_to_models_index(phone); st.session_state[f"success_saved_{phone}"] = True; st.rerun()
-                else:
-                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px; box-shadow:0 0 10px rgba(46,204,113,0.5);'>✅ تم إنشاء المجموعة السحابية وضخ الهاتف بنجاح تام!</div>", unsafe_allow_html=True)
-                    if st.button("🔄 تحديث وتنشيط النظام الموحد", key="refresh_system_btn_3"): st.session_state[f"success_saved_{phone}"] = False; st.rerun()
+                
+                if st.button(f"📝 إنشاء مجموعة جديدة وإدراج الهاتف", key="force_create_new_group_btn"):
+                    # استدعاء دالة الطوارئ التي تبني الهيكل وتحدث ملف الفهرس تلقائياً
+                    success = create_and_save_new_group(db_data, new_size, chosen_panel, chosen_sensor, phone)
+                    
+                    if success:
+                        st.session_state["show_success_alert"] = f"🎉 تم إنشاء مجموعة جديدة بنجاح وإدراج الهاتف '{phone}' وتحديث الفهرس تلقائياً!"
+                        st.rerun()
 
-    st.session_state.notifications = global_audit_alerts if global_audit_alerts else []
+    # -------------------------------------------------------------
+    # عرض نافذة النجاح الخضراء بشكل مستقر وثابت بعد الـ rerun
+    # -------------------------------------------------------------
+    if "show_success_alert" in st.session_state:
+        st.success(st.session_state["show_success_alert"])
+        st.balloons()
+        del st.session_state["show_success_alert"]
