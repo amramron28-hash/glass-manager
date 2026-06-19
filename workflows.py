@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 from database import load_db, save_db
@@ -49,7 +50,7 @@ def append_to_models_index(phone_name):
             with open(INDEX_FILE, "a", encoding="utf-8") as f:
                 f.write(f"{phone_name}\n")
 
-def run_system_workflows(phone, db_data, suggestions, all_available_panels, all_available_sensors, total_models, empty_groups_count):
+def run_system_workflows(phone, db_data, suggestions, total_models, empty_groups_count):
     """المحرك المركزي لإدارة الخطط الثلاث (1، 2، 3) بالتناغم الكامل"""
     
     # حساب متغيرات التطابق الحرفي العميقة
@@ -104,10 +105,19 @@ def run_system_workflows(phone, db_data, suggestions, all_available_panels, all_
         chosen_panel = ""
         chosen_sensor = ""
 
-        # تتابع النافذة الثانية: الشاشات ديناميكياً من ملف التهيئة مع ميزة (+)
+        # تتابع النافذة الثانية: استعادة القوائم الثابتة القديمة تماماً مع تذييلها بخيار (+)
         if new_size:
             with col_p:
-                panel_options = [""] + [p for p in all_available_panels if p] + ["➕ إضافة شكل جديد..."]
+                panel_options = [
+                    "",
+                    "Punch-Hole Screen",
+                    "Notch Screen",
+                    "Waterdrop Notch",
+                    "Full Screen",
+                    "Flat Screen",
+                    "Curved Screen",
+                    "➕ إضافة شكل جديد..."
+                ]
                 selected_panel = st.selectbox("🖥️ 2. نوع الشاشة الهيكلي:", panel_options, key="workflow_panel")
                 
                 if selected_panel == "➕ إضافة شكل جديد...":
@@ -115,10 +125,19 @@ def run_system_workflows(phone, db_data, suggestions, all_available_panels, all_
                 else:
                     chosen_panel = str(selected_panel).strip()
 
-        # تتابع النافذة الثالثة: المستشعرات ديناميكياً مع ميزة (+)
+        # تتابع النافذة الثالثة: استعادة القوائم الثابتة القديمة تماماً مع تذييلها بخيار (+)
         if new_size and chosen_panel:
             with col_se:
-                sensor_options = [""] + [s for s in all_available_sensors if s] + ["➕ إضافة مستشعر جديد..."]
+                sensor_options = [
+                    "",
+                    "hardware_top_sensor",
+                    "virtual_camera_sensor",
+                    "under_display_fingerprint",
+                    "under_display_sensor",
+                    "side_sensor",
+                    "no_visible_sensor",
+                    "➕ إضافة مستشعر جديد..."
+                ]
                 selected_sensor = st.selectbox("👁️ 3. مستشعر التقارب المكتشف:", sensor_options, key="workflow_sensor")
                 
                 if selected_sensor == "➕ إضافة مستشعر جديد...":
