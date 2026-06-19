@@ -79,24 +79,32 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ☁️ تحميل قاعدة البيانات السحابية المركزية
-db_data = load_db()
-
-# ⚡ محرك استخراج الأسماء فلاشياً في الذاكرة الحية (RAM) لتسريع الستارة
-def load_fast_models_index(db):
-    """استخراج قائمة الأسماء المسطحة فوراً من قاعدة البيانات في الذاكرة للسرعة الفلاشية"""
+# ⚡ تفعيل كاش الذاكرة الحية لقراءة قاعدة البيانات وحساب الإحصائيات مرة واحدة فقط لمنع خنق السيرفر
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_cached_system_data():
+    db = load_db()
+    
+    # استخراج قائمة الأسماء المسطحة فوراً في الذاكرة للسرعة الفلاشية
     extracted_names = []
+    empty_groups = 0
+    
     for size, panels in db.items():
+        size_has_models = False
         for panel, sensors in panels.items():
             for sensor, s_data in sensors.items():
                 models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
                 for m in models_list:
                     if m.strip():
                         extracted_names.append(m.strip())
-    return sorted(list(set(extracted_names)))
+                        size_has_models = True
+        if not size_has_models:
+            empty_groups += 1
+            
+    unique_names = sorted(list(set(extracted_names)))
+    return db, unique_names, len(unique_names), empty_groups
 
-# توليد كاش الأسماء السريع في الذاكرة فوراً عند تشغيل الصفحة
-unique_models = load_fast_models_index(db_data)
+# استدعاء البيانات من الكاش الخارق (يعمل بأجزاء من الثانية أثناء الكتابة الحرة)
+db_data, unique_models, total_models, empty_groups_count = get_cached_system_data()
 
 def local_check_existing_size_group(db, target_size, target_panel):
     matched_models = []
@@ -122,20 +130,7 @@ def ai_background_global_verify(phone_name):
         pass
     return None
 
-# حساب الإحصائيات العامة من مصفوفة الذاكرة مباشرة
-total_models = len(unique_models)
-empty_groups_count = 0
-for size, panels in db_data.items():
-    size_has_models = False
-    for panel, sensors in panels.items():
-        for sensor, s_data in sensors.items():
-            models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
-            if models_list:
-                size_has_models = True
-    if not size_has_models:
-        empty_groups_count += 1
-
-# 🔍 دالة البحث اللحظي المبنية على مصفوفة الذاكرة المسطحة السريعة
+# 🔍 دالة البحث اللحظي السريع جداً المبني على كاش الذاكرة المسطحة
 def fast_phone_search(searchterm):
     if not searchterm:
         return []
@@ -152,7 +147,7 @@ phone = st.text_input(
     key="free_smart_search_input"
 ).strip()
 
-# جلب الاقتراحات المساعدة لحظياً وبسرعة خارقة من الذاكرة
+# جلب الاقتراحات المساعدة لحظياً وبسرعة خارقة من ذاكرة الكاش السريع
 suggestions = fast_phone_search(phone) if phone else []
 # ============================================================
 # حساب متغيرات التطابق (تم تأخيرها هنا لضمان السرعة اللحظية للاقتراحات)
@@ -280,7 +275,7 @@ if should_open_manual_workflow:
     if new_size and new_panel:
         with col_se:
             new_sensor = str(st.selectbox(
-                "👁️ 3. مستشعر التقارب Mكتشف والمراقب:",
+                "👁️ 3. مستشعر التقارب المكتشف والمراقب:",
                 ["", "hardware_top_sensor", "virtual_camera_sensor", "under_display_fingerprint", "under_display_sensor", "side_sensor", "no_visible_sensor"],
                 key="workflow_sensor"
             )).strip()
@@ -319,10 +314,13 @@ if should_open_manual_workflow:
                 if phone not in db_data[new_size][new_panel][new_sensor]["models"]:
                     db_data[new_size][new_panel][new_sensor]["models"].append(phone)
 
-                # حفظ في قاعدة البيانات الشاملة والسحاب تلقائياً
+                # حفظ في قاعدة البيانات الشاملة والسحاب
                 save_db(db_data)
                 
-                st.success(f"✅ تم دمج {phone} بنجاح كعنصر متوافق داخل المجموعة المكتشفة وتحديث محرك البحث الحقيقي.")
+                # تطهير الكاش تلقائياً لكي يرى الكاش التعديل فوراً بالسرعة القصوى
+                st.cache_data.clear()
+                
+                st.success(f"✅ تم دمج {phone} بنجاح كعنصر متوافق داخل المجموعة المكتشفة وتحديث محرك البحث الذكي.")
                 st.rerun()
             # (قف) - انتهاء الخطة 2 بالدمج التلقائي الناجح للمجموعة الحالية وتوقف المعالجة
 
@@ -340,8 +338,11 @@ if should_open_manual_workflow:
 
                 db_data[new_size][new_panel][new_sensor] = {"models": [phone]}
 
-                # حفظ في قاعدة البيانات الشاملة والسحاب تلقائياً
+                # حفظ في قاعدة البيانات الشاملة والسحاب
                 save_db(db_data)
+                
+                # تطهير الكاش تلقائياً لكي يرى الكاش التعديل فوراً بالسرعة القصوى
+                st.cache_data.clear()
                 
                 st.success(f"✅ تم تفعيل خطة الطوارئ بنجاح، وإنشاء مجموعة سحابية ومحرك بحث جديد لحفظ الهاتف {phone}.")
                 st.rerun()
@@ -359,4 +360,3 @@ draw_control_panel(
     total_models=total_models,
     empty_groups_count=empty_groups_count
 )
-
