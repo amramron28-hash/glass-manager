@@ -101,7 +101,23 @@ st.markdown(
     all_available_sensors
 ) = initialize_system_data()
 
-# 🔍 محرك جلب الاقتراحات اللحظية الفلاشية من ملف الأسماء
+# 🎯 [الربط المحكم وصمام التغذية التلقائية لملف المؤشر]:
+# إذا كان ملف models_index.txt فارغاً تماماً على GitHub، يتم تعبئته وضخ الموديلات القديمة داخله فوراً دفعة واحدة لمرة واحدة فقط
+INDEX_FILE = "models_index.txt"
+if os.path.exists(INDEX_FILE):
+    with open(INDEX_FILE, "r", encoding="utf-8") as f:
+        has_lines = any(line.strip() for line in f)
+        
+    if not has_lines and unique_models:
+        with open(INDEX_FILE, "w", encoding="utf-8") as f:
+            for m_name in unique_models:
+                f.write(f"{m_name}\n")
+
+    # 🔗 قفل الربط اللحظي: إجبار محرك البحث على القراءة المباشرة من أسطر ملف الأسماء النصي الخفيف
+    with open(INDEX_FILE, "r", encoding="utf-8") as f:
+        unique_models = sorted(list(set([line.strip() for line in f if line.strip()])))
+
+# 🔍 محرك جلب الاقتراحات اللحظية الفلاشية المعتمد على أسطر ملف الأسماء الخفيف
 def fast_phone_search(searchterm):
     if not searchterm:
         return []
@@ -118,7 +134,7 @@ phone = st.text_input(
     key="free_smart_search_input"
 ).strip()
 
-# جلب الاقتراحات المساعدة لحظياً أثناء الكتابة
+# جلب الاقتراحات المساعدة لحظياً أثناء الكتابة من مصفوفة الملف
 suggestions = fast_phone_search(phone) if phone else []
 
 # ⚡ [إصلاح الـ Auto-complete]: إظهار ستارة الاقتراحات المساعدة لحظياً في الواجهة الرئيسية لمنع الاختفاء
