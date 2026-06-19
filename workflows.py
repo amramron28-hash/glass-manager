@@ -47,6 +47,7 @@ def append_to_models_index(phone_name):
             with open(INDEX_FILE, "a", encoding="utf-8") as f:
                 f.write(f"{phone_name}\n")
 
+# ⚡ [الدالة المستقبلة]: تستقبل المعاملات الثلاثة الصافية المتوافقة تماماً مع ملف app.py
 def run_system_workflows(phone, db_data, suggestions):
     size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
     is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
@@ -133,7 +134,7 @@ def run_system_workflows(phone, db_data, suggestions):
 
                     save_db(db_data)
                     append_to_models_index(phone)
-                    st.success("✅ تم دمج الهاتف بنجاح وحفظ البيانات في السحاب الشامل!")
+                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px;'>✅ تم دمج الهاتف بنجاح وحفظ البيانات في السحاب الشامل!</div>", unsafe_allow_html=True)
                     time.sleep(2.0)
                     st.rerun()
 
@@ -150,7 +151,7 @@ def run_system_workflows(phone, db_data, suggestions):
 
                     save_db(db_data)
                     append_to_models_index(phone)
-                    st.success("✅ تم إنشاء مجموعة سحابية جديدة بنجاح وتثبيت الهاتف المكتمل!")
+                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px;'>✅ تم إنشاء مجموعة سحابية جديدة بنجاح وتثبيت الهاتف المكتمل!</div>", unsafe_allow_html=True)
                     time.sleep(2.0)
                     st.rerun()
 
