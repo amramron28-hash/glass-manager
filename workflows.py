@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 import requests
 from database import load_db, save_db
@@ -14,16 +15,17 @@ from ui_components import (
 )
 
 def local_check_existing_size_group(db, target_size, target_panel):
+    """فحص وتدقيق Mجموعات الأبعاد والشاشات المسجلة"""
     matched_models = []
-    if target_size in db:
-        if target_panel in db[target_size]:
-            for sensor, s_data in db[target_size][target_panel].items():
-                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
-                for m in models_list:
-                    matched_models.append(m)
+    if target_size in db and target_panel in db[target_size]:
+        for sensor, s_data in db[target_size][target_panel].items():
+            models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+            for m in models_list:
+                matched_models.append(m)
     return matched_models
 
 def ai_background_global_verify(phone_name):
+    """التحقق الذكي عبر الـ API العالمي في الخلفية"""
     try:
         url = f"https://vercel.app{requests.utils.quote(phone_name)}"
         res = requests.get(url, timeout=1.5).json()
@@ -38,6 +40,7 @@ def ai_background_global_verify(phone_name):
     return None
 
 def append_to_models_index(phone_name):
+    """ضخ الاسم الجديد تلقائياً في ملف المساعدة الستاري لتسريع المرات القادمة"""
     INDEX_FILE = "models_index.txt"
     if os.path.exists(INDEX_FILE):
         with open(INDEX_FILE, "r", encoding="utf-8") as f:
@@ -47,72 +50,156 @@ def append_to_models_index(phone_name):
                 f.write(f"{phone_name}\n")
 
 def run_system_workflows(phone, db_data, suggestions):
+    """المحرك المركزي لإدارة الخطط الثلاث (1، 2، 3) بالتناغم الكامل"""
+
     size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
     is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
-    
-    # ------------------------------------------------------------
-    # الخطة 1: نتائج التوافق الفورية
-    # ------------------------------------------------------------
+    global_audit_alerts = []
+
+    # ============================================================
+    # الخطة 1: نتائج التوافق الفورية للهواتف المطابقة حرفياً
+    # ============================================================
     if is_exact_match:
-        st.markdown(f"<div class='section-title' style='text-align: right; color: #ffffff; font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 8px;'>📊 نتائج التوافق للهاتف: <span style='color: #00bfff;'>{real_name}</span></div>", unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class='section-title' style='text-align: right; color: #ffffff; font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 8px;'>
+            📊 نتائج التوافق والمقاسات للهاتف: <span style='color: #00bfff;'>{real_name}</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
         draw_technical_coords(size_str, panel, sensor)
         results = get_compatibles_strict(db_data, phone)
-        if "exact" in results: draw_neon_section("هواتف مطابقة تماماً", [m for m in results["exact"] if m not in results.get("warn", [])], "#2ecc71", "🟢", phone)
-        if "plus" in results: draw_neon_section("هواتف أكبر بقليل (Plus)", results["plus"], "#3498db", "🔵", phone)
-        if "minus" in results: draw_neon_section("هواتف أصغر بقليل (Minus)", results["minus"], "#e67e22", "🟤", phone)
-        if results.get("warn"): draw_neon_section("تنبيه حساس", results["warn"], "#ef4444", "⚠️", phone)
 
-    # ------------------------------------------------------------
-    # الخطة 2 و 3: المعالجة اليدوية
-    # ------------------------------------------------------------
+        if "exact" in results:
+            exact_list = [m for m in results["exact"] if m not in results.get("warn", [])]
+            draw_neon_section("هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)", exact_list, "#2ecc71", "🟢", phone)
+
+        if "plus" in results:
+            draw_neon_section("هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)", results["plus"], "#3498db", "🔵", phone)
+
+        if "minus" in results:
+            draw_neon_section("هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)", results["minus"], "#e67e22", "🟤", phone)
+
+        if results.get("warn"):
+            draw_neon_section("تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف:", results["warn"], "#ef4444", "⚠️", phone)
+
+    # ============================================================
+    # شرط عزل الخطة 2 و الخطة 3 (حظر نوافذ الإدخال أثناء الكتابة الفلاشية)
+    # ============================================================
     should_open_manual_workflow = (phone != "" and not is_exact_match and not suggestions)
+
     if should_open_manual_workflow:
         st.markdown("---")
-        st.warning(f"⚠️ الهاتف ({phone}) غير مسجل. يرجى إدخال المواصفات:")
-        
+        st.warning(f"⚠️ الهاتف ({phone}) غير مسجل بالاسم الحرفي. تم تفعيل النوافذ التتابعية لإدخال مواصفاته:")
+
         col_s, col_p, col_se = st.columns(3)
-        with col_s: new_size = st.text_input("📐 المقاس الرقمي:", key="workflow_size").strip()
-        
+
+        with col_s:
+            new_size = st.text_input("📐 1. المقاس الرقمي للزبون (مثال: 6.67):", key="workflow_size").strip()
+
         chosen_panel = ""
+        chosen_sensor = ""
+
         if new_size:
             with col_p:
-                selected_panel = st.selectbox("🖥️ نوع الشاشة:", ["", "Punch-Hole Screen", "Notch Screen", "Waterdrop Notch", "Full Screen", "➕ إضافة شكل جديد..."], key="workflow_panel")
-                chosen_panel = st.text_input("✍️ شكل الشاشة:", key="custom_panel_input").strip() if selected_panel == "➕ إضافة شكل جديد..." else selected_panel
-        
-        chosen_sensor = ""
+                panel_options = [
+                    "",
+                    "Punch-Hole Screen",
+                    "Notch Screen",
+                    "Waterdrop Notch",
+                    "Full Screen",
+                    "Flat Screen",
+                    "Curved Screen",
+                    "➕ إضافة شكل جديد..."
+                ]
+                selected_panel = st.selectbox("🖥️ 2. نوع الشاشة الهيكلي:", panel_options, key="workflow_panel")
+
+                if selected_panel == "➕ إضافة شكل جديد...":
+                    chosen_panel = st.text_input("✍️ اكتب شكل الشاشة الجديد هنا:", key="custom_panel_input").strip()
+                else:
+                    chosen_panel = str(selected_panel).strip()
+
         if new_size and chosen_panel:
             with col_se:
-                selected_sensor = st.selectbox("👁️ مستشعر التقارب:", ["", "hardware_top_sensor", "virtual_camera_sensor", "under_display_fingerprint", "➕ إضافة مستشعر جديد..."], key="workflow_sensor")
-                chosen_sensor = st.text_input("✍️ نوع المستشعر:", key="custom_sensor_input").strip() if selected_sensor == "➕ إضافة مستشعر جديد..." else selected_sensor
+                sensor_options = [
+                    "",
+                    "hardware_top_sensor",
+                    "virtual_camera_sensor",
+                    "under_display_fingerprint",
+                    "under_display_sensor",
+                    "side_sensor",
+                    "no_visible_sensor",
+                    "➕ إضافة مستشعر جديد..."
+                ]
+                selected_sensor = st.selectbox("👁️ 3. مستشعر التقارب المكتشف:", sensor_options, key="workflow_sensor")
+
+                if selected_sensor == "➕ إضافة مستشعر جديد...":
+                    chosen_sensor = st.text_input("✍️ اكتب نوع المستشعر الجديد هنا:", key="custom_sensor_input").strip()
+                else:
+                    chosen_sensor = str(selected_sensor).strip()
 
         if new_size and chosen_panel and chosen_sensor:
-            matched_list = local_check_existing_size_group(db_data, new_size, chosen_panel)
-            st.markdown("---")
-            
-            # التأكد من حالة النجاح
-            success_key = f"success_saved_{phone}"
-            if success_key not in st.session_state: st.session_state[success_key] = False
+            global_data = ai_background_global_verify(phone)
 
-            if not st.session_state[success_key]:
-                if matched_list:
-                    st.info(f"💡 تم رصد مجموعة مطابقة! الموديلات: {', '.join(matched_list)}")
-                    if st.button("🔗 دمج الموديل الجديد وتحديث السحاب"):
-                        db_data.setdefault(new_size, {}).setdefault(chosen_panel, {}).setdefault(chosen_sensor, {"models": []})["models"].append(phone)
-                        save_db(db_data)
-                        append_to_models_index(phone)
-                        st.session_state[success_key] = True
-                        st.rerun()
+            if global_data and global_data["size"]:
+                if new_size not in global_data["size"]:
+                    global_audit_alerts.append(
+                        f"🚨 تدقيق عالمي: هاتف `{phone}` تم إدخاله بـ {new_size} والحقيقي في السحاب {global_data['size']}"
+                    )
+
+            matched_list = local_check_existing_size_group(db_data, new_size, chosen_panel)
+
+            st.markdown("---")
+
+            if f"success_saved_{phone}" not in st.session_state:
+                st.session_state[f"success_saved_{phone}"] = False
+
+            # ------------------------------------------------------------
+            # الخطة 2: دمج الهاتف الجديد في مجموعة هيكلية مكتشفة مسبقاً
+            # ------------------------------------------------------------
+            if matched_list:
+                st.info("💡 تم رصد مجموعة مقاسات وشاشات متطابقة مسبقاً في النظام السحابي!")
+                st.markdown(f"🎯 الموديلات المتوافقة مع هذه المجموعة: **{', '.join(matched_list)}**")
+
+                if not st.session_state[f"success_saved_{phone}"]:
+                    if st.button("🔗 موافقة: دمج الموديل الجديد وتحديث السحاب", key="btn_merge_model"):
+                        # 🎯 حقن تعديلك الذكي للرفع المباشر الصارم
+                        success = save_db(db_data, new_phone_name=phone, size=new_size, panel=chosen_panel, sensor=chosen_sensor)
+                        
+                        if success:
+                            append_to_models_index(phone)
+                            st.session_state[f"success_saved_{phone}"] = True
+                            st.rerun()
+                        else:
+                            st.error("⚠️ فشل الرفع إلى السحابة. تأكد من اتصال الإنترنت وصلاحيات قاعدة البيانات.")
                 else:
-                    st.error("❌ لا توجد مجموعة مسبقة مطابقة.")
-                    if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف"):
-                        db_data.setdefault(new_size, {}).setdefault(chosen_panel, {}).setdefault(chosen_sensor, {"models": []})["models"].append(phone)
-                        save_db(db_data)
-                        append_to_models_index(phone)
-                        st.session_state[success_key] = True
+                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px; box-shadow:0 0 10px rgba(46,204,113,0.5);'>✅ تم قفل ودمج الهاتف بنجاح في السحاب المركزي!</div>", unsafe_allow_html=True)
+                    if st.button("🔄 تحديث وتنشيط النظام الموحد", key="refresh_system_btn_2"):
+                        st.session_state[f"success_saved_{phone}"] = False
                         st.rerun()
+
+            # ------------------------------------------------------------
+            # الخطة 3: خطة الطوارئ وإنشاء مواصفات ومجموعة جديدة كلياً
+            # ------------------------------------------------------------
             else:
-                st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center;'>✅ تم إنجاز العملية بنجاح!</div>", unsafe_allow_html=True)
-                if st.button("🔄 تحديث النظام"):
-                    st.session_state[success_key] = False
-                    st.rerun()
+                st.error("❌ خطة الطوارئ (الخطة 3): لا توجد مجموعة مسبقة تطابق هذه المواصفات.")
+
+                if not st.session_state[f"success_saved_{phone}"]:
+                    if st.button("➕ إنشاء مجموعة جديدة وإدراج الهاتف", key="btn_create_group"):
+                        # 🎯 حقن تعديلك الذكي للرفع المباشر الصارم للخطط الطارئة والهياكل الجديدة
+                        success = save_db(db_data, new_phone_name=phone, size=new_size, panel=chosen_panel, sensor=chosen_sensor)
+                        
+                        if success:
+                            append_to_models_index(phone)
+                            st.session_state[f"success_saved_{phone}"] = True
+                            st.rerun()
+                        else:
+                            st.error("⚠️ فشل الرفع إلى السحابة. تأكد من اتصال الإنترنت وصلاحيات قاعدة البيانات.")
+                else:
+                    st.markdown("<div style='padding:15px; background-color:#2ecc71; color:white; border-radius:8px; font-weight:bold; text-align:center; margin-bottom:15px; box-shadow:0 0 10px rgba(46,204,113,0.5);'>✅ تم إنشاء المجموعة السحابية وضخ الهاتف بنجاح تام!</div>", unsafe_allow_html=True)
+                    if st.button("🔄 تحديث وتنشيط النظام الموحد", key="refresh_system_btn_3"):
+                        st.session_state[f"success_saved_{phone}"] = False
+                        st.rerun()
 
