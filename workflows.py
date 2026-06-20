@@ -45,28 +45,42 @@ def run_system_workflows(phone, db_data, suggestions):
     size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
     is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
     
-    # مصفوفة لتجميع مخرجات الواجهة كـ HTML بدلاً من st.markdown
     html_output = []
 
+    # 🟢 الخطة 1: وجود تطابق تام في قاعدة البيانات
     if is_exact_match:
-        # توليد كود الـ HTML الخاص بالإحداثيات الفنية عند التطابق التام
         coords_html = draw_technical_coords(size_str, panel, sensor, real_name)
         if coords_html:
             html_output.append(str(coords_html))
             
-        # جلب الهواتف المتوافقة
         compatibles = get_compatibles_strict(db_data, size_str, panel, sensor, real_name)
         compat_html = draw_neon_section(compatibles)
         if compat_html:
             html_output.append(str(compat_html))
             
+    # 🟡 الخطة 2 & 3: الهاتف غير مسجل أو تطابق جزئي - تفعيل وضع فحص الذكاء الاصطناعي والإدخال اليدوي
     elif phone:
-        # في حال عدم التطابق التام (البحث الجاري أو عدم الوجود)
         html_output.append(f"""
-            <div style='padding: 15px; background: rgba(255, 165, 0, 0.1); border-left: 4px solid #ffa500; border-radius: 4px; margin-top: 15px;'>
-                <span style='color: #ffa500; font-weight: bold;'>🔍 جاري فحص ومطابقة الموديل المستهدف:</span> {escape(phone)}
+            <div style='padding: 15px; background: rgba(0, 191, 255, 0.1); border-left: 4px solid #00bfff; border-radius: 4px; margin-top: 15px; color: #ffffff;'>
+                <span style='color: #00bfff; font-weight: bold;'>🔍 جاري معالجة ومطابقة الموديل:</span> {escape(phone)}
             </div>
         """)
+        
+        # محاكاة التدقيق الخارجي في الخلفية عبر الـ API
+        ai_result = ai_background_global_verify(phone)
+        if ai_result:
+            html_output.append(f"""
+                <div style='padding: 12px; background: rgba(50, 205, 50, 0.1); border: 1px dashed #32cd32; border-radius: 6px; margin-top: 10px; color: #ffffff;'>
+                    <span style='color: #32cd32; font-weight: bold;'>🤖 نتائج الفحص العالمي الذكي:</span><br>
+                    📏 الحجم المتوقع: {escape(ai_result['size'])} | 📺 الشاشة: {escape(ai_result['panel'])} | 🔌 الحساس: {escape(ai_result['sensor'])}
+                </div>
+            """)
+        else:
+            # الخطة 3: فتح صندوق التنبيه لعدم عثور الـ API على بيانات تلقائية
+            html_output.append(f"""
+                <div style='padding: 12px; background: rgba(255, 69, 0, 0.1); border: 1px solid #ff4500; border-radius: 6px; margin-top: 10px; color: #ffffff;'>
+                    <span style='color: #ff4500; font-weight: bold;'>⚠️ تنبيه النظام الموحد:</span> الموديل غير مدرج حالياً. يمكنك استخدام نموذج الإدخال اليدوي بأسفل لوحة التحكم لتوثيقه وضخه في قاعدة بيانات النظام.
+                </div>
+            """)
 
-    # إرجاع مخرجات الواجهة مجمعة ليتم حقنها مباشرة في الـ app.py
     return "\n".join(html_output)
