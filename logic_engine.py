@@ -1,221 +1,95 @@
 import os
-import re
-from database import supabase
+import requests
+from html import escape
+from database import load_db, save_db
+from logic_engine import find_model_coords, get_compatibles_strict
+from ui_components import draw_technical_coords, draw_neon_section
 
-_clean_regex = re.compile(r'[-_/ \s]+')
+def local_check_existing_size_group(db, target_size, target_panel):
+    """فحص وتدقيق مجموعات الأبعاد والشاشات المسجلة"""
+    matched_models = []
+    if target_size in db and target_panel in db[target_size]:
+        for sensor, s_data in db[target_size][target_panel].items():
+            models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+            for m in models_list:
+                matched_models.append(m)
+    return matched_models
 
-# ==========================
-# تنظيف النصوص
-# ==========================
-def normalize_text(text):
-    if not text:
-        return ""
-    return _clean_regex.sub(' ', str(text).lower()).strip()
-
-# ==========================
-# هوية الهاتف
-# ==========================
-def build_phone_identity(row):
-    brand = normalize_text(row.get("brand", ""))
-    model = normalize_text(row.get("model_name") or row.get("model") or "")
-    if brand:
-        return f"{brand} {model}"
-    return model
-
-# ==========================
-# البحث عن الهاتف
-# ==========================
-def find_model_coords(db_data, model_name):
-    if not model_name or not db_data:
-        return None, None, None, None
-
-    target = normalize_text(model_name)
-
-    for size_str, panels in db_data.items():
-        for panel_name, sensors in panels.items():
-            for sensor_name, sensor_data in sensors.items():
-                models_list = (
-                    sensor_data.get("models", [])
-                    if isinstance(sensor_data, dict)
-                    else sensor_data
-                )
-                for m in models_list:
-                    if normalize_text(m) == target:
-                        return (
-                            size_str,
-                            panel_name,
-                            sensor_name,
-                            m
-                        )
-    return None, None, None, None
-
-# ============================================================
-# المقاسات القريبة (تمت إعادة صياغة السطر 101 لحل خطأ الـ Syntax الجذري)
-# ============================================================
-def get_compatibles_strict(db_data, model_name):
-    results = {
-        "exact": [],
-        "plus": [],
-        "minus": [],
-        "warn": []
-    }
-
-    size_str, panel, sensor, real_name = find_model_coords(db_data, model_name)
-
-    if not size_str:
-        return results
-
+def ai_background_global_verify(phone_name):
+    """التحقق الذكي عبر الـ API العالمي في الخلفية"""
     try:
-        current_size = float(size_str)
+        url = f"https://vercel.app{requests.utils.quote(phone_name)}"
+        res = requests.get(url, timeout=1.5).json()
+        if res and "specs" in res:
+            return {
+                "size": str(res["specs"].get("display_size", "")),
+                "panel": str(res["specs"].get("display_type", "")),
+                "sensor": str(res["specs"].get("proximity_type", ""))
+            }
     except:
-        return results
+        pass
+    return None
 
-    for size_key, panels in db_data.items():
-        try:
-            target_size = float(size_key)
-        except:
-            continue
+def append_to_models_index(phone_name):
+    """ضخ الاسم الجديد تلقائياً في ملف المساعدة الستاري لتسريع المرات القادمة"""
+    INDEX_FILE = "models_index.txt"
+    if os.path.exists(INDEX_FILE):
+        with open(INDEX_FILE, "r", encoding="utf-8") as f:
+            current_models = [line.strip() for line in f if line.strip()]
+        if phone_name not in current_models:
+            with open(INDEX_FILE, "a", encoding="utf-8") as f:
+                f.write(f"{phone_name}\n")
 
-        diff = round(target_size - current_size, 2)
+def run_system_workflows(phone, db_data, suggestions):
+    """المحرك المركزي لإدارة الخطط الثلاث بالتناغم الكامل لبيئة Shiny"""
+    size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
+    is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
+    
+    html_output = []
 
-        for panel_key, sensors in panels.items():
-            if panel_key != panel:
-                continue
+    # 🟢 الخطة 1: وجود تطابق تام في قاعدة البيانات
+    if is_exact_match:
+        coords_html = draw_technical_coords(size_str, panel, sensor, real_name)
+        if coords_html:
+            html_output.append(str(coords_html))
+            
+        # 🔗 التعديل الصحيح والدقيق المتطابق مع ملف logic_engine لتفادي التعارض الجوهري
+        compatibles_dict = get_compatibles_strict(db_data, phone)
+        
+        # استخراج الهواتف المتوافقة من القوائم المختلفة (الأجهزة المطابقة، والمقاسات الزائدة والناقصة)
+        all_compatibles = []
+        if compatibles_dict:
+            all_compatibles.extend(compatibles_dict.get("exact", []))
+            all_compatibles.extend(compatibles_dict.get("plus", []))
+            all_compatibles.extend(compatibles_dict.get("minus", []))
+            
+        compat_html = draw_neon_section(all_compatibles)
+        if compat_html:
+            html_output.append(str(compat_html))
+            
+    # 🟡 الخطة 2 & 3: الهاتف غير مسجل أو تطابق جزئي - تفعيل وضع فحص الذكاء الاصطناعي والإدخال اليدوي
+    elif phone:
+        html_output.append(f"""
+            <div style='padding: 15px; background: rgba(0, 191, 255, 0.1); border-left: 4px solid #00bfff; border-radius: 4px; margin-top: 15px; color: #ffffff;'>
+                <span style='color: #00bfff; font-weight: bold;'>🔍 جاري معالجة ومطابقة الموديل:</span> {escape(phone)}
+            </div>
+        """)
+        
+        # محاكاة التدقيق الخارجي في الخلفية عبر الـ API
+        ai_result = ai_background_global_verify(phone)
+        if ai_result:
+            html_output.append(f"""
+                <div style='padding: 12px; background: rgba(50, 205, 50, 0.1); border: 1px dashed #32cd32; border-radius: 6px; margin-top: 10px; color: #ffffff;'>
+                    <span style='color: #32cd32; font-weight: bold;'>🤖 نتائج الفحص العالمي الذكي:</span><br>
+                    📏 الحجم المتوقع: {escape(ai_result['size'])} | 📺 الشاشة: {escape(ai_result['panel'])} | 🔌 الحساس: {escape(ai_result['sensor'])}
+                </div>
+            """)
+        else:
+            # الخطة 3: فتح صندوق التنبيه لعدم عثور الـ API على بيانات تلقائية
+            html_output.append(f"""
+                <div style='padding: 12px; background: rgba(255, 69, 0, 0.1); border: 1px solid #ff4500; border-radius: 6px; margin-top: 10px; color: #ffffff;'>
+                    <span style='color: #ff4500; font-weight: bold;'>⚠️ تنبيه النظام الموحد:</span> الموديل غير مدرج حالياً. يمكنك استخدام نموذج الإدخال اليدوي بأسفل لوحة التحكم لتوثيقه وضخه في قاعدة بيانات النظام.
+                </div>
+            """)
 
-            for sensor_key, sensor_data in sensors.items():
-                models_list = (
-                    sensor_data.get("models", [])
-                    if isinstance(sensor_data, dict)
-                    else sensor_data
-                )
-                for m in models_list:
-                    if normalize_text(m) == normalize_text(real_name):
-                        continue
-
-                    if diff == 0.0:
-                        if sensor_key == sensor:
-                            results["exact"].append(m)
-                        else:
-                            results["warn"].append(m)
-
-                    # صياغة بديلة محمية لمنع تعليق أو تشويه السيرفر عند الرفع لـ Streamlit
-                    elif diff >= 0.01 and diff <= 0.03:
-                        results["plus"].append(m)
-
-                    elif diff <= -0.01 and diff >= -0.03:
-                        results["minus"].append(m)
-
-    return results
-
-# ==========================================
-# كشف تعارض نفس الهاتف
-# ==========================================
-def detect_self_conflicts():
-    alerts = []
-    try:
-        res = supabase.table("phones").select("*").execute()
-        rows = res.data or []
-        grouped = {}
-
-        for row in rows:
-            phone_key = build_phone_identity(row)
-            if not phone_key:
-                continue
-            grouped.setdefault(phone_key, []).append(row)
-
-        for phone, items in grouped.items():
-            sensors = set()
-            sizes = set()
-
-            for item in items:
-                sensor = normalize_text(item.get("sensor",""))
-                size = normalize_text(item.get("size",""))
-                if sensor:
-                    sensors.add(sensor)
-                if size:
-                    sizes.add(size)
-
-            if len(sensors) > 1:
-                alerts.append(
-                    {
-                        "type": "self_conflict",
-                        "phone": phone,
-                        "sensors": list(sensors),
-                        "sizes": list(sizes)
-                    }
-                )
-    except Exception:
-        return []
-    return alerts
-
-# ==========================
-# تنظيف وبناء الهيكل
-# ==========================
-def run_intelligent_inspector(db_data=None):
-    changes_made = False
-    cleaned_db = {}
-    try:
-        res = supabase.table("phones").select("*").execute()
-        rows = res.data or []
-
-        for r in rows:
-            row_id = r.get("id")
-            size = str(r.get("size","")).strip()
-            panel = str(r.get("panel","")).strip()
-            sensor = str(r.get("sensor","")).strip()
-            model = str(r.get("model_name") or r.get("model") or "").strip()
-
-            if not all([size, panel, sensor, model]):
-                supabase.table("phones").delete().eq("id", row_id).execute()
-                changes_made = True
-                continue
-
-            cleaned_db.setdefault(size, {})
-            cleaned_db[size].setdefault(panel, {})
-            cleaned_db[size][panel].setdefault(sensor, {"models":[]})
-
-            if model not in cleaned_db[size][panel][sensor]["models"]:
-                cleaned_db[size][panel][sensor]["models"].append(model)
-            else:
-                supabase.table("phones").delete().eq("id", row_id).execute()
-                changes_made = True
-
-        return cleaned_db, changes_made
-    except Exception:
-        return (db_data if db_data else {}, False)
-
-# ==========================================
-# المراقب الصامت للمقاسات والمستشعرات
-# ==========================================
-def smart_proximity_guard(db_data, size, panel, sensor):
-    alerts = []
-    try:
-        current_size = float(size)
-    except:
-        return alerts
-
-    for size_key, panels in db_data.items():
-        try:
-            saved_size = float(size_key)
-        except:
-            continue
-
-        difference = abs(saved_size - current_size)
-
-        if difference <= 0.03:
-            for panel_key, sensors in panels.items():
-                if panel_key != panel:
-                    continue
-
-                for sensor_key, data in sensors.items():
-                    models = data.get("models", [])
-                    if sensor_key != sensor:
-                        alerts.append(
-                            {
-                                "type": "sensor_warning",
-                                "size": size_key,
-                                "sensor": sensor_key,
-                                "models": models
-                            }
-                        )
-    return alerts
+    return "\n".join(html_output)
