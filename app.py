@@ -278,3 +278,4 @@ app_ui = ui.page_fluid(
         ui.column(12,
             ui.div(
                 ui.input_text("free_smart_search_input_field", "", placeholder="اكتب اسم الهاتف المستهدف هنا بحرية وسرعة...", width="100%"),
+                ui.output_ui("floating_suggestions_ui"),
