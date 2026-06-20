@@ -38,12 +38,17 @@ input[type="text"] {{ background: rgba(255, 255, 255, 0.07) !important; color: w
 .suggestion-live-btn:hover {{ background-color: rgba(0, 191, 255, 0.15) !important; color: #00bfff !important; }}
 """
 
-# بناء تخطيط الصفحة بشكل ثابت لضمان ظهور الشريط الجانبي وخانة البحث معاً
+# الصياغة القياسية الصحيحة والمضمونة لواجهة Shiny لمنع خطأ الـ TypeError
 app_ui = ui.page_sidebar(
-    # وضع لوحة التحكم في مكانها الهندسي الصحيح كشريط جانبي ثابت
-    ui.output_ui("sidebar_control_panel_render"),
+    # تثبيت حاوية الشريط الجانبي هندسياً في الواجهة لتقبلها منصة Shiny
+    ui.sidebar(
+        ui.output_ui("sidebar_content_inner_render"),
+        title="🛠️ لوحة التحكم بالتطبيق",
+        position="left",
+        bg="rgba(15, 23, 42, 0.85)"
+    ),
     
-    # محتويات الصفحة الرئيسية
+    # محتويات الشاشة الرئيسية المنتصفية
     ui.head_content(
         ui.tags.style(custom_css),
         ui.tags.title("ZEGAAR AMMAR GLASS MANAGER")
@@ -55,10 +60,10 @@ app_ui = ui.page_sidebar(
         </div>
     """),
     
-    # وضع حقل البحث بشكل ثابت في الواجهة لضمان ظهوره المستمر
+    # حقل البحث الحر الثابت والظاهر دائماً للمستخدمين
     ui.input_text("free_smart_search_input_field", label="", value="", placeholder="اكتب اسم الهاتف المستهدف هنا بحرية وسرعة..."),
     
-    # مساحة عرض مخرجات البحث والبطاقات الزجاجية
+    # حاوية النتائج والبطاقات الزجاجية الملونة
     ui.output_ui("dynamic_cards_render")
 )
 
@@ -68,7 +73,7 @@ def server(input, output, session):
     from ui_components import draw_control_panel
     from logic_engine import run_intelligent_inspector, detect_self_conflicts
 
-    # تشغيل المراقب الصامت وجلب التنبيهات
+    # تشغيل عين ويد المراقب الصامت للتطهير الأمني التلقائي
     cleaned_db_data, changes_were_made = run_intelligent_inspector()
     conflict_alerts = detect_self_conflicts()
     
@@ -103,17 +108,19 @@ def server(input, output, session):
     def update_reactive_input():
         search_val.set(input.free_smart_search_input_field().strip())
 
-    # 1. رندر شريط أدوات لوحة التحكم والإشعارات في الجانب
+    # 1. ضخ محتويات لوحة التحكم العميقة (المراقب، الإعدادات، الجرس) داخل حاوية الشريط المستقر
     @output
     @render.ui
-    def sidebar_control_panel_render():
-        return draw_control_panel(
+    def sidebar_content_inner_render():
+        sidebar_object = draw_control_panel(
             notifications=system_notifications, 
             total_models=total_models, 
             empty_groups_count=empty_groups_count
         )
+        # استخراج المكونات الداخلية الصافية وحقنها لمنع تكرار الحاويات
+        return ui.div(*sidebar_object.children)
 
-    # 2. رندر الاقتراحات الحية والبطاقات الزجاجية في المنتصف
+    # 2. ضخ الستارة التفاعلية للمساعدة والبطاقات الزجاجية في الشاشة المنتصفية
     @output
     @render.ui
     def dynamic_cards_render():
