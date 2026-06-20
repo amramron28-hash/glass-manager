@@ -1,95 +1,124 @@
-import os
-import requests
-from html import escape
-from database import load_db, save_db
-from logic_engine import find_model_coords, get_compatibles_strict
-from ui_components import draw_technical_coords, draw_neon_section
+import re
 
-def local_check_existing_size_group(db, target_size, target_panel):
-    """فحص وتدقيق مجموعات الأبعاد والشاشات المسجلة"""
-    matched_models = []
-    if target_size in db and target_panel in db[target_size]:
-        for sensor, s_data in db[target_size][target_panel].items():
-            models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
-            for m in models_list:
-                matched_models.append(m)
-    return matched_models
+def find_model_coords(db_data, phone_name):
+    """
+    البحث في قاعدة البيانات عن قياسات وأبعاد الهاتف المستهدف.
+    تعتمد على مطابقة النصوص بغض النظر عن حالة الأحرف (Case-insensitive).
+    """
+    if not phone_name or not db_data:
+        return None, None, None, None
+        
+    phone_name_clean = phone_name.strip().lower()
+    
+    # المرور على أبعاد الشاشات في قاعدة البيانات المسجلة
+    for size_str, panels in db_data.items():
+        if not isinstance(panels, dict):
+            continue
+        for panel, sensors in panels.items():
+            if not isinstance(sensors, dict):
+                continue
+            for sensor, s_data in sensors.items():
+                # استخراج قائمة الموديلات التابعة لهذا التصنيف
+                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+                if not isinstance(models_list, list):
+                    continue
+                    
+                for model in models_list:
+                    if model.strip().lower() == phone_name_clean:
+                        # إرجاع: المقاس، نوع الشاشة، الحساس، والاسم الحقيقي المسجل
+                        return size_str, panel, sensor, model
+                        
+    # في حال لم يتم العثور على تطابق تام، يتم البحث عن تطابق جزئي كخيار احتياطي
+    for size_str, panels in db_data.items():
+        if not isinstance(panels, dict):
+            continue
+        for panel, sensors in panels.items():
+            if not isinstance(sensors, dict):
+                continue
+            for sensor, s_data in sensors.items():
+                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+                if not isinstance(models_list, list):
+                    continue
+                for model in models_list:
+                    if phone_name_clean in model.strip().lower():
+                        return size_str, panel, sensor, model
 
-def ai_background_global_verify(phone_name):
-    """التحقق الذكي عبر الـ API العالمي في الخلفية"""
+    return None, None, None, None
+
+
+def get_compatibles_strict(db_data, phone_name):
+    """
+    تحديد الهواتف البديلة والمتوافقة عبر 3 مستويات دقيقة:
+    1. exact: نفس المقاس ونفس خصائص الشاشة والحساس تماماً.
+    2. plus: الهواتف التي تزيد بمقدار تفاوت ضئيل جداً مسموح به.
+    3. minus: الهواتف التي تقل بمقدار تفاوت ضئيل جداً مسموح به.
+    """
+    compatibles = {"exact": [], "plus": [], "minus": []}
+    
+    # جلب أبعاد الهاتف الحالي أولاً
+    size_str, panel, sensor, real_name = find_model_coords(db_data, phone_name)
+    
+    if not size_str:
+        return compatibles
+
+    # استخراج القيمة الرقمية للمقاس بالإنش (مثال: "6.5" من "6.5 inches")
+    current_size = extract_numeric_size(size_str)
+    if current_size is None:
+        return compatibles
+
+    # حد التفاوت المسموح به في قياسات زجاج الحماية (Tolerance Threshold)
+    TOLERANCE = 0.05 
+
+    for size_key, panels in db_data.items():
+        if not isinstance(panels, dict):
+            continue
+            
+        loop_size = extract_numeric_size(size_key)
+        if loop_size is None:
+            continue
+            
+        # فحص مستويات التطابق بناءً على المقاس الرياضي والتفاوت
+        size_diff = loop_size - current_size
+        
+        for panel_key, sensors in panels.items():
+            # فلترة صارمة: يجب تطابق نوع الشاشة لضمان انحناءات الزجاج وحواف الحماية
+            if panel_key != panel:
+                continue
+                
+            for sensor_key, s_data in sensors.items():
+                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+                if not isinstance(models_list, list):
+                    continue
+                    
+                for model in models_list:
+                    # استبعاد الهاتف المبحوث عنه من قائمة البدائل
+                    if model.lower() == real_name.lower():
+                        continue
+                        
+                    # 1. تطابق تام ومباشر
+                    if abs(size_diff) < 0.001 and sensor_key == sensor:
+                        if model not in compatibles["exact"]:
+                            compatibles["exact"].append(model)
+                    
+                    # 2. زيادة طفيفة ضمن حدود التفاوت المقبولة
+                    elif 0 < size_diff <= TOLERANCE:
+                        if model not in compatibles["plus"]:
+                            compatibles["plus"].append(model)
+                            
+                    # 3. نقصان طفيف ضمن حدود التفاوت المقبولة
+                    elif -TOLERANCE <= size_diff < 0:
+                        if model not in compatibles["minus"]:
+                            compatibles["minus"].append(model)
+
+    return compatibles
+
+
+def extract_numeric_size(size_string):
+    """دالة مساعدة لاستخراج الأرقام العشرية من النصوص البرمجية للمقاسات"""
     try:
-        url = f"https://vercel.app{requests.utils.quote(phone_name)}"
-        res = requests.get(url, timeout=1.5).json()
-        if res and "specs" in res:
-            return {
-                "size": str(res["specs"].get("display_size", "")),
-                "panel": str(res["specs"].get("display_type", "")),
-                "sensor": str(res["specs"].get("proximity_type", ""))
-            }
-    except:
+        match = re.search(r"[-+]?\d*\.\d+|\d+", size_string)
+        if match:
+            return float(match.group())
+    except Exception:
         pass
     return None
-
-def append_to_models_index(phone_name):
-    """ضخ الاسم الجديد تلقائياً في ملف المساعدة الستاري لتسريع المرات القادمة"""
-    INDEX_FILE = "models_index.txt"
-    if os.path.exists(INDEX_FILE):
-        with open(INDEX_FILE, "r", encoding="utf-8") as f:
-            current_models = [line.strip() for line in f if line.strip()]
-        if phone_name not in current_models:
-            with open(INDEX_FILE, "a", encoding="utf-8") as f:
-                f.write(f"{phone_name}\n")
-
-def run_system_workflows(phone, db_data, suggestions):
-    """المحرك المركزي لإدارة الخطط الثلاث بالتناغم الكامل لبيئة Shiny"""
-    size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
-    is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
-    
-    html_output = []
-
-    # 🟢 الخطة 1: وجود تطابق تام في قاعدة البيانات
-    if is_exact_match:
-        coords_html = draw_technical_coords(size_str, panel, sensor, real_name)
-        if coords_html:
-            html_output.append(str(coords_html))
-            
-        # 🔗 التعديل الصحيح والدقيق المتطابق مع ملف logic_engine لتفادي التعارض الجوهري
-        compatibles_dict = get_compatibles_strict(db_data, phone)
-        
-        # استخراج الهواتف المتوافقة من القوائم المختلفة (الأجهزة المطابقة، والمقاسات الزائدة والناقصة)
-        all_compatibles = []
-        if compatibles_dict:
-            all_compatibles.extend(compatibles_dict.get("exact", []))
-            all_compatibles.extend(compatibles_dict.get("plus", []))
-            all_compatibles.extend(compatibles_dict.get("minus", []))
-            
-        compat_html = draw_neon_section(all_compatibles)
-        if compat_html:
-            html_output.append(str(compat_html))
-            
-    # 🟡 الخطة 2 & 3: الهاتف غير مسجل أو تطابق جزئي - تفعيل وضع فحص الذكاء الاصطناعي والإدخال اليدوي
-    elif phone:
-        html_output.append(f"""
-            <div style='padding: 15px; background: rgba(0, 191, 255, 0.1); border-left: 4px solid #00bfff; border-radius: 4px; margin-top: 15px; color: #ffffff;'>
-                <span style='color: #00bfff; font-weight: bold;'>🔍 جاري معالجة ومطابقة الموديل:</span> {escape(phone)}
-            </div>
-        """)
-        
-        # محاكاة التدقيق الخارجي في الخلفية عبر الـ API
-        ai_result = ai_background_global_verify(phone)
-        if ai_result:
-            html_output.append(f"""
-                <div style='padding: 12px; background: rgba(50, 205, 50, 0.1); border: 1px dashed #32cd32; border-radius: 6px; margin-top: 10px; color: #ffffff;'>
-                    <span style='color: #32cd32; font-weight: bold;'>🤖 نتائج الفحص العالمي الذكي:</span><br>
-                    📏 الحجم المتوقع: {escape(ai_result['size'])} | 📺 الشاشة: {escape(ai_result['panel'])} | 🔌 الحساس: {escape(ai_result['sensor'])}
-                </div>
-            """)
-        else:
-            # الخطة 3: فتح صندوق التنبيه لعدم عثور الـ API على بيانات تلقائية
-            html_output.append(f"""
-                <div style='padding: 12px; background: rgba(255, 69, 0, 0.1); border: 1px solid #ff4500; border-radius: 6px; margin-top: 10px; color: #ffffff;'>
-                    <span style='color: #ff4500; font-weight: bold;'>⚠️ تنبيه النظام الموحد:</span> الموديل غير مدرج حالياً. يمكنك استخدام نموذج الإدخال اليدوي بأسفل لوحة التحكم لتوثيقه وضخه في قاعدة بيانات النظام.
-                </div>
-            """)
-
-    return "\n".join(html_output)
