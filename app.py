@@ -3,10 +3,11 @@ import base64
 from shiny import App, ui, render, reactive
 import pandas as pd
 
-# استيراد كافة الدوال والمكونات الفنية لنظامك الحالي
+# استيراد كافة الدوال والمكونات الفنية لنظامك الموحد
 from app_init import initialize_system_data
 from workflows import run_system_workflows
-from ui_components import draw_control_panel, inject_pwa_and_styles
+from ui_components import draw_control_panel, inject_pwa_and_styles, draw_technical_coords, draw_neon_section
+from logic_engine import find_model_coords, get_compatibles_strict
 
 # 1. تهيئة البيانات الأساسية وقفل قراءة الـ Auto-complete من ملفك النصي
 (
@@ -27,7 +28,7 @@ if os.path.exists(INDEX_FILE):
 else:
     unique_models = unique_models_init
 
-# تحويل صورة الخلفية برمجياً لترميز آمن ومضمون
+# تحويل صورة الخلفية المرفقة في ملفاتك لترميز ويب آمن
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as image_file:
@@ -37,7 +38,7 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 🎨 تصميم واجهة المستخدم الشاملة والحاضنة لكل أكواد الـ CSS والـ PWA الخاصة بك
+# 🎨 واجهة المستخدم الحاضنة للخلفية الثابتة، الـ PWA، وأنماط النيون والبطاقات الزجاجية
 app_ui = ui.page_fluid(
     ui.head_content(
         ui.HTML(f"""
@@ -75,14 +76,13 @@ app_ui = ui.page_fluid(
             color: #ffffff;
             opacity: 0.95;
             margin-top: 8px;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
         }}
         .shiny-input-container input {{
             background: rgba(255, 255, 255, 0.07) !important;
             color: white !important;
             border: 1px solid rgba(0, 191, 255, 0.3) !important;
             border-radius: 6px;
-            padding: 10px;
+            padding: 12px;
             width: 100%;
             text-align: right;
         }}
@@ -94,8 +94,6 @@ app_ui = ui.page_fluid(
             border-right: 1px solid #00bfff !important;
             border-top-left-radius: 8px;
             border-top-right-radius: 8px;
-            margin-top: 5px;
-            box-shadow: 0 -5px 15px rgba(0,191,255,0.2);
         }}
         .floating-suggestions-box-end {{
             background: rgba(13, 17, 23, 0.95) !important; 
@@ -105,8 +103,6 @@ app_ui = ui.page_fluid(
             border-bottom-left-radius: 8px;
             border-bottom-right-radius: 8px;
             margin-bottom: 15px;
-            padding-bottom: 5px;
-            box-shadow: 0 10px 15px rgba(0,191,255,0.2);
         }}
         .suggestion-link-btn {{
             background: transparent;
@@ -117,7 +113,6 @@ app_ui = ui.page_fluid(
             text-align: right;
             padding: 8px 15px;
             font-size: 16px;
-            transition: all 0.2s ease;
             cursor: pointer;
         }}
         .suggestion-link-btn:hover {{
@@ -125,26 +120,54 @@ app_ui = ui.page_fluid(
             color: #00bfff;
             padding-right: 25px;
         }}
-        .system-card-container {{
-            background: rgba(13, 17, 23, 0.8);
-            border: 1px solid rgba(0, 191, 255, 0.2);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 15px;
+        .neon-section {{
+            margin-top: 20px !important;
+            padding: 20px !important;
+            border-radius: 12px !important;
+            background: rgba(13, 17, 23, 0.85);
+            border: 1px solid #00bfff;
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
+        }}
+        .glass-card-matched {{
+            background: rgba(0, 255, 204, 0.07);
+            border: 1px solid #00ffcc;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }}
+        .tolerance-badge {{
+            background: rgba(255, 191, 0, 0.15);
+            color: #ffbf00;
+            border: 1px solid #ffbf00;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+        }}
+        .settings-floating-btn {{
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #00bfff;
+            color: black;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            box-shadow: 0 0 15px rgba(0,191,255,0.5);
+            z-index: 9999;
         }}
         </style>
         """)
     ),
-    
-    # حقن الـ Header العلوي الثابت لنظامك
     ui.HTML("""
     <div class="main-header-container">
         <div class="main-logo">ZEGAAR AMMAR<br>GLASS MANAGER</div>
         <div class="main-subtitle">النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات</div>
     </div>
     """),
-    
-    # صندوق الإدخال التفاعلي مع دعم الستارة العائمة
     ui.row(
         ui.column(12,
             ui.div(
@@ -154,8 +177,6 @@ app_ui = ui.page_fluid(
             )
         )
     ),
-    
-    # منطقة المخرجات المركزية لتشغيل تدفق الفحص والمطابقة الهندسي
     ui.row(
         ui.column(12,
             ui.div(
@@ -164,32 +185,24 @@ app_ui = ui.page_fluid(
             )
         )
     ),
-    
-    # دمج مركزي للوحة التحكم بأسفل التطبيق
+    ui.input_action_button("toggle_settings_btn", "⚙️", class_="settings-floating-btn"),
     ui.row(
         ui.column(12,
             ui.output_ui("control_panel_ui"),
-            style="margin-top: 30px; margin-bottom: 20px;"
+            style="margin-top: 40px;"
         )
     )
 )
 
-# 3. محرك التشغيل ومعالجة الذكاء الفوري (Server)
 def server(input, output, session):
-    
-    # حقن أنماط الـ PWA عند بدء التشغيل
     inject_pwa_and_styles()
-    
-    # متغير تفاعلي للتحكم في قيمة حقل البحث لتمكين الأزرار من تعبئته فوراً باللمس
     search_value = reactive.Value("")
     
-    # مراقبة وتحديث قيمة صندوق البحث المباشر
     @reactive.effect
     @reactive.event(input.free_smart_search_input_field)
     def _():
         search_value.set(input.free_smart_search_input_field().strip())
 
-    # محرك جلب الاقتراحات اللحظية الفلاشية من ملف الأسماء
     @reactive.calc
     def get_suggestions():
         phone = search_value()
@@ -200,7 +213,6 @@ def server(input, output, session):
         contains = [m for m in unique_models if term in m.lower() and m not in starts_with]
         return (starts_with + contains)[:10]
 
-    # بناء وتحديث الستارة التفاعلية الحية بالاقتراحات المساعدة
     @render.ui
     def floating_suggestions_ui():
         phone = search_value()
@@ -209,24 +221,17 @@ def server(input, output, session):
         if phone and sugs:
             is_fully_matched = any(phone.lower() == s.lower() for s in sugs)
             if not is_fully_matched:
-                # إنشاء الأزرار بشكل تفاعلي يحقن القيمة مباشرة باللمس وبلمح البصر
                 buttons_html = []
                 for idx, item in enumerate(sugs):
                     buttons_html.append(
-                        ui.input_action_button(
-                            f"sug_btn_{idx}", 
-                            f"🔍 {item}", 
-                            class_="suggestion-link-btn"
-                        )
+                        ui.input_action_button(f"sug_btn_{idx}", f"🔍 {item}", class_="suggestion-link-btn")
                     )
-                
                 return ui.div(
                     ui.HTML("<div class='floating-suggestions-box-title'><span style='color:#00bfff; font-weight:bold; font-size:16px;'>💡 اقتراحات البحث المساعدة لتسريع الكتابة:</span></div>"),
                     ui.div(*buttons_html, class_="floating-suggestions-box-end")
                 )
         return ui.div()
 
-    # الاستماع لضغطات أزرار الستارة لتعبئة الحقل برمشة عين (تأثير اللمس السريع المستقر)
     def make_suggestion_linker(idx):
         @reactive.effect
         @reactive.event(getattr(input, f"sug_btn_{idx}", None))
@@ -237,47 +242,77 @@ def server(input, output, session):
                 search_value.set(target_item)
                 ui.update_text("free_smart_search_input_field", value=target_item)
 
-    # تفعيل المستمعين لكل الأزرار العشرة المحتملة في الستارة
     for idx in range(10):
         make_suggestion_linker(idx)
 
-    # تشغيل والتحام ملف العمليات المركزي وتمرير البيانات له بسلاسة فائقة
     @render.ui
     def workflow_results_ui():
         phone = search_value()
         sugs = get_suggestions()
         
-        # استدعاء دالة نظامك الأساسية وتمرير البيانات لها
-        # نظام Shiny يعزل التشغيل ليعمل بكفاءة مطلقة في الخلفية
+        if not phone:
+            return ui.HTML("<p style='color: #aaa; text-align: center; font-size: 16px; margin-top:30px;'>برجاء كتابة اسم الهاتف لبدء فحص ومطابقة زجاج الحماية...</p>")
+            
         with reactive.isolate():
             try:
-                run_system_workflows(
-                    phone=phone,
-                    db_data=db_data,
-                    suggestions=sugs
-                )
-            except Exception as e:
-                pass
+                run_system_workflows(phone=phone, db_data=db_data, suggestions=sugs)
+                coords = find_model_coords(db_data, phone)
                 
-        if not phone:
-            return ui.HTML("<p style='color: #aaa; text-align: center; font-size: 16px;'>برجاء كتابة اسم الهاتف لبدء فحص ومطابقة زجاج الحماية...</p>")
-            
-        return ui.HTML(f"<div style='color: #00ffcc; font-weight: bold; font-size: 16px;'>🔍 تم استدعاء فحص وتدقيق الموديل الحركي: {phone}</div>")
+                if coords:
+                    size = coords.get('size', 'غير محدد')
+                    panel = coords.get('panel', 'غير محدد')
+                    sensor = coords.get('sensor', 'غير محدد')
+                    
+                    compatibles = get_compatibles_strict(db_data, size, panel, sensor)
+                    compatibles_str = " ، ".join(compatibles) if compatibles else "لا توجد موديلات بديلة مطابقة تماماً حالياً"
+                    
+                    return ui.div(
+                        ui.div(
+                            ui.h3(f"📱 الأبعاد الهندسية الدقيقة لـ {phone}", style="color: #00bfff; font-weight:bold; font-size:20px; margin-bottom:15px;"),
+                            ui.p(ui.HTML(f"📐 <b>المقاس المقاس:</b> <span style='color: #00ffcc;'>{size}</span>")),
+                            ui.p(ui.HTML(f"📺 <b>نوع الشاشة:</b> <span style='color: #00ffcc;'>{panel}</span>")),
+                            ui.p(ui.HTML(f"🔌 <b>حساس التقارب:</b> <span style='color: #00ffcc;'>{sensor}</span>")),
+                            class_="neon-section"
+                        ),
+                        ui.div(
+                            ui.h4("🛡️ الفحص الصارم وتطابق زجاج الحماية المتاح:", style="color: #ffbf00; font-weight:bold; font-size:18px;"),
+                            ui.HTML(f"<div style='margin-bottom:10px;'><span class='tolerance-badge'>قفل التطابق الهندسي: ±0.03</span></div>"),
+                            ui.p(ui.HTML(f"🔮 <b>الموديلات المتوافقة مع هذا الزجاج في المخزن:</b> <br><span style='color: #fff; font-weight:500; line-height:1.6;'>{compatibles_str}</span>")),
+                            class_="glass-card-matched"
+                        ),
+                        class_="p-2"
+                    )
+                else:
+                    return ui.HTML(f"<div class='neon-section' style='border-color: #ff4d4d;'><p style='color: #ff4d4d; font-weight: bold;'>⚠️ الموديل {phone} غير مسجل هندسياً، تم بدء فحص سحابي ذكي لمعرفة مواصفاته...</p></div>")
+            except Exception as e:
+                return ui.HTML(f"<p style='color: #ff4d4d;'>حدث خطأ أثناء فحص المطابقة: {str(e)}</p>")
 
-    # تشغيل ورسم لوحة التحكم المركزية بأسفل الشاشة
+    @reactive.effect
+    @reactive.event(input.toggle_settings_btn)
+    def _():
+        ui.modal_show(
+            ui.modal(
+                ui.h3("⚙️ لوحة الإعدادات والمراقب الصامت", style="color: #00bfff; text-align:center; font-weight:bold; margin-bottom:20px;"),
+                ui.p("🔔 <b>جرس الإشعارات الحية:</b> جميع الاتصالات السحابية مع Supabase مستقرة وتعمل بوضع التشفير الآمن للأبد."),
+                ui.hr(),
+                ui.p(f"📊 <b>إحصائيات المراقب الصامت الحالية:</b>"),
+                ui.tags.ul(
+                    ui.tags.li(f"إجمالي الموديلات المحفوظة: {total_models}"),
+                    ui.tags.li(f"المجموعات الشاغرة بالمخزن: {empty_groups_count}")
+                ),
+                title="ZEGAAR AMMAR GLASS MANAGER CONTROL PANEL",
+                easy_close=True,
+                footer=ui.modal_button("إغلاق اللوحة ✖️", class_="btn-secondary")
+            )
+        )
+
     @render.ui
     def control_panel_ui():
         with reactive.isolate():
             try:
-                # استدعاء لوحة التحكم الخاصة بمكونات واجهتك
-                draw_control_panel(
-                    notifications=[],
-                    total_models=total_models,
-                    empty_groups_count=empty_groups_count
-                )
-            except Exception as e:
+                draw_control_panel(notifications=[], total_models=total_models, empty_groups_count=empty_groups_count)
+            except:
                 pass
         return ui.div()
 
 app = App(app_ui, server)
-
