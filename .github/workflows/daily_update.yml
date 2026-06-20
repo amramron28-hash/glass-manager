@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install Hugging Face Hub
         run: pip install huggingface_hub
@@ -27,15 +27,15 @@ jobs:
           python -c "
           from huggingface_hub import HfApi
           import os
-          
+
           api = HfApi(token=os.environ['HF_TOKEN'])
-          
+
           # رفع كل محتويات المستودع بما فيها مجلد الصور بشكل آمن ومباشر
           api.upload_folder(
               folder_path='.',
-              repo_id='amramron28/Zegaarammar',
+              repo_id='amramron28/zegaarmour-glass-manager',
               repo_type='space',
-              ignore_patterns=['.git/*', '.github/*']
+              ignore_patterns=['.git/', '.github/']
           )
-          print('تم رفع جميع الملفات والمجلدات بنجاح!')
+          print('تم رفع جميع الملفات والمجلدات بنجاح')
           "
