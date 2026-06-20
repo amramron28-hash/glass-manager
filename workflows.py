@@ -2,8 +2,6 @@ import os
 import requests
 from html import escape
 from database import load_db, save_db
-from logic_engine import find_model_coords, get_compatibles_strict
-from ui_components import draw_technical_coords, draw_neon_section
 
 def local_check_existing_size_group(db, target_size, target_panel):
     """فحص وتدقيق مجموعات الأبعاد والشاشات المسجلة"""
@@ -42,6 +40,10 @@ def append_to_models_index(phone_name):
 
 def run_system_workflows(phone, db_data, suggestions):
     """المحرك المركزي لإدارة الخطط الثلاث بالتناغم الكامل لبيئة Shiny"""
+    # استدعاء داخلي لمنع الـ Circular Import بشكل قطعي
+    from logic_engine import find_model_coords, get_compatibles_strict
+    from ui_components import draw_technical_coords, draw_neon_section
+
     size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
     is_exact_match = True if real_name and phone.lower() == real_name.lower() else False
     
@@ -53,8 +55,15 @@ def run_system_workflows(phone, db_data, suggestions):
         if coords_html:
             html_output.append(str(coords_html))
             
-        compatibles = get_compatibles_strict(db_data, size_str, panel, sensor, real_name)
-        compat_html = draw_neon_section(compatibles)
+        compatibles_dict = get_compatibles_strict(db_data, phone)
+        
+        all_compatibles = []
+        if compatibles_dict:
+            all_compatibles.extend(compatibles_dict.get("exact", []))
+            all_compatibles.extend(compatibles_dict.get("plus", []))
+            all_compatibles.extend(compatibles_dict.get("minus", []))
+            
+        compat_html = draw_neon_section(all_compatibles)
         if compat_html:
             html_output.append(str(compat_html))
             
@@ -66,7 +75,6 @@ def run_system_workflows(phone, db_data, suggestions):
             </div>
         """)
         
-        # محاكاة التدقيق الخارجي في الخلفية عبر الـ API
         ai_result = ai_background_global_verify(phone)
         if ai_result:
             html_output.append(f"""
@@ -76,7 +84,6 @@ def run_system_workflows(phone, db_data, suggestions):
                 </div>
             """)
         else:
-            # الخطة 3: فتح صندوق التنبيه لعدم عثور الـ API على بيانات تلقائية
             html_output.append(f"""
                 <div style='padding: 12px; background: rgba(255, 69, 0, 0.1); border: 1px solid #ff4500; border-radius: 6px; margin-top: 10px; color: #ffffff;'>
                     <span style='color: #ff4500; font-weight: bold;'>⚠️ تنبيه النظام الموحد:</span> الموديل غير مدرج حالياً. يمكنك استخدام نموذج الإدخال اليدوي بأسفل لوحة التحكم لتوثيقه وضخه في قاعدة بيانات النظام.
