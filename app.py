@@ -13,7 +13,7 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 2. تصميم واجهة المستخدم (UI) الموحدة بكروت النيون الخضراء المنفصلة واللوحة المنبثقة
+# 2. تصميم واجهة المستخدم (UI) الموحدة بكروت النيون الخضراء واللوحة المنبثقة
 app_ui = ui.page_fluid(
     ui.head_content(
         ui.HTML('<link rel="manifest" href="/manifest.json">'),
@@ -120,17 +120,17 @@ app_ui = ui.page_fluid(
             width: 100%;
         }}
         .glass-card-item {{
-            background: rgba(12, 53, 27, 0.6) !important; /* لون أخضر داكن زجاجي مبطن */
+            background: rgba(12, 53, 27, 0.6) !important; 
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 2px solid #32cd32 !important; /* إطار نيون أخضر مضيء ومستقر */
+            border: 2px solid #32cd32 !important; 
             box-shadow: 0 0 12px rgba(50, 205, 50, 0.4);
             padding: 16px 20px;
-            border-radius: 12px !important; /* حواف دائرية ممتازة */
+            border-radius: 12px !important; 
             text-align: center;
-            font-size: 20px !important; /* خط كبير وعريض */
+            font-size: 20px !important; 
             font-weight: 800 !important;
-            color: #ffffff !important; /* نص أبيض ناصع وثابت */
+            color: #ffffff !important; 
             transition: all 0.25s ease;
             cursor: pointer;
             width: 100%;
@@ -271,11 +271,82 @@ app_ui = ui.page_fluid(
     ui.HTML("""
     <div class="main-header-container">
         <div class="main-logo">ZEGAAR AMMAR<br>GLASS MANAGER</div>
-        <div class="main-subtitle">النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات</div>
+        <div class="main-subtitle">النظام السطار الذكي الموحد لفحص ومطابقة حماية الشاشات</div>
     </div>
     """),
     ui.row(
         ui.column(12,
             ui.div(
-                ui.input_text("free_smart_search_input_field", "", placeholder="اكتب اسم الهاتف المستهدف هنا بحرية وسرعة...", width="100%"),
+                ui.input_text("free_smart_search_input_field", "", placeholder="اكتب اسم الهاتف هنا بحرية وسرعة...", width="100%"),
                 ui.output_ui("floating_suggestions_ui"),
+                class_="p-2"
+            )
+        )
+    ),
+    ui.row(
+        ui.column(12,
+            ui.output_ui("matched_results_ui"),
+            class_="p-1"
+        )
+    )
+)
+
+# ==============================================================================
+# 🧠 منطق السيرفر (Server Logic) لإدارة التفاعلات والمخرجات دون تعارض جوهري
+# ==============================================================================
+def server(input, output, session):
+    
+    from database import load_db
+    from workflows import run_system_workflows
+    
+    db_data = load_db()
+
+    @reactive.calc
+    def filtered_suggestions():
+        query = input.free_smart_search_input_field().strip()
+        if not query or len(query) < 2:
+            return []
+        
+        INDEX_FILE = "models_index.txt"
+        if os.path.exists(INDEX_FILE):
+            with open(INDEX_FILE, "r", encoding="utf-8") as f:
+                models = [line.strip() for line in f if line.strip()]
+            return [m for m in models if query.lower() in m.lower()][:5]
+        return []
+
+    @render.ui
+    def floating_suggestions_ui():
+        suggestions = filtered_suggestions()
+        query = input.free_smart_search_input_field().strip()
+        
+        if not suggestions or query in suggestions:
+            return ui.div()
+        
+        buttons = []
+        buttons.append(ui.div("💡 الموديلات المقترحة القريبة:", class_="floating-suggestions-box-title"))
+        
+        for item in suggestions:
+            buttons.append(
+                ui.tags.button(
+                    item, 
+                    class_="suggestion-link-btn", 
+                    onclick=f"document.getElementById('free_smart_search_input_field').value='{item}'; "
+                            f"Shiny.setInputValue('free_smart_search_input_field', '{item}');"
+                )
+            )
+        
+        buttons.append(ui.div(class_="floating-suggestions-box-end"))
+        return ui.div(*buttons)
+
+    @render.ui
+    def matched_results_ui():
+        query = input.free_smart_search_input_field().strip()
+        if not query or len(query) < 2:
+            return ui.div()
+            
+        suggestions = filtered_suggestions()
+        html_res = run_system_workflows(query, db_data, suggestions)
+        return ui.div(ui.HTML(html_res))
+
+# 🚀 تشغيل التطبيق السحابي الموحد بكامل كفاءته البرمجية لـ GLASS MANAGER
+app = App(app_ui, server)
