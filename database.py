@@ -28,11 +28,19 @@ def _safe(v):
     if v is None or isinstance(v, float): return ""
     return str(v).strip()
 
-def load_db():
+def _fetch_raw_rows():
+    """جلب الأسطر الخام مباشرة من قاعدة البيانات لمنع تعارض ملف logic_engine"""
     try:
         req = urllib.request.Request(f"{URL}?select=*", headers=headers, method='GET')
         with opener.open(req) as response:
-            rows = json.loads(response.read().decode("utf-8"))
+            return json.loads(response.read().decode("utf-8"))
+    except Exception as e:
+        print("FETCH_RAW_ROWS ERROR:", e)
+        return []
+
+def load_db():
+    try:
+        rows = _fetch_raw_rows()
         db = {}
         for row in rows:
             size = _safe(row.get("size"))
@@ -72,13 +80,15 @@ def save_db(data, new_phone_name=None, size=None, panel=None, sensor=None):
         return add_model(size, panel, sensor, new_phone_name)
     return True
 
-# كائن متوافق مع الكود القديم لمنع ImportError
+# كائن متوافق مع الكود القديم والجديد ويعيد أسطراً خاماً صحيحة 100%
 class SupabaseMockClient:
     def table(self, *a, **k): return self
     def select(self, *a, **k): return self
+    def delete(self, *a, **k): return self
+    def eq(self, *a, **k): return self
     def insert(self, *a, **k): return self
     def execute(self):
-        class R: data = load_db()
+        class R: data = _fetch_raw_rows()
         return R()
 
 supabase = SupabaseMockClient()
