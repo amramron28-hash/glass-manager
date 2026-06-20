@@ -207,7 +207,7 @@ app_ui = ui.page_fluid(
     ),
     # المراقب الصامت وجرس الإشعارات في الجزء العلوي
     ui.div(
-        ui.div("👁️ مراقب السيرفر الصامت: <span>مستقر ونشط</span>", class_="silent-observer"),
+        ui.div(ui.HTML("👁️ مراقب السيرفر الصامت: <span>مستقر ونشط</span>"), class_="silent-observer"),
         ui.HTML('<button class="notification-bell" onclick="alert(\'🔔 نظام الإشعارات: قاعدة البيانات محدثة وتعمل بكفاءة 100%\')">🔔<span class="bell-dot"></span></button>'),
         class_="top-monitor-bar"
     ),
