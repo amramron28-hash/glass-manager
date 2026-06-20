@@ -25,7 +25,7 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 🎨 حقن الخلفية الثابتة مع إعطاء الاقتراحات المساعدة قوة الطفو المطلق فوق الصورة
+# 🎨 حقن الخلفية الثابتة مع ستايل أزرار الستارة التفاعلية العائمة فوق الواجهة
 st.markdown(
     f"""
     <style>
@@ -66,23 +66,32 @@ st.markdown(
         color: white !important;
         border: 1px solid rgba(0, 191, 255, 0.3) !important;
     }}
-    /* حاوية مخصصة تجبر الاقتراحات على الطفو الفلاشي فوق واجهة الشاشة والصورة الخلفية */
-    .floating-suggestions-box {{
-        padding: 15px; 
+    /* تصميم الصندوق العائم للاقتراحات المساعدة */
+    .floating-suggestions-box-title {{
+        padding: 10px 15px 5px 15px; 
         background: rgba(13, 17, 23, 0.95) !important; 
-        border: 1px solid #00bfff !important; 
-        border-radius: 8px; 
-        margin-top: 5px; 
-        margin-bottom: 15px;
-        box-shadow: 0 0 15px rgba(0,191,255,0.4);
+        border-top: 1px solid #00bfff !important;
+        border-left: 1px solid #00bfff !important;
+        border-right: 1px solid #00bfff !important;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        margin-top: 5px;
+        box-shadow: 0 -5px 15px rgba(0,191,255,0.2);
         position: relative !important;
-        z-index: 999999 !important; /* اختراق وبث الواجهة فوق الصورة */
+        z-index: 999999 !important;
     }}
-    .suggestion-item {{
-        color: #ffffff !important;
-        font-size: 16px !important;
-        padding: 6px 10px;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+    .floating-suggestions-box-end {{
+        background: rgba(13, 17, 23, 0.95) !important; 
+        border-bottom: 1px solid #00bfff !important;
+        border-left: 1px solid #00bfff !important;
+        border-right: 1px solid #00bfff !important;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        margin-bottom: 15px;
+        padding-bottom: 5px;
+        box-shadow: 0 10px 15px rgba(0,191,255,0.2);
+        position: relative !important;
+        z-index: 999999 !important;
     }}
     .neon-section {{
         margin-top: 25px !important;
@@ -95,6 +104,24 @@ st.markdown(
         font-size: 26px !important;
         margin-left: 12px !important;
         display: inline-block !important;
+    }}
+    /* تحسين أزرار الاقتراحات الحية لتطفو وتتفاعل مع اللمس بصرياً */
+    div.stButton > button.suggestion-live-btn {{
+        background-color: transparent !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+        border-radius: 0px !important;
+        width: 100% !important;
+        text-align: right !important;
+        padding: 6px 15px !important;
+        font-size: 16px !important;
+        transition: all 0.2s ease !important;
+    }}
+    div.stButton > button.suggestion-live-btn:hover {{
+        background-color: rgba(0, 191, 255, 0.15) !important;
+        color: #00bfff !important;
+        padding-right: 25px !important;
     }}
     </style>
     
@@ -133,28 +160,48 @@ def fast_phone_search(searchterm):
     contains = [m for m in unique_models if term in m.lower() and m not in starts_with]
     return (starts_with + contains)[:10]
 
-# خانة البحث الحر الفوري المدمج
-phone = st.text_input(
+# إدارة جلسة حقل الإدخال لتمكين الأزرار من ملء صندوق البحث فورياً
+if "search_field_val" not in st.session_state:
+    st.session_state.search_field_val = ""
+
+# خانة البحث الحر الفوري المدمج المرتبطة بذاكرة الجلسة التفاعلية
+phone_input = st.text_input(
     "البحث والمطابقة الفورية للموديلات:",
+    value=st.session_state.search_field_val,
     placeholder="اكتب اسم الهاتف المستهدف هنا بحرية وسرعة...",
     label_visibility="collapsed",
-    key="free_smart_search_input"
+    key="free_smart_search_input_field"
 ).strip()
 
-# جلب الاقتراحات المساعدة لحظياً أثناء الكتابة
+# تحديث المتغير الأساسي
+phone = phone_input
+
+# جلب الاقتراحات المساعدة لحظياً أثناء الكتابة من مصفوفة الملف
 suggestions = fast_phone_search(phone) if phone else []
 
-# ⚡ [إصلاح وفك الحجب البصري]: طباعة الاقتراحات داخل حاوية الطفو العلوية الفلورية لتعمل وتظهر فوراً مئة بالمئة
+# ⚡ [إعادة إحياء الستارة التفاعلية]: تحويل الأسطر الميتة إلى أزرار حية تتقلص مع الحروف وتملأ الحقل باللمس
 if phone and suggestions:
     is_fully_matched = any(phone.lower() == s.lower() for s in suggestions)
     if not is_fully_matched:
-        html_suggestions = "<div class='floating-suggestions-box'><span style='color:#00bfff; font-weight:bold; font-size:16px;'>💡 اقتراحات البحث المساعدة لتسريع الكتابة:</span><br><br>"
-        for item in suggestions:
-            html_suggestions += f"<div class='suggestion-item'>🔍 <b>{item}</b></div>"
-        html_suggestions += "</div>"
-        st.markdown(html_suggestions, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class='floating-suggestions-box-title'>
+                <span style='color:#00bfff; font-weight:bold; font-size:16px;'>💡 اقتراحات البحث المساعدة لتسريع الكتابة:</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+        # فتح حاوية الأزرار الحية
+        with st.container():
+            st.markdown("<div class='floating-suggestions-box-end'>", unsafe_allow_html=True)
+            for idx, item in enumerate(suggestions):
+                # زر تفاعلي حقيقي مفرود يملأ الحقل فور اللمس وينعش الواجهة
+                if st.button(f"🔍 {item}", key=f"sug_btn_{idx}", help=item, type="secondary"):
+                    st.session_state.search_field_val = item
+                    st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
 
-# 🔗 الالتحام البرمجي الكامل وتمرير البيانات لملف العمليات
+# 🔗 الالتحام البرمجي الكامل وتمرير البيانات لملف العمليات المستقر دون تداخل
 run_system_workflows(
     phone=phone,
     db_data=db_data,
@@ -167,3 +214,4 @@ draw_control_panel(
     total_models=total_models,
     empty_groups_count=empty_groups_count
 )
+
