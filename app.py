@@ -13,7 +13,7 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 2. تصميم واجهة المستخدم (UI) بنمط النيون والبطاقات الزجاجية والمكونات الإضافية
+# 2. تصميم واجهة المستخدم بالبطاقات المتقطعة والمراقب الصامت والجرس
 app_ui = ui.page_fluid(
     ui.head_content(
         ui.HTML(f"""
@@ -95,8 +95,6 @@ app_ui = ui.page_fluid(
             color: #00bfff;
             padding-right: 25px;
         }}
-        
-        /* 💎 تصميم شبكة البطاقات المتقطعة والمنفصلة للنتائج */
         .glass-card-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -122,8 +120,6 @@ app_ui = ui.page_fluid(
             transform: translateY(-2px);
             box-shadow: 0 0 10px rgba(0,191,255,0.3);
         }}
-
-        /* 🔔 شارات المراقبة والإشعارات العلوية */
         .top-monitor-bar {{
             display: flex;
             justify-content: space-between;
@@ -158,8 +154,6 @@ app_ui = ui.page_fluid(
             background: #ff4500;
             border-radius: 50%;
         }}
-
-        /* ⚙️ نافذة الإعدادات المنبثقة الشاملة */
         .settings-modal {{
             display: none;
             position: fixed;
@@ -205,7 +199,6 @@ app_ui = ui.page_fluid(
         </style>
         """)
     ),
-    # المراقب الصامت وجرس الإشعارات في الجزء العلوي
     ui.div(
         ui.div(ui.HTML("👁️ مراقب السيرفر الصامت: <span>مستقر ونشط</span>"), class_="silent-observer"),
         ui.HTML('<button class="notification-bell" onclick="alert(\'🔔 نظام الإشعارات: قاعدة البيانات محدثة وتعمل بكفاءة 100%\')">🔔<span class="bell-dot"></span></button>'),
@@ -232,8 +225,6 @@ app_ui = ui.page_fluid(
             class_="p-1"
         )
     ),
-    
-    # ترس الإعدادات العائم والنافذة المنبثقة التفاعلية مع JavaScript
     ui.HTML("""
     <div id="modal_overlay" class="modal-overlay" onclick="closeSettings()"></div>
     <div id="settings_modal" class="settings-modal">
@@ -244,9 +235,7 @@ app_ui = ui.page_fluid(
         <p style="font-size: 14px; margin-bottom: 20px;">🛡️ <b>تأمين حاوية Shiny:</b> <span style="color:#00bfff;">نشط (Hugging Face)</span></p>
         <button onclick="closeSettings()" style="width: 100%; background: #ff4500; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">إغلاق لوحة الإعدادات</button>
     </div>
-
     <button class="settings-floating-btn" onclick="openSettings()">⚙️</button>
-
     <script>
     function openSettings() {
         document.getElementById('settings_modal').style.display = 'block';
@@ -259,18 +248,14 @@ app_ui = ui.page_fluid(
     </script>
     """)
 )
-
-# 3. منطق السيرفر (Server Logic) لإدارة التفاعلات
+# 3. منطق السيرفر لإدارة التفاعلات وعرض الكروت المقسمة
 def server(input, output, session):
     
-    # استيراد داخلي ومحلي للدوال عند إقلاع السيرفر لمنع الـ Circular Import تماماً
     from database import load_db
     from workflows import run_system_workflows
     
-    # تحميل قاعدة البيانات المؤمنة
     db_data = load_db()
 
-    # حساب وتصفية الاقتراحات السريعة أثناء الكتابة
     @reactive.calc
     def filtered_suggestions():
         query = input.free_smart_search_input_field().strip()
@@ -280,3 +265,43 @@ def server(input, output, session):
         INDEX_FILE = "models_index.txt"
         if os.path.exists(INDEX_FILE):
             with open(INDEX_FILE, "r", encoding="utf-8") as f:
+                models = [line.strip() for line in f if line.strip()]
+            return [m for m in models if query.lower() in m.lower()][:5]
+        return []
+
+    @render.ui
+    def floating_suggestions_ui():
+        suggestions = filtered_suggestions()
+        query = input.free_smart_search_input_field().strip()
+        
+        if not suggestions or query in suggestions:
+            return ui.div()
+        
+        buttons = []
+        buttons.append(ui.div("💡 الموديلات المقترحة القريبة:", class_="floating-suggestions-box-title"))
+        
+        for item in suggestions:
+            buttons.append(
+                ui.tags.button(
+                    item, 
+                    class_="suggestion-link-btn", 
+                    onclick=f"document.getElementById('free_smart_search_input_field').value='{item}'; "
+                            f"Shiny.setInputValue('free_smart_search_input_field', '{item}');"
+                )
+            )
+        
+        buttons.append(ui.div(class_="floating-suggestions-box-end"))
+        return ui.div(*buttons)
+
+    @render.ui
+    def matched_results_ui():
+        query = input.free_smart_search_input_field().strip()
+        if not query or len(query) < 2:
+            return ui.div()
+            
+        suggestions = filtered_suggestions()
+        html_res = run_system_workflows(query, db_data, suggestions)
+        return ui.div(ui.HTML(html_res))
+
+# 🚀 تشغيل التطبيق السحابي الموحد لـ ZEGAAR AMMAR
+app = App(app_ui, server)
