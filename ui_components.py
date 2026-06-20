@@ -5,9 +5,9 @@ from shiny import ui
 
 _bg_cache = None
 
-# ==========================================
-# 🎨 الخلفية + التنسيق الفني المطور للبطاقات واللوحة المنبثقة
-# ==========================================
+# ==============================================================================
+# 🎨 الخلفية وحقن ستايل الـ CSS المترجم ليعمل بقوة داخل حاوية Shiny السحابية
+# ==============================================================================
 def inject_pwa_and_styles():
     global _bg_cache
     if _bg_cache is None:
@@ -31,30 +31,80 @@ def inject_pwa_and_styles():
         background-attachment: fixed !important;
     }}
     
-    /* 🎨 تصميم البطاقات الزجاجية المتقطعة والمنفصلة بالكامل (طابق حجم ونمط صورتك) */
-    .glass-card-item-exact {{
-        background: rgba(12, 53, 27, 0.65) !important; /* لون أخضر داكن زجاجي مبطن */
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 2px solid #32cd32 !important; /* إطار نيون أخضر مضيء ومستقر */
-        box-shadow: 0 0 14px rgba(50, 205, 50, 0.35); /* توهج نيون أخضر فاصل */
-        padding: 16px 20px !important; /* نفس الارتفاع الممتد في صورتك */
-        border-radius: 14px !important; /* حواف دائرية أنيقة ومتقنة */
-        text-align: center !important; /* توسط الموديل في منتصف البطاقة */
-        font-size: 20px !important; /* خط كبير وعريض */
-        font-weight: 800 !important; /* Bold سميك */
-        color: #ffffff !important; /* نص أبيض ناصع وثابت */
-        margin-bottom: 14px !important; /* مسافة فاصلة عمودية تضمن الانفصال التام */
-        width: 100%;
-        box-sizing: border-box;
-        transition: all 0.25s ease;
+    /* 🎯 رفع شريط البحث موازياً للعنوان */
+    .container-fluid {{
+        padding-top: 35px !important; 
     }}
-    .glass-card-item-exact:hover {{
-        background: rgba(50, 205, 50, 0.25) !important;
-        box-shadow: 0 0 20px rgba(50, 205, 50, 0.65);
+
+    /* 🎯 العربية أقصى اليمين: عناوين فئات التوافق ملتصقة باليمين بالكامل */
+    .section-title {{
+        font-size: 20px !important;
+        font-weight: bold !important;
+        color: #ffffff !important;
+        margin-top: 25px !important;
+        margin-bottom: 12px !important;
+        text-align: right !important;
+        direction: rtl !important;
+    }}
+
+    /* 🎯 هندسة كروت النيون الفاخرة ثنائية اللغة لـ Shiny (انفصال وتقطيع كامل) */
+    .ammar-flat-card, .flat-warning-card {{
+        padding: 12px 16px !important;
+        margin-bottom: 14px !important; /* مسافة فاصلة عمودية تضمن عدم اندماج الكروت */
+        border-radius: 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        /* التوزيع الذكي: الاسم الإنجليزي أقصى اليسار وصندوق الصورة أقصى اليمين */
+        justify-content: space-between !important; 
+        direction: ltr !important; /* لضمان دفع المحتوى الإنجليزي ليسار الكارت */
+        width: 100% !important;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3) !important;
+        box-sizing: border-box !important;
+        transition: all 0.2s ease;
+    }}
+    .ammar-flat-card:hover, .flat-warning-card:hover {{
         transform: translateY(-2px);
     }}
 
+    /* الألوان والحدود النيونية المطابقة لهندستك الصارمة المأخوذة من ملف الـ CSS */
+    .flat-exact {{ background: linear-gradient(135deg, #0d1f13, #07120b) !important; border: 2px solid #2ecc71 !important; }}
+    .flat-plus {{ background: linear-gradient(135deg, #0b1a33, #060e1c) !important; border: 2px solid #3498db !important; }}
+    .flat-minus {{ background: linear-gradient(135deg, #2b1807, #140b03) !important; border: 2px solid #e67e22 !important; }}
+    .flat-warning-card {{ background: linear-gradient(135deg, #26090b, #120405) !important; border: 2px solid #ff4a5a !important; }}
+
+    /* 🎯 الإنجليزية أقصى اليسار: أسماء الهواتف والبراندات ملتصقة أقصى اليسار تماماً وبخط عريض وبولد */
+    .flat-phone-text {{ 
+        color: #ffffff !important; 
+        font-size: 20px !important; 
+        font-weight: 800 !important;
+        text-align: left !important;
+        display: block !important;
+        padding-left: 5px !important;
+        margin: 0 !important;
+    }}
+
+    .flat-warn-text {{ 
+        color: #ffb3b9 !important; 
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        text-align: left !important;
+        display: block !important;
+    }}
+
+    /* 🎯 حجز مساحة لصور الهواتف تلقائياً: مربع نيون فخم أقصى اليمين في الجهة المقابلة للاسم تماماً */
+    .image-placeholder-box {{
+        width: 55px !important;
+        height: 55px !important;
+        min-width: 55px !important;
+        border-radius: 8px !important;
+        background-color: rgba(10, 14, 23, 0.8) !important;
+        border: 1px dashed rgba(0, 191, 255, 0.4) !important;
+        box-shadow: inset 0px 0px 8px rgba(0, 191, 255, 0.15) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }}
+    
     .glass-window-card {{
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
@@ -65,9 +115,6 @@ def inject_pwa_and_styles():
         justify-content: space-between;
         align-items: center;
         border: 1px solid rgba(255, 255, 255, 0.1);
-    }}
-    .shiny-split-layout {{
-        gap: 15px !important;
     }}
     .sidebar-title {{
         text-align: center; 
@@ -86,13 +133,13 @@ def inject_pwa_and_styles():
     </style>
     """
 
-# ==========================================
+# ==============================================================================
 # 📋 بطاقة الإحداثيات الفنية للموديل الفعلي
-# ==========================================
+# ==============================================================================
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, real_name=None):
     return f"""
-    <div class="glass-window-card" style="background:rgba(15,23,42,.6); margin-top:15px; border: 1px solid #00bfff; box-shadow: 0 0 10px rgba(0,191,255,0.2);">
-        <div style="direction:rtl; text-align:right; font-size:16px; line-height:1.7; color:white; width:100%;">
+    <div class="glass-window-card" style="background:rgba(15,23,42,.7); margin-top:15px; border: 1px solid #00bfff; box-shadow: 0 0 10px rgba(0,191,255,0.2); direction:rtl;">
+        <div style="text-align:right; font-size:16px; line-height:1.7; color:white; width:100%;">
             {"🔍 <b>الموديل المتطابق:</b> " + escape(real_name) + "<br>" if real_name else ""}
             📏 <b>المقاس:</b> {escape(str(size_grp))} <br>
             📺 <b>نوع الشاشة:</b> {escape(str(panel_grp))} <br>
@@ -101,36 +148,42 @@ def draw_technical_coords(size_grp, panel_grp, sensor_grp, real_name=None):
     </div>
     """
 
-# ==========================================
-# 📱 بطاقات النتائج المتقطعة والمنفصلة (النيون الأخضر الزجاجي البولد)
-# ==========================================
-def draw_neon_section(models_list, title="هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00):", color_hex="#32cd32", badge_icon="🟢"):
+# ==============================================================================
+# 📱 بطاقات النتائج المتقطعة والمنفصلة كلياً بنظام نيون هندسة اللغات ثنائي القطب
+# ==============================================================================
+def draw_neon_section(models_list, title="هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00):", color_hex="#2ecc71", badge_icon="🟢"):
     if not models_list:
         return ""
 
     html_cards = []
-    # عنوان القسم العلوي متوافق تماماً مع لقطة الشاشة
+    # 🎯 العربية أقصى اليمين كعنوان فئة رئيسية ملتصق تماماً باليمين كما هو معرّف في ملف الـ CSS
     html_cards.append(f"""
-    <h4 style="color:#ffffff; direction:rtl; text-align:right; margin:20px 0 12px 0; font-weight:bold; font-size:19px; display:flex; align-items:center; gap:8px;">
-        <span style="color:{color_hex};">{badge_icon}</span> {title}
-    </h4>
-    <div style="display: flex; flex-direction: column; width:100%;">
+    <div class="section-title">
+        <span style="color:{color_hex}; margin-left: 6px;">{badge_icon}</span>{title}
+    </div>
+    <div style="display: flex; flex-direction: column; width:100%; box-sizing: border-box;">
     """)
 
-    # تكرار ضخ الهواتف البديلة في بطاقات منفصلة ومتقطعة ذات حجم عريض ونقي
+    # بناء كروت منفصلة ومتقطعة: الاسم الإنجليزي يساراً وصندوق الصورة يميناً بالتوافق مع الـ style.css
     for model in models_list:
         html_cards.append(f"""
-        <div class="glass-card-item-exact">
-            {escape(model)}
+        <div class="ammar-flat-card flat-exact">
+            <!-- 🎯 الإنجليزية أقصى اليسار تماماً وبخط عريض وبولد عالي الوضوح -->
+            <div class="flat-phone-text">{escape(model)}</div>
+            
+            <!-- 🎯 حجز مساحة لصور الهواتف تلقائياً أقصى اليمين في الجهة المقابلة للاسم تماماً -->
+            <div class="image-placeholder-box">
+                <span style="color: rgba(0, 191, 255, 0.4); font-size: 11px; font-weight: bold;">🖼️</span>
+            </div>
         </div>
         """)
         
     html_cards.append("</div>")
     return "\n".join(html_cards)
 
-# ==========================================
-# 🛠️ لوحة التحكم التفاعلية المدمجة لـ Shiny
-# ==========================================
+# ==============================================================================
+# 🛠️ لوحة التحكم الجانبية التفاعلية
+# ==============================================================================
 def draw_control_panel(notifications=None, total_models=0, empty_groups_count=0):
     notifications = notifications or []
     
@@ -143,14 +196,8 @@ def draw_control_panel(notifications=None, total_models=0, empty_groups_count=0)
         ui.HTML('<h3 class="sidebar-title">🛠️ لوحة التحكم</h3>'),
         
         ui.accordion(
-            ui.accordion_panel(
-                "🔔 الإشعارات",
-                ui.HTML(notif_html)
-            ),
-            ui.accordion_panel(
-                "⚙️ الإعدادات",
-                ui.input_checkbox("silent_monitor_checkbox", "تفعيل المراقب الصامت", value=True)
-            ),
+            ui.accordion_panel("🔔 الإشعارات", ui.HTML(notif_html)),
+            ui.accordion_panel("⚙️ الإعدادات", ui.input_checkbox("silent_monitor_checkbox", "تفعيل المراقب الصامت", value=True)),
             ui.accordion_panel(
                 "🛡️ المراقب الصامت",
                 ui.HTML(f"""
