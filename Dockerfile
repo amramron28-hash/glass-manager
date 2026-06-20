@@ -13,6 +13,9 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 # نسخ باقي ملفات مشروعك الذكية (workflows, logic_engine...) إلى السيرفر
 COPY . .
 
+# منح صلاحيات كاملة للمجلد لضمان سلاسة قراءة وتعديل الملفات
+RUN chmod -R 777 /code
+
 # منح صلاحيات كاملة للمستخدم الافتراضي لتشغيل النظام بأمان وضمان عدم توقفه
 RUN useradd -m -u 1000 user
 USER user
@@ -24,4 +27,3 @@ EXPOSE 7860
 
 # الأمر النهائي والمسؤول عن تشغيل تطبيق Shiny فائق السرعة
 CMD ["shiny", "run", "app.py", "--host", "0.0.0.0", "--port", "7860"]
-
