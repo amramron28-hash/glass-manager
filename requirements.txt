@@ -6,3 +6,4 @@ cachetools
 orjson
 supabase>=2.0.0
 httpx
+pandas
