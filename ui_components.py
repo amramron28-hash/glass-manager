@@ -6,7 +6,7 @@ from shiny import ui
 _bg_cache = None
 
 # ==========================================
-# 🎨 الخلفية + التنسيق (تم إضافة الـ CSS للزجاج هنا)
+# 🎨 الخلفية + التنسيق الفني المطور للبطاقات واللوحة المنبثقة
 # ==========================================
 def inject_pwa_and_styles():
     global _bg_cache
@@ -20,7 +20,6 @@ def inject_pwa_and_styles():
                 break
         _bg_cache = img
 
-    # إرجاع الـ ستايل المخصص ليتم حقنه في رأس واجهة Shiny لسرعة الأداء
     return f"""
     <style>
     html, body, .container-fluid {{
@@ -31,7 +30,31 @@ def inject_pwa_and_styles():
         background-repeat: no-repeat !important;
         background-attachment: fixed !important;
     }}
-    /* التعديل الجوهري: تأثير الزجاج الصافي */
+    
+    /* 🎨 تصميم البطاقات الزجاجية المتقطعة والمنفصلة بالكامل (طابق حجم ونمط صورتك) */
+    .glass-card-item-exact {{
+        background: rgba(12, 53, 27, 0.65) !important; /* لون أخضر داكن زجاجي مبطن */
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 2px solid #32cd32 !important; /* إطار نيون أخضر مضيء ومستقر */
+        box-shadow: 0 0 14px rgba(50, 205, 50, 0.35); /* توهج نيون أخضر فاصل */
+        padding: 16px 20px !important; /* نفس الارتفاع الممتد في صورتك */
+        border-radius: 14px !important; /* حواف دائرية أنيقة ومتقنة */
+        text-align: center !important; /* توسط الموديل في منتصف البطاقة */
+        font-size: 20px !important; /* خط كبير وعريض */
+        font-weight: 800 !important; /* Bold سميك */
+        color: #ffffff !important; /* نص أبيض ناصع وثابت */
+        margin-bottom: 14px !important; /* مسافة فاصلة عمودية تضمن الانفصال التام */
+        width: 100%;
+        box-sizing: border-box;
+        transition: all 0.25s ease;
+    }}
+    .glass-card-item-exact:hover {{
+        background: rgba(50, 205, 50, 0.25) !important;
+        box-shadow: 0 0 20px rgba(50, 205, 50, 0.65);
+        transform: translateY(-2px);
+    }}
+
     .glass-window-card {{
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
@@ -64,11 +87,11 @@ def inject_pwa_and_styles():
     """
 
 # ==========================================
-# 📋 بطاقة الإحداثيات الفنية (تم التعديل لتتناسب مع التصميم)
+# 📋 بطاقة الإحداثيات الفنية للموديل الفعلي
 # ==========================================
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, real_name=None):
     return f"""
-    <div class="glass-window-card" style="background:rgba(15,23,42,.6); margin-top:15px;">
+    <div class="glass-window-card" style="background:rgba(15,23,42,.6); margin-top:15px; border: 1px solid #00bfff; box-shadow: 0 0 10px rgba(0,191,255,0.2);">
         <div style="direction:rtl; text-align:right; font-size:16px; line-height:1.7; color:white; width:100%;">
             {"🔍 <b>الموديل المتطابق:</b> " + escape(real_name) + "<br>" if real_name else ""}
             📏 <b>المقاس:</b> {escape(str(size_grp))} <br>
@@ -79,43 +102,43 @@ def draw_technical_coords(size_grp, panel_grp, sensor_grp, real_name=None):
     """
 
 # ==========================================
-# 📱 بطاقات النتائج (تم الحفاظ على التوهج وتأثير الزجاج والـ Bold)
+# 📱 بطاقات النتائج المتقطعة والمنفصلة (النيون الأخضر الزجاجي البولد)
 # ==========================================
-def draw_neon_section(models_list, title="الأجهزة المتوافقة والمدعومة بالكامل وبنفس الأبعاد الصارمة:", color_hex="#00bfff", badge_icon="📱"):
+def draw_neon_section(models_list, title="هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00):", color_hex="#32cd32", badge_icon="🟢"):
     if not models_list:
         return ""
 
     html_cards = []
+    # عنوان القسم العلوي متوافق تماماً مع لقطة الشاشة
     html_cards.append(f"""
-    <h4 style="color:{color_hex}; direction:rtl; text-align:right; margin:15px 0 8px 0; font-weight:bold;">
-    {badge_icon} {title}
+    <h4 style="color:#ffffff; direction:rtl; text-align:right; margin:20px 0 12px 0; font-weight:bold; font-size:19px; display:flex; align-items:center; gap:8px;">
+        <span style="color:{color_hex};">{badge_icon}</span> {title}
     </h4>
+    <div style="display: flex; flex-direction: column; width:100%;">
     """)
 
+    # تكرار ضخ الهواتف البديلة في بطاقات منفصلة ومتقطعة ذات حجم عريض ونقي
     for model in models_list:
         html_cards.append(f"""
-        <div class="glass-window-card" style="border-left: 6px solid {color_hex}; background: {color_hex}25;">
-            <div style="font-size: 18px; font-weight: 800; color: #ffffff; text-align: left; width:100%;">
-                {escape(model)}
-            </div>
+        <div class="glass-card-item-exact">
+            {escape(model)}
         </div>
         """)
         
+    html_cards.append("</div>")
     return "\n".join(html_cards)
 
 # ==========================================
-# 🛠️ لوحة التحكم التفاعلية والمطابقة تماماً لـ Shiny
+# 🛠️ لوحة التحكم التفاعلية المدمجة لـ Shiny
 # ==========================================
 def draw_control_panel(notifications=None, total_models=0, empty_groups_count=0):
     notifications = notifications or []
     
-    # تحضير كود الإشعارات
     if notifications:
         notif_html = "".join([f"<div style='color:#ffc107; margin-bottom:5px;'>⚠️ {escape(n)}</div>" for n in notifications])
     else:
         notif_html = "<div style='color:#aaa; font-style:italic;'>لا توجد تنبيهات</div>"
         
-    # توليد وضخ الألواح الجانبية التفاعلية بنظام Shiny الفاخر
     panel_ui = ui.sidebar(
         ui.HTML('<h3 class="sidebar-title">🛠️ لوحة التحكم</h3>'),
         
