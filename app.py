@@ -1,9 +1,9 @@
 import os
 import base64
-from shiny import App, ui, render, reactive
 import pandas as pd
+from shiny import App, ui, render, reactive
 
-# تحويل صورة الخلفية المرفقة في ملفاتك لترميز ويب آمن
+# 1. تحويل صورة الخلفية المرفقة لترميز ويب آمن
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as image_file:
@@ -13,7 +13,7 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 🎨 واجهة المستخدم الحاضنة للخلفية الثابتة، الـ PWA، وأنماط النيون والبطاقات الزجاجية
+# 2. تصميم واجهة المستخدم (UI) بنمط النيون والبطاقات الزجاجية
 app_ui = ui.page_fluid(
     ui.head_content(
         ui.HTML(f"""
@@ -152,52 +152,54 @@ app_ui = ui.page_fluid(
             )
         )
     ),
-        # تابع لواجهة المستخدم (إغلاق الحاويات المفتوحة وإضافة حاويات العرض وزر الإعدادات)
-        ui.output_ui("matched_results_ui"),
-        class_="p-1"
+    ui.row(
+        ui.column(12,
+            ui.output_ui("matched_results_ui"),
+            class_="p-1"
+        )
     ),
-    # زر عائم للإعدادات أسفل الشاشة كما هو معرف في الـ CSS
     ui.HTML('<button class="settings-floating-btn">⚙️</button>')
 )
 
-# 🧠 منطق الخادم (Server Logic) لإدارة البحث والاقتراحات الذكية
+# 3. منطق السيرفر (Server Logic) لإدارة التفاعلات
 def server(input, output, session):
     
-    # محاكاة لقاعدة بيانات الهواتف (استبدلها بقاعدتك أو بالملف المستورد)
-    # ملاحظة لحل مشكلة Circular Import: تأكد أن ملف logic_engine لا يستورد من app.py
-    try:
-        from logic_engine import find_model_coords, get_compatibles_strict
-    except ImportError:
-        # دالة بديلة مؤقتة لحين إصلاح الاستيراد الدائري في ملف logic_engine.py
-        def find_model_coords(search_text):
-            # قاعدة بيانات تجريبية سريعة
-            mock_data = ["iPhone 13", "iPhone 14 Pro", "Samsung S23", "Samsung S24 Ultra"]
-            return [m for m in mock_data if search_text.lower() in m.lower()]
-        
-        def get_compatibles_strict(model_name):
-            return {"model": model_name, "tolerance": "0.1mm", "alternatives": ["شاشة متوافقة A", "شاشة متوافقة B"]}
+    # استيراد محلي آمن للدوال لمنع الـ Circular Import أثناء إقلاع السيرفر
+    from database import load_db
+    from workflows import run_system_workflows, append_to_models_index
+    
+    # تحميل قاعدة البيانات
+    db_data = load_db()
 
-    # تفاعل ديناميكي عند الكتابة في حقل البحث
+    # حساب الاقتراحات بناءً على المدخلات الحالية ونص البحث المستهدف
     @reactive.calc
     def filtered_suggestions():
-        query = input.free_smart_search_input_field()
+        query = input.free_smart_search_input_field().strip()
         if not query or len(query) < 2:
             return []
-        # استدعاء دالة البحث من محرك المنطق
-        return find_model_coords(query)
+        
+        # قراءة كشاف الأسماء للتصفية الذكية السريعة للاقتراحات المقربة
+        INDEX_FILE = "models_index.txt"
+        if os.path.exists(INDEX_FILE):
+            with open(INDEX_FILE, "r", encoding="utf-8") as f:
+                models = [line.strip() for line in f if line.strip()]
+            return [m for m in models if query.lower() in m.lower()][:5]
+        return []
 
-    # 1. عرض قائمة الاقتراحات العائمة أثناء الكتابة
+    # رندرة قائمة الاقتراحات الطافية أثناء الكتابة
     @render.ui
     def floating_suggestions_ui():
         suggestions = filtered_suggestions()
-        if not suggestions:
+        query = input.free_smart_search_input_field().strip()
+        
+        # إخفاء القائمة في حال اختيار الاسم المطابق تماماً
+        if not suggestions or query in suggestions:
             return ui.div()
         
-        # بناء قائمة الخيارات المقترحة داخل التصميم المعرف مسبقاً
         buttons = []
         buttons.append(ui.div("💡 الموديلات المقترحة القريبة:", class_="floating-suggestions-box-title"))
         
-        for idx, item in enumerate(suggestions):
+        for item in suggestions:
             buttons.append(
                 ui.tags.button(
                     item, 
@@ -210,33 +212,23 @@ def server(input, output, session):
         buttons.append(ui.div(class_="floating-suggestions-box-end"))
         return ui.div(*buttons)
 
-    # 2. عرض نتائج المطابقة النهائية (البطاقات الزجاجية والنيون)
+    # رندرة النتائج النهائية الممررة من المحرك المركزي وخططه الثلاث
     @render.ui
     def matched_results_ui():
-        query = input.free_smart_search_input_field()
+        query = input.free_smart_search_input_field().strip()
+        if not query or len(query) < 2:
+            return ui.div()
+            
         suggestions = filtered_suggestions()
         
-        # إذا كان النص المكتوب يطابق تماماً أحد الخيارات أو تم اختياره
-        if query in suggestions or (len(suggestions) == 1 and query.lower() == suggestions[0].lower()):
-            target_model = suggestions[0]
-            details = get_compatibles_strict(target_model)
-            
-            return ui.div(
-                ui.div(
-                    ui.HTML(f"<h3>📱 النتيجة المتطابقة: {details['model']}</h3>"),
-                    ui.p("تم العثور على القياسات الدقيقة لحماية الزجاج بنجاح."),
-                    class_="glass-card-matched"
-                ),
-                ui.div(
-                    ui.HTML("<h4>🛠️ بدائل الحماية المتوافقة:</h4>"),
-                    ui.tags.ul(
-                        *[ui.tags.li(alt) for alt in details.get('alternatives', [])]
-                    ),
-                    ui.HTML(f'<span class="tolerance-badge">نسبة التفاوت المسموح: {details.get("tolerance", "0.0mm")}</span>'),
-                    class_="neon-section"
-                )
-            )
-        return ui.div()
+        # تشغيل محرك workflows المركزي لجلب الواجهات والمطابقات
+        html_res = run_system_workflows(query, db_data, suggestions)
+        
+        # ضخ الهاتف المكتوب في الكشاف تلقائياً إذا تم استخدامه بنجاح
+        if query:
+            append_to_models_index(query)
 
-# 🚀 تشغيل التطبيق السحابي الموحد
+        return ui.div(ui.HTML(html_res))
+
+# 🚀 بناء التطبيق وتشغيله
 app = App(app_ui, server)
