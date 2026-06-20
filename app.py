@@ -3,7 +3,6 @@ import os
 from html import escape
 from shiny import App, render, ui, reactive
 
-# 🎨 تجميع أنماط الـ CSS المخصصة وحقن الخلفية الثابتة والستارة التفاعلية
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as image_file:
@@ -39,7 +38,12 @@ input[type="text"] {{ background: rgba(255, 255, 255, 0.07) !important; color: w
 .suggestion-live-btn:hover {{ background-color: rgba(0, 191, 255, 0.15) !important; color: #00bfff !important; }}
 """
 
-app_ui = ui.page_fluid(
+# بناء تخطيط الصفحة بشكل ثابت لضمان ظهور الشريط الجانبي وخانة البحث معاً
+app_ui = ui.page_sidebar(
+    # وضع لوحة التحكم في مكانها الهندسي الصحيح كشريط جانبي ثابت
+    ui.output_ui("sidebar_control_panel_render"),
+    
+    # محتويات الصفحة الرئيسية
     ui.head_content(
         ui.tags.style(custom_css),
         ui.tags.title("ZEGAAR AMMAR GLASS MANAGER")
@@ -50,32 +54,32 @@ app_ui = ui.page_fluid(
             <div class="main-subtitle">النظام السحابي الذكي الموحد لفحص ومطابقة حماية الشاشات</div>
         </div>
     """),
+    
+    # وضع حقل البحث بشكل ثابت في الواجهة لضمان ظهوره المستمر
     ui.input_text("free_smart_search_input_field", label="", value="", placeholder="اكتب اسم الهاتف المستهدف هنا بحرية وسرعة..."),
-    ui.output_ui("dynamic_interface_render")
+    
+    # مساحة عرض مخرجات البحث والبطاقات الزجاجية
+    ui.output_ui("dynamic_cards_render")
 )
 
 def server(input, output, session):
-    # ⚡ استدعاءات داخلية صارمة ومحمية لقتل التعليق الدائري (Circular Import Fix)
     from app_init import initialize_system_data
     from workflows import run_system_workflows
-    from ui_components import draw_control_panel, inject_pwa_and_styles
+    from ui_components import draw_control_panel
     from logic_engine import run_intelligent_inspector, detect_self_conflicts
 
-    # 🛡️ تشغيل "المراقب الصامت" فور إقلاع السيرفر لتطهير وحماية بنية الجداول حياً
+    # تشغيل المراقب الصامت وجلب التنبيهات
     cleaned_db_data, changes_were_made = run_intelligent_inspector()
     conflict_alerts = detect_self_conflicts()
     
-    # تحويل التنبيهات إلى نصوص برمجية تضخ في جرس الإشعارات
     system_notifications = []
     if changes_were_made:
         system_notifications.append("المراقب الصامت: تم العثور على أسطر تالفة أو مكررة وقام النظام بتطهيرها وحذفها تلقائياً.")
     for alert in conflict_alerts:
         system_notifications.append(f"تنبيه تعارض ذاتي: الهاتف '{alert['phone']}' مسجل بمستشعرات متعددة {alert['sensors']}")
 
-    # تهيئة البيانات الأساسية للنظام
     (db_data, _initial_unique_models, total_models, empty_groups_count, _, _, _, _) = initialize_system_data()
     
-    # استخدام قاعدة البيانات المطهرة إذا حدث تغيير
     if changes_were_made and cleaned_db_data:
         db_data = cleaned_db_data
 
@@ -99,14 +103,24 @@ def server(input, output, session):
     def update_reactive_input():
         search_val.set(input.free_smart_search_input_field().strip())
 
+    # 1. رندر شريط أدوات لوحة التحكم والإشعارات في الجانب
     @output
     @render.ui
-    def dynamic_interface_render():
+    def sidebar_control_panel_render():
+        return draw_control_panel(
+            notifications=system_notifications, 
+            total_models=total_models, 
+            empty_groups_count=empty_groups_count
+        )
+
+    # 2. رندر الاقتراحات الحية والبطاقات الزجاجية في المنتصف
+    @output
+    @render.ui
+    def dynamic_cards_render():
         phone = search_val()
         suggestions = fast_phone_search(phone) if phone else []
         ui_elements = []
         
-        # الستارة التفاعلية للاقتراحات المساعدة
         if phone and suggestions:
             is_fully_matched = any(phone.lower() == s.lower() for s in suggestions)
             if not is_fully_matched:
@@ -123,19 +137,9 @@ def server(input, output, session):
                         search_val.set(target_item)
                 ui_elements.append(ui.div(*btn_list, class_="floating-suggestions-box-end"))
         
-        # تشغيل خطط العمليات الثلاث وضخ البطاقات الزجاجية الملونة
         workflow_output = run_system_workflows(phone=phone, db_data=db_data, suggestions=suggestions)
         if workflow_output:
             ui_elements.append(ui.HTML(str(workflow_output)))
-            
-        # دمج وتوصيل لوحة التحكم وجرس الإشعارات مع مصفوفة المراقب الصامت
-        control_panel_output = draw_control_panel(
-            notifications=system_notifications, 
-            total_models=total_models, 
-            empty_groups_count=empty_groups_count
-        )
-        if control_panel_output:
-            ui_elements.append(ui.HTML(str(control_panel_output)))
             
         return ui.div(*ui_elements)
 
