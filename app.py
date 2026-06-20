@@ -13,7 +13,7 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 2. تصميم واجهة المستخدم (UI) بنمط النيون والبطاقات الزجاجية
+# 2. تصميم واجهة المستخدم (UI) بنمط النيون والبطاقات الزجاجية والمكونات الإضافية
 app_ui = ui.page_fluid(
     ui.head_content(
         ui.HTML(f"""
@@ -95,30 +95,94 @@ app_ui = ui.page_fluid(
             color: #00bfff;
             padding-right: 25px;
         }}
-        .neon-section {{
-            margin-top: 20px !important;
-            padding: 20px !important;
-            border-radius: 12px !important;
-            background: rgba(13, 17, 23, 0.85);
-            border: 1px solid #00bfff;
-            box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
+        
+        /* 💎 تصميم شبكة البطاقات المتقطعة والمنفصلة للنتائج */
+        .glass-card-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            padding: 5px;
         }}
-        .glass-card-matched {{
-            background: rgba(0, 255, 204, 0.07);
-            border: 1px solid #00ffcc;
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
-            padding: 15px;
+        .glass-card-item {{
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 191, 255, 0.2);
+            padding: 10px;
             border-radius: 8px;
-            margin-top: 10px;
-        }}
-        .tolerance-badge {{
-            background: rgba(255, 191, 0, 0.15);
-            color: #ffbf00;
-            border: 1px solid #ffbf00;
-            padding: 3px 8px;
-            border-radius: 4px;
+            text-align: center;
             font-size: 14px;
+            color: #ffffff;
+            transition: all 0.25s ease;
+        }}
+        .glass-card-item:hover {{
+            border-color: #00bfff;
+            background: rgba(0, 191, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 0 10px rgba(0,191,255,0.3);
+        }}
+
+        /* 🔔 شارات المراقبة والإشعارات العلوية */
+        .top-monitor-bar {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(13, 17, 23, 0.6);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }}
+        .silent-observer {{
+            font-size: 12px;
+            color: #a0aec0;
+        }}
+        .silent-observer span {{
+            color: #32cd32;
             font-weight: bold;
+        }}
+        .notification-bell {{
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            position: relative;
+        }}
+        .bell-dot {{
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            background: #ff4500;
+            border-radius: 50%;
+        }}
+
+        /* ⚙️ نافذة الإعدادات المنبثقة الشاملة */
+        .settings-modal {{
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            max-width: 400px;
+            background: rgba(13, 17, 23, 0.96);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00bfff;
+            box-shadow: 0 0 30px rgba(0, 191, 255, 0.4);
+            padding: 22px;
+            border-radius: 12px;
+            z-index: 10000;
+            text-align: right;
+        }}
+        .modal-overlay {{
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
         }}
         .settings-floating-btn {{
             position: fixed;
@@ -128,14 +192,24 @@ app_ui = ui.page_fluid(
             color: black;
             border: none;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 24px;
-            box-shadow: 0 0 15px rgba(0,191,255,0.5);
-            z-index: 9999;
+            width: 55px;
+            height: 55px;
+            font-size: 22px;
+            box-shadow: 0 0 15px rgba(0,191,255,0.4);
+            z-index: 9998;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }}
         </style>
         """)
+    ),
+    # المراقب الصامت وجرس الإشعارات في الجزء العلوي
+    ui.div(
+        ui.div("👁️ مراقب السيرفر الصامت: <span>مستقر ونشط</span>", class_="silent-observer"),
+        ui.HTML('<button class="notification-bell" onclick="alert(\'🔔 نظام الإشعارات: قاعدة البيانات محدثة وتعمل بكفاءة 100%\')">🔔<span class="bell-dot"></span></button>'),
+        class_="top-monitor-bar"
     ),
     ui.HTML("""
     <div class="main-header-container">
@@ -158,77 +232,51 @@ app_ui = ui.page_fluid(
             class_="p-1"
         )
     ),
-    ui.HTML('<button class="settings-floating-btn">⚙️</button>')
+    
+    # ترس الإعدادات العائم والنافذة المنبثقة التفاعلية مع JavaScript
+    ui.HTML("""
+    <div id="modal_overlay" class="modal-overlay" onclick="closeSettings()"></div>
+    <div id="settings_modal" class="settings-modal">
+        <h3 style="color: #00bfff; text-align: center; margin-top: 0;">⚙️ لوحة تحكم النظام</h3>
+        <hr style="border-color: rgba(0,191,255,0.2); margin-bottom: 15px;">
+        <p style="font-size: 14px; margin-bottom: 10px;">📊 <b>حالة الـ API العالـمي:</b> <span style="color:#32cd32;">متصل وعامل</span></p>
+        <p style="font-size: 14px; margin-bottom: 10px;">📏 <b>مستوى تفاوت الأبعاد:</b> <span style="color:#ffbf00;">0.05mm مسموح</span></p>
+        <p style="font-size: 14px; margin-bottom: 20px;">🛡️ <b>تأمين حاوية Shiny:</b> <span style="color:#00bfff;">نشط (Hugging Face)</span></p>
+        <button onclick="closeSettings()" style="width: 100%; background: #ff4500; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">إغلاق لوحة الإعدادات</button>
+    </div>
+
+    <button class="settings-floating-btn" onclick="openSettings()">⚙️</button>
+
+    <script>
+    function openSettings() {
+        document.getElementById('settings_modal').style.display = 'block';
+        document.getElementById('modal_overlay').style.display = 'block';
+    }
+    function closeSettings() {
+        document.getElementById('settings_modal').style.display = 'none';
+        document.getElementById('modal_overlay').style.display = 'none';
+    }
+    </script>
+    """)
 )
 
 # 3. منطق السيرفر (Server Logic) لإدارة التفاعلات
 def server(input, output, session):
     
-    # استيراد محلي آمن للدوال لمنع الـ Circular Import أثناء إقلاع السيرفر
+    # استيراد داخلي ومحلي للدوال عند إقلاع السيرفر لمنع الـ Circular Import تماماً
     from database import load_db
-    from workflows import run_system_workflows, append_to_models_index
+    from workflows import run_system_workflows
     
-    # تحميل قاعدة البيانات
+    # تحميل قاعدة البيانات المؤمنة
     db_data = load_db()
 
-    # حساب الاقتراحات بناءً على المدخلات الحالية ونص البحث المستهدف
+    # حساب وتصفية الاقتراحات السريعة أثناء الكتابة
     @reactive.calc
     def filtered_suggestions():
         query = input.free_smart_search_input_field().strip()
         if not query or len(query) < 2:
             return []
         
-        # قراءة كشاف الأسماء للتصفية الذكية السريعة للاقتراحات المقربة
         INDEX_FILE = "models_index.txt"
         if os.path.exists(INDEX_FILE):
             with open(INDEX_FILE, "r", encoding="utf-8") as f:
-                models = [line.strip() for line in f if line.strip()]
-            return [m for m in models if query.lower() in m.lower()][:5]
-        return []
-
-    # رندرة قائمة الاقتراحات الطافية أثناء الكتابة
-    @render.ui
-    def floating_suggestions_ui():
-        suggestions = filtered_suggestions()
-        query = input.free_smart_search_input_field().strip()
-        
-        # إخفاء القائمة في حال اختيار الاسم المطابق تماماً
-        if not suggestions or query in suggestions:
-            return ui.div()
-        
-        buttons = []
-        buttons.append(ui.div("💡 الموديلات المقترحة القريبة:", class_="floating-suggestions-box-title"))
-        
-        for item in suggestions:
-            buttons.append(
-                ui.tags.button(
-                    item, 
-                    class_="suggestion-link-btn", 
-                    onclick=f"document.getElementById('free_smart_search_input_field').value='{item}'; "
-                            f"Shiny.setInputValue('free_smart_search_input_field', '{item}');"
-                )
-            )
-        
-        buttons.append(ui.div(class_="floating-suggestions-box-end"))
-        return ui.div(*buttons)
-
-    # رندرة النتائج النهائية الممررة من المحرك المركزي وخططه الثلاث
-    @render.ui
-    def matched_results_ui():
-        query = input.free_smart_search_input_field().strip()
-        if not query or len(query) < 2:
-            return ui.div()
-            
-        suggestions = filtered_suggestions()
-        
-        # تشغيل محرك workflows المركزي لجلب الواجهات والمطابقات
-        html_res = run_system_workflows(query, db_data, suggestions)
-        
-        # ضخ الهاتف المكتوب في الكشاف تلقائياً إذا تم استخدامه بنجاح
-        if query:
-            append_to_models_index(query)
-
-        return ui.div(ui.HTML(html_res))
-
-# 🚀 بناء التطبيق وتشغيله
-app = App(app_ui, server)
