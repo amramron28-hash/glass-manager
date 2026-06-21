@@ -1,73 +1,82 @@
-from shiny import App, ui, render, reactive
-import json
+import os
+from html import escape
+from shiny import App, render, reactive, ui
+from ui import app_ui  # استيراد الواجهة من الملف الأول المطور
+
+# 1. تهيئة مكتبة وأدوات اتصال Supabase السحابية
+from dotenv import load_dotenv
+from supabase import create_client, Client
+
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("الرجاء التأكد من إعداد SUPABASE_URL و SUPABASE_KEY في إعدادات المنصة السحابية")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==============================================================================
-# الكود الكامل: يشمل التنسيق الثابت، نظام الاقتراحات، والخطوات التتابعية
+# 2. دوال الاتصال المباشر بقاعدة البيانات لجدول phones
 # ==============================================================================
 
-app_ui = ui.page_fluid(
-    ui.head_content(
-        ui.tags.style("""
-            body { background: #0d1117; color: white; font-family: sans-serif; margin: 0; }
-            /* الدرج الجانبي الثابت */
-            .drawer { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; 
-                      background: #161b22; border-right: 2px solid #00bfff; 
-                      transition: 0.5s; z-index: 9999; padding: 25px; }
-            .drawer.open { left: 0; }
-            .header-bar { display: flex; justify-content: space-between; padding: 20px; align-items: center; background: #0d1117; }
-            
-            /* البطاقات والبحث */
-            .glass-card { background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 20px; padding: 20px; margin: 15px auto; width: 90%; max-width: 500px; }
-            .search-box { position: relative; max-width: 500px; margin: auto; padding: 20px; }
-            #custom_suggestions { position: absolute; width: 90%; background: #161b22; border: 1px solid #00bfff; border-radius: 10px; z-index: 9998; display: none; }
-            .suggestion-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; }
-            .btn-neon { background: #00bfff; color: black; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; }
-        """),
-        ui.tags.script("""
-            function toggleDrawer() { document.getElementById('drawer').classList.toggle('open'); }
-            function selectModel(m) { 
-                document.getElementById('search_query').value = m; 
-                document.getElementById('custom_suggestions').style.display = 'none';
-                Shiny.setInputValue('search_query', m, {priority: 'event'});
-            }
-        """)
-    ),
+def fetch_all_models_from_supabase():
+    """جلب كافة الموديلات الحية من جدول phones في السحاب وتجهيزها للاقتراحات المخصصة"""
+    try:
+        response = supabase.table("phones").select("model_name").execute()
+        records = response.data
+        if records:
+            raw_list = [r["model_name"] for r in records if r.get("model_name")]
+            return sorted(list(set(raw_list)))
+    except Exception as e:
+        print(f"خطأ سحابي أثناء جلب البيانات: {e}")
+    return []
 
-    # الهيكل الثابت للواجهة
-    ui.HTML("""<div id="drawer" class="drawer">
-        <h3 style="color:#00bfff;">القائمة</h3>
-        <p>⚙️ إعدادات | 🔔 تنبيهات | 🔇 صامت</p>
-        <button onclick="toggleDrawer()" class="btn-neon">إغلاق</button>
-    </div>"""),
+def insert_model_to_supabase(model_name, size, panel, sensor):
+    """رفع البيانات السحابية مطابقة تماماً لأعمدة جدولك: size, panel, sensor"""
+    try:
+        data = {
+            "model_name": model_name,
+            "size": size,
+            "panel": panel,   
+            "sensor": sensor  
+        }
+        supabase.table("phones").insert(data).execute()
+        return True
+    except Exception as e:
+        print(f"خطأ سحابي أثناء الرفع والحفظ: {e}")
+        return False
 
-    ui.div(
-        ui.HTML('<div style="cursor:pointer; font-size:28px;" onclick="toggleDrawer()">☰</div>'),
-        ui.h2("ZEGAAR AMMAR", style="color:#00bfff; margin:0;"),
-        ui.HTML('<div>🔔</div>'), class_="header-bar"
-    ),
-
-    ui.div(
-        ui.input_text("search_query", "", placeholder="ابحث عن موديل الهاتف..."),
-        ui.HTML("<div id='custom_suggestions'></div>"),
-        ui.output_ui("main_content_ui"),
-        class_="search-box"
-    )
-)
+# ==============================================================================
+# 3. منطق السيرفر المتفاعل (Server Logic)
+# ==============================================================================
 
 def server(input, output, session):
+    # مستشعر داخلي لإجبار الواجهة على جلب تحديثات البيانات السحابية فوراً عند إضافة موديل جديد
+    trigger_refresh = reactive.value(0)
     current_step = reactive.value(0)
     
-    # 1. نظام الاقتراحات (قاعدة بيانات ثابتة للاختبار)
+    # ذاكرة مؤقتة تفاعلية تحفظ الموديلات من Supabase لتسريع التصفية الفورية
+    @reactive.calc
+    def cloud_models():
+        trigger_refresh()  # يتأثر تلقائياً عند تغيير قيمة المستشعر لإعادة الجلب
+        return fetch_all_models_from_supabase()
+
+    # محرك الاقتراحات المخصصة المتصل بـ Supabase
     @reactive.effect
-    def _():
-        models = ["Redmi 9", "Infinix Smart 9", "Realme 14X", "Vivo Y300T"]
-        query = input.search_query()
+    def _handle_suggestions():
+        query = input.search_query().strip()
         if not query:
             ui.run_javascript("document.getElementById('custom_suggestions').style.display = 'none';")
             return
         
+        # جلب الموديلات الحقيقية من السيرفر السحابي
+        models = cloud_models()
         filtered = [m for m in models if query.lower() in m.lower()]
-        items = "".join([f"<div class='suggestion-item' onclick=\"selectModel('{m}')\">{m}</div>" for m in filtered])
+        
+        # تحويل الاقتراحات المفلترة لعناصر HTML تفاعلية آمنة
+        items = "".join([f"<div class='suggestion-item' onclick=\"selectModel('{escape(m)}')\">{m}</div>" for m in filtered])
         
         if items:
             ui.update_html("custom_suggestions", content=items)
@@ -75,31 +84,90 @@ def server(input, output, session):
         else:
             ui.run_javascript("document.getElementById('custom_suggestions').style.display = 'none';")
 
-    # 2. منطق الخطوات (ثابت ولا يمس الواجهة العلوية)
+    # معالج واجهات خطوات الطوارئ والإضافة محمي بوضعية مستقرة من التداخل البصري
     @render.ui
     def main_content_ui():
-        # إذا تم اختيار موديل والخطوة صفر، ننتقل للخطوة 1
-        if input.search_query() and current_step() == 0: current_step.set(1)
+        query = input.search_query().strip()
+        if not query:
+            return ui.div()
+            
+        models_list = cloud_models()
         
-        if current_step() == 1:
-            return ui.div(ui.h4("📏 الخطوة 1: المقاس"), ui.input_text("v1", ""), 
-                          ui.input_action_button("nxt1", "التالي", class_="btn-neon"), class_="glass-card")
-        if current_step() == 2:
-            return ui.div(ui.h4("📺 الخطوة 2: الشاشة"), ui.input_select("v2", "", ["Notch", "Punch"]), 
-                          ui.input_action_button("nxt2", "التالي", class_="btn-neon"), class_="glass-card")
-        if current_step() == 3:
-            return ui.div(ui.h4("🔌 الخطوة 3: المستشعر"), ui.input_select("v3", "", ["Hardware", "Virtual"]), 
-                          ui.input_action_button("fin", "حفظ", class_="btn-neon"), class_="glass-card")
+        # إذا تطابق نص البحث مع موديل موجود سحابياً، يتم إغلاق معالج الخطوات وعرض بيانات الموديل فوراً
+        if query in models_list:
+            ui.run_javascript("document.getElementById('custom_suggestions').style.display = 'none';")
+            # [يمكنك هنا استدعاء محرك الـ workflow لعرض البيانات المسترجعة للمطابقة]
+            return ui.div(ui.h4(f"✅ تم العثور على الموديل: {query}", style="color:#2ecc71;"), class_="glass-card")
+            
+        # تشغيل واجهة الطوارئ والخطوة الأولى تلقائياً عند عدم العثور على الموديل
+        if query not in models_list and current_step() == 0: 
+            current_step.set(1)
+        
+        step = current_step()
+        
+        if step == 1:
+            return ui.div(
+                ui.h4("📏 الخطوة 1: أدخل المقاس", style="color:#00bfff;"), 
+                ui.input_text("v1", "المقاس الحجم:", value=input.v1() if "v1" in input else ""), 
+                ui.input_action_button("nxt1", "التالي ➡️", class_="btn-neon"), 
+                class_="glass-card"
+            )
+        if step == 2:
+            return ui.div(
+                ui.h4("📺 الخطوة 2: شكل الشاشة", style="color:#00bfff;"), 
+                ui.input_select("v2", "اختر الشكل:", ["Notch Screen", "Punch Screen", "Curved Screen"], selected=input.v2() if "v2" in input else "Notch Screen"), 
+                ui.input_action_button("nxt2", "التالي ➡️", class_="btn-neon"), 
+                class_="glass-card"
+            )
+        if step == 3:
+            return ui.div(
+                ui.h4("🔌 الخطوة 3: نوع المستشعر", style="color:#00bfff;"), 
+                ui.input_select("v3", "اختر المستشعر المعتمد:", ["hardware", "under_display", "virtual"], selected=input.v3() if "v3" in input else "hardware"), 
+                ui.input_action_button("fin", "✅ رفع وحفظ بـ Supabase", class_="btn-neon", style="background: linear-gradient(135deg, #2ecc71, #27ae60); color: white;"), 
+                class_="glass-card"
+            )
         return ui.div()
 
+    # التنقل السلس بين الخطوات السحابية
     @reactive.effect
     @reactive.event(input.nxt1)
-    def _(): current_step.set(2)
+    def _goto_step2(): 
+        current_step.set(2)
+        
     @reactive.effect
     @reactive.event(input.nxt2)
-    def _(): current_step.set(3)
+    def _goto_step3(): 
+        current_step.set(3)
+        
+    # التنفيذ السحابي النهائي للمزامنة والحفظ وإعادة التصفير التلقائي للواجهات
     @reactive.effect
     @reactive.event(input.fin)
-    def _(): current_step.set(0)
+    def _execute_cloud_save(): 
+        model_name = input.search_query().strip()
+        size = input.v1().strip() if "v1" in input else ""
+        panel = input.v2() if "v2" in input else "Notch Screen"
+        sensor = input.v3() if "v3" in input else "hardware"
+        
+        # الرفع المباشر للأعمدة الصحيحة في جدول phones
+        success = insert_model_to_supabase(model_name, size, panel, sensor)
+        
+        if success:
+            # إجبار الكود على إعادة جلب البيانات وتحديث الاقتراحات السحابية فوراً
+            trigger_refresh.set(trigger_refresh() + 1)
+            current_step.set(0)
+            
+            ui.insert_ui(
+                ui.HTML("<script>alert('تم رفع وحفظ الموديل الجديد بنجاح في قاعدة بيانات Supabase السحابية!');</script>"),
+                selector="body",
+                where="beforeEnd",
+                immediate=True
+            )
+        else:
+            ui.insert_ui(
+                ui.HTML("<script>alert('خطأ أثناء عملية الحفظ! يرجى التحقق من اتصال السيرفر');</script>"),
+                selector="body",
+                where="beforeEnd",
+                immediate=True
+            )
 
 app = App(app_ui, server)
