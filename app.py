@@ -174,6 +174,11 @@ app_ui = ui.page_fluid(
                 document.getElementById('custom_suggestions').style.display = 'none';
                 Shiny.setInputValue('search_query', m, {priority: 'event'});
             }
+            /* تصفير الـ autocomplete من خلال الجافاسكريبت بعد التحميل لتفادي خطأ الأكواد */
+            document.addEventListener("DOMContentLoaded", function() {
+                var searchInput = document.getElementById("search_query");
+                if (searchInput) { searchInput.setAttribute("autocomplete", "off"); }
+            });
         """)
     ),
     ui.HTML("""<div id="drawer" class="drawer">
@@ -192,7 +197,7 @@ app_ui = ui.page_fluid(
         class_="header-bar"
     ),
     ui.div(
-        ui.input_text("search_query", "", placeholder="ابحث عن موديل الهاتف...", attributes={"autocomplete": "off"}),
+        ui.input_text("search_query", "", placeholder="ابحث عن موديل الهاتف..."),
         ui.HTML("<div id='custom_suggestions'></div>"),
         ui.output_ui("main_content_ui"),
         class_="search-box"
