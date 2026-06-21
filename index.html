@@ -3,65 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>قاعدة بيانات شاشات الهواتف</title>
-    
+    <title>ZEGAAR AMMAR GLASS MANAGER</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3498db">
-
+    <meta name="theme-color" content="#00bfff">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; }
-        .size-card { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
-        .size-header { background-color: #3498db; color: white; padding: 10px 15px; font-size: 1.2em; font-weight: bold; }
-        .screen-group { padding: 15px; border-bottom: 1px solid #eee; }
-        .screen-type { font-weight: bold; color: #2980b9; margin-bottom: 10px; display: block; }
-        .sensor-item { margin: 8px 0; padding: 8px; background-color: #f9f9f9; border-radius: 5px; border-right: 3px solid #bdc3c7; }
-        .models-list span { background: #eef2f3; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+        body { font-family: sans-serif; background: #060e1c; color: white; margin: 0; padding: 20px; text-align: right; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .ammar-card { background: linear-gradient(135deg, #0b1a33, #060e1c); border: 2px solid #00bfff; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0, 191, 255, 0.25); }
+        .title { color: #00bfff; font-weight: bold; font-size: 20px; margin-bottom: 10px; }
+        .data-item { color: #fff; margin-bottom: 8px; font-size: 16px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>قاعدة بيانات شاشات الهواتف</h1>
-    <div id="app"></div>
+    <div id="app">جاري تحميل البيانات...</div>
 </div>
 
 <script>
-    const dbData = [
-      { "size": "6.1", "screens": [{ "type": "Flat", "sensors": [{ "type": "Capacitive", "models": ["iPhone 13", "iPhone 14", "iPhone 15"] }] }] },
-      { "size": "6.4", "screens": [{ "type": "Notch", "sensors": [{ "type": "virtual", "models": ["Samsung A50", "Samsung A51"] }] }] }
-      // أضف بقية بياناتك هنا بنفس التنسيق
-    ];
-
-    function renderDB() {
-        const container = document.getElementById('app');
-        let html = '';
-        dbData.forEach(item => {
-            html += `<div class="size-card"><div class="size-header">حجم الشاشة: ${item.size} بوصة</div>`;
-            item.screens.forEach(screen => {
-                html += `<div class="screen-group"><span class="screen-type">نوع الشاشة: ${screen.type}</span>`;
-                screen.sensors.forEach(sensor => {
-                    const modelsText = sensor.models.map(m => `<span>${m}</span>`).join('');
-                    html += `<div class="sensor-item"><strong>${sensor.type}</strong>: ${modelsText}</div>`;
-                });
-                html += `</div>`;
-            });
-            html += `</div>`;
-        });
-        container.innerHTML = html;
-    }
-    renderDB();
-
-    // كود تسجيل الـ Service Worker لتفعيل التثبيت
+    // ربط الـ Service Worker لتمكين خاصية "سهم التثبيت"
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./service-worker.js')
-                .then(() => console.log('PWA Registered'))
-                .catch(err => console.log('PWA Failed', err));
+            .then(() => console.log('PWA Ready'))
+            .catch(err => console.log('PWA Error', err));
         });
     }
-</script>
 
+    // دالة جلب البيانات من Supabase
+    async function loadData() {
+        const URL = "https://mgmphimlcdchtbiyhhbt.supabase.co/rest/v1/phones?select=*";
+        const KEY = "YOUR_SUPABASE_ANON_KEY"; // ضع مفتاحك هنا
+
+        try {
+            const res = await fetch(URL, { headers: { "apikey": KEY, "Authorization": `Bearer ${KEY}` }});
+            const data = await res.json();
+            const app = document.getElementById('app');
+            app.innerHTML = data.map(item => `
+                <div class="ammar-card">
+                    <div class="title">${item.model_name || 'موديل غير معروف'}</div>
+                    <div class="data-item">📏 الحجم: ${item.display_size || 'N/A'}</div>
+                    <div class="data-item">📺 نوع الشاشة: ${item.panel_type || 'N/A'}</div>
+                </div>
+            `).join('');
+        } catch (e) {
+            document.getElementById('app').innerHTML = "تعذر تحميل البيانات، يرجى التأكد من الاتصال.";
+        }
+    }
+    loadData();
+</script>
 </body>
 </html>
