@@ -4,11 +4,8 @@ FROM python:3.10-slim
 # إعداد دليل العمل الأساسي داخل السيرفر
 WORKDIR /code
 
-# نسخ ملف المتطلبات أولاً لتسريع عملية البناء والتحديث التلقائي مستقبلاً
-COPY ./requirements.txt /code/requirements.txt
-
-# تثبيت الحزم والمكتبات المطلوبة لتطبيقك دون حفظ ملفات مؤقتة
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+# تثبيت الحزم والمكتبات المطلوبة لتطبيقك مباشرة في السحاب
+RUN pip install --no-cache-dir --upgrade shiny supabase pandas python-dotenv requests
 
 # نسخ باقي ملفات مشروعك الذكية (workflows, logic_engine...) إلى السيرفر
 COPY . .
