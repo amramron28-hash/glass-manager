@@ -21,10 +21,9 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("الرجاء التأكد من إعداد SUPABASE_URL و SUPABASE_KEY في إعدادات المنصة السحابية")
 
-# تعزيز خيارات العميل لتفادي مشاكل جدران الحماية والـ SSL في السحاب
+# تعزيز خيارات العميل لتفادي مشاكل جدران الحماية والمهلة في السحاب
 custom_options = ClientOptions(
-    postgrest_client_timeout=30,
-    allow_empty_key=False
+    postgrest_client_timeout=30
 )
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=custom_options)
@@ -322,3 +321,4 @@ def server(input, output, session):
             ui.insert_ui(ui.HTML("<script>alert('خطأ أثناء عملية الحفظ!');</script>"), selector="body", where="beforeEnd", immediate=True)
 
 app = App(app_ui, server)
+
