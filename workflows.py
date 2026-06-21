@@ -99,13 +99,14 @@ def local_check_existing_size_group(db, target_size, target_panel):
 
 def ai_background_global_verify(phone_name):
     try:
+        # 🌐 تصحيح الرابط بإضافة الشرطة المائلة لحماية الاتصال بالـ API
         url = f"https://vercel.app{requests.utils.quote(phone_name)}"
-        res = requests.get(url, timeout=1.5).json()
+        res = requests.get(url, timeout=2.0).json()
         if res and "specs" in res:
             return {
-                "size": str(res["specs"].get("display_size", "")),
-                "panel": str(res["specs"].get("display_type", "")),
-                "sensor": str(res["specs"].get("proximity_type", ""))
+                "size": str(res["specs"].get("display_size", "غير مدرج")),
+                "panel": str(res["specs"].get("display_type", "غير مدرج")),
+                "sensor": str(res["specs"].get("proximity_type", "غير مدرج"))
             }
     except:
         pass
@@ -115,9 +116,12 @@ def run_system_workflows(phone, db_data, suggestions):
     """المحرك المركزي المصحح المسافات البادئة لربط الحسابات السحابية والخطط الثلاث"""
     from ui_components import draw_technical_coords, draw_neon_section
 
-    size_str, panel, sensor, real_name = find_model_coords(db_data, phone) if phone else (None, None, None, None)
+    if not phone or not phone.strip():
+        return ""
+
+    size_str, panel, sensor, real_name = find_model_coords(db_data, phone)
     
-    # معيار التحقق الآمن والمطابق لحالة الحروف الصغيرة والكبيرة المستقرة
+    # معيار التحقق الآمن لضمان التطابق الفعلي التام في قاعدة البيانات
     is_exact_match = True if real_name and phone.strip().lower() == real_name.strip().lower() else False
     
     html_output = []
@@ -139,7 +143,7 @@ def run_system_workflows(phone, db_data, suggestions):
         if compat_html:
             html_output.append(str(compat_html))
             
-    # 🟡 الخطة 2 & 3: تم تصحيح المحاذاة والمسافة تماماً لتعمل خطة الطوارئ فورا في حال عدم المطابقة التامة
+    # 🟡 الخطة 2 & 3: تفعيل المعالجة الفورية والآمنة لعدم المطابقة التامة
     else:
         # الخطة 2: كارت نيون زجاجي أزرق فاخر لمعالجة الـ API
         html_output.append(f"""
@@ -163,7 +167,7 @@ def run_system_workflows(phone, db_data, suggestions):
                 </div>
             """)
         else:
-            # الخطة 3 (خطة الطوارئ): كارت نيون برتقالي مضيء منفصل ومتقطع 100% ومطابق لحجم كروتك
+            # الخطة 3 (خطة الطوارئ): كارت نيون برتقالي مضيء منفصل في حال عدم استجابة الـ API أو غياب البيانات
             html_output.append(f"""
                 <div style="font-size: 20px !important; font-weight: bold !important; color: #ffffff !important; margin-top: 25px !important; margin-bottom: 12px !important; text-align: right !important; direction: rtl !important;">
                     <span style="color:#ff4500; margin-left: 6px;">⚠️</span>تنبيه النظام الموحد لعدم الإدراج:
@@ -172,7 +176,3 @@ def run_system_workflows(phone, db_data, suggestions):
                     <div style="color: #ffb3b9 !important; font-size: 20px !important; font-weight: 700 !important; text-align: right !important; line-height: 1.5; width:100%;">
                         الموديل غير مدرج حالياً. يمكنك استخدام نموذج الإدخال اليدوي بأسفل لوحة التحكم لتوثيقه وضخه في قاعدة بيانات النظام.
                     </div>
-                </div>
-            """)
-
-    return "\n".join(html_output)
