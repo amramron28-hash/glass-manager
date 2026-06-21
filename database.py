@@ -2,7 +2,7 @@ import json
 import urllib.request
 import urllib.error
 
-# إعدادات الاتصال الصارمة بـ Supabase الخاصة بك
+# 🎯 إعدادات الاتصال الصارمة والمستخرجة من جدولك الفعلي في Supabase
 URL = "https://supabase.co"
 KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
 
@@ -13,7 +13,7 @@ headers = {
     "Prefer": "return=representation"
 }
 
-# معالج التحويلات الذكي (Redirect Handler) لـ Supabase
+# معالج التحويلات الذكي (Redirect Handler) لمنع أخطاء التوجيه 307 في Supabase
 class SupabaseRedirectHandler(urllib.request.HTTPRedirectHandler):
     def http_error_307(self, req, fp, code, msg, hdrs):
         new_url = hdrs.get('Location') or hdrs.get('location')
@@ -29,7 +29,7 @@ def _safe(v):
     return str(v).strip()
 
 def _fetch_raw_rows():
-    """جلب الأسطر الخام مباشرة من قاعدة البيانات بحد أقصى للانتظار لتفادي تعليق الواجهة"""
+    """جلب الأسطر الخام مباشرة من جدول قاعدة البيانات بحد أقصى للانتظار"""
     try:
         req = urllib.request.Request(f"{URL}?select=*", headers=headers, method='GET')
         with opener.open(req, timeout=3.0) as response:
@@ -40,22 +40,25 @@ def _fetch_raw_rows():
 
 def load_db():
     """
-    الدالة المركزية لجلب الموديلات وبناء مصفوفة شجرية متوافقة.
-    التعديل الجوهري: حقن القائمة تحت مفتاح 'models' ليتعرف عليها محرك التطبيق فوراً.
+    الدالة المركزية لجلب الموديلات وبناء المصفوفة الشجرية للتوافق.
+    التصحيح الجوهري: مطابقة القراءة لحقل 'modal_name' الصارم من جدول Supabase وحقنه بـ models.
     """
     try:
         rows = _fetch_raw_rows()
         db = {}
         for row in rows:
             size = _safe(row.get("size"))
-            model = _safe(row.get("model_name")) or _safe(row.get("phone_name")) or _safe(row.get("model"))
+            
+            # 🎯 الفحص والمطابقة الدقيقة لعمود جدولك الفعلي الفروي بحرف (a)
+            model = _safe(row.get("modal_name"))
+            
             panel = _safe(row.get("panel")) or "Notch Screen"
             sensor = _safe(row.get("sensor")) or "hardware_top_sensor"
             
             if not size or not model: 
                 continue
                 
-            # 🎯 الربط الذهبي: إنشاء الهيكلية الشجرية الصارمة وحقن الموديل داخل مفتاح 'models'
+            # بناء التفرع الشجري بدقة متناهية تتوافق مع محرك الـ logic والـ workflows
             db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
             if model not in db[size][panel][sensor]["models"]:
                 db[size][panel][sensor]["models"].append(model)
@@ -66,12 +69,13 @@ def load_db():
         return {}
 
 def add_model(size, panel, sensor, model):
+    """دالة الرفع التلقائي لحفظ الهواتف الجديدة بمطابقة حقول الجدول في السحابة"""
     try:
         payload = {
             "size": _safe(size),
             "panel": _safe(panel),
             "sensor": _safe(sensor),
-            "model_name": _safe(model)
+            "modal_name": _safe(model)  # 🎯 تم التصحيح ليطابق اسم العمود الفعلي بجدولك
         }
         req = urllib.request.Request(URL, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
         with opener.open(req) as response:
@@ -89,7 +93,7 @@ def save_db(data, new_phone_name=None, size=None, panel=None, sensor=None):
         return add_model(size, panel, sensor, new_phone_name)
     return True
 
-# كائن المحاكاة المتوافق مع بقية ملفات المشروع
+# كائن المحاكاة المتوافق مع بقية ملفات المشروع البرمجي
 class SupabaseMockClient:
     def table(self, *a, **k): return self
     def select(self, *a, **k): return self
