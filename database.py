@@ -82,3 +82,44 @@ def save_db(data, new_phone_name=None, size=None, panel=None, sensor=None):
     if new_phone_name and size and panel and sensor:
         return add_model(size, panel, sensor, new_phone_name)
     return True
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ZEGAAR AMMAR GLASS MANAGER</title>
+    <style>
+        body { background: #060e1c; color: white; padding: 20px; font-family: Arial; }
+        .box { border: 2px solid #00bfff; padding: 20px; border-radius: 15px; background: #0b1a33; }
+        #suggestions { border: 1px solid #444; background: #060e1c; position: absolute; width: 300px; display: none; }
+        .s-item { padding: 10px; cursor: pointer; }
+        .s-item:hover { background: #00bfff; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <input type="text" id="phone-name" placeholder="ابحث عن اسم الهاتف..." oninput="showSuggestions(this.value)">
+    <div id="suggestions"></div>
+</div>
+
+<div id="app-view" class="box" style="margin-top: 20px;"></div>
+
+<script>
+    // وظيفة إظهار وإخفاء القائمة (حل مشكلة الستارة)
+    function showSuggestions(val) {
+        const div = document.getElementById('suggestions');
+        if (val.length < 2) { div.style.display = 'none'; return; }
+        
+        // هنا يتم عرض النتائج
+        div.style.display = 'block';
+        div.innerHTML = `<div class="s-item" onclick="selectModel('Oppo Reno 2')">Oppo Reno 2</div>`;
+    }
+
+    function selectModel(name) {
+        document.getElementById('phone-name').value = name;
+        document.getElementById('suggestions').style.display = 'none'; // الروتوش المطلوب: إخفاء الستارة
+        document.getElementById('app-view').innerHTML = `<h3>جاري تحليل: ${name}</h3>`;
+    }
+</script>
+</body>
+</html>
