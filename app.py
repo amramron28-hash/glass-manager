@@ -1,5 +1,4 @@
 import os
-import httpx
 from html import escape
 import base64
 from shiny import App, ui, render, reactive
@@ -14,13 +13,14 @@ from supabase import create_client, Client
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# وضع الروابط والمفاتيح الحديثة مباشرة لضمان أعلى استقرار سحابي لقراءة مفاتيح sb_publishable
+# ⚠️ يرجى التأكد من استبدال القيم أدناه ببياناتك الحقيقية بدقة وبدون أي مسافات إضافية
+SUPABASE_URL = "https://supabase.co"
+SUPABASE_KEY = "sb_publishable_..."  # الصق هنا المفتاح الجديد الطويل الذي يظهر في صورتك
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("الرجاء التأكد من إعداد SUPABASE_URL و SUPABASE_KEY في إعدادات المنصة السحابية")
+    raise ValueError("الرجاء التأكد من وضع روابط ومفاتيح Supabase الحقيقية داخل الكود")
 
-# إنشاء الاتصال السحابي المباشر والمستقر بالإعدادات الافتراضية الآمنة لتجنب تعارض النسخ
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==============================================================================
@@ -44,11 +44,10 @@ def fetch_all_models_from_supabase():
                 
             all_records.extend(records)
             
-            # إذا كان عدد السجلات المسترجعة أقل من حجم الدفعة، فهذا يعني أننا جلبنا كل شيء تماماً
             if len(records) < page_size:
                 break
                 
-            start += page_size  # الانتقال للدفعة التالية
+            start += page_size  
             
         if all_records:
             raw_list = [r["model_name"] for r in all_records if r.get("model_name")]
