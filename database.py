@@ -7,26 +7,18 @@ URL = "https://mgmphimlcdchtbiyhhbt.supabase.co/rest/v1/phones"
 KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
 
 def _fetch_raw_rows():
-    """جلب البيانات من Supabase"""
     try:
         req = urllib.request.Request(f"{URL}?select=*", method='GET')
         req.add_header("apikey", KEY)
         req.add_header("Authorization", f"Bearer {KEY}")
         req.add_header("Content-Type", "application/json")
-        req.add_header("Prefer", "return=representation")
-        
         with urllib.request.urlopen(req, timeout=15.0) as response:
-            content = response.read().decode("utf-8")
-            return json.loads(content)
-    except urllib.error.HTTPError as e:
-        print(f"SUPABASE_HTTP_ERROR: {e.code} - {e.read().decode()}")
-        return []
+            return json.loads(response.read().decode("utf-8"))
     except Exception as e:
-        print(f"DATABASE_CONNECTION_ERROR: {e}")
+        print(f"DATABASE_ERROR: {e}")
         return []
 
 def load_db():
-    """بناء الهيكلية الشجرية للبيانات"""
     rows = _fetch_raw_rows()
     db = {}
     for row in rows:
@@ -34,24 +26,15 @@ def load_db():
         model = str(row.get("model_name", "")).strip()
         panel = str(row.get("panel", "Notch Screen")).strip()
         sensor = str(row.get("sensor", "hardware_top_sensor")).strip()
-        
-        if not size or not model: 
-            continue
-            
+        if not size or not model: continue
         db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
         if model not in db[size][panel][sensor]["models"]:
             db[size][panel][sensor]["models"].append(model)
     return db
 
 def add_model(size, panel, sensor, model):
-    """إضافة جهاز جديد"""
     try:
-        payload = {
-            "size": size,
-            "panel": panel,
-            "sensor": sensor,
-            "model_name": model
-        }
+        payload = {"size": size, "panel": panel, "sensor": sensor, "model_name": model}
         req = urllib.request.Request(URL, data=json.dumps(payload).encode("utf-8"), method="POST")
         req.add_header("apikey", KEY)
         req.add_header("Authorization", f"Bearer {KEY}")
@@ -61,3 +44,9 @@ def add_model(size, panel, sensor, model):
     except Exception as e:
         print(f"ADD_MODEL_ERROR: {e}")
         return False
+
+# هذه هي الدالة التي كانت مفقودة وتسببت في الخطأ
+def save_db(data, new_phone_name=None, size=None, panel=None, sensor=None):
+    if new_phone_name and size and panel and sensor:
+        return add_model(size, panel, sensor, new_phone_name)
+    return True
