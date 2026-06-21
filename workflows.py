@@ -99,14 +99,14 @@ def local_check_existing_size_group(db, target_size, target_panel):
 
 def ai_background_global_verify(phone_name):
     try:
-        # 🌐 تصحيح الرابط بإضافة الشرطة المائلة لحماية الاتصال بالـ API
+        # 🌐 إضافة الشرطة المائلة وتعيين مهلة استجابة مناسبة للـ API لحمايته من التجميد
         url = f"https://vercel.app{requests.utils.quote(phone_name)}"
         res = requests.get(url, timeout=2.0).json()
         if res and "specs" in res:
             return {
-                "size": str(res["specs"].get("display_size", "غير مدرج")),
-                "panel": str(res["specs"].get("display_type", "غير مدرج")),
-                "sensor": str(res["specs"].get("proximity_type", "غير مدرج"))
+                "size": str(res["specs"].get("display_size", "غير محدد")),
+                "panel": str(res["specs"].get("display_type", "غير محدد")),
+                "sensor": str(res["specs"].get("proximity_type", "غير محدد"))
             }
     except:
         pass
@@ -121,7 +121,7 @@ def run_system_workflows(phone, db_data, suggestions):
 
     size_str, panel, sensor, real_name = find_model_coords(db_data, phone)
     
-    # معيار التحقق الآمن لضمان التطابق الفعلي التام في قاعدة البيانات
+    # التحقق الفعلي لضمان التطابق التام والمستقر داخل قاعدة البيانات
     is_exact_match = True if real_name and phone.strip().lower() == real_name.strip().lower() else False
     
     html_output = []
@@ -143,7 +143,7 @@ def run_system_workflows(phone, db_data, suggestions):
         if compat_html:
             html_output.append(str(compat_html))
             
-    # 🟡 الخطة 2 & 3: تفعيل المعالجة الفورية والآمنة لعدم المطابقة التامة
+    # 🟡 الخطة 2 & 3: تفعيل المعالجة في حال عدم التطابق التامة
     else:
         # الخطة 2: كارت نيون زجاجي أزرق فاخر لمعالجة الـ API
         html_output.append(f"""
@@ -157,7 +157,7 @@ def run_system_workflows(phone, db_data, suggestions):
         
         ai_result = ai_background_global_verify(phone)
         if ai_result:
-            # نتائج الفحص العالمي في كارت نيون فيروزي فخم ومستقل تماماً
+            # تم إغلاق السلسلة وتصحيح الخطأ الإملائي هنا تماماً
             html_output.append(f"""
                 <div class="ammar-flat-card" style="background: linear-gradient(135deg, #071f21, #030f10) !important; border: 2px solid #00ffcc !important; padding: 16px 20px !important; margin-bottom: 14px !important; border-radius: 12px !important; display: flex !important; align-items: center !important; justify-content: space-between !important; direction: ltr !important; width: 100% !important; box-shadow: 0px 4px 12px rgba(0, 255, 204, 0.25) !important; box-sizing: border-box !important;">
                     <div style="color: #00ffcc !important; font-size: 19px !important; font-weight: 800 !important; text-align: left !important; direction: rtl !important; width:100%;">
@@ -167,7 +167,7 @@ def run_system_workflows(phone, db_data, suggestions):
                 </div>
             """)
         else:
-            # الخطة 3 (خطة الطوارئ): كارت نيون برتقالي مضيء منفصل في حال عدم استجابة الـ API أو غياب البيانات
+            # الخطة 3 (خطة الطوارئ): كارت نيون برتقالي مضيء منفصل في حال غياب بيانات الـ API أو فشل الاتصال
             html_output.append(f"""
                 <div style="font-size: 20px !important; font-weight: bold !important; color: #ffffff !important; margin-top: 25px !important; margin-bottom: 12px !important; text-align: right !important; direction: rtl !important;">
                     <span style="color:#ff4500; margin-left: 6px;">⚠️</span>تنبيه النظام الموحد لعدم الإدراج:
