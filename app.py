@@ -22,19 +22,39 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==============================================================================
-# 3. دوال الاتصال المباشر بقاعدة البيانات لجدول phones الحقيقي
+# 3. دوال الاتصال المباشر بقاعدة البيانات لجدول phones مع جلب لانهائي ذكي
 # ==============================================================================
 
 def fetch_all_models_from_supabase():
-    """جلب كافة الموديلات الحية من جدول phones في السحاب وتجهيزها للاقتراحات"""
+    """جلب كافة الموديلات دون أي قيود عبر نظام الدفعات المتتالية اللانهائي لضمان التوسع المستقبلي الكامل"""
+    all_records = []
+    page_size = 1000  # حجم الدفعة الواحدة المسموح بها برمجياً
+    start = 0
+    
     try:
-        response = supabase.table("phones").select("model_name").execute()
-        records = response.data
-        if records:
-            raw_list = [r["model_name"] for r in records if r.get("model_name")]
+        while True:
+            end = start + page_size - 1
+            response = supabase.table("phones").select("model_name").range(start, end).execute()
+            records = response.data
+            
+            if not records:
+                break
+                
+            all_records.extend(records)
+            
+            # إذا كان عدد السجلات المسترجعة أقل من حجم الدفعة، فهذا يعني أننا جلبنا كل شيء تماماً
+            if len(records) < page_size:
+                break
+                
+            start += page_size  # الانتقال للدفعة التالية
+            
+        if all_records:
+            raw_list = [r["model_name"] for r in all_records if r.get("model_name")]
             return sorted(list(set(raw_list)))
+            
     except Exception as e:
-        print(f"خطأ سحابي أثناء جلب البيانات: {e}")
+        print(f"خطأ سحابي أثناء جلب البيانات الموسعة: {e}")
+        
     return []
 
 def insert_model_to_supabase(model_name, size, panel, sensor):
@@ -174,7 +194,6 @@ app_ui = ui.page_fluid(
                 document.getElementById('custom_suggestions').style.display = 'none';
                 Shiny.setInputValue('search_query', m, {priority: 'event'});
             }
-            /* تصفير الـ autocomplete من خلال الجافاسكريبت بعد التحميل لتفادي خطأ الأكواد */
             document.addEventListener("DOMContentLoaded", function() {
                 var searchInput = document.getElementById("search_query");
                 if (searchInput) { searchInput.setAttribute("autocomplete", "off"); }
