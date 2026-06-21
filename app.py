@@ -11,7 +11,6 @@ from ui_components import inject_pwa_and_styles
 # 2. إعداد واستدعاء مكتبات الربط السحابي وإدارة المتغيرات السرية
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from supabase.lib.client_options import ClientOptions
 
 load_dotenv()
 
@@ -21,12 +20,8 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("الرجاء التأكد من إعداد SUPABASE_URL و SUPABASE_KEY في إعدادات المنصة السحابية")
 
-# تعزيز خيارات العميل لتفادي مشاكل جدران الحماية والمهلة في السحاب
-custom_options = ClientOptions(
-    postgrest_client_timeout=30
-)
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=custom_options)
+# إنشاء الاتصال السحابي المباشر والمستقر بالإعدادات الافتراضية الآمنة لتجنب تعارض النسخ
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==============================================================================
 # 3. دوال الاتصال المباشر بقاعدة البيانات لجدول phones مع جلب لانهائي ذكي وآمن
@@ -321,4 +316,3 @@ def server(input, output, session):
             ui.insert_ui(ui.HTML("<script>alert('خطأ أثناء عملية الحفظ!');</script>"), selector="body", where="beforeEnd", immediate=True)
 
 app = App(app_ui, server)
-
