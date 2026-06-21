@@ -2,8 +2,8 @@ import json
 import urllib.request
 import urllib.error
 
-# إعدادات الاتصال
-URL = "https://mgmphimlcdchtbiyhhbt.supabase.co/rest/v1/phones"
+# إعدادات الاتصال الصارمة بـ Supabase الخاصة بك
+URL = "https://supabase.co"
 KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
 
 headers = {
@@ -13,7 +13,7 @@ headers = {
     "Prefer": "return=representation"
 }
 
-# معالج التحويلات (Redirect)
+# معالج التحويلات الذكي (Redirect Handler) لـ Supabase
 class SupabaseRedirectHandler(urllib.request.HTTPRedirectHandler):
     def http_error_307(self, req, fp, code, msg, hdrs):
         new_url = hdrs.get('Location') or hdrs.get('location')
@@ -29,28 +29,37 @@ def _safe(v):
     return str(v).strip()
 
 def _fetch_raw_rows():
-    """جلب الأسطر الخام مباشرة من قاعدة البيانات لمنع تعارض ملف logic_engine"""
+    """جلب الأسطر الخام مباشرة من قاعدة البيانات بحد أقصى للانتظار لتفادي تعليق الواجهة"""
     try:
         req = urllib.request.Request(f"{URL}?select=*", headers=headers, method='GET')
-        with opener.open(req) as response:
+        with opener.open(req, timeout=3.0) as response:
             return json.loads(response.read().decode("utf-8"))
     except Exception as e:
         print("FETCH_RAW_ROWS ERROR:", e)
         return []
 
 def load_db():
+    """
+    الدالة المركزية لجلب الموديلات وبناء مصفوفة شجرية متوافقة.
+    التعديل الجوهري: حقن القائمة تحت مفتاح 'models' ليتعرف عليها محرك التطبيق فوراً.
+    """
     try:
         rows = _fetch_raw_rows()
         db = {}
         for row in rows:
             size = _safe(row.get("size"))
-            model = _safe(row.get("model_name"))
+            model = _safe(row.get("model_name")) or _safe(row.get("phone_name")) or _safe(row.get("model"))
             panel = _safe(row.get("panel")) or "Notch Screen"
             sensor = _safe(row.get("sensor")) or "hardware_top_sensor"
-            if not size or not model: continue
+            
+            if not size or not model: 
+                continue
+                
+            # 🎯 الربط الذهبي: إنشاء الهيكلية الشجرية الصارمة وحقن الموديل داخل مفتاح 'models'
             db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
             if model not in db[size][panel][sensor]["models"]:
                 db[size][panel][sensor]["models"].append(model)
+                
         return db
     except Exception as e:
         print("LOAD_DB ERROR:", e)
@@ -80,7 +89,7 @@ def save_db(data, new_phone_name=None, size=None, panel=None, sensor=None):
         return add_model(size, panel, sensor, new_phone_name)
     return True
 
-# كائن متوافق مع الكود القديم والجديد ويعيد أسطراً خاماً صحيحة 100%
+# كائن المحاكاة المتوافق مع بقية ملفات المشروع
 class SupabaseMockClient:
     def table(self, *a, **k): return self
     def select(self, *a, **k): return self
