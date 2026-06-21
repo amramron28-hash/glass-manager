@@ -6,7 +6,7 @@ from shiny import ui
 _bg_cache = None
 
 # ==============================================================================
-# 🎨 الخلفية وتنسيقات النيون المعاكسة والبطاقات المتقطعة لـ Shiny
+# 🎨 الخلفية وحقن ملف الـ CSS الأصلي الخاص بك ليعمل بكفاءة داخل Shiny
 # ==============================================================================
 def inject_pwa_and_styles():
     global _bg_cache
@@ -31,11 +31,12 @@ def inject_pwa_and_styles():
         background-attachment: fixed !important;
     }}
     
+    /* 🎯 رفع شريط البحث للثلث العلوي */
     .container-fluid {{
         padding-top: 35px !important; 
     }}
 
-    /* العربية أقصى اليمين: عناوين فئات التوافق ملتصقة باليمين بالكامل */
+    /* 🎯 العربية أقصى اليمين: عناوين فئات التوافق ملتصقة باليمين بالكامل */
     .section-title {{
         font-size: 20px !important;
         font-weight: bold !important;
@@ -46,41 +47,43 @@ def inject_pwa_and_styles():
         direction: rtl !important;
     }}
 
-    /* 🟢 هندسة كروت النيون الفاخرة المتقطعة والمعاكسة (انفصال عمودي كامل) */
-    .ammar-flat-card-reversed {{
+    /* 🎯 هندسة كروت النيون الفاخرة ثنائية اللغة (تطبيق كود الـ CSS الأصلي الخاص بك ليفصل الكروت) */
+    .ammar-flat-card, .flat-warning-card {{
         padding: 14px 18px !important;
-        margin-bottom: 12px !important; /* مسافة فاصلة حاسمة تمنع الاندماج */
+        margin-bottom: 14px !important; /* مسافة فاصلة عمودية صارمة تمنع التكدس نهائياً */
         border-radius: 12px !important;
         display: flex !important;
         align-items: center !important;
-        /* التوزيع العكسي الذكي: الاسم الإنجليزي يميناً وصندوق الصورة يساراً */
+        /* التوزيع الذكي الأصلي: الاسم الإنجليزي أقصى اليسار وصندوق الصورة أقصى اليمين */
         justify-content: space-between !important; 
-        direction: rtl !important; /* فرض الاتجاه من اليمين لليسار */
+        direction: ltr !important; /* لضمان دفع المحتوى الإنجليزي لليسار بصورة طبيعية */
         width: 100% !important;
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.35) !important;
         box-sizing: border-box !important;
         transition: all 0.2s ease;
-        background: linear-gradient(135deg, #0d1f13, #07120b) !important; 
-        border: 2px solid #2ecc71 !important;
     }}
-    .ammar-flat-card-reversed:hover {{
+    .ammar-flat-card:hover, .flat-warning-card:hover {{
         transform: translateY(-2px);
-        box-shadow: 0 0 15px rgba(46, 204, 113, 0.5) !important;
     }}
 
-    /* الإنجليزية أقصى اليمين: أسماء الهواتف ملتصقة باليمين تماماً وبخط عريض جداً */
-    .flat-phone-text-reversed {{ 
+    /* الألوان والحدود النيونية الصارمة من ملفك */
+    .flat-exact {{ background: linear-gradient(135deg, #0d1f13, #07120b) !important; border: 2px solid #2ecc71 !important; }}
+    .flat-plus {{ background: linear-gradient(135deg, #0b1a33, #060e1c) !important; border: 2px solid #3498db !important; }}
+    .flat-minus {{ background: linear-gradient(135deg, #2b1807, #140b03) !important; border: 2px solid #e67e22 !important; }}
+    .flat-warning-card {{ background: linear-gradient(135deg, #26090b, #120405) !important; border: 2px solid #ff4a5a !important; }}
+
+    /* 🎯 الإنجليزية أقصى اليسار: أسماء الهواتف والبراندات ملتصقة أقصى اليسار تماماً */
+    .flat-phone-text {{ 
         color: #ffffff !important; 
         font-size: 21px !important; 
         font-weight: 800 !important;
-        text-align: right !important;
+        text-align: left !important;
+        display: block !important;
         margin: 0 !important;
-        width: 100%;
-        padding-right: 10px;
     }}
 
-    /* حجز مساحة لصور الهواتف تلقائياً: مربع نيون فخم ملتصق أقصى اليسار بالكامل */
-    .image-placeholder-box-reversed {{
+    /* 🎯 حجز مساحة لصور الهواتف تلقائياً: مربع نيون فخم أقصى اليمين في الجهة المقابلة للاسم تماماً */
+    .image-placeholder-box {{
         width: 55px !important;
         height: 55px !important;
         min-width: 55px !important;
@@ -137,42 +140,43 @@ def draw_technical_coords(size_grp, panel_grp, sensor_grp, real_name=None):
     """
 
 # ==============================================================================
-# 📱 بطاقات النتائج المتقطعة والمنفصلة (الاسم أقصى اليمين والمربع أقصى اليسار)
+# 📱 بطاقات النتائج المتقطعة والمنفصلة كلياً بنظام نيون هندسة اللغات الأصلي الخاص بك
 # ==============================================================================
 def draw_neon_section(models_list, title="هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00):", color_hex="#2ecc71", badge_icon="🟢"):
     if not models_list:
         return ""
 
     html_cards = []
-    # عنوان الفئة ملتصق باليمين
+    # 🎯 العربية أقصى اليمين كعنوان فئة رئيسية ملتصق تماماً باليمين كما بملف الـ CSS
     html_cards.append(f"""
     <div class="section-title">
         <span style="color:{color_hex}; margin-left: 6px;">{badge_icon}</span>{title}
     </div>
+    <div style="display: flex; flex-direction: column; width:100%; box-sizing: border-box;">
     """)
 
-    # ضخ الكروت المتقطعة والمنفصلة مع فرض الاتجاه المعاكس لكل كارت على حدة
+    # بناء كروت منفصلة ومتقطعة باستخدام كلاسات الـ CSS الصارمة لملف التنسيق الأصلي الخاص بك
     for model in models_list:
         html_cards.append(f"""
-        <div class="ammar-flat-card-reversed">
-            <!-- 🎯 التمرير المعاكس: اسم الهاتف الإنجليزي يلتصق بأقصى اليمين وبخط بولد عريض -->
-            <div class="flat-phone-text-reversed">{escape(model)}</div>
+        <div class="ammar-flat-card flat-exact">
+            <!-- 🎯 الإنجليزية أقصى اليسار تماماً وبخط عريض وبولد عالي الوضوح وحجم كبير -->
+            <div class="flat-phone-text">{escape(model)}</div>
             
-            <!-- 🎯 حجز مساحة لصور الهواتف لتلتصق بأقصى اليسار في الجهة المقابلة تماماً -->
-            <div class="image-placeholder-box-reversed">
+            <!-- 🎯 حجز مساحة لصور الهواتف تلقائياً أقصى اليمين في الجهة المقابلة للاسم تماماً -->
+            <div class="image-placeholder-box">
                 <span style="color: rgba(0, 191, 255, 0.4); font-size: 11px; font-weight: bold;">🖼️</span>
             </div>
         </div>
         """)
         
+    html_cards.append("</div>")
     return "\n".join(html_cards)
 
 # ==============================================================================
-# 🛠️ لوحة التحكم الجانبية التفاعلية
+# 🛠️ لوحة التحكم الجانبية التفاعلية لـ Shiny
 # ==============================================================================
 def draw_control_panel(notifications=None, total_models=0, empty_groups_count=0):
     notifications = notifications or []
-    
     if notifications:
         notif_html = "".join([f"<div style='color:#ffc107; margin-bottom:5px;'>⚠️ {escape(n)}</div>" for n in notifications])
     else:
@@ -180,7 +184,6 @@ def draw_control_panel(notifications=None, total_models=0, empty_groups_count=0)
         
     panel_ui = ui.sidebar(
         ui.HTML('<h3 class="sidebar-title">🛠️ لوحة التحكم</h3>'),
-        
         ui.accordion(
             ui.accordion_panel("🔔 الإشعارات", ui.HTML(notif_html)),
             ui.accordion_panel("⚙️ الإعدادات", ui.input_checkbox("silent_monitor_checkbox", "تفعيل المراقب الصامت", value=True)),
