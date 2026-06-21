@@ -1,0 +1,6 @@
+shiny
+supabase
+pandas
+python-dotenv
+requests
+
