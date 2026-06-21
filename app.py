@@ -4,6 +4,7 @@ import pandas as pd
 from shiny import App, ui, render, reactive
 from ui_components import inject_pwa_and_styles  
 
+# 1. تحويل صورة الخلفية المرفقة لترميز ويب آمن
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as image_file:
@@ -13,7 +14,7 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 🎨 واجهة المستخدم الحاضنة لهندسة الستارة وكروت الطوارئ المتقطعة
+# 2. تصميم واجهة المستخدم (UI) الموحدة وإلغاء قيود التكدس الافتراضية
 app_ui = ui.page_fluid(
     ui.head_content(
         ui.HTML('<link rel="manifest" href="/manifest.json">'),
@@ -21,6 +22,8 @@ app_ui = ui.page_fluid(
         ui.HTML('<meta name="theme-color" content="#00bfff">'),
         ui.HTML('<meta name="apple-mobile-web-app-capable" content="yes">'),
         ui.HTML('<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'),
+        
+        # كود جافا سكريبت لإجبار التطبيق المنزل على العمل ملء الشاشة كلياً
         ui.HTML("""
         <script>
         if ('serviceWorker' in navigator) {
@@ -28,6 +31,7 @@ app_ui = ui.page_fluid(
             .then(reg => console.log('PWA Connected'))
             .catch(err => console.log('PWA Failed', err));
         }
+        
         if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
             document.addEventListener('click', e => {
                 const target = e.target.closest('a');
@@ -68,12 +72,12 @@ app_ui = ui.page_fluid(
             margin-top: 8px;
         }}
         
-        /* 🔍 حاوية صندوق البحث التوسيطية */
+        /* حاوية صندوق البحث التوسيطية */
         .search-wrapper-box {{
             width: 100% !important;
             max-width: 85% !important;
             margin: 0 auto !important;
-            position: relative !important; /* هام جداً لارتكاز الستارة المنسدلة */
+            position: relative !important;
         }}
         .shiny-input-container {{
             width: 100% !important;
@@ -91,7 +95,7 @@ app_ui = ui.page_fluid(
             direction: ltr !important;
         }}
         
-        /* 🪟 هندسة الستارة المنسدلة الأنيقة أسفل شريط البحث مباشرة (Curtain Dropdown) */
+        /* هندسة الستارة المنسدلة الأنيقة أسفل شريط البحث مباشرة */
         .curtain-dropdown-menu {{
             position: absolute !important;
             top: 100% !important;
@@ -149,7 +153,7 @@ app_ui = ui.page_fluid(
             box-sizing: border-box !important;
         }}
 
-        /* 🚪 اللوحة الجانبية المنبثقة من اليسار */
+        /* لوحة الأفقية المنبثقة المخفية في أقصى اليسار */
         .side-drawer-container {{
             position: fixed;
             top: 15px;
@@ -283,7 +287,6 @@ app_ui = ui.page_fluid(
     ui.row(
         ui.column(12,
             ui.div(
-                # وضع حقل البحث والستارة المخرجة داخل حاوية التوسيط الذكية المخصصة
                 ui.div(
                     ui.input_text("free_smart_search_input_field", "", placeholder="Search Phone Here...", width="100%"),
                     ui.output_ui("floating_suggestions_ui"),
@@ -302,29 +305,46 @@ app_ui = ui.page_fluid(
 )
 
 # ==============================================================================
-# 🧠 3. منطق السيرفر السحابي (Server Logic) لبناء الستارة وتفريغ الكروت
+# 🧠 3. منطق السيرفر السحابي المحدث لحل مسارات الكشاف وتصحيح معاملات Supabase
 # ==============================================================================
 def server(input, output, session):
     
     from database import load_db
     from workflows import run_system_workflows
     
+    # تحميل قاعدة البيانات المؤمنة من Supabase
     db_data = load_db()
 
+    # المراقبة التفاعلية الحسابية وقراءة كشاف الـ 300 موديل بأمان تام للمسارات المطلقة
     @reactive.calc
     def filtered_suggestions():
         query = input.free_smart_search_input_field().strip()
         if not query or len(query) < 2:
             return []
         
-        INDEX_FILE = "models_index.txt"
-        if os.path.exists(INDEX_FILE):
-            with open(INDEX_FILE, "r", encoding="utf-8") as f:
-                models = [line.strip() for line in f if line.strip()]
-            return [m for m in models if query.lower() in m.lower()][:5]
-        return []
+        # تحديد المسار المطلق للملف لضمان قراءته داخل بيئة نظام خوادم Linux
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        INDEX_FILE = os.path.join(base_dir, "models_index.txt")
+        
+        paths_to_try = [INDEX_FILE, "models_index.txt", "./models_index.txt", "/app/models_index.txt"]
+        
+        models = []
+        for path in paths_to_try:
+            if os.path.exists(path):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        models = [line.strip() for line in f if line.strip()]
+                    if models: 
+                        break
+                except Exception:
+                    pass
+                    
+        if not models:
+            return []
+            
+        return [m for m in models if query.lower() in m.lower()][:5]
 
-    # 1. رندرة وتفعيل الستارة المنسدلة الستارية الأنيقة أسفل شريط البحث (Curtain Dropdown)
+    # 1. رندرة الستارة المنسدلة الذكية الستارية أسفل شريط البحث مباشرة
     @render.ui
     def floating_suggestions_ui():
         suggestions = filtered_suggestions()
@@ -333,7 +353,6 @@ def server(input, output, session):
         if not suggestions or query in suggestions:
             return ui.HTML("")
         
-        # بناء هيكل الستارة المنسدلة الصافي من كلاس الـ CSS المعرف
         html = []
         html.append("<div class='curtain-dropdown-menu'>")
         html.append("   <div class='curtain-title'>💡 الموديلات المقترحة القريبة:</div>")
@@ -349,7 +368,7 @@ def server(input, output, session):
         html.append("</div>")
         return ui.HTML("\n".join(html))
 
-    # 2. رندرة النتائج والخطط الثلاث بحقن HTML صافي مطلق لمنع الانضغاط والتكدس
+    # 2. رندرة وتفعيل النتائج والخطط الثلاث بمرونة مطلقة وإجبار التحفيز بمجرد الكتابة
     @render.ui
     def matched_results_ui():
         query = input.free_smart_search_input_field().strip()
@@ -357,10 +376,15 @@ def server(input, output, session):
             return ui.HTML("")
             
         suggestions = filtered_suggestions()
-        html_res = run_system_workflows(query, db_data, suggestions)
-        return ui.HTML(html_res)
+        
+        # التمرير الهندسي الصحيح: الاسم (query) أولاً ثم قاعدة البيانات (db_data) ليتعرف عليها Supabase
+        try:
+            html_res = run_system_workflows(query, db_data, suggestions)
+            return ui.HTML(html_res)
+        except Exception as e:
+            return ui.HTML(f"<div style='color:#ff4500; text-align:center; padding:10px;'>⚠️ خطأ اتصال محلي: {str(e)}</div>")
 
 # ==============================================================================
-# 🚀 4. الإقلاع والتشغيل الفوري لـ GLASS MANAGER
+# 🚀 4. تشغيل وتوثيق نظام GLASS MANAGER
 # ==============================================================================
 app = App(app_ui, server)
