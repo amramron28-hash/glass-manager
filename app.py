@@ -2,9 +2,8 @@ import os
 import base64
 import pandas as pd
 from shiny import App, ui, render, reactive
-from ui_components import inject_pwa_and_styles  # استدعاء دالة الحقن الفنية لـ Shiny
+from ui_components import inject_pwa_and_styles  
 
-# 1. تحويل صورة الخلفية المرفقة لترميز ويب آمن
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as image_file:
@@ -14,13 +13,14 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 2. تصميم واجهة المستخدم (UI) الموحدة وإلغاء قيود التكدس الافتراضية
+# 🎨 واجهة المستخدم الحاضنة لهندسة الستارة وكروت الطوارئ المتقطعة
 app_ui = ui.page_fluid(
     ui.head_content(
         ui.HTML('<link rel="manifest" href="/manifest.json">'),
         ui.HTML('<link rel="apple-touch-icon" href="/AMMAR.jpg">'),
         ui.HTML('<meta name="theme-color" content="#00bfff">'),
         ui.HTML('<meta name="apple-mobile-web-app-capable" content="yes">'),
+        ui.HTML('<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'),
         ui.HTML("""
         <script>
         if ('serviceWorker' in navigator) {
@@ -28,10 +28,18 @@ app_ui = ui.page_fluid(
             .then(reg => console.log('PWA Connected'))
             .catch(err => console.log('PWA Failed', err));
         }
+        if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+            document.addEventListener('click', e => {
+                const target = e.target.closest('a');
+                if (target && target.host === window.location.host) {
+                    e.preventDefault();
+                    window.location.href = target.href;
+                }
+            }, false);
+        }
         </script>
         """),
         
-        # حقن الـ CSS المساعد للخلفية والكروت
         ui.HTML(inject_pwa_and_styles()),
         
         ui.HTML(f"""
@@ -60,12 +68,17 @@ app_ui = ui.page_fluid(
             margin-top: 8px;
         }}
         
-        /* 🎯 ضبط وتوسيط حقل البحث القياسي بنسبة 85% من اتساع الشاشة */
+        /* 🔍 حاوية صندوق البحث التوسيطية */
+        .search-wrapper-box {{
+            width: 100% !important;
+            max-width: 85% !important;
+            margin: 0 auto !important;
+            position: relative !important; /* هام جداً لارتكاز الستارة المنسدلة */
+        }}
         .shiny-input-container {{
             width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-            margin: 0 auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }}
         .shiny-input-container input {{
             background: rgba(255, 255, 255, 0.07) !important;
@@ -73,13 +86,58 @@ app_ui = ui.page_fluid(
             border: 1px solid rgba(0, 191, 255, 0.3) !important;
             border-radius: 6px;
             padding: 12px;
-            width: 85% !important;
-            max-width: 85% !important;
+            width: 100% !important;
+            text-align: left !important;
+            direction: ltr !important;
+        }}
+        
+        /* 🪟 هندسة الستارة المنسدلة الأنيقة أسفل شريط البحث مباشرة (Curtain Dropdown) */
+        .curtain-dropdown-menu {{
+            position: absolute !important;
+            top: 100% !important;
+            left: 0 !important;
+            width: 100% !important;
+            background: rgba(10, 14, 23, 0.98) !important;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 1px solid #00bfff !important;
+            border-right: 1px solid #00bfff !important;
+            border-bottom: 1px solid #00bfff !important;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            z-index: 99999 !important;
+            box-shadow: 0 10px 25px rgba(0, 191, 255, 0.35) !important;
+            padding: 5px 0;
+            margin-top: 2px;
+        }}
+        .curtain-title {{
+            padding: 8px 15px;
+            font-size: 13px;
+            color: #00bfff;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(0, 191, 255, 0.15);
             text-align: right;
             direction: rtl;
         }}
+        .suggestion-link-btn {{
+            background: transparent;
+            color: #ffffff;
+            border: none;
+            width: 100%;
+            text-align: left;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            direction: ltr;
+        }}
+        .suggestion-link-btn:hover {{
+            background-color: rgba(0, 191, 255, 0.15);
+            color: #00bfff;
+            padding-left: 22px;
+        }}
         
-        /* 🎯 خطوة فك تكتل الحاويات: إلغاء محاذاة اليمين وخصائص الضغط في Shiny لعرض الكروت بكامل الشاشة */
+        /* فك تكثيف الحاويات لـ Shiny لضمان فرد الكروت بالكامل */
         .row, .col-12, .p-1, .p-2, .shiny-output-ui {{
             width: 100% !important;
             max-width: 100% !important;
@@ -91,7 +149,7 @@ app_ui = ui.page_fluid(
             box-sizing: border-box !important;
         }}
 
-        /* 🚪 لوحة الأفقية المنبثقة المخفية في أقصى اليسار */
+        /* 🚪 اللوحة الجانبية المنبثقة من اليسار */
         .side-drawer-container {{
             position: fixed;
             top: 15px;
@@ -181,7 +239,6 @@ app_ui = ui.page_fluid(
         """)
     ),
     
-    # 🗲 لوحة الإظهار الجانبية المنبثقة أفقياً باليسار عند لمس السهم
     ui.HTML("""
     <div id="side_drawer" class="side-drawer-container">
         <button id="drawer_toggle" class="drawer-toggle-btn" onclick="toggleDrawer()">🡪</button>
@@ -226,8 +283,12 @@ app_ui = ui.page_fluid(
     ui.row(
         ui.column(12,
             ui.div(
-                ui.input_text("free_smart_search_input_field", "", placeholder="اكتب اسم الهاتف هنا بحرية وسرعة...", width="100%"),
-                ui.output_ui("floating_suggestions_ui"),
+                # وضع حقل البحث والستارة المخرجة داخل حاوية التوسيط الذكية المخصصة
+                ui.div(
+                    ui.input_text("free_smart_search_input_field", "", placeholder="Search Phone Here...", width="100%"),
+                    ui.output_ui("floating_suggestions_ui"),
+                    class_="search-wrapper-box"
+                ),
                 class_="p-2"
             )
         )
@@ -241,7 +302,7 @@ app_ui = ui.page_fluid(
 )
 
 # ==============================================================================
-# 🧠 3. منطق السيرفر (Server Logic) لإدارة التفاعلات والمخرجات الصافية المفرودة
+# 🧠 3. منطق السيرفر السحابي (Server Logic) لبناء الستارة وتفريغ الكروت
 # ==============================================================================
 def server(input, output, session):
     
@@ -263,31 +324,32 @@ def server(input, output, session):
             return [m for m in models if query.lower() in m.lower()][:5]
         return []
 
+    # 1. رندرة وتفعيل الستارة المنسدلة الستارية الأنيقة أسفل شريط البحث (Curtain Dropdown)
     @render.ui
     def floating_suggestions_ui():
         suggestions = filtered_suggestions()
         query = input.free_smart_search_input_field().strip()
         
         if not suggestions or query in suggestions:
-            return ui.div()
+            return ui.HTML("")
         
-        buttons = []
-        buttons.append(ui.div("💡 الموديلات المقترحة القريبة:", class_="floating-suggestions-box-title"))
+        # بناء هيكل الستارة المنسدلة الصافي من كلاس الـ CSS المعرف
+        html = []
+        html.append("<div class='curtain-dropdown-menu'>")
+        html.append("   <div class='curtain-title'>💡 الموديلات المقترحة القريبة:</div>")
         
         for item in suggestions:
-            buttons.append(
-                ui.tags.button(
-                    item, 
-                    class_="suggestion-link-btn", 
-                    onclick=f"document.getElementById('free_smart_search_input_field').value='{item}'; "
-                            f"Shiny.setInputValue('free_smart_search_input_field', '{item}');"
-                )
-            )
-        
-        buttons.append(ui.div(class_="floating-suggestions-box-end"))
-        return ui.div(*buttons)
+            html.append(f"""
+                <button class="suggestion-link-btn" onclick="
+                    document.getElementById('free_smart_search_input_field').value='{item}'; 
+                    Shiny.setInputValue('free_smart_search_input_field', '{item}');
+                ">{item}</button>
+            """)
+            
+        html.append("</div>")
+        return ui.HTML("\n".join(html))
 
-    # رندرة النتائج وضمان الحقن المباشر الصافي للـ HTML لحل مشكلة التكدس والمحاذاة
+    # 2. رندرة النتائج والخطط الثلاث بحقن HTML صافي مطلق لمنع الانضغاط والتكدس
     @render.ui
     def matched_results_ui():
         query = input.free_smart_search_input_field().strip()
@@ -296,11 +358,9 @@ def server(input, output, session):
             
         suggestions = filtered_suggestions()
         html_res = run_system_workflows(query, db_data, suggestions)
-        
-        # 🎯 إرجاع الـ HTML بشكل صافي ومطلق يضمن تحرير الكروت من قيود الانضغاط
         return ui.HTML(html_res)
 
 # ==============================================================================
-# 🚀 4. تشغيل وتوثيق نظام GLASS MANAGER السحابي
+# 🚀 4. الإقلاع والتشغيل الفوري لـ GLASS MANAGER
 # ==============================================================================
 app = App(app_ui, server)
