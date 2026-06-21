@@ -326,6 +326,7 @@ app_ui = ui.page_fluid(
 
     ui.HTML("""
     <div class="main-header-container">
+        <div class="main-logo">
 # ==============================================================================
 # 🧠 3. منطق السيرفر والمزامنة الجلسية للخطط البديلة
 # ==============================================================================
@@ -442,7 +443,6 @@ def server(input, output, session):
         suggestions = filtered_suggestions()
 
         try:
-            # تشغيلworkflows المحمية لعرض الكروت المناسبة
             html_result = run_system_workflows(query, db_data.get(), suggestions)
             return ui.HTML(html_result)
         except Exception as e:
@@ -458,11 +458,9 @@ def server(input, output, session):
         if not query or len(query) < 2:
             return ui.HTML("")
 
-        # فحص هل الهاتف مدرج في قاعدة البيانات أم لا
         size_str, panel, sensor, real_name = find_model_coords(db_data.get(), query)
         is_exact_match = True if real_name and query.lower() == real_name.lower() else False
 
-        # إذا كان الهاتف مدرجاً (الخطة 1 شغالة)، لا تظهر واجهة الطوارئ المتتالية هنا
         if is_exact_match:
             return ui.HTML("")
 
@@ -504,7 +502,6 @@ def server(input, output, session):
             target_panel = manual_panel.get()
             target_sensor = manual_sensor.get()
 
-            # محاولة العثور على بدائل متوافقة من نفس الحجم والنوع داخل قاعدة البيانات الحالية
             matched_models = []
             current_db = db_data.get()
             if target_size in current_db and target_panel in current_db[target_size]:
@@ -539,4 +536,11 @@ def server(input, output, session):
                 """),
                 ui.div(
                     ui.input_action_button("inject_into_supabase_btn", f"⚡ ربط وتوثيق {query} فوراً في قاعدة البيانات السحابية", 
+                                            class_="btn btn-success", style="width:100%; font-weight:bold; margin-top:15px; padding:10px;"),
+                    style="direction:rtl; text-align:right;"
+                ),
+                class_="step-container",
+                style="border-style:solid; border-color:#ff4500;"
+            )
 
+    # ==========================================================================
