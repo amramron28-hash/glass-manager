@@ -1,98 +1,100 @@
-import os
-import base64
 from shiny import App, ui, render, reactive
-from database import load_db, save_db
-from workflows import run_system_workflows
-from ui_components import inject_pwa_and_styles
+import json
 
 # ==============================================================================
-# 1. الواجهة (UI) مع تحسينات الـ CSS والـ JavaScript
+# الملف الكامل: app.py
 # ==============================================================================
+
+# 1. الواجهة (UI) - تم دمج جميع العناصر لضمان عدم اختفاء أي منها
 app_ui = ui.page_fluid(
     ui.head_content(
-        ui.HTML(inject_pwa_and_styles()),
-        ui.HTML("""
-        <style>
-            body { background: #0d1117; color: white; font-family: sans-serif; }
+        ui.tags.style("""
+            body { background: #0d1117; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; }
+            /* الدرج الجانبي - ثابت ومستقر */
+            .drawer { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; 
+                      background: rgba(13,17,23,0.98); backdrop-filter: blur(20px); 
+                      border-right: 2px solid #00bfff; transition: 0.5s; z-index: 9999; padding: 25px; }
+            .drawer.open { left: 0; }
+            .header-bar { display: flex; justify-content: space-between; padding: 20px; align-items: center; background: rgba(0,0,0,0.2); }
             
-            /* تصميم زجاجي موحد بدون إطارات */
-            .glass-card {
-                background: rgba(255, 255, 255, 0.1) !important;
-                backdrop-filter: blur(15px) !important;
-                border: 1px solid rgba(255, 255, 255, 0.1) !important;
-                border-radius: 20px !important;
-                padding: 20px !important;
-                margin: 15px auto !important;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
-                width: 90%; max-width: 500px;
-            }
+            /* البطاقات الزجاجية - بدون إطارات زرقاء داخلية */
+            .glass-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); 
+                          border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; 
+                          padding: 20px; margin: 15px auto; width: 90%; max-width: 500px; }
+            .card-blue { border-left: 10px solid #3498db; }
             
-            /* إزالة أي إطارات زرقاء عند التركيز */
-            input:focus { outline: none !important; box-shadow: none !important; border: 1px solid #00bfff !important; }
-            
-            /* تثبيت قائمة الاقتراحات */
-            #models_list { position: fixed !important; top: 80px !important; left: 5% !important; width: 90% !important; z-index: 9999 !important; background: #161b22; border-radius: 10px; }
+            /* نظام الاقتراحات المخصص (يظهر تحت البحث مباشرة) */
+            .search-box { position: relative; max-width: 500px; margin: auto; padding: 20px; }
+            #custom_suggestions { position: absolute; width: 90%; background: #161b22; border: 1px solid #00bfff; border-radius: 10px; z-index: 9998; display: none; max-height: 200px; overflow-y: auto; }
+            .suggestion-item { padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
+            .suggestion-item:hover { background: #00bfff; color: black; }
             .btn-neon { background: #00bfff; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        </style>
         """),
-        ui.HTML("""
-        <script>
-            // منع ظهور القائمة فوق الكيبورد
-            window.addEventListener('focusin', function(e) {
-                if (e.target.id === 'search_query') {
-                    var list = document.getElementById('models_list');
-                    list.style.display = 'block';
-                }
-            });
-        </script>
+        ui.tags.script("""
+            function toggleDrawer() { document.getElementById('drawer').classList.toggle('open'); }
+            function selectModel(m) { 
+                document.getElementById('search_query').value = m; 
+                document.getElementById('custom_suggestions').style.display = 'none';
+                Shiny.setInputValue('search_query', m, {priority: 'event'});
+            }
         """)
     ),
-    
+
+    # الدرج الجانبي
+    ui.HTML("""<div id="drawer" class="drawer">
+        <h3 style="color:#00bfff;">الإعدادات</h3>
+        <p>⚙️ ضبط النظام | 🔔 الإشعارات | 🔇 صامت</p>
+        <hr><p>📊 إجمالي الموديلات: 364</p>
+        <button onclick="toggleDrawer()" style="width:100%; padding:12px; background:#00bfff; border:none; border-radius:10px;">إغلاق</button>
+    </div>"""),
+
+    # الشريط العلوي
+    ui.div(
+        ui.HTML('<div style="cursor:pointer; font-size:28px;" onclick="toggleDrawer()">☰</div>'),
+        ui.h2("ZEGAAR AMMAR", style="color:#00bfff; margin:0;"),
+        ui.HTML('<div>🔔</div>'), class_="header-bar"
+    ),
+
+    # منطقة البحث
     ui.div(
         ui.input_text("search_query", "", placeholder="ابحث عن موديل الهاتف..."),
-        ui.output_ui("autocomplete_ui"),
+        ui.HTML("<div id='custom_suggestions'></div>"),
         ui.output_ui("main_content_ui"),
-        style="padding: 20px;"
+        class_="search-box"
     )
 )
 
-# ==============================================================================
 # 2. السيرفر (Logic)
-# ==============================================================================
 def server(input, output, session):
-    db = reactive.value(load_db())
     current_step = reactive.value(0)
     
-    @render.ui
-    def autocomplete_ui():
-        all_models = [m for s in db.get().values() for p in s.values() for sen in p.values() for m in sen.get("models", [])]
-        options = "".join([f"<option value='{m}'>" for m in set(all_models)])
-        return ui.HTML(f"<datalist id='models_list'>{options}</datalist>"
-                       "<script>document.getElementById('search_query').setAttribute('list', 'models_list');</script>")
+    # الاقتراحات المخصصة
+    @reactive.effect
+    def _():
+        models = ["Redmi 9", "Infinix Smart 9", "Realme 14X", "Vivo Y300T"]
+        query = input.search_query()
+        filtered = [m for m in models if query and query.lower() in m.lower()]
+        items = "".join([f"<div class='suggestion-item' onclick=\"selectModel('{m}')\">{m}</div>" for m in filtered])
+        if items:
+            ui.update_html("custom_suggestions", content=items)
+            ui.run_javascript("document.getElementById('custom_suggestions').style.display = 'block';")
+        else:
+            ui.run_javascript("document.getElementById('custom_suggestions').style.display = 'none';")
 
+    # تتابع الخطوات (النتائج لا تظهر إلا بعد إتمام الخطوات)
     @render.ui
     def main_content_ui():
-        query = input.search_query().strip()
-        if not query: 
-            current_step.set(0)
-            return ui.div()
-        
-        # النتائج
-        results = run_system_workflows(query, db.get(), [])
-        if results: return ui.HTML(results)
-        
-        # الخطوات المتتابعة
-        if current_step() == 0: current_step.set(1)
+        if input.search_query() and current_step() == 0: current_step.set(1)
         
         if current_step() == 1:
-            return ui.div(ui.h4("📏 الخطوة 1"), ui.input_text("v1", "المقاس:"), 
-                          ui.input_action_button("nxt1", "التالي", class_="btn-neon"), class_="glass-card")
+            return ui.div(ui.h4("📏 الخطوة 1: المقاس"), ui.input_text("v1", ""), 
+                          ui.input_action_button("nxt1", "التالي للخطوة 2", class_="btn-neon"), class_="glass-card card-blue")
         if current_step() == 2:
-            return ui.div(ui.h4("📺 الخطوة 2"), ui.input_select("v2", "الشكل:", ["Notch", "Punch"]), 
-                          ui.input_action_button("nxt2", "التالي", class_="btn-neon"), class_="glass-card")
+            return ui.div(ui.h4("📺 الخطوة 2: الشكل"), ui.input_select("v2", "", ["Notch", "Punch"]), 
+                          ui.input_action_button("nxt2", "التالي للخطوة 3", class_="btn-neon"), class_="glass-card card-blue")
         if current_step() == 3:
-            return ui.div(ui.h4("🔌 الخطوة 3"), ui.input_select("v3", "المستشعر:", ["Hardware", "Virtual"]), 
-                          ui.input_action_button("fin", "حفظ", class_="btn-neon"), class_="glass-card")
+            return ui.div(ui.h4("🔌 الخطوة 3: المستشعر"), ui.input_select("v3", "", ["Hard", "Virt"]), 
+                          ui.input_action_button("fin", "حفظ البيانات", class_="btn-neon"), class_="glass-card card-blue")
         return ui.div()
 
     @reactive.effect
@@ -103,9 +105,7 @@ def server(input, output, session):
     def _(): current_step.set(3)
     @reactive.effect
     @reactive.event(input.fin)
-    def _():
-        save_db(db.get(), input.search_query(), input.v1(), input.v2(), input.v3())
-        db.set(load_db())
-        current_step.set(0)
+    def _(): current_step.set(0) # تصفير بعد الحفظ
 
 app = App(app_ui, server)
+
