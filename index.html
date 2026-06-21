@@ -1,23 +1,62 @@
-// مفتاح تحكم لمنع التضاد
-let isAdvancedPlanActive = false; 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ZEGAAR AMMAR GLASS MANAGER</title>
+    <style>
+        body { background: #060e1c; color: white; padding: 20px; font-family: Arial; }
+        .box { border: 2px solid #00bfff; padding: 20px; border-radius: 15px; margin-top: 20px; background: #0b1a33; }
+        input, button { padding: 10px; border-radius: 5px; border: none; }
+        button { background: #00bfff; color: #060e1c; cursor: pointer; }
+    </style>
+</head>
+<body>
 
-// دالة مربع البحث (Auto-complete)
-document.getElementById('phone-name').addEventListener('input', (e) => {
-    // إذا كانت الخطة 2 أو 3 تعمل، نوقف عمل البحث فوراً!
-    if (isAdvancedPlanActive) return; 
+<div class="box">
+    <input type="text" id="phone-name" placeholder="ابحث عن اسم الهاتف...">
+    <button onclick="workflow.startSearch()">بحث</button>
+</div>
 
-    const searchTerm = e.target.value;
-    runPlan1(searchTerm);
-});
+<div id="app-view" class="box">
+    </div>
 
-// عند بدء الخطة 2 أو 3، نقوم بقفل مربع البحث
-function startAdvancedPlans() {
-    isAdvancedPlanActive = true; 
-    document.getElementById('phone-name').disabled = true; // قفل مربع البحث
-}
+<script>
+    const workflow = {
+        state: 'SEARCH', // هذا هو "العصب" الذي يمنع التضاد
+        
+        startSearch: async () => {
+            if (workflow.state !== 'SEARCH') return;
+            
+            const name = document.getElementById('phone-name').value;
+            // 1. اتصل بـ Supabase (هنا ضع رابط الـ API الخاص بك)
+            const found = false; // استبدلها بمنطق البحث الحقيقي
+            
+            if (found) {
+                document.getElementById('app-view').innerHTML = "<h3>تم العثور على الهاتف</h3>";
+            } else {
+                workflow.switchTo('PLAN_2');
+            }
+        },
 
-// عند انتهاء العمل، نفتح القفل
-function finishAdvancedPlans() {
-    isAdvancedPlanActive = false;
-    document.getElementById('phone-name').disabled = false;
-}
+        switchTo: (plan) => {
+            workflow.state = plan;
+            document.getElementById('phone-name').disabled = true; // غلق مربع البحث لمنع التضاد
+            
+            if (plan === 'PLAN_2') {
+                document.getElementById('app-view').innerHTML = `
+                    <h3>خطة 2: تحديد المواصفات</h3>
+                    <button onclick="workflow.switchTo('PLAN_3')">لم أجد تطابقاً (انتقال للطوارئ)</button>
+                    <button onclick="location.reload()">إلغاء</button>
+                `;
+            } else if (plan === 'PLAN_3') {
+                document.getElementById('app-view').innerHTML = `
+                    <h3>خطة الطوارئ: إضافة مجموعة جديدة</h3>
+                    <input type="text" placeholder="اسم المجموعة">
+                    <button onclick="alert('تم الحفظ!'); location.reload();">حفظ</button>
+                `;
+            }
+        }
+    };
+</script>
+</body>
+</html>
