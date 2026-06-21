@@ -1,57 +1,23 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZEGAAR AMMAR GLASS MANAGER</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#00bfff">
-    <style>
-        body { font-family: sans-serif; background: #060e1c; color: white; margin: 0; padding: 20px; text-align: right; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .ammar-card { background: linear-gradient(135deg, #0b1a33, #060e1c); border: 2px solid #00bfff; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0, 191, 255, 0.25); }
-        .title { color: #00bfff; font-weight: bold; font-size: 20px; margin-bottom: 10px; }
-        .data-item { color: #fff; margin-bottom: 8px; font-size: 16px; }
-    </style>
-</head>
-<body>
+// مفتاح تحكم لمنع التضاد
+let isAdvancedPlanActive = false; 
 
-<div class="container">
-    <h1>قاعدة بيانات شاشات الهواتف</h1>
-    <div id="app">جاري تحميل البيانات...</div>
-</div>
+// دالة مربع البحث (Auto-complete)
+document.getElementById('phone-name').addEventListener('input', (e) => {
+    // إذا كانت الخطة 2 أو 3 تعمل، نوقف عمل البحث فوراً!
+    if (isAdvancedPlanActive) return; 
 
-<script>
-    // ربط الـ Service Worker لتمكين خاصية "سهم التثبيت"
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./service-worker.js')
-            .then(() => console.log('PWA Ready'))
-            .catch(err => console.log('PWA Error', err));
-        });
-    }
+    const searchTerm = e.target.value;
+    runPlan1(searchTerm);
+});
 
-    // دالة جلب البيانات من Supabase
-    async function loadData() {
-        const URL = "https://mgmphimlcdchtbiyhhbt.supabase.co/rest/v1/phones?select=*";
-        const KEY = "YOUR_SUPABASE_ANON_KEY"; // ضع مفتاحك هنا
+// عند بدء الخطة 2 أو 3، نقوم بقفل مربع البحث
+function startAdvancedPlans() {
+    isAdvancedPlanActive = true; 
+    document.getElementById('phone-name').disabled = true; // قفل مربع البحث
+}
 
-        try {
-            const res = await fetch(URL, { headers: { "apikey": KEY, "Authorization": `Bearer ${KEY}` }});
-            const data = await res.json();
-            const app = document.getElementById('app');
-            app.innerHTML = data.map(item => `
-                <div class="ammar-card">
-                    <div class="title">${item.model_name || 'موديل غير معروف'}</div>
-                    <div class="data-item">📏 الحجم: ${item.display_size || 'N/A'}</div>
-                    <div class="data-item">📺 نوع الشاشة: ${item.panel_type || 'N/A'}</div>
-                </div>
-            `).join('');
-        } catch (e) {
-            document.getElementById('app').innerHTML = "تعذر تحميل البيانات، يرجى التأكد من الاتصال.";
-        }
-    }
-    loadData();
-</script>
-</body>
-</html>
+// عند انتهاء العمل، نفتح القفل
+function finishAdvancedPlans() {
+    isAdvancedPlanActive = false;
+    document.getElementById('phone-name').disabled = false;
+}
