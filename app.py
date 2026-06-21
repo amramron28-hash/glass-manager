@@ -2,6 +2,7 @@ import os
 import base64
 import pandas as pd
 from shiny import App, ui, render, reactive
+from ui_components import inject_pwa_and_styles  # استدعاء دالة الحقن الفنية لـ Shiny
 
 # 1. تحويل صورة الخلفية المرفقة لترميز ويب آمن
 def get_base64_image(image_path):
@@ -13,7 +14,7 @@ def get_base64_image(image_path):
 
 bg_img_base64 = get_base64_image("phone_image.webp")
 
-# 2. تصميم واجهة المستخدم (UI) الموحدة بكروت النيون الخضراء واللوحة المنبثقة
+# 2. تصميم واجهة المستخدم (UI) الموحدة وإلغاء قيود التكدس الافتراضية
 app_ui = ui.page_fluid(
     ui.head_content(
         ui.HTML('<link rel="manifest" href="/manifest.json">'),
@@ -24,25 +25,17 @@ app_ui = ui.page_fluid(
         <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/service-worker.js')
-            .then(reg => console.log('PWA Active'))
+            .then(reg => console.log('PWA Connected'))
             .catch(err => console.log('PWA Failed', err));
         }
         </script>
         """),
         
+        # حقن الـ CSS المساعد للخلفية والكروت
+        ui.HTML(inject_pwa_and_styles()),
+        
         ui.HTML(f"""
         <style>
-        body, .container-fluid {{
-            background-image: url("{bg_img_base64}");
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-color: #0d1117;
-            color: white;
-            font-family: sans-serif;
-            direction: rtl;
-        }}
         .main-header-container {{
             width: 100%;
             text-align: center;
@@ -53,18 +46,26 @@ app_ui = ui.page_fluid(
             border-radius: 8px;
         }}
         .main-logo {{
-            font-size: 32px; 
-            font-weight: 900; 
-            color: #00bfff; 
-            text-shadow: 0 0 15px rgba(0,191,255,0.8);
-            line-height: 1.2;
+            font-size: 24px !important; 
+            font-weight: 900 !important;
+            color: #00bfff !important;
+            text-shadow: 0 0 10px rgba(0, 191, 255, 0.6), 0 0 20px rgba(0, 191, 255, 0.4) !important;
+            line-height: 1.4 !important;
         }}
         .main-subtitle {{
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: #ffffff;
-            opacity: 0.95;
+            opacity: 0.9;
             margin-top: 8px;
+        }}
+        
+        /* 🎯 ضبط وتوسيط حقل البحث القياسي بنسبة 85% من اتساع الشاشة */
+        .shiny-input-container {{
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            margin: 0 auto !important;
         }}
         .shiny-input-container input {{
             background: rgba(255, 255, 255, 0.07) !important;
@@ -72,74 +73,22 @@ app_ui = ui.page_fluid(
             border: 1px solid rgba(0, 191, 255, 0.3) !important;
             border-radius: 6px;
             padding: 12px;
-            width: 100%;
+            width: 85% !important;
+            max-width: 85% !important;
             text-align: right;
-        }}
-        .floating-suggestions-box-title {{
-            padding: 10px 15px 5px 15px; 
-            background: rgba(13, 17, 23, 0.95) !important; 
-            border-top: 1px solid #00bfff !important;
-            border-left: 1px solid #00bfff !important;
-            border-right: 1px solid #00bfff !important;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-        }}
-        .floating-suggestions-box-end {{
-            background: rgba(13, 17, 23, 0.95) !important; 
-            border-bottom: 1px solid #00bfff !important;
-            border-left: 1px solid #00bfff !important;
-            border-right: 1px solid #00bfff !important;
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-            margin-bottom: 15px;
-        }}
-        .suggestion-link-btn {{
-            background: transparent;
-            color: #ffffff;
-            border: none;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            width: 100%;
-            text-align: right;
-            padding: 8px 15px;
-            font-size: 16px;
-            cursor: pointer;
-        }}
-        .suggestion-link-btn:hover {{
-            background-color: rgba(0, 191, 255, 0.15);
-            color: #00bfff;
-            padding-right: 25px;
+            direction: rtl;
         }}
         
-        /* 🟢 تنسيق نيون الشاشات المتوافقة المتقطعة والمنفصلة تماماً كما بالصورة المرفقة */
-        .glass-card-grid {{
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 15px;
-            padding: 5px;
-            width: 100%;
-        }}
-        .glass-card-item {{
-            background: rgba(12, 53, 27, 0.6) !important; 
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 2px solid #32cd32 !important; 
-            box-shadow: 0 0 12px rgba(50, 205, 50, 0.4);
-            padding: 16px 20px;
-            border-radius: 12px !important; 
-            text-align: center;
-            font-size: 20px !important; 
-            font-weight: 800 !important;
-            color: #ffffff !important; 
-            transition: all 0.25s ease;
-            cursor: pointer;
-            width: 100%;
-            letter-spacing: 0.5px;
-        }}
-        .glass-card-item:hover {{
-            background: rgba(50, 205, 50, 0.25) !important;
-            box-shadow: 0 0 20px rgba(50, 205, 50, 0.7);
-            transform: scale(1.01);
+        /* 🎯 خطوة فك تكتل الحاويات: إلغاء محاذاة اليمين وخصائص الضغط في Shiny لعرض الكروت بكامل الشاشة */
+        .row, .col-12, .p-1, .p-2, .shiny-output-ui {{
+            width: 100% !important;
+            max-width: 100% !important;
+            display: block !important;
+            clear: both !important;
+            float: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
         }}
 
         /* 🚪 لوحة الأفقية المنبثقة المخفية في أقصى اليسار */
@@ -232,7 +181,7 @@ app_ui = ui.page_fluid(
         """)
     ),
     
-    # 🗲 لوحة الإظهار الجانبية المنبثقة أفقياً باليسار
+    # 🗲 لوحة الإظهار الجانبية المنبثقة أفقياً باليسار عند لمس السهم
     ui.HTML("""
     <div id="side_drawer" class="side-drawer-container">
         <button id="drawer_toggle" class="drawer-toggle-btn" onclick="toggleDrawer()">🡪</button>
@@ -292,7 +241,7 @@ app_ui = ui.page_fluid(
 )
 
 # ==============================================================================
-# 🧠 منطق السيرفر (Server Logic) لإدارة التفاعلات والمخرجات دون تعارض جوهري
+# 🧠 3. منطق السيرفر (Server Logic) لإدارة التفاعلات والمخرجات الصافية المفرودة
 # ==============================================================================
 def server(input, output, session):
     
@@ -338,15 +287,20 @@ def server(input, output, session):
         buttons.append(ui.div(class_="floating-suggestions-box-end"))
         return ui.div(*buttons)
 
+    # رندرة النتائج وضمان الحقن المباشر الصافي للـ HTML لحل مشكلة التكدس والمحاذاة
     @render.ui
     def matched_results_ui():
         query = input.free_smart_search_input_field().strip()
         if not query or len(query) < 2:
-            return ui.div()
+            return ui.HTML("")
             
         suggestions = filtered_suggestions()
         html_res = run_system_workflows(query, db_data, suggestions)
-        return ui.div(ui.HTML(html_res))
+        
+        # 🎯 إرجاع الـ HTML بشكل صافي ومطلق يضمن تحرير الكروت من قيود الانضغاط
+        return ui.HTML(html_res)
 
-# 🚀 تشغيل التطبيق السحابي الموحد بكامل كفاءته البرمجية لـ GLASS MANAGER
+# ==============================================================================
+# 🚀 4. تشغيل وتوثيق نظام GLASS MANAGER السحابي
+# ==============================================================================
 app = App(app_ui, server)
