@@ -1,6 +1,5 @@
 import os
 import base64
-from html import escape
 from shiny import App, ui, render, reactive
 from database import load_db, save_db
 from workflows import run_system_workflows
@@ -18,7 +17,7 @@ def get_base64_image(image_path):
 bg_img_base64 = get_base64_image("phone_image.webp")
 
 # ==============================================================================
-# 2. الواجهة الرسومية (UI) - كاملة ومعالجة
+# 2. الواجهة الرسومية (UI)
 # ==============================================================================
 app_ui = ui.page_fluid(
     ui.head_content(
@@ -37,15 +36,15 @@ app_ui = ui.page_fluid(
         """)
     ),
     
-    # النافذة المنسدلة (الدرج)
+    # الدرج المنزلق
     ui.HTML("""
     <div id="drawer" class="drawer">
         <h3 class="neon-text">الإعدادات</h3>
-        <p>⚙️ إعدادات النظام</p>
+        <p>⚙️ ضبط النظام</p>
         <p>🔔 جرس الإشعارات</p>
         <p>🔇 المراقب الصامت</p>
         <hr style="border:0.5px solid #00bfff;">
-        <p>📊 إجمالي الموديلات: <span id="model_count">364</span></p>
+        <p>📊 إجمالي الموديلات: 364</p>
         <button onclick="document.getElementById('drawer').classList.remove('open')" class="btn-neon">إغلاق</button>
     </div>
     """),
@@ -58,96 +57,73 @@ app_ui = ui.page_fluid(
         class_="header-bar"
     ),
 
-    # منطقة البحث مع حقن الـ Auto-complete يدوياً لتجنب خطأ attributes
+    # البحث و Auto-complete
     ui.div(
         ui.input_text("search_query", "", placeholder="ابحث عن موديل الهاتف..."),
-        ui.HTML('<datalist id="models_list"></datalist>'),
-        ui.tags.script("document.getElementById('search_query').setAttribute('list', 'models_list');"),
+        ui.output_ui("autocomplete_ui"),
         ui.output_ui("main_content_ui"),
         style="max-width: 600px; margin: auto; padding: 20px;"
     )
 )
 
 # ==============================================================================
-# 3. منطق السيرفر (Server Logic)
+# 3. السيرفر (Server Logic)
 # ==============================================================================
 def server(input, output, session):
     db = reactive.value(load_db())
     current_step = reactive.value(0)
     
-    # مراقبة نص البحث وعزل تعديل الخطوات لمنع الـ Infinite Loop
-    @reactive.effect
-    @reactive.event(input.search_query)
-    def _():
-        query = input.search_query().strip()
-        if not query:
-            current_step.set(0)
-        else:
-            results = run_system_workflows(query, db.get(), [])
-            if not results and current_step() == 0:
-                current_step.set(1)
+    # 1. تحديث قائمة البحث تلقائياً
+    @render.ui
+    def autocomplete_ui():
+        all_models = []
+        for size_cat in db.get().values():
+            for panel_cat in size_cat.values():
+                for sensor_cat in panel_cat.values():
+                    all_models.extend(sensor_cat.get("models", []))
+        options = "".join([f"<option value='{m}'>" for m in set(all_models)])
+        return ui.HTML(f"<datalist id='models_list'>{options}</datalist>"
+                       "<script>document.getElementById('search_query').setAttribute('list', 'models_list');</script>")
 
+    # 2. منطق النتائج وخطوات الطوارئ
     @render.ui
     def main_content_ui():
         query = input.search_query().strip()
         if not query: 
+            current_step.set(0)
             return ui.div()
         
         results = run_system_workflows(query, db.get(), [])
         
-        # إذا وُجدت نتائج اعرضها مباشرة
-        if results:
-            return ui.HTML(results)
+        if not results:
+            if current_step() == 0: current_step.set(1)
             
-        # إذا لم توجد نتيجة، نبدأ نظام المعالج التفاعلي (Wizard)
-        step = current_step()
-        
-        if step == 1:
-            return ui.div(
-                ui.h4("📏 الخطوة 1: أدخل المقاس", class_="neon-text"),
-                ui.input_text("val_size", "المقاس:", value=input.val_size() if "val_size" in input else ""),
-                ui.input_action_button("next1", "التالي", class_="btn-neon"),
-                class_="step-container"
-            )
-        elif step == 2:
-            return ui.div(
-                ui.h4("📺 الخطوة 2: شكل الشاشة", class_="neon-text"),
-                ui.input_select("val_panel", "الشكل:", ["Notch", "Punch", "Curved"], selected=input.val_panel() if "val_panel" in input else "Notch"),
-                ui.input_action_button("next2", "التالي", class_="btn-neon"),
-                class_="step-container"
-            )
-        elif step == 3:
-            return ui.div(
-                ui.h4("🔌 الخطوة 3: المستشعر", class_="neon-text"),
-                ui.input_select("val_sensor", "المستشعر:", ["Hardware", "Virtual"], selected=input.val_sensor() if "val_sensor" in input else "Hardware"),
-                ui.input_action_button("save_all", "إتمام وحفظ", class_="btn-neon"),
-                class_="step-container"
-            )
-        return ui.div()
+            # عرض الخطوات بالترتيب
+            if current_step() == 1:
+                return ui.div(ui.h4("📏 الخطوة 1: أدخل المقاس", class_="neon-text"),
+                              ui.input_text("val_size", "المقاس:"),
+                              ui.input_action_button("next1", "التالي", class_="btn-neon"), class_="step-container")
+            elif current_step() == 2:
+                return ui.div(ui.h4("📺 الخطوة 2: شكل الشاشة", class_="neon-text"),
+                              ui.input_select("val_panel", "اختر الشكل:", ["Notch", "Punch", "Curved"]),
+                              ui.input_action_button("next2", "التالي", class_="btn-neon"), class_="step-container")
+            elif current_step() == 3:
+                return ui.div(ui.h4("🔌 الخطوة 3: المستشعر", class_="neon-text"),
+                              ui.input_select("val_sensor", "اختر المستشعر:", ["Hardware", "Virtual"]),
+                              ui.input_action_button("save_all", "إتمام وحفظ", class_="btn-neon"), class_="step-container")
+        return ui.HTML(results)
 
-    # التنقل بين الخطوات
+    # 3. تنقل الخطوات
     @reactive.effect
     @reactive.event(input.next1)
-    def _(): 
-        current_step.set(2)
-    
+    def _(): current_step.set(2)
     @reactive.effect
     @reactive.event(input.next2)
-    def _(): 
-        current_step.set(3)
-
-    # الحفظ النهائي الآمن والقراءة الصحيحة للمدخلات المهدومة من الـ UI
+    def _(): current_step.set(3)
     @reactive.effect
     @reactive.event(input.save_all)
     def _():
-        size = input.val_size() if "val_size" in input else ""
-        panel = input.val_panel() if "val_panel" in input else "Notch"
-        sensor = input.val_sensor() if "val_sensor" in input else "Hardware"
-        
-        # حفظ البيانات المستخرجة بنجاح
-        save_db(db.get(), input.search_query(), size, panel, sensor)
-        
-        # إعادة التصفير وتحديث قاعدة البيانات التفاعلية
+        save_db(db.get(), input.search_query(), input.val_size(), input.val_panel(), input.val_sensor())
         db.set(load_db())
         current_step.set(0)
 
