@@ -13,10 +13,10 @@ from supabase import create_client, Client
 
 load_dotenv()
 
-# وضع الروابط والمفاتيح الحديثة مباشرة لضمان أعلى استقرار سحابي لقراءة مفاتيح sb_publishable
-# ⚠️ يرجى التأكد من استبدال القيم أدناه ببياناتك الحقيقية بدقة وبدون أي مسافات إضافية
+# وضع الروابط والمفاتيح الحديثة مباشرة لضمان أعلى استقرار سحابي
+# ⚠️ تأكد من وضع رابط مشروعك الفعلي ومفتاحك الذي يبدأ بـ sb_publishable مكان النقاط أدناه بدقة
 SUPABASE_URL = "https://supabase.co"
-SUPABASE_KEY = "sb_publishable_..."  # الصق هنا المفتاح الجديد الطويل الذي يظهر في صورتك
+SUPABASE_KEY = "sb_publishable_..."  
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("الرجاء التأكد من وضع روابط ومفاتيح Supabase الحقيقية داخل الكود")
@@ -24,37 +24,23 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==============================================================================
-# 3. دوال الاتصال المباشر بقاعدة البيانات لجدول phones مع جلب لانهائي ذكي وآمن
+# 3. دوال الاتصال المباشر بقاعدة البيانات لجدول phones - نسخة الجلب السريع والمباشر
 # ==============================================================================
 
 def fetch_all_models_from_supabase():
-    """جلب كافة الموديلات دون أي قيود عبر نظام الدفعات المتتالية اللانهائي لضمان التوسع المستقبلي الكامل"""
-    all_records = []
-    page_size = 1000  # حجم الدفعة الواحدة المسموح بها برمجياً
-    start = 0
-    
+    """جلب كافة الموديلات الحية بشكل مباشر وسريع ومتوافق مع التحديثات الأمنية الجديدة"""
     try:
-        while True:
-            end = start + page_size - 1
-            response = supabase.table("phones").select("model_name").range(start, end).execute()
-            records = response.data
-            
-            if not records:
-                break
-                
-            all_records.extend(records)
-            
-            if len(records) < page_size:
-                break
-                
-            start += page_size  
-            
-        if all_records:
-            raw_list = [r["model_name"] for r in all_records if r.get("model_name")]
+        # استعلام مباشر للحصول على عمود الأسماء دون تحديد قيود للنطاق لتفادي البطء
+        response = supabase.table("phones").select("model_name").execute()
+        records = response.data
+        
+        if records:
+            raw_list = [r["model_name"] for r in records if r.get("model_name")]
+            # إزالة التكرارات وترتيب الموديلات أبجدياً لإطعام الاقتراحات والعداد
             return sorted(list(set(raw_list)))
             
     except Exception as e:
-        print(f"خطأ سحابي أثناء جلب البيانات الموسعة: {e}")
+        print(f"خطأ سحابي أثناء جلب البيانات: {e}")
         
     return []
 
