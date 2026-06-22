@@ -1,119 +1,88 @@
 import os
-import json
 from shiny import App, ui, render, reactive
-from dotenv import load_dotenv
-from database import load_db, save_db
-from ui_components import inject_pwa_and_styles, draw_control_panel, draw_technical_coords, draw_neon_section
-from workflows import run_system_workflows
+from supabase import create_client
 
-load_dotenv()
+# إعداد الاتصال بالسحابة
+supabase = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
-# --- الواجهة (UI) ---
+# التنسيق النهائي (Glassmorphism & Neon)
+css = """
+    body { background-color: #0a0e17 !important; color: white !important; font-family: sans-serif; }
+    .app-title { text-align: center; color: #00bfff; font-size: 2.2em; font-weight: 800; margin-bottom: 0px; text-shadow: 0 0 10px #00bfff; }
+    .app-sub { text-align: center; color: #fff; font-size: 1.2em; margin-bottom: 20px; }
+    .glass-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 15px; margin: 10px 0; }
+    .suggestions-curtain { background: #0a0e17 !important; border: 1px solid #00bfff; border-radius: 10px; z-index: 9999; position: absolute; width: 100%; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+    .suggestion-row { padding: 12px; color: white; cursor: pointer; border-bottom: 1px solid #1c2538; }
+    .suggestion-row:hover { background: #00bfff; color: black; }
+    .badge { display:inline-block; width:30px; height:30px; border-radius:50%; text-align:center; line-height:30px; margin-left:10px; border:1px solid #fff; }
+    .card-exact { border-right: 6px solid #00ff88; }
+    .card-plus { border-right: 6px solid #00bfff; }
+    .card-minus { border-right: 6px solid #ffaa00; }
+    .card-warn { border-right: 6px solid #ff3333; }
+"""
+
 app_ui = ui.page_fluid(
-    ui.HTML(inject_pwa_and_styles()), # حقن الـ PWA والـ CSS
-    ui.div(
-        ui.h2("ZEGAAR AMMAR", style="color:#00bfff; text-align:center; margin-top:20px;"),
-        ui.p("GLASS MANAGER", style="color:white; text-align:center;"),
-        class_="header-bar"
+    ui.head_content(ui.tags.style(css)),
+    ui.sidebar(
+        ui.h3("🛠️ الإعدادات", style="text-align:center;"),
+        ui.hr(),
+        ui.div("🔔 جرس الإشعارات: نشط"),
+        ui.div("🛡️ المراقب الصامت: يعمل"),
+        ui.output_ui("sidebar_counter"),
+        ui.input_action_button("btn_refresh", "🔄 تحديث البيانات", class_="btn-neon")
     ),
-    ui.output_ui("control_panel"),
-    ui.div(
-        ui.input_text("search_query", "", placeholder="ابحث عن موديل الهاتف..."),
-        ui.output_ui("suggestions_curtain_ui"),
-        ui.input_action_button("btn_search", "افحص الهاتف 🔍", class_="btn-neon"),
-        ui.output_ui("main_content_ui"),
-        class_="search-box"
-    )
+    ui.div(ui.h1("ZEGAAR AMMAR", class_="app-title"), ui.p("GLASS MANAGER", class_="app-sub")),
+    ui.div(ui.input_text("search_query", "", placeholder="🔍 ابحث عن الموديل..."), ui.output_ui("suggestions_curtain"), class_="search-box"),
+    ui.output_ui("main_area")
 )
 
-# --- السيرفر (Server) ---
 def server(input, output, session):
-    # حالات التطبيق (States)
-    refresh_trigger = reactive.value(0)
-    current_plan = reactive.value(0)
-    wizard_step = reactive.value(1)
-    show_suggestions = reactive.value(False)
-
+    plan = reactive.value(1)
+    
     @reactive.calc
-    def cloud_database():
-        refresh_trigger.get()
-        return load_db()
+    def fetch_data():
+        input.btn_refresh()
+        return supabase.table("phones").select("*").execute().data
 
     @render.ui
-    def control_panel():
-        return draw_control_panel(total_models=len(cloud_database()))
-
-    @reactive.effect
-    @reactive.event(input.search_query)
-    def _(): show_suggestions.set(len(input.search_query().strip()) > 0)
+    def sidebar_counter():
+        return ui.div(f"📱 إجمالي الموديلات: {len(fetch_data())}")
 
     @render.ui
-    def suggestions_curtain_ui():
-        if not show_suggestions(): return None
-        q = input.search_query().strip().lower()
-        db = cloud_database()
-        found = []
-        for sz in db:
-            for p in db[sz]:
-                for s in db[sz][p]:
-                    found.extend([m for m in db[sz][p][s]["models"] if q in m.lower()])
-        found = list(set(found))[:8]
-        items = [ui.div(f"📱 {m}", class_="suggestion-row", 
-                 onclick=f"Shiny.setInputValue('selected_model', '{m}', {{priority:'event'}})") for m in found]
-        return ui.div(*items, class_="suggestions-curtain") if items else None
+    def suggestions_curtain():
+        q = input.search_query().lower()
+        if not q: return None
+        matches = [d['model_name'] for d in fetch_data() if q in d['model_name'].lower()][:6]
+        return ui.div(*[ui.div(m, class_="suggestion-row", onclick=f"Shiny.setInputValue('selected_model', '{m}')") for m in matches], class_="suggestions-curtain")
 
     @reactive.effect
     @reactive.event(input.selected_model)
-    def _():
-        ui.update_text("search_query", value=input.selected_model())
-        show_suggestions.set(False)
-
-    @reactive.effect
-    @reactive.event(input.btn_search)
-    def _():
-        db = cloud_database()
-        q = input.search_query().strip()
-        # المنطق: إذا وجد الموديل نذهب للخطة 1، إذا لا نذهب للخطة 2 (Wizard)
-        found = False
-        for sz in db:
-            for p in db[sz]:
-                for s in db[sz][p]:
-                    if any(q.lower() == m.lower() for m in db[sz][p][s]["models"]):
-                        found = True
-        current_plan.set(1 if found else 2)
-        if not found: wizard_step.set(1)
+    def _(): ui.update_text("search_query", value=input.selected_model())
 
     @render.ui
-    def main_content_ui():
-        plan = current_plan()
-        q = input.search_query().strip()
-        if plan == 1:
-            return ui.HTML(run_system_workflows(q, cloud_database(), []))
+    def main_area():
+        return ui.div(ui.input_action_button("btn_search", "فحص الموديل"), ui.output_ui("results"))
+
+    @render.ui
+    def results():
+        if not input.btn_search(): return None
+        data = fetch_data()
+        target = next((d for d in data if d['model_name'].lower() == input.search_query().lower()), None)
+        if not target: return ui.div("الموديل غير موجود.", class_="glass-card")
         
-        if plan == 2:
-            step = wizard_step()
-            if step == 1: return ui.div(ui.h4("📏 المقاس"), ui.input_text("v1", ""), ui.input_action_button("next1", "التالي"))
-            if step == 2: return ui.div(ui.h4("📺 الشاشة"), ui.input_select("v2", "", ["Notch", "Punch"]), ui.input_action_button("next2", "التالي"))
-            if step == 3: return ui.div(ui.h4("🔌 الحساس"), ui.input_select("v3", "", ["hardware", "under_display"]), ui.input_action_button("check_spec_match", "فحص"))
-        return None
-
-    # معالجات الـ Wizard
-    @reactive.effect
-    @reactive.event(input.next1)
-    def _(): wizard_step.set(2)
-    
-    @reactive.effect
-    @reactive.event(input.next2)
-    def _(): wizard_step.set(3)
-
-    @reactive.effect
-    @reactive.event(input.check_spec_match)
-    def _():
-        # هنا يتم حفظ الموديل الجديد باستخدام save_db من database.py
-        success = save_db(None, input.search_query(), input.v1(), input.v2(), input.v3())
-        if success:
-            ui.notification_show("تم الحفظ بنجاح!", type="message")
-            refresh_trigger.set(refresh_trigger() + 1)
-            current_plan.set(1)
+        res = []
+        for d in data:
+            # 1. التحذير (الحساس)
+            if d['sensor'] != target['sensor']:
+                res.append(ui.div(ui.span("🔴", class_="badge"), f"تحذير حساس: {d['model_name']}", class_="glass-card card-warn"))
+                continue
+            
+            # 2. المنطق الرياضي (التسامح 0.03)
+            diff = round(d['size'] - target['size'], 3)
+            if diff == 0: res.append(ui.div(ui.span("🟢", class_="badge"), f"مطابق: {d['model_name']}", class_="glass-card card-exact"))
+            elif 0 < diff <= 0.03: res.append(ui.div(ui.span("🔵", class_="badge"), f"أكبر (Plus): {d['model_name']}", class_="glass-card card-plus"))
+            elif -0.03 <= diff < 0: res.append(ui.div(ui.span("🟠", class_="badge"), f"أصغر (Minus): {d['model_name']}", class_="glass-card card-minus"))
+        
+        return ui.div(*res)
 
 app = App(app_ui, server)
