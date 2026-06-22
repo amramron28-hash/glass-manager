@@ -171,49 +171,77 @@ app_ui = ui.page_fluid(
         class_="search-box"
     )
 )
+# ==============================================================================
+# 3. السيرفر (Server Logic) - التفاعلية الحية والحفظ السحابي السريع
+# ==============================================================================
+
 def server(input, output, session):
     trigger_refresh = reactive.value(0)
     current_step = reactive.value(0)
 
+    # ذاكرة مؤقتة تفاعلية تجلب البيانات بلمح البصر بطريقة متوافقة تماماً مع التحديثات الأخيرة
     @reactive.calc
-    def cloud_models():
-        trigger_refresh()  
-        return fetch_all_models_from_supabase()
+    def cloud_database():
+        trigger_refresh()
+        try:
+            # استخدام الفك المباشر .data لكسر تعليق ومشاكل الدوران اللانهائي
+            response = supabase.table("phones").select("model_name").execute()
+            records = response.data if hasattr(response, 'data') else response
+            
+            if records and isinstance(records, list):
+                raw_list = [r["model_name"] for r in records if isinstance(r, dict) and r.get("model_name")]
+                return sorted(list(set(raw_list)))
+        except Exception as e:
+            print(f"خطأ سحابي أثناء الجلب: {e}")
+        return []
 
-    @reactive.effect
-    def _update_drawer_count():
-        total = len(cloud_models())
-        script_html = f"<script>document.getElementById('model_count').innerText = '{total}';</script>"
-        ui.insert_ui(ui.HTML(script_html), selector="#model_count", where="beforeBegin", immediate=True)
+    # حساب ديناميكي فوري لإجمالي الموديلات المسجلة وعرض الرقم فوراً في القائمة
+    @render.text
+    def model_count():
+        try:
+            models_list = cloud_database()
+            return str(len(models_list))
+        except:
+            return "0"
 
+    # محرك الاقتراحات المخصصة الفوري المتناسق هندسياً وفائق السرعة
     @reactive.effect
     def _handle_suggestions():
         query = input.search_query().strip()
         if not query:
             ui.run_javascript("document.getElementById('custom_suggestions').style.display = 'none';")
             return
-        models = cloud_models()
+        
+        models = cloud_database()
         filtered = [m for m in models if query.lower() in m.lower()]
         items = "".join([f"<div class='suggestion-item' onclick=\"selectModel('{escape(m)}')\">{m}</div>" for m in filtered])
+        
         if items:
             ui.update_html("custom_suggestions", content=items)
             ui.run_javascript("document.getElementById('custom_suggestions').style.display = 'block';")
         else:
             ui.run_javascript("document.getElementById('custom_suggestions').style.display = 'none';")
 
+    # معالج واجهات العرض وخطوات الإضافات السحابية عند الطوارئ
     @render.ui
     def main_content_ui():
         query = input.search_query().strip()
         if not query:
             return ui.div()
-        models_list = cloud_models()
+            
+        models_list = cloud_database()
+        
         if query in models_list:
             ui.run_javascript("document.getElementById('custom_suggestions').style.display = 'none';")
+            # استدعاء دالة workflows الخاصة بنظامك لعرض تفاصيل الموديل المطابق فوراً
             results = run_system_workflows(query, {}, [])  
             return ui.HTML(results)
+            
         if query not in models_list and current_step() == 0: 
             current_step.set(1)
+        
         step = current_step()
+        
         if step == 1:
             return ui.div(
                 ui.h4("📏 الخطوة 1: أدخل المقاس", class_="neon-text"), 
@@ -224,29 +252,31 @@ def server(input, output, session):
         if step == 2:
             return ui.div(
                 ui.h4("📺 الخطوة 2: شكل الشاشة", class_="neon-text"), 
-                ui.input_select("v2", "اختر الشكل:", ["Notch Screen", "Punch Screen", "Curved Screen"], selected=input.v2() if "v2" in input else "Notch Screen"), 
+                ui.input_select("v2", "اختر الشكل المعتمد:", ["Notch Screen", "Punch Screen", "Curved Screen"], selected=input.v2() if "v2" in input else "Notch Screen"), 
                 ui.input_action_button("nxt2", "التالي ➡️", class_="btn-neon"), 
                 class_="glass-card"
             )
         if step == 3:
             return ui.div(
                 ui.h4("🔌 الخطوة 3: نوع المستشعر", class_="neon-text"), 
-                ui.input_select("v3", "اختر المستشعر المعتمد:", ["hardware", "under_display", "virtual"], selected=input.v3() if "v3" in input else "hardware"), 
+                ui.input_select("v3", "اختر المستشعر:", ["hardware", "under_display", "virtual"], selected=input.v3() if "v3" in input else "hardware"), 
                 ui.input_action_button("fin", "✅ رفع وحفظ بـ Supabase", class_="btn-neon", style="background: linear-gradient(135deg, #2ecc71, #27ae60); color: white;"), 
                 class_="glass-card"
             )
         return ui.div()
 
+    # التنقل السلس بين الحالات والاحتفاظ بالقيم
     @reactive.effect
     @reactive.event(input.nxt1)
     def _goto_step2(): 
         current_step.set(2)
-
+        
     @reactive.effect
     @reactive.event(input.nxt2)
     def _goto_step3(): 
         current_step.set(3)
-
+        
+    # الرفع السحابي الفعلي النهائي وإعادة تصفير حقول المعالج وتحديث العداد تلقائياً
     @reactive.effect
     @reactive.event(input.fin)
     def _execute_cloud_save(): 
@@ -254,12 +284,16 @@ def server(input, output, session):
         size = input.v1().strip() if "v1" in input else ""
         panel = input.v2() if "v2" in input else "Notch Screen"
         sensor = input.v3() if "v3" in input else "hardware"
-        success = insert_model_to_supabase(model_name, size, panel, sensor)
-        if success:
+        
+        try:
+            data = {"model_name": model_name, "size": size, "panel": panel, "sensor": sensor}
+            supabase.table("phones").insert(data).execute()
+            
             trigger_refresh.set(trigger_refresh() + 1)
             current_step.set(0)
-            ui.insert_ui(ui.HTML("<script>alert('تم الحفظ بنجاح بـ Supabase!');</script>"), selector="body", where="beforeEnd", immediate=True)
-        else:
-            ui.insert_ui(ui.HTML("<script>alert('خطأ أثناء عملية الحفظ!');</script>"), selector="body", where="beforeEnd", immediate=True)
+            ui.insert_ui(ui.HTML("<script>alert('تم دمج وتحديث الموديل بنجاح في قاعدة بيانات Supabase السحابية!');</script>"), selector="body", where="beforeEnd", immediate=True)
+        except Exception as e:
+            ui.insert_ui(ui.HTML(f"<script>alert('خطأ أثناء الحفظ السحابي: {escape(str(e))}');</script>"), selector="body", where="beforeEnd", immediate=True)
 
+# 4. تشغيل التطبيق السحابي المتكامل
 app = App(app_ui, server)
