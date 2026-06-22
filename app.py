@@ -42,7 +42,7 @@ app_ui = ui.page_fluid(
                 z-index: 10005;
             }
             
-            /* تحصين درج الإعدادات الجانبي فوق كل شيء في التطبيق */
+            /* تحصين درج الإعدادات الجانبي فوق كل شيء in التطبيق */
             .drawer { 
                 position: fixed; 
                 top: 0; 
@@ -60,7 +60,7 @@ app_ui = ui.page_fluid(
             }
             .drawer.open { left: 0; }
             
-            /* حاويات الخطوات معزولة في موضع مستقر ومحمي من السقوط خلف الاقتراحات */
+            /* حاويات الخطوات معزولة in موضع مستقر ومحمي من السقوط خلف الاقتراحات */
             .glass-card { 
                 background: rgba(255, 255, 255, 0.05); 
                 backdrop-filter: blur(16px);
@@ -152,7 +152,7 @@ app_ui = ui.page_fluid(
     ),
     ui.HTML('<div id="drawer" class="drawer">'),
     ui.h3("⚙️ الإعدادات السحابية", class_="neon-text"),
-    ui.p("📊 إجمالي الموديلات الحية: ", ui.output_text("model_count", inline=True, class_="neon-text")),
+    ui.p("📊 إجمالي الموديلات الحية: ", ui.span(ui.output_text("model_count", inline=True), class_="neon-text")),
     ui.p("🔇 المراقب الصامت: نشط", style="margin: 15px 0; font-size:0.9rem; color:#888;"),
     ui.p("🔔 تنبيهات المتصل: مستقرة", style="margin: 15px 0; font-size:0.9rem; color:#888;"),
     ui.hr(style="border:0.5px solid rgba(0, 191, 255, 0.2); margin: 20px 0;"),
