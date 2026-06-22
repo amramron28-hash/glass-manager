@@ -1,4 +1,4 @@
-Enterimport os
+import os
 import json
 from shiny import App, ui, render, reactive
 from supabase import create_client, Client
