@@ -4,61 +4,91 @@ from supabase import create_client
 from workflows import run_system_workflows
 from ui_components import inject_pwa_and_styles
 
-SUPABASE_URL=os.environ.get("SUPABASE_URL")
-SUPABASE_KEY=os.environ.get("SUPABASE_KEY")
 
-supabase=create_client(SUPABASE_URL,SUPABASE_KEY)
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+
+supabase = create_client(
+    SUPABASE_URL,
+    SUPABASE_KEY
+)
+
 
 
 def convert_database(rows):
-    db={}
+
+    db = {}
+
     for item in rows:
-        size=str(item.get("size","")).strip()
-        panel=str(item.get("panel","")).strip()
-        sensor=str(item.get("sensor","")).strip()
-        model=str(item.get("model_name","")).strip()
+
+        size = str(item.get("size","")).strip()
+        panel = str(item.get("panel","")).strip()
+        sensor = str(item.get("sensor","")).strip()
+        model = str(item.get("model_name","")).strip()
+
 
         if not size or not model:
             continue
 
+
         db.setdefault(size,{})
         db[size].setdefault(panel,{})
-        db[size][panel].setdefault(sensor,{"models":[]})
+        db[size][panel].setdefault(
+            sensor,
+            {"models":[]}
+        )
+
 
         if model not in db[size][panel][sensor]["models"]:
             db[size][panel][sensor]["models"].append(model)
 
+
     return db
 
 
-app_ui=ui.page_fluid(
+
+
+app_ui = ui.page_fluid(
 
     inject_pwa_and_styles(),
 
+
     ui.HTML("""
     <script>
-    function openDrawer(){
-    document.getElementById('settings_drawer').classList.add('open');
+
+    function toggleDrawer(){
+        let d=document.getElementById(
+        'settings_drawer'
+        );
+
+        d.classList.toggle('open');
     }
-    function closeDrawer(){
-    document.getElementById('settings_drawer').classList.remove('open');
-    }
+
     </script>
     """),
 
+
+
     ui.div(
-        ui.h3("⚙️ الإعدادات",
-        style="color:#00bfff;"),
+
+        ui.h3(
+            "⚙️ الإعدادات",
+            style="color:#00bfff;"
+        ),
+
 
         ui.div(
             "🔔 الإشعارات نشطة",
             class_="metric-box"
         ),
 
+
         ui.div(
             "🛡️ المراقب الصامت يعمل",
             class_="metric-box"
         ),
+
 
         ui.input_action_button(
             "close_drawer",
@@ -66,22 +96,29 @@ app_ui=ui.page_fluid(
             class_="btn-neon"
         ),
 
+
         id="settings_drawer",
         class_="drawer"
+
     ),
 
 
+
+
     ui.div(
+
 
         ui.h2(
             "ZEGAAR AMMAR",
             style="color:#00bfff;margin:0;"
         ),
 
+
         ui.h3(
             "GLASS MANAGER",
             style="color:white;margin:0;"
         ),
+
 
         ui.input_action_button(
             "btn_settings",
@@ -89,8 +126,12 @@ app_ui=ui.page_fluid(
             class_="btn-neon"
         ),
 
+
         class_="header-bar"
+
     ),
+
+
 
 
     ui.div(
@@ -101,30 +142,53 @@ app_ui=ui.page_fluid(
             placeholder="🔍 ابحث عن موديل الهاتف..."
         ),
 
+
         ui.output_ui(
             "suggestions_curtain"
         ),
 
+
         class_="search-box"
+
     ),
+
 
 
     ui.output_ui(
         "results_area"
     )
+
 )
+
+
+
+
+
 def server(input, output, session):
+
 
     @reactive.calc
     def cloud_rows():
 
         try:
-            data=supabase.table("phones").select("*").execute()
-            return data.data or []
+
+            res = (
+                supabase
+                .table("phones")
+                .select("*")
+                .execute()
+            )
+
+            return res.data or []
+
 
         except Exception as e:
+
             print(e)
             return []
+
+
+
 
 
     @reactive.calc
@@ -135,28 +199,54 @@ def server(input, output, session):
         )
 
 
+
+
+
+
     @reactive.effect
     @reactive.event(input.btn_settings)
-    def open_drawer():
+    def open_settings():
 
         ui.insert_ui(
+
             ui.HTML(
-                "<script>openDrawer();</script>"
+                """
+                <script>
+                toggleDrawer();
+                </script>
+                """
             ),
+
             selector="body"
+
         )
+
+
+
 
 
     @reactive.effect
     @reactive.event(input.close_drawer)
-    def close_drawer():
+    def close_settings():
 
         ui.insert_ui(
+
             ui.HTML(
-                "<script>closeDrawer();</script>"
+                """
+                <script>
+                toggleDrawer();
+                </script>
+                """
             ),
+
             selector="body"
+
         )
+
+
+
+
+
 
 
     @render.ui
@@ -164,10 +254,13 @@ def server(input, output, session):
 
         q=input.search_query().strip().lower()
 
+
         if not q:
             return None
 
-        found=[]
+
+        names=[]
+
 
         for row in cloud_rows():
 
@@ -178,45 +271,78 @@ def server(input, output, session):
                 )
             )
 
+
             if q in name.lower():
-                found.append(name)
+
+                names.append(name)
 
 
-        found=list(dict.fromkeys(found))[:8]
+
+        names=list(dict.fromkeys(names))[:8]
 
 
-        if not found:
+        if not names:
             return None
 
 
-        return ui.div(
 
-            *[
+        items=[]
+
+
+        for name in names:
+
+            safe=name.replace(
+                "'",
+                "\\'"
+            )
+
+
+            items.append(
+
                 ui.div(
+
                     name,
+
                     class_="suggestion-row",
+
                     onclick=f"""
                     Shiny.setInputValue(
                     'selected_model',
-                    '{name}'
-                    )
+                    '{safe}',
+                    {{priority:'event'}}
+                    );
                     """
-                )
-                for name in found
-            ],
 
+                )
+
+            )
+
+
+
+        return ui.div(
+            *items,
             class_="suggestions-curtain"
         )
 
 
+
+
+
+
+
     @reactive.effect
     @reactive.event(input.selected_model)
-    def fill_search():
+    def choose_model():
 
         ui.update_text(
             "search_query",
             value=input.selected_model()
         )
+
+
+
+
+
 
 
     @render.ui
@@ -226,25 +352,37 @@ def server(input, output, session):
 
 
         if not phone:
+
             return None
 
 
-        result=run_system_workflows(
+
+        html = run_system_workflows(
+
             phone,
+
             database(),
+
             None
+
         )
 
 
-        if not result:
+        if not html:
+
             return None
 
 
-        return ui.HTML(result)
+
+        return ui.HTML(html)
 
 
 
-app=App(
+
+
+
+
+app = App(
     app_ui,
     server
-)
+        )
