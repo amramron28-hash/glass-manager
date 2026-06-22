@@ -1,238 +1,60 @@
 import os
 import requests
-from html import escape
-import base64
 from shiny import App, ui, render, reactive
-
-# 1. استيراد المكونات وسيرفرات الفحص من ملفات مشروعك المحفوظة في الذاكرة
-from workflows import run_system_workflows
-from ui_components import inject_pwa_and_styles
-
-# 2. إعداد واستدعاء مكتبات الربط السحابي وإدارة المتغيرات السرية
-from dotenv import load_dotenv
 from supabase import create_client, Client
+from dotenv import load_dotenv
 
+# 1. الإعدادات
 load_dotenv()
-
-# وضع الروابط والمفاتيح الحديثة مباشرة لضمان أعلى استقرار سحابي
-# ⚠️ تأكد من وضع رابط مشروعك الفعلي ومفتاحك الذي يبدأ بـ sb_publishable مكان النقاط أدناه بدقة
-SUPABASE_URL = "https://supabase.co"
-SUPABASE_KEY = "sb_publishable_..."  
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("الرجاء التأكد من وضع روابط ومفاتيح Supabase الحقيقية داخل الكود")
+# ضع الرابط الخاص بمشروعك هنا
+SUPABASE_URL = "https://your-project-id.supabase.co" 
+# ضع المفتاح الذي يبدأ بـ eyJ هنا
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# متغير عالمي لحفظ نص الخطأ إذا حدث لعرضه على الواجهة بدلاً من الاختفاء الصامت
-LATEST_CLOUD_ERROR = "لا يوجد أخطاء مسجلة، السيرفر لم يرسل بيانات بعد."
-
-# ==============================================================================
-# 3. دوال الاتصال المباشر بقاعدة البيانات - نسخة الفحص الثلاثي الذكي
-# ==============================================================================
-
-def fetch_all_models_from_supabase():
-    """جلب البيانات باستخدام 3 استراتيجيات متتالية لضمان كسر حاجز الصفر والتعرف على الخطأ الحقيقي"""
-    global LATEST_CLOUD_ERROR
-    
-    # --- الطريقة الأولى: استعلام الـ execute الافتراضي المحدث ---
-    try:
-        response = supabase.table("phones").select("model_name").execute()
-        if hasattr(response, 'data') and response.data:
-            raw_list = [r["model_name"] for r in response.data if r.get("model_name")]
-            return sorted(list(set(raw_list)))
-    except Exception as e:
-        LATEST_CLOUD_ERROR = f"فشلت الطريقة الأولى: {str(e)}"
-
-    # --- الطريقة الثانية: محاولة القراءة كقاموس (لبعض النسخ القديمة والوسيطة) ---
-    try:
-        response = supabase.table("phones").select("model_name").execute()
-        if isinstance(response, dict) and "data" in response:
-            raw_list = [r["model_name"] for r in response["data"] if r.get("model_name")]
-            return sorted(list(set(raw_list)))
-    except Exception as e:
-        LATEST_CLOUD_ERROR += f" |  فشلت الطريقة الثانية: {str(e)}"
-
-    # --- الطريقة الثالثة القاطعة: الاتصال المباشر عبر الـ REST API باستخدام requests ---
-    try:
-        clean_url = SUPABASE_URL.rstrip('/')
-        headers = {
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}"
-        }
-        api_url = f"{clean_url}/rest/v1/phones?select=model_name"
-        res = requests.get(api_url, headers=headers, timeout=15)
-        if res.status_code == 200:
-            data = res.json()
-            if data:
-                raw_list = [r["model_name"] for r in data if r.get("model_name")]
-                return sorted(list(set(raw_list)))
-        else:
-            LATEST_CLOUD_ERROR += f" |  فشلت طريقة requests بكود: {res.status_code} ورسالة: {res.text}"
-    except Exception as e:
-        LATEST_CLOUD_ERROR += f" |  فشلت طريقة requests تماماً: {str(e)}"
-        
-    return []
-
-def insert_model_to_supabase(model_name, size, panel, sensor):
-    """رفع البيانات السحابية مطابقة تماماً لأعمدة جدولك الفعلية: size, panel, sensor"""
-    try:
-        data = {
-            "model_name": model_name,
-            "size": size,
-            "panel": panel,   
-            "sensor": sensor  
-        }
-        supabase.table("phones").insert(data).execute()
-        return True
-    except Exception as e:
-        print(f"خطأ سحابي أثناء الرفع والحفظ: {e}")
-        return False
-
-# ==============================================================================
-# 4. الواجهة الرسومية (UI) - معزولة كلياً ومحمية بالـ Glassmorphism
-# ==============================================================================
+# 2. الواجهة الرسومية (UI)
 app_ui = ui.page_fluid(
     ui.head_content(
-        ui.HTML(inject_pwa_and_styles()),
         ui.tags.style("""
-            body { 
-                background: #0d1117; 
-                color: #f5f6fa; 
-                font-family: 'Segoe UI', system-ui, sans-serif; 
-                margin: 0; 
-            }
-            .header-bar { 
-                display: flex; 
-                justify-content: space-between; 
-                padding: 15px 25px; 
-                align-items: center; 
-                background: rgba(13, 17, 23, 0.45); 
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                border-bottom: 1px solid rgba(0, 191, 255, 0.2);
-                position: relative;
-                z-index: 10005; 
-            }
-            .drawer { 
-                position: fixed; 
-                top: 0; 
-                left: -320px; 
-                width: 290px; 
-                height: 100%; 
-                background: rgba(22, 27, 34, 0.9); 
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
-                border-right: 2px solid #00bfff; 
-                transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-                z-index: 10010; 
-                padding: 30px 25px; 
-                box-shadow: 5px 0 30px rgba(0,0,0,0.7);
-            }
+            body { background: #0d1117; color: #f5f6fa; font-family: sans-serif; }
+            .header-bar { display: flex; justify-content: space-between; padding: 15px; background: rgba(13, 17, 23, 0.45); border-bottom: 1px solid #00bfff; }
+            .drawer { position: fixed; top: 0; left: -320px; width: 290px; height: 100%; background: #161b22; border-right: 2px solid #00bfff; transition: 0.4s; padding: 30px; z-index: 10010; }
             .drawer.open { left: 0; }
-            .glass-card { 
-                background: rgba(255, 255, 255, 0.05); 
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
-                border: 1px solid rgba(0, 191, 255, 0.25); 
-                border-radius: 20px; 
-                padding: 30px; 
-                margin: 25px auto; 
-                width: 92%; 
-                max-width: 500px; 
-                box-shadow: 0 8px 32px 0 rgba(0, 191, 255, 0.15);
-                position: relative;
-                z-index: 999; 
-            }
-            .search-box { 
-                position: relative; 
-                max-width: 500px; 
-                margin: auto; 
-                padding: 25px 15px; 
-                z-index: 500; 
-            }
-            #custom_suggestions { 
-                position: absolute; 
-                width: calc(100% - 30px); 
-                background: rgba(22, 27, 34, 0.95); 
-                backdrop-filter: blur(10px);
-                border: 1px solid #00bfff; 
-                border-radius: 10px; 
-                z-index: 998; 
-                display: none; 
-                box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-                max-height: 250px;
-                overflow-y: auto;
-                margin-top: 5px;
-            }
-            .suggestion-item { 
-                padding: 12px 20px; 
-                border-bottom: 1px solid rgba(255,255,255,0.05); 
-                cursor: pointer; 
-                transition: 0.2s;
-            }
-            .suggestion-item:hover { 
-                background: rgba(0, 191, 255, 0.15); 
-                color: #00bfff; 
-            }
-            .btn-neon { 
-                background: linear-gradient(135deg, #00bfff, #0080ff); 
-                color: black; 
-                border: none; 
-                padding: 12px; 
-                width: 100%; 
-                border-radius: 10px; 
-                font-weight: bold; 
-                cursor: pointer;
-                transition: 0.2s;
-                box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3);
-            }
-            .btn-neon:hover { 
-                transform: translateY(-2px); 
-                box-shadow: 0 6px 20px rgba(0, 191, 255, 0.5); 
-            }
-            input[type="text"], select {
-                background: rgba(255, 255, 255, 0.07) !important;
-                border: 1px solid rgba(255, 255, 255, 0.15) !important;
-                color: white !important;
-                border-radius: 8px !important;
-                padding: 11px 15px !important;
-            }
-            input[type="text"]:focus, select:focus {
-                border-color: #00bfff !important;
-                box-shadow: 0 0 10px rgba(0, 191, 255, 0.5) !important;
-            }
-            .neon-text { color: #00bfff; text-shadow: 0 0 8px rgba(0, 191, 255, 0.6); font-weight: 600; }
+            .btn-neon { background: #00bfff; color: black; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; }
+            .neon-text { color: #00bfff; font-weight: bold; }
         """),
         ui.tags.script("""
             function toggleDrawer() { document.getElementById('drawer').classList.toggle('open'); }
-            function selectModel(m) { 
-                document.getElementById('search_query').value = m; 
-                document.getElementById('custom_suggestions').style.display = 'none';
-                Shiny.setInputValue('search_query', m, {priority: 'event'});
-            }
-            document.addEventListener("DOMContentLoaded", function() {
-                var searchInput = document.getElementById("search_query");
-                if (searchInput) { searchInput.setAttribute("autocomplete", "off"); }
-            });
         """)
     ),
-    ui.HTML("""<div id="drawer" class="drawer">
-        <h3 class="neon-text" style="margin-bottom: 20px;">⚙️ الإعدادات السحابية</h3>
-        <p style="margin: 15px 0;">⚡ الجدول المتصل: phones</p>
-        <p style="margin: 15px 0;">🔔 جرس التنبيهات</p>
-        <p style="margin: 15px 0;">🔇 المراقب الصامت</p>
-        <hr style="border:0.5px solid rgba(0, 191, 255, 0.2); margin: 20px 0;">
-        <p style="font-size: 1.05rem;">📊 إجمالي الموديلات: <span id="model_count" class="neon-text">...</span></p>
-        <button onclick="toggleDrawer()" class="btn-neon" style="color: white; background: #e74c3c;">إغلاق</button>
-    </div>"""),
+    ui.HTML('<div id="drawer" class="drawer">'),
+    ui.h3("⚙️ الإعدادات السحابية", class_="neon-text"),
+    ui.p("📊 إجمالي الموديلات: ", ui.output_text("model_count", inline=True, class_="neon-text")),
+    ui.input_action_button("close_btn", "إغلاق", onclick="toggleDrawer()", class_="btn-neon"),
+    ui.HTML('</div>'),
     ui.div(
-        ui.HTML('<div style="cursor:pointer; font-size:28px; color:#00bfff;" onclick="toggleDrawer()">☰</div>'),
-        ui.h2("ZEGAAR AMMAR", style="color:#00bfff; margin:0; font-size: 1.5rem; font-weight:600;"),
-        ui.HTML('<div style="color:#00bfff; font-size:20px; cursor:pointer;">🔔</div>'), 
+        ui.HTML('<div style="cursor:pointer; font-size:28px;" onclick="toggleDrawer()">☰</div>'),
+        ui.h2("ZEGAAR AMMAR", style="color:#00bfff;"),
         class_="header-bar"
-    ),
-    ui.div(
+    )
+)
+
+# 3. السيرفر (Server)
+def server(input, output, session):
+    @render.text
+    def model_count():
+        try:
+            response = supabase.table("phones").select("model_name").execute()
+            if response.data:
+                models = {r["model_name"] for r in response.data}
+                return str(len(models))
+            return "0"
+        except Exception as e:
+            return "Error"
+
+# 4. تشغيل التطبيق
+app = App(app_ui, server)
 def server(input, output, session):
     trigger_refresh = reactive.value(0)
     current_step = reactive.value(0)
