@@ -104,3 +104,205 @@ def server(input, output, session):
         return ui.div(*res)
 
 app = App(app_ui, server)
+def server(input, output, session):
+
+
+    @reactive.calc
+    def cloud_data():
+
+        try:
+
+            result = (
+                supabase
+                .table("phones")
+                .select("*")
+                .execute()
+            )
+
+            return result.data or []
+
+
+        except Exception as e:
+
+            print(e)
+
+            return []
+
+
+
+
+    @reactive.calc
+    def local_db():
+
+        return convert_database(
+            cloud_data()
+        )
+
+
+
+
+    # ==============================
+    # فتح وغلق الإعدادات
+    # ==============================
+
+
+    @reactive.effect
+    @reactive.event(input.btn_settings)
+    def open_settings():
+
+        ui.update_element(
+            "settings_drawer",
+            class_="drawer open"
+        )
+
+
+
+    @reactive.effect
+    @reactive.event(input.close_drawer)
+    def close_settings():
+
+        ui.update_element(
+            "settings_drawer",
+            class_="drawer"
+        )
+
+
+
+
+    # ==============================
+    # الاقتراحات
+    # ==============================
+
+
+    @render.ui
+    def suggestions_curtain():
+
+
+        q = input.search_query().strip().lower()
+
+
+        if not q:
+
+            return None
+
+
+
+        matches = []
+
+
+        for row in cloud_data():
+
+            name = str(
+                row.get(
+                    "model_name",
+                    ""
+                )
+            )
+
+
+            if q in name.lower():
+
+                matches.append(name)
+
+
+
+        matches = list(dict.fromkeys(matches))[:8]
+
+
+
+        if not matches:
+
+            return None
+
+
+
+        return ui.div(
+
+            *[
+
+                ui.div(
+                    name,
+                    class_="suggestion-row",
+                    onclick=f"""
+                    Shiny.setInputValue(
+                    'selected_model',
+                    '{name}'
+                    )
+                    """
+                )
+
+                for name in matches
+
+            ],
+
+            class_="suggestions-curtain"
+
+        )
+
+
+
+
+
+    @reactive.effect
+    @reactive.event(input.selected_model)
+    def select_model():
+
+
+        ui.update_text(
+            "search_query",
+            value=input.selected_model()
+        )
+
+
+
+
+
+    # ==============================
+    # النتائج
+    # ==============================
+
+
+    @render.ui
+    def results_area():
+
+
+        phone = (
+            input.search_query()
+            .strip()
+        )
+
+
+        if not phone:
+
+            return None
+
+
+
+        html = run_system_workflows(
+
+            phone,
+
+            local_db(),
+
+            None
+
+        )
+
+
+
+        if not html:
+
+            return None
+
+
+
+        return ui.HTML(html)
+
+
+
+
+
+app = App(
+    app_ui,
+    server
+        )
