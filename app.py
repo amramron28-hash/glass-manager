@@ -327,455 +327,146 @@ app_ui = ui.page_fluid(
 def server(input, output, session):
 
     trigger_refresh = reactive.value(0)
-
     current_step = reactive.value(0)
 
-
     # ------------------------------------------------------
-    # جلب قاعدة البيانات من Supabase
+    # جلب قاعدة البيانات من Supabase مع إصلاح صياغة الحقول
     # ------------------------------------------------------
-
     @reactive.calc
     def cloud_database():
-
         trigger_refresh()
-
-
         try:
-
-            response = (
-                supabase
-                .table("phones")
-                .select(
-                    "model_name,size,panel,sensor"
-                )
-                .execute()
-            )
-
-
-            data = response.data
-
-
-            if data and isinstance(data,list):
-
+            # تم تعديل الاستعلام ليكون متوافقاً ومستقراً مع كافة إصدارات السحاب
+            response = supabase.table("phones").select("*").execute()
+            data = response.data if hasattr(response, 'data') else response
+            
+            if data and isinstance(data, list):
                 return data
-
-
             return []
-
-
         except Exception as e:
-
-
-            print(
-                "SUPABASE ERROR:",
-                e
-            )
-
-
+            print("SUPABASE ERROR:", e)
             return []
-
-
 
     # ------------------------------------------------------
     # عداد الموديلات
     # ------------------------------------------------------
-
     @render.text
-
     def model_count():
-
-        db = cloud_database()
-
-        return str(len(db))
-
-
+        try:
+            db = cloud_database()
+            return str(len(db))
+        except:
+            return "0"
 
     # ------------------------------------------------------
-    # Auto Complete
+    # Auto Complete الفوري والمحمي هندسياً من التداخل البصري
     # ------------------------------------------------------
-
     @reactive.effect
-
     def suggestions():
-
-
         q = input.search_query().strip()
-
-
         if not q:
-
-
-            ui.run_javascript(
-                """
-                document.getElementById(
-                'custom_suggestions'
-                ).style.display='none';
-                """
-            )
-
+            ui.run_javascript("document.getElementById('custom_suggestions').style.display='none';")
             return
 
-
-
         db = cloud_database()
-
-
-        names = [
-
-            x["model_name"]
-
-            for x in db
-
-            if x.get("model_name")
-
-        ]
-
-
-
-        result = [
-
-            m for m in names
-
-            if q.lower() in m.lower()
-
-        ]
-
-
+        names = [x["model_name"] for x in db if isinstance(x, dict) and x.get("model_name")]
+        result = [m for m in names if q.lower() in m.lower()]
 
         html = ""
-
-
         for m in result[:20]:
-
-
-            html += (
-
-            "<div class='suggestion-item' "
-            f"onclick=\"selectModel('{escape(m)}')\">"
-            f"{m}"
-            "</div>"
-
-            )
-
-
+            html += f"<div class='suggestion-item' onclick=\"selectModel('{escape(m)}')\">{m}</div>"
 
         if html:
-
-
-            ui.update_html(
-                "custom_suggestions",
-                content=html
-            )
-
-
-            ui.run_javascript(
-                """
-                document.getElementById(
-                'custom_suggestions'
-                ).style.display='block';
-                """
-            )
-
-
+            ui.update_html("custom_suggestions", content=html)
+            ui.run_javascript("document.getElementById('custom_suggestions').style.display='block';")
         else:
-
-
-            ui.run_javascript(
-                """
-                document.getElementById(
-                'custom_suggestions'
-                ).style.display='none';
-                """
-            )
-
-
+            ui.run_javascript("document.getElementById('custom_suggestions').style.display='none';")
 
     # ------------------------------------------------------
-    # عرض النتائج والخطوات
+    # عرض النتائج والخطوات (معزولة ومستقرة تماماً ولا تختفي)
     # ------------------------------------------------------
-
     @render.ui
-
     def main_content_ui():
-
-
         query = input.search_query().strip()
-
-
         if not query:
-
             return ui.div()
 
-
-
         db = cloud_database()
+        phone = next((x for x in db if isinstance(x, dict) and x.get("model_name") == query), None)
 
-
-
-        phone = next(
-
-            (
-                x for x in db
-
-                if x.get("model_name") == query
-
-            ),
-
-            None
-
-        )
-
-
-
-        # إذا كان الهاتف موجود
-
+        # إذا كان الهاتف موجود في السحاب يعرض الـ workflow
         if phone:
+            ui.run_javascript("document.getElementById('custom_suggestions').style.display='none';")
+            return ui.HTML(run_system_workflows(query, phone, db))
 
-
-            ui.run_javascript(
-                """
-                document.getElementById(
-                'custom_suggestions'
-                ).style.display='none';
-                """
-            )
-
-
-            return ui.HTML(
-
-                run_system_workflows(
-                    query,
-                    phone,
-                    db
-                )
-
-            )
-
-
-
-        # هاتف جديد
-
+        # في حالة هاتف جديد - تشغيل معالج خطوات الطوارئ
         if current_step() == 0:
-
             current_step.set(1)
 
+        step = current_step()
 
-
-        if current_step() == 1:
-
-
+        if step == 1:
             return ui.div(
-
-                ui.h4(
-                    "📏 الخطوة 1: المقاس",
-                    class_="neon-text"
-                ),
-
-
-                ui.input_text(
-                    "v1",
-                    "المقاس"
-                ),
-
-
-                ui.input_action_button(
-                    "next1",
-                    "التالي ➡️",
-                    class_="btn-neon"
-                ),
-
-
+                ui.h4("📏 الخطوة 1: أدخل المقاس", class_="neon-text"),
+                ui.input_text("v1", "المقاس"),
+                ui.input_action_button("next1", "التالي ➡️", class_="btn-neon"),
                 class_="glass-card"
-
             )
 
-
-
-
-        if current_step() == 2:
-
-
+        if step == 2:
             return ui.div(
-
-
-                ui.h4(
-                    "📺 الخطوة 2: شكل الشاشة",
-                    class_="neon-text"
-                ),
-
-
-                ui.input_select(
-                    "v2",
-                    "الشاشة",
-                    [
-                    "Notch Screen",
-                    "Punch Screen",
-                    "Curved Screen"
-                    ]
-                ),
-
-
-                ui.input_action_button(
-                    "next2",
-                    "التالي ➡️",
-                    class_="btn-neon"
-                ),
-
-
+                ui.h4("📺 الخطوة 2: شكل الشاشة", class_="neon-text"),
+                ui.input_select("v2", "الشاشة", ["Notch Screen", "Punch Screen", "Curved Screen"]),
+                ui.input_action_button("next2", "التالي ➡️", class_="btn-neon"),
                 class_="glass-card"
-
-
             )
 
-
-
-        if current_step() == 3:
-
-
+        if step == 3:
             return ui.div(
-
-
-                ui.h4(
-                    "🔌 الخطوة 3: المستشعر",
-                    class_="neon-text"
-                ),
-
-
-                ui.input_select(
-                    "v3",
-                    "المستشعر",
-                    [
-                    "hardware",
-                    "under_display",
-                    "virtual"
-                    ]
-                ),
-
-
-                ui.input_action_button(
-                    "save",
-                    "حفظ في Supabase",
-                    class_="btn-neon"
-                ),
-
-
+                ui.h4("🔌 الخطوة 3: المستشعر", class_="neon-text"),
+                ui.input_select("v3", "المشعر", ["hardware", "under_display", "virtual"]),
+                ui.input_action_button("save", "حفظ في Supabase", class_="btn-neon"),
                 class_="glass-card"
-
             )
-
-
+        return ui.div()
 
     # ------------------------------------------------------
-    # التنقل
+    # التنقل والتحكم بالخطوات
     # ------------------------------------------------------
-
-
     @reactive.effect
-
     @reactive.event(input.next1)
-
     def step2():
-
         current_step.set(2)
 
-
-
     @reactive.effect
-
     @reactive.event(input.next2)
-
     def step3():
-
         current_step.set(3)
 
-
-
     # ------------------------------------------------------
-    # الحفظ
+    # الحفظ السحابي المباشر للأعمدة الصحيحة
     # ------------------------------------------------------
-
-
     @reactive.effect
-
     @reactive.event(input.save)
-
     def save_phone():
-
-
         try:
-
-
             data = {
-
-
-            "model_name":
-            input.search_query(),
-
-
-            "size":
-            input.v1(),
-
-
-            "panel":
-            input.v2(),
-
-
-            "sensor":
-            input.v3()
-
-
+                "model_name": input.search_query().strip(),
+                "size": input.v1().strip() if "v1" in input else "",
+                "panel": input.v2() if "v2" in input else "Notch Screen",
+                "sensor": input.v3() if "v3" in input else "hardware"
             }
 
-
-
-            supabase.table(
-                "phones"
-            ).insert(
-                data
-            ).execute()
-
-
-
-            trigger_refresh.set(
-                trigger_refresh()+1
-            )
-
-
+            supabase.table("phones").insert(data).execute()
+            trigger_refresh.set(trigger_refresh() + 1)
             current_step.set(0)
-
-
-
-            ui.run_javascript(
-
-                "alert('تم الحفظ بنجاح')"
-
-            )
-
-
-
+            ui.run_javascript("alert('تم الحفظ بنجاح في Supabase السحابي!');")
         except Exception as e:
-
-
             print(e)
-
-
-            ui.run_javascript(
-
-                f"alert('خطأ: {escape(str(e))}')"
-
-            )
-
-
-
-
+            ui.run_javascript(f"alert('خطأ أثناء الحفظ: {escape(str(e))}')")
 
 # ==========================================================
-# تشغيل التطبيق
+# 4) تشغيل التطبيق السحابي المتكامل
 # ==========================================================
+app = App(app_ui, server)
 
-
-app = App(
-    app_ui,
-    server
-            )
