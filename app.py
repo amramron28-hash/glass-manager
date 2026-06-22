@@ -5,7 +5,7 @@ from supabase import create_client
 # إعداد الاتصال بالسحابة
 supabase = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
-# التنسيق الزجاجي العائم
+# التنسيق الزجاجي العائم (Glassmorphism)
 css = """
     body { background-color: #0a0e17 !important; color: white !important; font-family: sans-serif; }
     .app-title { text-align: center; color: #00bfff; font-size: 2.2em; font-weight: 800; margin: 0; text-shadow: 0 0 10px #00bfff; }
@@ -27,16 +27,8 @@ app_ui = ui.page_fluid(
         ui.tags.meta(name="apple-mobile-web-app-capable", content="yes"),
         ui.tags.style(css)
     ),
-    # زر الإعدادات في الزاوية
     ui.div(ui.input_action_button("btn_settings", "⚙️", class_="btn-neon"), style="position:fixed; top:10px; right:10px; z-index:1000;"),
-    
-    # الشعار في سطرين
-    ui.div(
-        ui.h1("ZEGAAR AMMAR", class_="app-title"),
-        ui.h2("GLASS MANAGER", class_="app-sub"),
-        style="margin-top: 20px; margin-bottom: 30px;"
-    ),
-    
+    ui.div(ui.h1("ZEGAAR AMMAR", class_="app-title"), ui.h2("GLASS MANAGER", class_="app-sub"), style="margin-top: 20px; margin-bottom: 30px;"),
     ui.div(ui.input_text("search_query", "", placeholder="🔍 ابحث عن الموديل..."), ui.output_ui("suggestions_curtain"), class_="search-box"),
     ui.output_ui("results_area")
 )
@@ -45,14 +37,10 @@ def server(input, output, session):
     @reactive.calc
     def fetch_data(): return supabase.table("phones").select("*").execute().data
 
-    # نافذة الإعدادات المنبثقة
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _():
-        m = ui.modal(
-            ui.div("🔔 جرس الإشعارات: نشط", ui.br(), "🛡️ المراقب الصامت: يعمل", ui.br(), f"📱 إجمالي الموديلات: {len(fetch_data())}"),
-            title="⚙️ إعدادات النظام", easy_close=True
-        )
+        m = ui.modal(ui.div("🔔 جرس الإشعارات: نشط", ui.br(), "🛡️ المراقب الصامت: يعمل", ui.br(), f"📱 إجمالي الموديلات: {len(fetch_data())}"), title="⚙️ إعدادات النظام", easy_close=True)
         ui.modal_show(m)
 
     @render.ui
@@ -74,12 +62,16 @@ def server(input, output, session):
         target = next((d for d in data if d['model_name'].lower() == q), None)
         if not target: return ui.div("الموديل غير موجود.", class_="glass-card")
         
+        # تحويل القيم إلى أرقام لتجنب خطأ الـ TypeError
+        target_size = float(target['size'])
+        
         res = []
         for d in data:
             if d['sensor'] != target['sensor']:
                 res.append(ui.div(ui.span("🔴", class_="badge"), f"تحذير حساس: {d['model_name']}", class_="glass-card card-warn"))
                 continue
-            diff = round(d['size'] - target['size'], 3)
+            
+            diff = round(float(d['size']) - target_size, 3)
             if diff == 0: res.append(ui.div(ui.span("🟢", class_="badge"), f"مطابق: {d['model_name']}", class_="glass-card card-exact"))
             elif 0 < diff <= 0.03: res.append(ui.div(ui.span("🔵", class_="badge"), f"أكبر: {d['model_name']}", class_="glass-card card-plus"))
             elif -0.03 <= diff < 0: res.append(ui.div(ui.span("🟠", class_="badge"), f"أصغر: {d['model_name']}", class_="glass-card card-minus"))
