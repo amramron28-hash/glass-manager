@@ -1,124 +1,468 @@
-/* ضبط الحاويات وإجبار طبقات سيرفر Streamlit العميقة على تمرير الخلفية */
-[data-testid="stAppViewContainer"], 
-[data-testid="stAppViewMain"], 
-.stApp, 
-.stMain, 
-main, 
-[data-testid="stApp"],
-[data-testid="stHeader"],
-.stDeployButton {
-    background-color: transparent !important;
+/* =====================================================
+   Shiny + Supabase UI CSS
+   تنظيف كامل من Streamlit
+===================================================== */
+
+/* الخلفية العامة */
+html, body, .container-fluid {
+    background-color: #0a0e17 !important;
+    color: white !important;
+    font-family: "Segoe UI", sans-serif !important;
+    direction: rtl !important;
+}
+
+
+/* طبقات Shiny */
+.shiny-bound-output,
+main,
+.page-content {
     background: transparent !important;
 }
 
-/* 🎯 رفع شريط البحث: تقليص الارتفاع الافتراضي ليرتفع الحقل للثلث العلوي موازياً للعنوان */
-div.stMainBlockContainer {
-    background-color: transparent !important;
-    padding-top: 35px !important; 
+
+/* الخلفية صورة الهاتف */
+body {
+    background-image:
+    linear-gradient(
+        rgba(10,14,23,.25),
+        rgba(10,14,23,.25)
+    ),
+    url('/phone_image.webp') !important;
+
+    background-size: 92% auto !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
 }
 
-/* شعار وعنوان التطبيق بتأثير النيون السماوي المضيء على سطرين متناسقين تلقائياً */
-.app-main-title {
-    font-size: 24px !important; 
-    font-weight: 900 !important;
-    color: #00bfff !important;
-    text-align: center !important;
-    text-shadow: 0 0 10px rgba(0, 191, 255, 0.6), 0 0 20px rgba(0, 191, 255, 0.4) !important;
-    margin-bottom: 15px !important;
-    letter-spacing: 1px !important;
-    line-height: 1.4 !important;
-    direction: ltr !important;
-    display: block !important;
-    max-width: 90% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+
+/* =====================================================
+   العنوان العلوي
+===================================================== */
+
+.header-bar {
+
+    display:flex !important;
+    justify-content:space-between !important;
+    align-items:center !important;
+
+    padding:15px 25px !important;
+
+    background:
+    rgba(13,17,23,.55) !important;
+
+    backdrop-filter:blur(12px) !important;
+
+    border-bottom:
+    1px solid rgba(0,191,255,.25) !important;
 }
 
-/* 🎯 تنسيق حقل البحث الموحد: تصغير الحجم قليلاً وتوسيطه المطلق في الشاشة */
-div[data-testid="stBlock"] .stSearchbox, 
-.stSearchbox, 
-div[data-baseweb="select"] {
-    max-width: 85% !important; 
-    margin-left: auto !important;
-    margin-right: auto !important;
+
+/* =====================================================
+   البحث
+===================================================== */
+
+.search-box {
+
+    position:relative !important;
+
+    max-width:500px !important;
+
+    margin:35px auto !important;
+
 }
 
-/* تنسيقات القوائم وحقول الإدخال الصارمة لليمين RTL */
-div[data-testid="stWidgetLabel"], .stTextInput input, .stSelectbox div[data-baseweb="select"], .stSelectbox input {
-    direction: rtl !important;
-    text-align: right !important;
-}
-div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
-    direction: rtl !important;
-    text-align: right !important;
-    background-color: #0d111a !important;
-    border: 1px solid #00bfff !important;
-}
 
-/* 🎯 العربية أقصى اليمين: عناوين فئات التوافق ملتصقة باليمين بالكامل */
-.section-title {
-    font-size: 20px !important;
-    font-weight: bold !important;
-    color: #ffffff !important;
-    margin-top: 25px !important;
-    text-align: right !important;
-    direction: rtl !important;
+input[type="text"] {
+
+    background:#111827 !important;
+
+    color:white !important;
+
+    border:
+    1px solid #00bfff !important;
+
+    border-radius:12px !important;
+
+    padding:12px !important;
+
+    direction:rtl !important;
+
+    text-align:right !important;
+
 }
 
-/* 🎯 هندسة كروت النيون الفاخرة ثنائية اللغة (تجهيز وحجز مكان الصور في المقابل) */
-.ammar-flat-card, .flat-warning-card {
-    padding: 12px 16px !important;
-    margin-bottom: 10px !important;
-    border-radius: 12px !important;
-    display: flex !important;
-    align-items: center !important;
-    /* التوزيع الذكي: الاسم الإنجليزي أقصى اليسار وصندوق الصورة أقصى اليمين */
-    justify-content: space-between !important; 
-    direction: ltr !important; /* لضمان دفع المحتوى الإنجليزي لليسار بصورة طبيعية */
-    width: 100% !important;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3) !important;
+
+
+/* =====================================================
+   ستارة الاقتراحات
+===================================================== */
+
+
+.suggestions-curtain {
+
+
+    position:absolute !important;
+
+    top:58px !important;
+
+    right:15px !important;
+
+    left:15px !important;
+
+
+    background:
+    rgba(22,27,34,.96) !important;
+
+
+    border:
+    1px solid #00bfff !important;
+
+
+    border-radius:12px !important;
+
+
+    max-height:240px !important;
+
+    overflow-y:auto !important;
+
+
+    z-index:99999 !important;
+
+
+    box-shadow:
+    0 8px 20px rgba(0,0,0,.6) !important;
+
+
+    backdrop-filter:blur(15px) !important;
+
 }
 
-.flat-exact { background: linear-gradient(135deg, #0d1f13, #07120b) !important; border: 2px solid #2ecc71 !important; }
-.flat-plus { background: linear-gradient(135deg, #0b1a33, #060e1c) !important; border: 2px solid #3498db !important; }
-.flat-minus { background: linear-gradient(135deg, #2b1807, #140b03) !important; border: 2px solid #e67e22 !important; }
-.flat-warning-card { background: linear-gradient(135deg, #26090b, #120405) !important; border: 2px solid #ff4a5a !important; }
 
-/* 🎯 الإنجليزية أقصى اليسار: أسماء الهواتف والبراندات ملتصقة أقصى اليسار تماماً */
-.flat-phone-text { 
-    color: #ffffff !important; 
-    font-size: 20px !important; 
-    font-weight: 800 !important;
-    text-align: left !important;
-    display: block !important;
-    padding-left: 5px !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+
+.suggestion-row {
+
+
+    padding:12px !important;
+
+
+    color:white !important;
+
+
+    cursor:pointer !important;
+
+
+    text-align:right !important;
+
+
+    border-bottom:
+    1px solid rgba(255,255,255,.08) !important;
+
 }
 
-.flat-warn-text { 
-    color: #ffb3b9 !important; 
-    font-size: 20px !important;
-    font-weight: 700 !important;
-    text-align: left !important;
-    display: block !important;
+
+
+.suggestion-row:hover {
+
+    background:
+    rgba(0,191,255,.18) !important;
+
 }
 
-/* 🎯 حجز مساحة لصور الهواتف تلقائياً: مربع نيون فخم أقصى اليمين في الجهة المقابلة للاسم تماماً */
+
+
+/* طبقة الإغلاق */
+
+.dismiss-overlay {
+
+    position:fixed !important;
+
+    top:0;
+
+    left:0;
+
+    width:100vw;
+
+    height:100vh;
+
+    z-index:99990 !important;
+
+}
+
+
+
+/* =====================================================
+   الكروت الزجاجية
+===================================================== */
+
+
+.glass-card {
+
+
+    background:
+    rgba(255,255,255,.06) !important;
+
+
+    backdrop-filter:
+    blur(15px) !important;
+
+
+    border:
+    1px solid rgba(0,191,255,.35) !important;
+
+
+    border-radius:20px !important;
+
+
+    padding:25px !important;
+
+
+    margin:25px auto !important;
+
+
+    max-width:500px !important;
+
+}
+
+
+
+/* =====================================================
+   بطاقات النتائج
+===================================================== */
+
+
+.ammar-flat-card,
+.flat-warning-card {
+
+
+    padding:14px 18px !important;
+
+    margin-bottom:14px !important;
+
+
+    border-radius:12px !important;
+
+
+    display:flex !important;
+
+    align-items:center !important;
+
+
+    justify-content:space-between !important;
+
+
+    direction:ltr !important;
+
+
+    width:100% !important;
+
+
+    box-sizing:border-box !important;
+
+}
+
+
+
+/* أخضر */
+.flat-exact {
+
+background:
+linear-gradient(135deg,#0d1f13,#07120b)!important;
+
+border:
+2px solid #2ecc71 !important;
+
+}
+
+
+
+/* أزرق */
+.flat-plus {
+
+
+background:
+linear-gradient(135deg,#0b1a33,#060e1c)!important;
+
+
+border:
+2px solid #3498db !important;
+
+
+}
+
+
+
+/* برتقالي */
+
+.flat-minus {
+
+
+background:
+linear-gradient(135deg,#2b1807,#140b03)!important;
+
+
+border:
+2px solid #e67e22 !important;
+
+
+}
+
+
+
+/* أحمر */
+
+.flat-warning-card {
+
+
+background:
+linear-gradient(135deg,#26090b,#120405)!important;
+
+
+border:
+2px solid #ff4500 !important;
+
+
+}
+
+
+
+
+.flat-phone-text {
+
+
+color:white !important;
+
+
+font-size:21px !important;
+
+
+font-weight:800 !important;
+
+
+text-align:left !important;
+
+}
+
+
+
+/* مربع الصورة */
+
 .image-placeholder-box {
-    width: 55px !important;
-    height: 55px !important;
-    min-width: 55px !important;
-    border-radius: 8px !important;
-    background-color: rgba(10, 14, 23, 0.8) !important;
-    border: 1px dashed rgba(0, 191, 255, 0.4) !important;
-    box-shadow: inset 0px 0px 8px rgba(0, 191, 255, 0.15) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+
+
+width:55px !important;
+
+height:55px !important;
+
+
+border-radius:8px !important;
+
+
+background:
+rgba(10,14,23,.8) !important;
+
+
+border:
+1px dashed rgba(0,191,255,.4)!important;
+
+
+display:flex !important;
+
+
+align-items:center !important;
+
+
+justify-content:center !important;
+
+
 }
 
-section[data-testid="stSidebar"] {
-    background-color: rgba(13, 17, 26, 0.96) !important;
-    border-right: 1px solid #21263d !important;
+
+
+/* =====================================================
+   الستارة الجانبية
+===================================================== */
+
+
+.drawer {
+
+
+position:fixed !important;
+
+
+top:0 !important;
+
+
+right:-320px !important;
+
+
+width:290px !important;
+
+
+height:100% !important;
+
+
+background:
+rgba(22,27,34,.95) !important;
+
+
+backdrop-filter:
+blur(20px)!important;
+
+
+border-left:
+2px solid #00bfff !important;
+
+
+transition:.4s !important;
+
+
+z-index:200000 !important;
+
+
+padding:30px !important;
+
+
+}
+
+
+
+.drawer.open {
+
+
+right:0 !important;
+
+
+}
+
+
+
+/* =====================================================
+   العداد
+===================================================== */
+
+
+.metric-box {
+
+
+background:
+rgba(255,255,255,.05)!important;
+
+
+padding:10px!important;
+
+
+border-radius:8px!important;
+
+
+margin-bottom:10px!important;
+
+
+text-align:center!important;
+
+
+border:
+1px solid rgba(0,191,255,.2)!important;
+
+
 }
