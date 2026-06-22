@@ -1,4 +1,5 @@
 import os
+import requests
 from html import escape
 import base64
 from shiny import App, ui, render, reactive
@@ -23,24 +24,53 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# متغير عالمي لحفظ نص الخطأ إذا حدث لعرضه على الواجهة بدلاً من الاختفاء الصامت
+LATEST_CLOUD_ERROR = "لا يوجد أخطاء مسجلة، السيرفر لم يرسل بيانات بعد."
+
 # ==============================================================================
-# 3. دوال الاتصال المباشر بقاعدة البيانات لجدول phones - نسخة الجلب السريع والمباشر
+# 3. دوال الاتصال المباشر بقاعدة البيانات - نسخة الفحص الثلاثي الذكي
 # ==============================================================================
 
 def fetch_all_models_from_supabase():
-    """جلب كافة الموديلات الحية بشكل مباشر وسريع ومتوافق مع التحديثات الأمنية الجديدة"""
+    """جلب البيانات باستخدام 3 استراتيجيات متتالية لضمان كسر حاجز الصفر والتعرف على الخطأ الحقيقي"""
+    global LATEST_CLOUD_ERROR
+    
+    # --- الطريقة الأولى: استعلام الـ execute الافتراضي المحدث ---
     try:
-        # استعلام مباشر للحصول على عمود الأسماء دون تحديد قيود للنطاق لتفادي البطء
         response = supabase.table("phones").select("model_name").execute()
-        records = response.data
-        
-        if records:
-            raw_list = [r["model_name"] for r in records if r.get("model_name")]
-            # إزالة التكرارات وترتيب الموديلات أبجدياً لإطعام الاقتراحات والعداد
+        if hasattr(response, 'data') and response.data:
+            raw_list = [r["model_name"] for r in response.data if r.get("model_name")]
             return sorted(list(set(raw_list)))
-            
     except Exception as e:
-        print(f"خطأ سحابي أثناء جلب البيانات: {e}")
+        LATEST_CLOUD_ERROR = f"فشلت الطريقة الأولى: {str(e)}"
+
+    # --- الطريقة الثانية: محاولة القراءة كقاموس (لبعض النسخ القديمة والوسيطة) ---
+    try:
+        response = supabase.table("phones").select("model_name").execute()
+        if isinstance(response, dict) and "data" in response:
+            raw_list = [r["model_name"] for r in response["data"] if r.get("model_name")]
+            return sorted(list(set(raw_list)))
+    except Exception as e:
+        LATEST_CLOUD_ERROR += f" | فشلت الطريقة الثانية: {str(e)}"
+
+    # --- الطريقة الثالثة القاطعة: الاتصال المباشر عبر الـ REST API باستخدام requests (تتخطى مشاكل المكتبة تماماً) ---
+    try:
+        clean_url = SUPABASE_URL.rstrip('/')
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}"
+        }
+        api_url = f"{clean_url}/rest/v1/phones?select=model_name"
+        res = requests.get(api_url, headers=headers, timeout=15)
+        if res.status_code == 200:
+            data = res.json()
+            if data:
+                raw_list = [r["model_name"] for r in data if r.get("model_name")]
+                return sorted(list(set(raw_list)))
+        else:
+            LATEST_CLOUD_ERROR += f" | فشلت طريقة requests بكود: {res.status_code} ورسالة: {res.text}"
+    except Exception as e:
+        LATEST_CLOUD_ERROR += f" | فشلت طريقة requests تماماً: {str(e)}"
         
     return []
 
@@ -204,11 +234,6 @@ app_ui = ui.page_fluid(
     ),
     ui.div(
         ui.input_text("search_query", "", placeholder="ابحث عن موديل الهاتف..."),
-        ui.HTML("<div id='custom_suggestions'></div>"),
-        ui.output_ui("main_content_ui"),
-        class_="search-box"
-    )
-)
 def server(input, output, session):
     trigger_refresh = reactive.value(0)
     current_step = reactive.value(0)
