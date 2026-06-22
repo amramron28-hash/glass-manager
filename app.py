@@ -1,5 +1,7 @@
 import os
 import json
+import re
+
 from shiny import App, ui, render, reactive
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -8,7 +10,7 @@ from ui_components import inject_pwa_and_styles, draw_control_panel
 
 
 # ==========================================================
-# 1) Supabase
+# Supabase
 # ==========================================================
 
 load_dotenv()
@@ -22,30 +24,46 @@ supabase: Client = create_client(
 )
 
 
+
 # ==========================================================
-# 2) Workflow
+# Workflow
 # ==========================================================
 
 try:
+
     from workflows import run_system_workflows
+
 
 except Exception:
 
-    def run_system_workflows(model, db, suggestions=None):
+
+    def run_system_workflows(model, db, suggestions):
+
         return f"""
+
         <div class="glass-card">
-            <h3 class="neon-text">{model}</h3>
-            <p>Workflow غير متوفر</p>
+
+        <h3 class="neon-text">
+        {model}
+        </h3>
+
+        <p>
+        Workflow غير متوفر
+        </p>
+
         </div>
+
         """
 
 
 
+
 # ==========================================================
-# 3) Local index
+# Local index
 # ==========================================================
 
 JSON_INDEX_PATH = "models_id_db.json"
+
 
 
 def load_local_json():
@@ -62,11 +80,15 @@ def load_local_json():
 
                 return json.load(f)
 
+
         except:
 
             return {}
 
+
     return {}
+
+
 
 
 
@@ -87,53 +109,168 @@ def save_local_json(data):
                 indent=4
             )
 
+
     except Exception as e:
 
         print(e)
 
 
 
+
+
 # ==========================================================
-# 4) UI
+# تنظيف أسماء الموديلات
+# ==========================================================
+
+def clean_name(text):
+
+    return re.sub(
+        r"\s+",
+        " ",
+        str(text)
+        .lower()
+        .strip()
+    )
+
+
+
+
+
+# ==========================================================
+# تحويل Supabase لبنية المحرك
+# ==========================================================
+
+def build_workflow_db(rows):
+
+
+    database = {}
+
+
+    for row in rows:
+
+
+        model = str(
+            row.get("model_name","")
+        ).strip()
+
+
+        size = str(
+            row.get("size","")
+        ).strip()
+
+
+        panel = str(
+            row.get("panel","")
+        ).strip()
+
+
+        sensor = str(
+            row.get("sensor","")
+        ).strip()
+
+
+
+        if not model or not size:
+
+            continue
+
+
+
+        database.setdefault(
+            size,
+            {}
+        )
+
+
+        database[size].setdefault(
+            panel,
+            {}
+        )
+
+
+        database[size][panel].setdefault(
+            sensor,
+            {
+                "models":[]
+            }
+        )
+
+
+
+        if model not in database[size][panel][sensor]["models"]:
+
+            database[size][panel][sensor]["models"].append(model)
+
+
+
+    return database
+
+
+
+
+
+# ==========================================================
+# واجهة التطبيق
 # ==========================================================
 
 
 app_ui = ui.page_fluid(
+
 
     ui.HTML(
         inject_pwa_and_styles()
     ),
 
 
+
     ui.HTML("""
+
+    <div class="header-bar">
+
+    <div
+    onclick="
+    document.getElementById('drawer')
+    .classList.toggle('open')"
+
+    style="
+    font-size:28px;
+    cursor:pointer;
+    color:#00bfff">
+
+    ☰
+
+    </div>
+
+
+    <div>
+
+    <h2 class="neon-text">
+    ZEGAAR AMMAR
+    </h2>
+
+
+    <div style="
+    color:#aaa;
+    text-align:center">
+
+    GLASS MANAGER
+
+    </div>
+
+
+    </div>
+
+
+    </div>
+
 
     <div id="drawer" class="drawer">
 
     </div>
 
-    <div class="header-bar">
-
-        <div onclick="
-        document.getElementById('drawer')
-        .classList.toggle('open')"
-        style="
-        font-size:28px;
-        cursor:pointer;
-        color:#00bfff">
-
-        ☰
-
-        </div>
-
-
-        <h2 style="color:#00bfff">
-        ZEGAAR AMMAR
-        </h2>
-
-
-    </div>
 
     """),
+
 
 
 
@@ -145,11 +282,13 @@ app_ui = ui.page_fluid(
 
     ui.div(
 
+
         ui.input_text(
             "search_query",
             "",
             placeholder="ابحث عن موديل الهاتف..."
         ),
+
 
 
         ui.output_ui(
@@ -171,7 +310,9 @@ app_ui = ui.page_fluid(
         ),
 
 
+
         class_="search-box"
+
 
     )
 
@@ -179,101 +320,89 @@ app_ui = ui.page_fluid(
 
 
 
+
+
 # ==========================================================
-# 5) Server
+# Server
 # ==========================================================
 
 
 def server(inp, output, session):
 
 
-    refresh_trigger = reactive.value(0)
+    refresh = reactive.value(0)
+
 
     current_plan = reactive.value(0)
 
-    wizard_step = reactive.value(1)
 
     show_suggestions = reactive.value(False)
-
-
-
-    screen_options = reactive.value(
-        [
-            "Notch",
-            "Punch",
-            "Curved"
-        ]
-    )
-
-
-    sensor_options = reactive.value(
-        [
-            "hardware",
-            "under_display"
-        ]
-    )
-
-
-
-    @reactive.calc
+@reactive.calc
     def cloud_database():
 
-        refresh_trigger.get()
+        refresh.get()
 
         try:
 
-            res = (
+            result = (
                 supabase
                 .table("phones")
                 .select("*")
                 .execute()
             )
 
-            return res.data or []
+
+            return result.data or []
 
 
         except Exception as e:
 
-            print(e)
+
+            print(
+                "Supabase error:",
+                e
+            )
+
 
             return []
+
+
 
 
 
     @render.ui
     def control_panel():
 
+
         return draw_control_panel(
+
             total_models=len(
                 cloud_database()
             )
+
         )
 
 
 
-    @render.text
-    def model_count_display():
-
-        return (
-            f"📱 عدد الموديلات: "
-            f"{len(cloud_database())}"
-        )
-
-
-
-    # ======================================================
-    # Auto complete
-    # ======================================================
 
 
     @reactive.effect
     @reactive.event(inp.search_query)
-    def search_change():
+    def typing():
+
 
         show_suggestions.set(True)
 
+
         current_plan.set(0)
 
+
+
+
+
+# ==========================================================
+# Auto complete
+# ==========================================================
 
 
     @render.ui
@@ -286,7 +415,10 @@ def server(inp, output, session):
 
 
 
-        q = inp.search_query().strip().lower()
+        q = clean_name(
+            inp.search_query()
+        )
+
 
 
         if not q:
@@ -295,27 +427,38 @@ def server(inp, output, session):
 
 
 
-        local = load_local_json()
+        data = load_local_json()
 
 
-        models = list(local.keys())
+
+        models = list(
+            data.keys()
+        )
+
 
 
         if not models:
 
+
             models = [
+
                 x.get("model_name")
+
                 for x in cloud_database()
+
                 if x.get("model_name")
+
             ]
 
 
 
         matches = [
 
+
             m for m in models
 
-            if m and q in m.lower()
+            if q in clean_name(m)
+
 
         ][:8]
 
@@ -327,101 +470,86 @@ def server(inp, output, session):
 
 
 
-        rows=[]
-
-
-        for m in matches:
-
-
-            rows.append(
-
-                ui.div(
-
-                    f"📱 {m}",
-
-                    class_="suggestion-row",
-
-                    onclick=f"""
-                    Shiny.setInputValue(
-                    'selected_suggestion',
-                    '{m}',
-                    {{priority:'event'}}
-                    )
-                    """
-
-                )
-
-            )
-
-
-
         return ui.div(
 
+
+            *[
+
             ui.div(
 
-                class_="dismiss-overlay",
+                f"📱 {m}",
 
-                onclick="""
+                class_="suggestion-row",
+
+                onclick=f"""
+
                 Shiny.setInputValue(
-                'clicked_outside',
-                Math.random(),
-                {priority:'event'}
+                'selected_model',
+                '{m}',
+                {{priority:'event'}}
                 )
+
                 """
-
-            ),
-
-            ui.div(
-
-                *rows,
-
-                class_="suggestions-curtain"
 
             )
 
-)
-# ==========================================================
-# إغلاق الستارة
-# ==========================================================
+            for m in matches
 
 
-    @reactive.effect
-    @reactive.event(inp.clicked_outside)
-    def close_curtain():
-
-        show_suggestions.set(False)
+            ],
 
 
+            class_="suggestions-curtain"
 
-    @reactive.effect
-    @reactive.event(inp.selected_suggestion)
-    def select_model():
 
-        value = inp.selected_suggestion()
-
-        ui.update_text(
-            "search_query",
-            value=value
         )
 
+
+
+
+
+    @reactive.effect
+    @reactive.event(inp.selected_model)
+    def select_model():
+
+
+        value = inp.selected_model()
+
+
+
+        ui.update_text(
+
+            "search_query",
+
+            value=value
+
+        )
+
+
+
         show_suggestions.set(False)
 
 
 
+
+
 # ==========================================================
-# البحث الرئيسي
+# البحث الحقيقي
 # ==========================================================
 
 
     @reactive.effect
     @reactive.event(inp.btn_search)
-    def search_button():
+    def search_phone():
 
 
         show_suggestions.set(False)
 
 
-        query = inp.search_query().strip()
+
+        query = clean_name(
+            inp.search_query()
+        )
 
 
 
@@ -429,15 +557,21 @@ def server(inp, output, session):
 
 
             ui.notification_show(
-                "اكتب اسم الهاتف أولاً",
+
+                "اكتب اسم الهاتف",
+
                 type="warning"
+
             )
+
 
             return
 
 
 
-        db = cloud_database()
+
+
+        rows = cloud_database()
 
 
 
@@ -445,19 +579,21 @@ def server(inp, output, session):
 
             (
 
-                x for x in db
+            x for x in rows
 
-                if str(
-                    x.get("model_name","")
-                ).lower().strip()
-                ==
-                query.lower().strip()
+            if clean_name(
+                x.get("model_name","")
+            )
+            ==
+            query
 
             ),
 
             None
 
         )
+
+
 
 
 
@@ -473,7 +609,7 @@ def server(inp, output, session):
 
             ui.notification_show(
 
-                "الموديل غير موجود بالاسم، الانتقال للخطة 2",
+                "الموديل غير موجود بالاسم",
 
                 type="warning"
 
@@ -481,179 +617,6 @@ def server(inp, output, session):
 
 
             current_plan.set(2)
-
-            wizard_step.set(1)
-
-
-
-
-
-# ==========================================================
-# الخطة 2
-# ==========================================================
-
-
-    @reactive.effect
-    @reactive.event(inp.next1)
-    def next_one():
-
-
-        if not inp.v1().strip():
-
-            ui.notification_show(
-                "أدخل المقاس",
-                type="error"
-            )
-
-            return
-
-
-        wizard_step.set(2)
-
-
-
-    @reactive.effect
-    @reactive.event(inp.next2)
-    def next_two():
-
-        wizard_step.set(3)
-
-
-
-
-
-    @reactive.effect
-    @reactive.event(inp.check_spec_match)
-    def check_match():
-
-
-        db = cloud_database()
-
-
-        size = inp.v1().strip()
-
-        panel = inp.v2()
-
-        sensor = inp.v3()
-
-
-
-        matches = [
-
-            x for x in db
-
-            if
-
-            str(x.get("size","")).strip()
-            == size
-
-            and
-
-            str(x.get("panel","")).lower().strip()
-            ==
-            str(panel).lower().strip()
-
-            and
-
-            str(x.get("sensor","")).lower().strip()
-            ==
-            str(sensor).lower().strip()
-
-        ]
-
-
-
-        if matches:
-
-            current_plan.set(22)
-
-
-        else:
-
-            current_plan.set(3)
-
-
-
-
-
-# ==========================================================
-# الخطة 3 حفظ
-# ==========================================================
-
-
-    @reactive.effect
-    @reactive.event(inp.emergency_save)
-    def emergency_save():
-
-
-        name = inp.search_query().strip()
-
-
-        data = {
-
-            "model_name":name,
-
-            "size":inp.v1(),
-
-            "panel":inp.v2(),
-
-            "sensor":inp.v3()
-
-        }
-
-
-
-        try:
-
-
-            supabase.table(
-                "phones"
-            ).insert(data).execute()
-
-
-
-            local = load_local_json()
-
-
-
-            local[name] = data
-
-
-
-            save_local_json(local)
-
-
-
-            refresh_trigger.set(
-                refresh_trigger()+1
-            )
-
-
-
-            current_plan.set(0)
-
-
-
-            ui.update_text(
-                "search_query",
-                value=""
-            )
-
-
-
-            ui.notification_show(
-                "تم الحفظ بنجاح",
-                type="message"
-            )
-
-
-        except Exception as e:
-
-
-            ui.notification_show(
-                str(e),
-                type="error"
-            )
 
 
 
@@ -668,31 +631,46 @@ def server(inp, output, session):
     def main_content_ui():
 
 
+        if show_suggestions():
+
+            return ui.div()
+
+
+
         plan = current_plan()
 
 
-        query = inp.search_query().strip()
 
-
-
-        if not query:
-
-            return ui.div()
+        query = inp.search_query()
 
 
 
         if plan == 1:
 
 
-            db = cloud_database()
+            rows = cloud_database()
+
+
+
+            workflow_db = build_workflow_db(
+                rows
+            )
+
 
 
             return ui.HTML(
 
+
                 run_system_workflows(
+
                     query,
-                    db
+
+                    workflow_db,
+
+                    []
+
                 )
+
 
             )
 
@@ -703,121 +681,20 @@ def server(inp, output, session):
         if plan == 2:
 
 
-            step = wizard_step()
-
-
-
-            if step == 1:
-
-
-                return ui.div(
-
-                    ui.h4(
-                        "📏 الخطة 2"
-                    ),
-
-
-                    ui.input_text(
-                        "v1",
-                        "المقاس"
-                    ),
-
-
-                    ui.input_action_button(
-                        "next1",
-                        "التالي"
-                    ),
-
-                    class_="glass-card"
-
-                )
-
-
-
-            if step == 2:
-
-
-                return ui.div(
-
-                    ui.input_select(
-                        "v2",
-                        "شكل الشاشة",
-                        choices=screen_options()
-                    ),
-
-
-                    ui.input_action_button(
-                        "next2",
-                        "التالي"
-                    ),
-
-                    class_="glass-card"
-
-                )
-
-
-
-            if step == 3:
-
-
-                return ui.div(
-
-                    ui.input_select(
-                        "v3",
-                        "المستشعر",
-                        choices=sensor_options()
-                    ),
-
-
-                    ui.input_action_button(
-                        "check_spec_match",
-                        "فحص"
-                    ),
-
-                    class_="glass-card"
-
-                )
-
-
-
-
-
-        if plan == 22:
-
-
-            db = cloud_database()
-
-
-            return ui.HTML(
-
-                run_system_workflows(
-                    query,
-                    db
-                )
-
-            )
-
-
-
-
-
-        if plan == 3:
-
-
             return ui.div(
 
                 ui.h4(
-                    "🚨 إضافة مجموعة جديدة"
+                    "الخطة 2 - إدخال المواصفات"
                 ),
 
 
-                ui.input_action_button(
-                    "emergency_save",
-                    "حفظ"
+                ui.p(
+                    "سيتم تشغيلها بعد فشل الاسم"
                 ),
 
 
                 class_="glass-card"
+
 
             )
 
@@ -830,6 +707,9 @@ def server(inp, output, session):
 
 
 app = App(
+
     app_ui,
+
     server
-            )
+
+        )
