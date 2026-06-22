@@ -51,9 +51,9 @@ def fetch_all_models_from_supabase():
             raw_list = [r["model_name"] for r in response["data"] if r.get("model_name")]
             return sorted(list(set(raw_list)))
     except Exception as e:
-        LATEST_CLOUD_ERROR += f" | فشلت الطريقة الثانية: {str(e)}"
+        LATEST_CLOUD_ERROR += f" |  فشلت الطريقة الثانية: {str(e)}"
 
-    # --- الطريقة الثالثة القاطعة: الاتصال المباشر عبر الـ REST API باستخدام requests (تتخطى مشاكل المكتبة تماماً) ---
+    # --- الطريقة الثالثة القاطعة: الاتصال المباشر عبر الـ REST API باستخدام requests ---
     try:
         clean_url = SUPABASE_URL.rstrip('/')
         headers = {
@@ -68,9 +68,9 @@ def fetch_all_models_from_supabase():
                 raw_list = [r["model_name"] for r in data if r.get("model_name")]
                 return sorted(list(set(raw_list)))
         else:
-            LATEST_CLOUD_ERROR += f" | فشلت طريقة requests بكود: {res.status_code} ورسالة: {res.text}"
+            LATEST_CLOUD_ERROR += f" |  فشلت طريقة requests بكود: {res.status_code} ورسالة: {res.text}"
     except Exception as e:
-        LATEST_CLOUD_ERROR += f" | فشلت طريقة requests تماماً: {str(e)}"
+        LATEST_CLOUD_ERROR += f" |  فشلت طريقة requests تماماً: {str(e)}"
         
     return []
 
@@ -233,7 +233,6 @@ app_ui = ui.page_fluid(
         class_="header-bar"
     ),
     ui.div(
-        ui.input_text("search_query", "", placeholder="ابحث عن موديل الهاتف..."),
 def server(input, output, session):
     trigger_refresh = reactive.value(0)
     current_step = reactive.value(0)
