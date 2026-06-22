@@ -13,18 +13,22 @@ def extract_numeric_size(size_string):
     return None
 
 
+
 def find_model_coords(db_data, phone_name):
+
     if not phone_name or not db_data:
         return None, None, None, None
 
     search = phone_name.strip().lower()
 
-    # تطابق كامل
+
     for size, panels in db_data.items():
+
         if not isinstance(panels, dict):
             continue
 
         for panel, sensors in panels.items():
+
             if not isinstance(sensors, dict):
                 continue
 
@@ -33,16 +37,19 @@ def find_model_coords(db_data, phone_name):
                 models = data.get("models", []) if isinstance(data, dict) else []
 
                 for model in models:
-                    if model.strip().lower() == search:
+
+                    if str(model).strip().lower() == search:
                         return size, panel, sensor, model
 
 
-    # تطابق جزئي
+
     for size, panels in db_data.items():
+
         if not isinstance(panels, dict):
             continue
 
         for panel, sensors in panels.items():
+
             if not isinstance(sensors, dict):
                 continue
 
@@ -51,11 +58,13 @@ def find_model_coords(db_data, phone_name):
                 models = data.get("models", []) if isinstance(data, dict) else []
 
                 for model in models:
-                    if search in model.lower():
+
+                    if search in str(model).lower():
                         return size, panel, sensor, model
 
 
     return None, None, None, None
+
 
 
 
@@ -87,6 +96,7 @@ def get_compatibles_strict(db_data, phone_name):
     tolerance = 0.03
 
 
+
     for size_key, panels in db_data.items():
 
         other = extract_numeric_size(size_key)
@@ -96,6 +106,11 @@ def get_compatibles_strict(db_data, phone_name):
 
 
         diff = other - current
+
+
+        if not isinstance(panels, dict):
+            continue
+
 
 
         for panel_key, sensors in panels.items():
@@ -116,8 +131,9 @@ def get_compatibles_strict(db_data, phone_name):
                 for model in models:
 
 
-                    if real_name and model.lower() == real_name.lower():
+                    if real_name and str(model).lower() == str(real_name).lower():
                         continue
+
 
 
                     if abs(diff) < 0.001:
@@ -165,26 +181,13 @@ def ai_background_global_verify(phone_name):
             data = response.json()
 
             return {
-                "size": str(
-                    data.get(
-                        "size",
-                        "غير محدد"
-                    )
-                ),
 
-                "panel": str(
-                    data.get(
-                        "panel",
-                        "غير محدد"
-                    )
-                ),
+                "size":str(data.get("size","غير محدد")),
 
-                "sensor": str(
-                    data.get(
-                        "sensor",
-                        "غير محدد"
-                    )
-                )
+                "panel":str(data.get("panel","غير محدد")),
+
+                "sensor":str(data.get("sensor","غير محدد"))
+
             }
 
 
@@ -218,23 +221,21 @@ def run_system_workflows(phone, db_data, suggestions=None):
     output = []
 
 
-    # الخطة 1
+
     if real_name:
 
 
         output.append(
-
             str(
-
                 draw_technical_coords(
                     size,
                     panel,
-                    sensor
+                    sensor,
+                    real_name
                 )
-
             )
-
         )
+
 
 
         compatible = get_compatibles_strict(
@@ -243,51 +244,40 @@ def run_system_workflows(phone, db_data, suggestions=None):
         )
 
 
+
         output.append(
-
             str(
-
                 draw_neon_section(
                     "مطابقة تماماً",
                     compatible["exact"],
                     "#2ecc71",
                     "🟢"
                 )
-
             )
-
         )
 
 
         output.append(
-
             str(
-
                 draw_neon_section(
                     "أكبر قليلاً",
                     compatible["plus"],
                     "#3498db",
                     "🔵"
                 )
-
             )
-
         )
 
 
         output.append(
-
             str(
-
                 draw_neon_section(
                     "أصغر قليلاً",
                     compatible["minus"],
                     "#e67e22",
                     "🟠"
                 )
-
             )
-
         )
 
 
@@ -295,17 +285,11 @@ def run_system_workflows(phone, db_data, suggestions=None):
 
 
         output.append(
-
-            f"""
-
-            <div class="flat-warning-card">
-
-            ⚠️ الموديل غير موجود في قاعدة البيانات
-
-            </div>
-
             """
-
+            <div class="flat-warning-card">
+            ⚠️ الموديل غير موجود في قاعدة البيانات
+            </div>
+            """
         )
 
 
@@ -315,31 +299,23 @@ def run_system_workflows(phone, db_data, suggestions=None):
         if ai:
 
             output.append(
+                f"""
+                <div class="glass-card">
 
-            f"""
+                🤖 الفحص الذكي
 
-            <div class="glass-card">
+                <br>
+                📏 {escape(ai['size'])}
 
-            🤖 الفحص الذكي
+                <br>
+                📺 {escape(ai['panel'])}
 
-            <br>
+                <br>
+                👁️ {escape(ai['sensor'])}
 
-            📏 {escape(ai['size'])}
-
-            <br>
-
-            📺 {escape(ai['panel'])}
-
-            <br>
-
-            👁️ {escape(ai['sensor'])}
-
-            </div>
-
-            """
-
+                </div>
+                """
             )
-
 
 
     return "\n".join(output)
