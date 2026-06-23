@@ -9,8 +9,13 @@ def inject_pwa_and_styles():
     if _bg_cache is None:
         for p in ["phone_image.webp", "./phone_image.webp", "/app/phone_image.webp"]:
             if os.path.exists(p):
-                with open(p, "rb") as f: _bg_cache = base64.b64encode(f.read()).decode()
+                with open(p, "rb") as f:
+                    _bg_cache = base64.b64encode(f.read()).decode()
                 break
+
+    if _bg_cache is None:
+        _bg_cache = ""
+
     return ui.HTML(f"""<style>
 html, body, .container-fluid {{ background-color:#0a0e17 !important; background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,{_bg_cache}'); background-size:92% auto !important; background-position:center center !important; background-repeat:no-repeat !important; background-attachment:fixed !important; color:white !important; direction:rtl !important; }}
 
@@ -124,7 +129,6 @@ input[type="text"], input[type="number"], select {{
 
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
     return ui.HTML(f"""<div class="glass-card" style="box-shadow: 0 0 15px rgba(0, 191, 255, 0.25);"><h3 style="color:#00bfff; text-align:center; margin-bottom:15px;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff;">{escape(str(size_grp))}</span><br>📺 <b>نوع الشاشة:</b> <span style="color:#00bfff;">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر الحركي:</b> <span style="color:#00bfff;">{escape(str(sensor_grp))}</span></div></div>""")
-
 def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
     if not models_list: return ui.div()
     class_map = {"exact": "flat-exact", "plus": "flat-plus", "minus": "flat-minus"}
@@ -152,4 +156,17 @@ def draw_plan_3_modal(phone_name, size, panel, sensor):
             style="display:flex; gap:10px;"
         ),
         class_="glass-card",
+        style="""
+            width:90%;
+            max-width:500px;
+            background:#161b22;
+            border:2px solid #e67e22;
+            box-shadow:0 0 25px rgba(230,126,34,.35);
+        """
+    )
+    return ui.div(
+        card_body,
+        class_="custom-modal-backdrop",
+        id="plan_3_modal_container"
+    )
 
