@@ -295,5 +295,5 @@ def draw_plan_3_modal(phone_name, size, panel, sensor):
                 
                 ui.p("هل تريد تسجيل هذا الهاتف وتأسيس مرجع فني ومجموعة جديدة له في السحاب؟", style="text-align:right; font-size:14px; margin-bottom:20px;"),
                 
-                ui.div((
+                ui.div)) 
                     ui.input_action_button("p3_submit", "💾 نعم، أنشئ المجموعة واحفظ", class_="btn-neon", style="background:#e67e22; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; flex:2;"),
