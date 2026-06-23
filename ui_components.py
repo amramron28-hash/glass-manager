@@ -207,7 +207,6 @@ def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_i
     if not models_list:
         return ui.div()
 
-    # تحديد كلاس التنسيق الزجاجي بناءً على نوع الخطة الممررة
     class_map = {
         "exact": "flat-exact",
         "plus": "flat-plus",
@@ -234,8 +233,6 @@ def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_i
         )
 
     return ui.div(*cards)
-
-# الخطة 2 التفاعلية: نافذة منبثقة لطلب إدخال المواصفات يدوياً عند غياب الهاتف
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
     panel_options = {p: p for p in existing_panels if p}
     sensor_options = {s: s for s in existing_sensors if s}
@@ -244,21 +241,18 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
         ui.div(
             ui.div(
                 ui.h3(f"📋 المواصفات الفنية لـ {phone_name}", style="color:#3498db; text-align:center; margin-bottom:20px;"),
-                
                 ui.label("📏 أدخل مقاس الشاشة يدوياً (مثال: 6.53):", style="display:block; margin-bottom:5px; text-align:right;"),
                 ui.input_numeric("p2_size", "", value=None, step=0.01),
                 ui.p("", style="margin-bottom:15px;"),
-                
                 ui.div(
                     ui.label("📺 اختر شكل ونوع الشاشة:", style="text-align:right;"),
-                    style="display:flex; justify-content:beteen; align-items:center;"
+                    style="display:flex; justify-content:space-between; align-items:center;"
                 ),
                 ui.div(
                     ui.input_select("p2_panel", "", choices=panel_options),
                     ui.input_action_button("btn_add_panel", "➕", class_="btn-neon", style="padding:10px; margin-right:5px; background:#3498db; border:none; color:white; border-radius:8px;"),
                     style="display:flex; gap:5px; width:100%; margin-bottom:15px;"
                 ),
-                
                 ui.div(
                     ui.label("👁️ اختر نوع مستشعر التقارب الصارم:", style="text-align:right;"),
                 ),
@@ -267,7 +261,6 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
                     ui.input_action_button("btn_add_sensor", "➕", class_="btn-neon", style="padding:10px; margin-right:5px; background:#3498db; border:none; color:white; border-radius:8px;"),
                     style="display:flex; gap:5px; width:100%; margin-bottom:20px;"
                 ),
-                
                 ui.div(
                     ui.input_action_button("p2_search", "🔍 فحص وتطابق المجموعات", class_="btn-neon", style="background:#2ecc71; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; flex:2;"),
                     ui.input_action_button("p2_cancel", "إلغلاق", class_="btn-neon", style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; flex:1;"),
@@ -280,20 +273,32 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
         id="plan_2_modal_container"
     )
 
-# خطة الطوارئ 3 التفاعلية: نافذة تطلب إنشاء مجموعة جديدة وحفظها في قاعدة البيانات
 def draw_plan_3_modal(phone_name, size, panel, sensor):
     return ui.div(
         ui.div(
             ui.div(
                 ui.h3("🚨 خطة الطوارئ 3: إنشاء مجموعة جديدة", style="color:#e67e22; text-align:center; margin-bottom:15px;"),
                 ui.p(f"النظام لم يعثر على أي مجموعة مطابقة للمواصفات المدخلة للهاتف ({phone_name}).", style="text-align:center; color:#bbb; font-size:14px;"),
-                
                 ui.div(
                     f"📐 المقاس المقترح: {size} | 📺 الشاشة: {panel} | 👁️ المستشعر: {sensor}",
                     style="background:rgba(230,126,34,0.1); border:1px solid #e67e22; padding:10px; border-radius:8px; font-size:13px; text-align:center; margin-bottom:20px; color:#e67e22;"
                 ),
-                
                 ui.p("هل تريد تسجيل هذا الهاتف وتأسيس مرجع فني ومجموعة جديدة له في السحاب؟", style="text-align:right; font-size:14px; margin-bottom:20px;"),
-                
-                ui.div)) 
+                ui.div(
                     ui.input_action_button("p3_submit", "💾 نعم، أنشئ المجموعة واحفظ", class_="btn-neon", style="background:#e67e22; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; flex:2;"),
+                    ui.input_action_button("p3_cancel", "تراجع", class_="btn-neon", style="background:#7f8c8d; color:white; padding:12px; border:none; border-radius:8px; flex:1;"),
+                    style="display:flex; gap:10px;"
+                ),
+                class_="glass-card", style="width:90%; max-width:450px; background:#161b22; border-color:#e67e22; border-width:2px; box-shadow: 0 0 25px rgba(230, 126, 34, 0.4);"
+            ),
+            class_="custom-modal-backdrop"
+        ),
+        id="plan_3_modal_container"
+    )
+
+def draw_control_panel(total_models=0, empty_groups_count=0):
+    return ui.div(
+        ui.h3("🛠️ لوحة التحكم", style="color:#00bfff;text-align:center;"),
+        ui.div(f"📱 الهواتف المسجلة: {total_models}", class_="glass-card"),
+        ui.div(f"🧹 مجموعات للمراجعة: {empty_groups_count}", class_="glass-card")
+    )
