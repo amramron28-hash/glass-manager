@@ -140,13 +140,16 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
     return ui.div(ui.div(ui.div(ui.h3(f"📋 المواصفات الفنية لـ {phone_name}", style="color:#3498db; text-align:center; margin-bottom:20px;"), ui.input_numeric("p2_size", "📏 أدخل مقاس الشاشة يدوياً (مثال: 6.53):", value=None, step=0.01), ui.p("", style="margin-bottom:15px;"), ui.div(ui.input_select("p2_panel", "📺 اختر شكل ونوع الشاشة:", choices=panel_options), ui.input_action_button("btn_add_panel", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), style="display:flex; gap:5px; width:100%; margin-bottom:15px; align-items: center;"), ui.div(ui.input_select("p2_sensor", "👁️ اختر نوع مستشعر التقارب الصارم:", choices=sensor_options), ui.input_action_button("btn_add_sensor", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), style="display:flex; gap:5px; width:100%; margin-bottom:20px; align-items: center;"), ui.div(ui.input_action_button("p2_search", "🔍 فحص وتطابق المجموعات", class_="btn-neon", style="background:#2ecc71; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; flex:2;"), ui.input_action_button("p2_cancel", "إلغلاق", class_="btn-neon", style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; flex:1;"), style="display:flex; gap:10px; justify-content:space-between;"), class_="glass-card", style="width:90%; max-width:450px; background:#161b22; border-color:#3498db; border-width:2px; box-shadow: 0 0 25px rgba(52, 152, 219, 0.4);"), class_="custom-modal-backdrop"), id="plan_2_modal_container")
 
 def draw_plan_3_modal(phone_name, size, panel, sensor):
-    return ui.div(
+    info_str = f"📐 المقاس المقترح: {size} | 📺 الشاشة: {panel} | 👁️ المستشعر: {sensor}"
+    card_body = ui.div(
+        ui.h3("🚨 خطة الطوارئ 3: إنشاء مجموعة جديدة", style="color:#e67e22; text-align:center; margin-bottom:15px;"),
+        ui.p(f"النظام لم يعثر على أي مجموعة مطابقة للمواصفات المدخلة للهاتف ({phone_name}).", style="text-align:center; color:#bbb; font-size:14px;"),
+        ui.div(info_str, style="background:rgba(230,126,34,0.1); border:1px solid #e67e22; padding:10px; border-radius:8px; font-size:13px; text-align:center; margin-bottom:20px; color:#e67e22;"),
+        ui.p("هل تريد تسجيل هذا الهاتف وتأسيس مرجع فني ومجموعة جديدة له في السحاب?", style="text-align:right; font-size:14px; margin-bottom:20px;"),
         ui.div(
-            ui.div(
-                ui.h3("🚨 خطة الطوارئ 3: إنشاء مجموعة جديدة", style="color:#e67e22; text-align:center; margin-bottom:15px;"), 
-                ui.p(f"النظام لم يعثر على أي مجموعة مطابقة للمواصفات المدخلة للهاتف ({phone_name}).", style="text-align:center; color:#bbb; font-size:14px;"), 
-                ui.div(f"📐 المقاس المقترح: {size} | 📺 الشاشة: {panel} | 👁️ المستشعر: {sensor}", style="background:rgba(230,126,34,0.1); border:1px solid #e67e22; padding:10px; border-radius:8px; font-size:13px; text-align:center; margin-bottom:20px; color:#e67e22;"), 
-                ui.p("هل تريد تسجيل هذا الهاتف وتأسيس مرجع فني ومجموعة جديدة له في السحاب?", style="text-align:right; font-size:14px; margin-bottom:20px;"), 
-                ui.div(
-                    ui.input_action_button("p3_submit", "💾 نعم، أنشئ المجموعة واحفظ", class_="btn-neon", style="background:#e67e22; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; flex:2;"), 
-                    ui.input_action_button("p3_cancel", "تراجع", class_="btn-neon", style="background:#7f8c8d; color:white; padding:12px; border:none; border-radius:8px; flex:1;"), 
+            ui.input_action_button("p3_submit", "💾 نعم، أنشئ المجموعة واحفظ", class_="btn-neon", style="background:#e67e22; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; flex:2;"),
+            ui.input_action_button("p3_cancel", "تراجع", class_="btn-neon", style="background:#7f8c8d; color:white; padding:12px; border:none; border-radius:8px; flex:1;"),
+            style="display:flex; gap:10px;"
+        ),
+        class_="glass-card",
+
