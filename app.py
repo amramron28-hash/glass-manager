@@ -180,7 +180,7 @@ def server(input, output, session):
         ui.update_text("search_query", value=model_selected)
         show_curtain.set(False)
 
-    # إغلاق الستارة تلقائياً في الواجهة عند العثور على نتيجة من دالةworkflows
+    # إغلاق الستارة تلقائياً في الواجهة عند العثور على نتيجة من دالة workflows
     @reactive.effect
     @reactive.event(input.hide_curtain_signal)
     def hide_curtain_on_signal():
@@ -284,7 +284,60 @@ def server(input, output, session):
         else:
             # لم يجد الكود أي مواصفات أو اسم مطابق -> تفعيل خطة الطوارئ 3 كلياً
             active_modal.set("plan_3")
-
     # تنفيذ دمج الهاتف في المجموعة المكتشفة بـ Supabase
     @reactive.effect
     @reactive.event(input.btn_merge_confirm)
+    def confirm_merge_supabase():
+        try:
+            supabase.table("phones").insert({
+                "model_name": current_search_phone(),
+                "size": str(input.p2_size()),
+                "panel": input.p2_panel(),
+                "sensor": input.p2_sensor()
+            }).execute()
+            
+            db_trigger.set(db_trigger() + 1)  # إنعاش وتحديث النظام حياً
+            ui.modal_remove()
+            ui.notification_show(f"✔️ تم دمج الموديل {current_search_phone()} بالمجموعة بنجاح!", type="message", duration=4)
+        except Exception as e:
+            ui.notification_show(f"❌ فشل الدمج بالسيرفر: {str(e)}", type="error")
+
+    # زر إلغاء وتراجع خطة الطوارئ 3
+    @reactive.effect
+    @reactive.event(input.p3_cancel)
+    def cancel_p3():
+        active_modal.set("plan_2")  # العودة للخلفية اليدوية
+
+    # تنفيذ خطة الطوارئ 3: إنشاء وحفظ خلية/مجموعة مرجعية جديدة كلياً في قاعدة البيانات
+    @reactive.effect
+    @reactive.event(input.p3_submit)
+    def submit_plan_3_supabase():
+        try:
+            supabase.table("phones").insert({
+                "model_name": current_search_phone(),
+                "size": str(input.p2_size()),
+                "panel": input.p2_panel(),
+                "sensor": input.p2_sensor()
+            }).execute()
+            
+            db_trigger.set(db_trigger() + 1)  # إنعاش البيانات حياً
+            active_modal.set(None)
+            ui.notification_show(f"🚨 خطة 3: تم تأسيس المجموعة المرجعية بنجاح للـ {current_search_phone()}!", type="warning", duration=5)
+        except Exception as e:
+            ui.notification_show(f"❌ فشل التأسيس: {str(e)}", type="error")
+
+    # نافذة المخرجات الرئيسية والتحديث المباشر للمقاس والتطابات
+    @render.ui
+    def results_area():
+        phone = input.search_query().strip()
+        if not phone:
+            return None
+
+        # تمرير الـ database التفاعلية المباشرة المربوطة بـ Supabase
+        result = run_system_workflows(phone, database(), None)
+        if not result:
+            return None
+
+        return ui.HTML(result)
+
+app = App(app_ui, server)
