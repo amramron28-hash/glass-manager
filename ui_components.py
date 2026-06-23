@@ -13,11 +13,23 @@ def inject_pwa_and_styles():
                     _bg_cache = base64.b64encode(f.read()).decode()
                 break
 
-    if _bg_cache is None:
-        _bg_cache = ""
+    # هنا تم تفعيل جدار الحماية البرمجي: إذا كانت الصورة مفقودة، يتم حقن ستايل آمن لا يكسر الشاشة
+    if _bg_cache:
+        bg_style = f"background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,{_bg_cache}');"
+    else:
+        bg_style = "background-image: none;"
 
     return ui.HTML(f"""<style>
-html, body, .container-fluid {{ background-color:#0a0e17 !important; background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,{_bg_cache}'); background-size:92% auto !important; background-position:center center !important; background-repeat:no-repeat !important; background-attachment:fixed !important; color:white !important; direction:rtl !important; }}
+html, body, .container-fluid {{ 
+    background-color:#0a0e17 !important; 
+    {bg_style} 
+    background-size:92% auto !important; 
+    background-position:center center !important; 
+    background-repeat:no-repeat !important; 
+    background-attachment:fixed !important; 
+    color:white !important; 
+    direction:rtl !important; 
+}}
 
 /* تعديل الهيدر ليحتوي السطرين الكبيرين بمرونة ودون التأثير على الأبعاد */
 .header-bar {{ 
