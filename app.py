@@ -47,6 +47,16 @@ def convert_database(rows):
 
 app_ui = ui.page_fluid(
 
+    ui.p("Current Path: " + os.getcwd()),
+
+    ui.p("Files: " + str(os.listdir("."))),
+
+    inject_pwa_and_styles(),
+
+    ui.HTML(
+        """
+        <script>
+
     inject_pwa_and_styles(),
 
     ui.tags.head(
