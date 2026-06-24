@@ -31,27 +31,32 @@ def convert_database(rows):
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
     ui.tags.head(
+        ui.tags.link(rel="manifest", href="/manifest.json"),
         ui.tags.style("""
-            /* تطبيق مظهر النيون الزجاجي على أي عنصر يظهر في منطقة النتائج */
-            .results-container div, .suggestion-row, .card-result {
-                background: rgba(255, 255, 255, 0.05) !important;
-                backdrop-filter: blur(15px) !important;
-                border: 1px solid rgba(0, 191, 255, 0.4) !important;
-                box-shadow: 0 0 15px rgba(0, 191, 255, 0.2) !important;
-                color: #00e5ff !important;
-                border-radius: 15px !important;
-                padding: 12px !important;
-                margin-bottom: 10px !important;
-                text-align: center !important;
-                font-weight: bold !important;
+            .neon-glass-card {
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(0, 191, 255, 0.3);
+                box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
+                color: #00e5ff;
+                padding: 15px;
+                margin-bottom: 12px;
+                border-radius: 15px;
+                text-align: center;
+                font-weight: bold;
             }
             .neon-red-card {
-                border: 1px solid rgba(255, 0, 85, 0.6) !important;
-                box-shadow: 0 0 20px rgba(255, 0, 85, 0.4) !important;
-                color: #ff4d4d !important;
+                border: 1px solid rgba(255, 0, 85, 0.5);
+                box-shadow: 0 0 15px rgba(255, 0, 85, 0.3);
+                color: #ff4d4d;
             }
         """),
         ui.tags.script("""
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/service-worker.js');
+                });
+            }
             Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
                 let d = document.getElementById('settings_drawer');
                 if(d){ msg === 'open' ? d.classList.add('open') : d.classList.remove('open'); }
@@ -76,7 +81,7 @@ app_ui = ui.page_fluid(
         ui.output_ui("suggestions_curtain"),
         class_="search-box"
     ),
-    ui.div(ui.output_ui("results_area"), class_="results-container"),
+    ui.output_ui("results_area"),
     ui.output_ui("modal_layer")
 )
 def server(input, output, session):
@@ -87,6 +92,30 @@ def server(input, output, session):
     custom_panels = reactive.Value([])
     custom_sensors = reactive.Value([])
     is_programmatic_update = reactive.Value(False)
+
+    # مصفوفة الألوان النيون الزجاجية
+    neon_colors = {
+        "green": {"border": "#00FF66", "bg": "rgba(11, 79, 53, 0.6)"},
+        "blue": {"border": "#00E5FF", "bg": "rgba(15, 76, 129, 0.6)"},
+        "orange": {"border": "#FF9100", "bg": "rgba(74, 46, 0, 0.6)"},
+        "red": {"border": "#FF1744", "bg": "rgba(74, 14, 23, 0.6)"}
+    }
+
+    def get_card_style(color_key):
+        c = neon_colors.get(color_key, neon_colors["blue"])
+        return f"""
+            background: {c['bg']} !important;
+            backdrop-filter: blur(10px) !important;
+            border: 1px solid {c['border']} !important;
+            box-shadow: 0 0 15px {c['border']}44 !important;
+            color: {c['border']} !important;
+            padding: 12px !important;
+            margin-bottom: 10px !important;
+            border-radius: 12px !important;
+            text-align: center !important;
+            font-weight: bold !important;
+            text-shadow: 0 0 5px {c['border']} !important;
+        """
 
     @reactive.calc
     def cloud_rows():
@@ -99,6 +128,18 @@ def server(input, output, session):
     @reactive.calc
     def database(): return convert_database(cloud_rows())
 
+    @reactive.calc
+    def unique_panels():
+        values = {str(r.get("panel") or "").strip() for r in cloud_rows() if r.get("panel")}
+        values.update(custom_panels())
+        return sorted(list(values))
+
+    @reactive.calc
+    def unique_sensors():
+        values = {str(r.get("sensor") or "").strip() for r in cloud_rows() if r.get("sensor")}
+        values.update(custom_sensors())
+        return sorted(list(values))
+
     @reactive.effect
     @reactive.event(input.btn_settings)
     async def open_drawer(): await session.send_custom_message("toggle_drawer", "open")
@@ -108,10 +149,79 @@ def server(input, output, session):
     async def close_drawer(): await session.send_custom_message("toggle_drawer", "close")
 
     @render.ui
+    def drawer_status_area():
+        total = len(cloud_rows())
+        notif = ("🟢 جرس الإشعارات: نشط" if input.switch_notif() else "🔴 جرس الإشعارات: متوقف")
+        monitor = ("🟢 المراقب الصامت: يحرس البيانات" if input.switch_monitor() else "🔴 المراقب الصامت: متوقف")
+        return ui.div(
+            ui.div(f"📊 إجمالي الهواتف بالسحاب: {total}", class_="metric-box"),
+            ui.div(notif, style="font-size:13px;"),
+            ui.div(monitor, style="font-size:13px;")
+        )
+
+    @reactive.effect
+    @reactive.event(input.search_query)
+    def track_search():
+        if is_programmatic_update(): is_programmatic_update.set(False)
+        else: show_curtain.set(True)
+
+    @render.ui
+    def suggestions_curtain():
+        if not show_curtain(): return None
+        q = input.search_query().strip().lower()
+        if not q: return None
+        matches = [str(r.get("model_name") or "").strip() for r in cloud_rows()]
+        matches = list(set([m for m in matches if q in m.lower()]))[:8]
+        if not matches: return None
+        return ui.div(*[ui.div(m, class_="suggestion-row", onclick=f"Shiny.setInputValue('selected_model', '{m.replace(chr(39),chr(92)+chr(39))}', {{priority:'event'}});") for m in matches], class_="suggestions-curtain")
+
+    @reactive.effect
+    @reactive.event(input.selected_model)
+    def fill_search():
+        is_programmatic_update.set(True)
+        ui.update_text("search_query", value=input.selected_model())
+        show_curtain.set(False)
+
+    @render.ui
+    def modal_layer():
+        m = active_modal()
+        if m == "plan_2": return draw_plan_2_modal(current_search_phone(), unique_panels(), unique_sensors())
+        if m == "plan_3": return draw_plan_3_modal(current_search_phone(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""))
+        return None
+
+    @reactive.effect
+    @reactive.event(input.btn_add_panel)
+    def add_panel(): ui.modal_show(ui.modal(ui.input_text("new_p", "اسم الشاشة:"), ui.input_action_button("save_p", "إضافة"), ui.modal_button("تراجع")))
+
+    @reactive.effect
+    @reactive.event(input.save_p)
+    def save_p():
+        val = input.new_p().strip()
+        if val: custom_panels.set(custom_panels() + [val])
+        ui.modal_remove()
+
+    @reactive.effect
+    @reactive.event(input.p2_search)
+    def process_p2():
+        compat = get_compatibles_strict(database(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""), str(current_search_phone() or ""))
+        if compat.get("exact") or compat.get("plus") or compat.get("minus"):
+            active_modal.set(None)
+            ui.modal_show(ui.modal(ui.h3("🎉 تم العثور!"), ui.input_action_button("btn_merge", "🔗 دمج"), ui.modal_button("إلغاء")))
+        else: active_modal.set("plan_3")
+
+    @reactive.effect
+    @reactive.event(input.btn_merge)
+    def do_merge():
+        try:
+            supabase.table("phones").insert({"model_name": str(current_search_phone() or ""), "size": str(input.p2_size() or ""), "panel": str(input.p2_panel() or ""), "sensor": str(input.p2_sensor() or "")}).execute()
+            db_trigger.set(db_trigger() + 1)
+            ui.modal_remove()
+        except: pass
+
+    @render.ui
     def results_area():
         p = input.search_query().strip()
         if not p: return None
-        
         target_size, target_sensor, target_panel = None, "", ""
         for r in cloud_rows():
             if str(r.get("model_name") or "").strip().lower() == p.lower():
@@ -120,10 +230,8 @@ def server(input, output, session):
                 target_sensor, target_panel = str(r.get("sensor") or ""), str(r.get("panel") or "")
                 break
         
-        # النتائج الأساسية (تتأثر بالـ CSS الجديد تلقائياً)
         html_out = run_system_workflows(p, database(), target_sensor)
         
-        # النتائج الحمراء (التنبيهية) مع الكلاس الخاص بها
         red_matches = []
         if target_size is not None:
             for r in cloud_rows():
@@ -134,7 +242,8 @@ def server(input, output, session):
                     lbl = "مطابق" if abs(r_size - target_size) < 0.005 else (f"+{abs(r_size-target_size):.2f}" if r_size > target_size else f"-{abs(r_size-target_size):.2f}")
                     if r_name not in [x[0] for x in red_matches]: red_matches.append((r_name, lbl))
         
-        red_html = "".join([f'<div class="neon-red-card">{name} <span style="font-size:10px;background:rgba(255,0,0,0.2);padding:2px 5px;border-radius:5px;">{lbl}</span></div>' for name, lbl in red_matches])
+        style_red = get_card_style("red")
+        red_html = "".join([f'<div style="{style_red}">{name} <span style="font-size:10px; background:rgba(0,0,0,0.3); padding:2px 5px; border-radius:5px;">{lbl}</span></div>' for name, lbl in red_matches])
         
         return ui.HTML(f"{html_out}<div style='margin-top:20px;'>{red_html}</div>")
 
