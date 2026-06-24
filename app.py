@@ -73,7 +73,6 @@ app_ui = ui.page_fluid(
         ui.input_action_button("btn_settings", "⚙️", class_="btn-neon", style="font-size:20px;padding:10px 15px;"),
         class_="header-bar"
     ),
-    ui.a("اختبار الصورة", href="/AMMAR.jpg", target="_blank"),
     ui.div(
         ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."),
         ui.output_ui("suggestions_curtain"),
@@ -306,4 +305,3 @@ def server(input, output, session):
         return ui.HTML(run_system_workflows(p, database(), None))
 
 app = App(app_ui, server)
-
