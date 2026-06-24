@@ -53,9 +53,7 @@ app_ui = ui.page_fluid(
 
     inject_pwa_and_styles(),
 
-    ui.HTML(
-        """
-        <script>
+    
 
     inject_pwa_and_styles(),
 
