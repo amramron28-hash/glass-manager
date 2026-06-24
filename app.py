@@ -343,7 +343,7 @@ def server(input, output, session):
                         if r_name not in red_matches:
                             red_matches.append((r_name, label))
                             
-      if red_matches:
+        if red_matches:
                 red_html = '<div class="sensor-warning-block" style="margin-top:15px;margin-bottom:15px;">'
                 red_html += '<div style="color:#ff4d4d;font-weight:bold;margin-bottom:10px;text-align:right;font-size:15px;">⚠️ تنبيه حساس مختلف (احذر انطفاء الشاشة):</div>'
                 for name, lbl in red_matches:
