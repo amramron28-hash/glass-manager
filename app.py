@@ -49,6 +49,28 @@ app_ui = ui.page_fluid(
 
     inject_pwa_and_styles(),
 
+    ui.tags.head(
+
+        ui.tags.link(
+            rel="manifest",
+            href="/manifest.json"
+        ),
+
+        ui.tags.script("""
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(reg) {
+                        console.log('Service Worker Registered', reg);
+                    })
+                    .catch(function(err) {
+                        console.log('Service Worker Failed', err);
+                    });
+                });
+            }
+        """)
+
+    ),
 
     ui.HTML(
         """
