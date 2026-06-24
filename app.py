@@ -343,4 +343,15 @@ def server(input, output, session):
                         if r_name not in red_matches:
                             red_matches.append((r_name, label))
                             
-            if red_matches:
+                        if red_matches:
+                red_html = '<div class="sensor-warning-block" style="margin-top:15px;margin-bottom:15px;">'
+                red_html += '<div style="color:#ff4d4d;font-weight:bold;margin-bottom:10px;text-align:right;font-size:15px;">⚠️ تنبيه حساس مختلف (احذر انطفاء الشاشة):</div>'
+                for name, lbl in red_matches:
+                    red_html += f'<div class="suggestion-row" style="background:linear-gradient(145deg, #cc2e2e, #8a1f1f);color:white;padding:12px;margin-bottom:8px;border-radius:10px;text-align:center;font-weight:bold;box-shadow:0 4px 6px rgba(0,0,0,0.3);">{name} <span style="font-size:11px;background:rgba(0,0,0,0.4);padding:2px 6px;border-radius:5px;margin-right:5px;">{lbl}</span></div>'
+                red_html += '</div>'
+                html_out = red_html + html_out
+                
+        return ui.HTML(html_out)
+
+app = App(app_ui, server)
+
