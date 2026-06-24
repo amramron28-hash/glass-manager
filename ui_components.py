@@ -63,9 +63,9 @@ html, body, .container-fluid {{
 
 .search-box {{ position:relative; width:90%; max-width:500px; margin:25px auto; }}
 
-/* إجبار حقل البحث وعناصر الاختيار على المحاذاة الصارمة لجهة اليمين دائماً */
+/* تثبيت شريط البحث والمحاذاة لليمين بشكل حاسم */
 input[type="text"], input[type="number"], select {{ 
-    width:100%; 
+    width:100% !important; 
     background:#111827 !important; 
     color:white !important; 
     border:1px solid #00bfff !important; 
@@ -76,14 +76,16 @@ input[type="text"], input[type="number"], select {{
 }}
 
 .suggestions-curtain {{ position:absolute; top:60px; right:0; left:0; background: rgba(22,27,34,.96); border: 1px solid #00bfff; border-radius:12px; max-height:240px; overflow-y:auto; z-index:99999; backdrop-filter:blur(15px); }}
-.suggestion-row {{ padding:12px; color:white; cursor:pointer; border-bottom: 1px solid rgba(255,255,255,.08); text-align:right; }}
+.suggestion-row {{ padding:12px; color:white; cursor:pointer; border-bottom: 1px solid rgba(255,255,255,.08); text-align:right; direction: rtl !important; }}
 .suggestion-row:hover {{ background: rgba(0,191,255,.18); }}
 .glass-card {{ background: rgba(255,255,255,.06); backdrop-filter:blur(15px); border: 1px solid rgba(0,191,255,.35); border-radius:20px; padding:20px; margin:15px auto; max-width:500px; }}
 
+/* إجبار حاوية بطاقات النتائج الزجاجية على الترتيب والبدء التام من جهة اليمين */
 .ammar-flat-card {{ 
-    display:flex; 
-    justify-content: flex-end; 
-    align-items:center; 
+    display:flex !important; 
+    justify-content: flex-start !important; 
+    flex-direction: row-reverse !important; 
+    align-items:center !important; 
     padding:16px 24px; 
     margin-bottom:14px; 
     border-radius:24px; 
@@ -123,7 +125,7 @@ input[type="text"], input[type="number"], select {{
 }}
 
 .flat-warning-card {{ background: linear-gradient(135deg,#26090b,#120405); border: 2px solid #ff4500; border-radius:12px; padding:18px; color:#ffb3b9; font-weight:bold; text-align:center; max-width:500px; margin: 10px auto; }}
-.flat-phone-text {{ color:white; font-size:20px; font-weight:800; text-align: right; text-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 2; }}
+.flat-phone-text {{ color:white; font-size:20px; font-weight:800; text-align: right !important; text-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 2; width: 100% !important; direction: rtl !important; }}
 .drawer {{ position:fixed; top:0; right:-320px; width:290px; height:100%; background: rgba(22,27,34,.95); backdrop-filter:blur(20px); border-left: 2px solid #00bfff; transition:.4s; z-index:200000; padding:30px; }}
 .drawer.open {{ right:0; }}
 .metric-box {{ background: rgba(255,255,255,.05); padding:10px; border-radius:8px; margin-bottom:10px; text-align:center; border: 1px solid rgba(0,191,255,.2); }}
@@ -131,15 +133,15 @@ input[type="text"], input[type="number"], select {{
 </style>""")
 
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
-    return ui.HTML(f"""<div class="glass-card" style="box-shadow: 0 0 15px rgba(0, 191, 255, 0.25);"><h3 style="color:#00bfff; text-align:center; margin-bottom:15px;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff;">{escape(str(size_grp))}</span><br>📺 <b>نوع الشاشة:</b> <span style="color:#00bfff;">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر الحركي:</b> <span style="color:#00bfff;">{escape(str(sensor_grp))}</span></div></div>""")
+    return ui.HTML(f"""<div class="glass-card" style="box-shadow: 0 0 15px rgba(0, 191, 255, 0.25);"><h3 style="color:#00bfff; text-align:center; margin-bottom:15px;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right; direction: rtl !important;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff;">{escape(str(size_grp))}</span><br>📺 <b>نوع الشاشة:</b> <span style="color:#00bfff;">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر الحركي:</b> <span style="color:#00bfff;">{escape(str(sensor_grp))}</span></div></div>""")
 def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
     if not models_list: return ui.div()
     class_map = {"exact": "flat-exact", "plus": "flat-plus", "minus": "flat-minus"}
     card_class = class_map.get(plan_type, "flat-exact")
-    cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; direction:rtl; text-align:right; margin-top:20px; margin-bottom:10px; max-width:500px; margin-left:auto; margin-right:auto;")]
+    cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; direction:rtl !important; text-align:right !important; margin-top:20px; margin-bottom:10px; max-width:500px; margin-left:auto; margin-right:auto;")]
     for model in models_list:
-        # إجبار نصوص الهواتف بالكامل على البقاء في جهة اليمين بشكل مطلق وثابت ومتناسق
-        cards.append(ui.HTML(f"""<div class="ammar-flat-card {card_class}" style="direction: rtl !important;"><div class="flat-phone-text" style="width:100%; text-align:right !important;">{escape(str(model))}</div></div>"""))
+        # حقن كود تنسيق صارم ومباشر هنا لإجبار النص الإنجليزي على البدء والالتصاق بأقصى اليمين دون أي انحراف
+        cards.append(ui.HTML(f"""<div class="ammar-flat-card {card_class}" style="direction: rtl !important; text-align: right !important;"><div class="flat-phone-text" style="width:100% !important; text-align:right !important; direction: ltr !important;">{escape(str(model))}</div></div>"""))
     return ui.div(*cards)
 
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
