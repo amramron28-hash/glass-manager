@@ -2,12 +2,19 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZEGAAR AMMAR GLASS MANAGER</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00bfff">
+    
     <style>
-        body { background: #060e1c; color: white; padding: 20px; font-family: Arial; }
+        body { background: #060e1c; color: white; padding: 20px; font-family: Arial, sans-serif; margin: 0; }
         .box { border: 2px solid #00bfff; padding: 20px; border-radius: 15px; margin-top: 20px; background: #0b1a33; }
-        input, button { padding: 10px; border-radius: 5px; border: none; }
-        button { background: #00bfff; color: #060e1c; cursor: pointer; }
+        input, button { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; box-sizing: border-box; font-size: 16px; }
+        button { background: #00bfff; color: #060e1c; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0099cc; }
+        h3 { color: #00bfff; }
     </style>
 </head>
 <body>
@@ -18,18 +25,29 @@
 </div>
 
 <div id="app-view" class="box">
-    </div>
+    <p>أدخل اسم الهاتف للبدء...</p>
+</div>
 
 <script>
+    // تسجيل الـ Service Worker لتفعيل خيار التثبيت (PWA)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(() => console.log('Service Worker تم تسجيله.'))
+                .catch(err => console.log('خطأ في تسجيل Service Worker: ', err));
+        });
+    }
+
     const workflow = {
-        state: 'SEARCH', // هذا هو "العصب" الذي يمنع التضاد
+        state: 'SEARCH',
         
         startSearch: async () => {
             if (workflow.state !== 'SEARCH') return;
-            
             const name = document.getElementById('phone-name').value;
-            // 1. اتصل بـ Supabase (هنا ضع رابط الـ API الخاص بك)
-            const found = false; // استبدلها بمنطق البحث الحقيقي
+            if(!name) return alert("يرجى إدخال اسم الهاتف");
+            
+            // هنا ستضع منطق البحث الخاص بـ Supabase
+            const found = false; 
             
             if (found) {
                 document.getElementById('app-view').innerHTML = "<h3>تم العثور على الهاتف</h3>";
@@ -37,10 +55,10 @@
                 workflow.switchTo('PLAN_2');
             }
         },
-
+        
         switchTo: (plan) => {
             workflow.state = plan;
-            document.getElementById('phone-name').disabled = true; // غلق مربع البحث لمنع التضاد
+            document.getElementById('phone-name').disabled = true;
             
             if (plan === 'PLAN_2') {
                 document.getElementById('app-view').innerHTML = `
@@ -51,7 +69,7 @@
             } else if (plan === 'PLAN_3') {
                 document.getElementById('app-view').innerHTML = `
                     <h3>خطة الطوارئ: إضافة مجموعة جديدة</h3>
-                    <input type="text" placeholder="اسم المجموعة">
+                    <input type="text" id="new-group" placeholder="اسم المجموعة">
                     <button onclick="alert('تم الحفظ!'); location.reload();">حفظ</button>
                 `;
             }
