@@ -53,9 +53,6 @@ app_ui = ui.page_fluid(
 
     inject_pwa_and_styles(),
 
-    
-
-    inject_pwa_and_styles(),
 
     ui.tags.head(
 
@@ -65,20 +62,18 @@ app_ui = ui.page_fluid(
         ),
 
         ui.tags.script("""
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/service-worker.js')
-                    .then(function(reg) {
-                        console.log('Service Worker Registered', reg);
-                    })
-                    .catch(function(err) {
-                        console.log('Service Worker Failed', err);
-                    });
-                });
-            }
-        """)
-
-    ),
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/service-worker.js')
+            .then(function(reg) {
+                console.log('Service Worker Registered', reg);
+            })
+            .catch(function(err) {
+                console.log('Service Worker Failed', err);
+            });
+        });
+    }
+"""),
 
     ui.HTML(
         """
