@@ -13,7 +13,6 @@ def inject_pwa_and_styles():
                     _bg_cache = base64.b64encode(f.read()).decode()
                 break
 
-    # هنا تم تفعيل جدار الحماية البرمجي: إذا كانت الصورة مفقودة، يتم حقن ستايل آمن لا يكسر الشاشة
     if _bg_cache:
         bg_style = f"background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,{_bg_cache}');"
     else:
@@ -31,7 +30,6 @@ html, body, .container-fluid {{
     direction:rtl !important; 
 }}
 
-/* تعديل الهيدر ليحتوي السطرين الكبيرين بمرونة ودون التأثير على الأبعاد */
 .header-bar {{ 
     display:flex; 
     justify-content:space-between; 
@@ -42,7 +40,6 @@ html, body, .container-fluid {{
     border-bottom: 1px solid rgba(0,191,255,.25); 
 }}
 
-/* تصميم شعار النيون الأزرق السماوي المضيء في سطرين واهتزاز ناعم للإضاءة */
 .brand-neon-title {{
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-align: right;
@@ -66,7 +63,6 @@ html, body, .container-fluid {{
 
 .search-box {{ position:relative; width:90%; max-width:500px; margin:25px auto; }}
 
-/* تصحيح محاذاة اللغات تلقائياً حسب المكتوب دون تداخل */
 input[type="text"], input[type="number"], select {{ 
     width:100%; 
     background:#111827 !important; 
@@ -83,12 +79,11 @@ input[type="text"], input[type="number"], select {{
 .suggestion-row:hover {{ background: rgba(0,191,255,.18); }}
 .glass-card {{ background: rgba(255,255,255,.06); backdrop-filter:blur(15px); border: 1px solid rgba(0,191,255,.35); border-radius:20px; padding:20px; margin:15px auto; max-width:500px; }}
 
-/* تصميم بطاقات النتائج ثلاثية الأبعاد اللامعة والزجاجية الفاخرة بناءً على شكل الكرات */
 .ammar-flat-card {{ 
     display:flex; 
     justify-content:space-between; 
     align-items:center; 
-    padding:16px; 
+    padding:16px 24px; 
     margin-bottom:14px; 
     border-radius:24px; 
     width:100%; 
@@ -98,7 +93,6 @@ input[type="text"], input[type="number"], select {{
     box-shadow: 0 8px 20px rgba(0,0,0,0.4);
 }}
 
-/* تأثير اللمعان الزجاجي العلوي */
 .ammar-flat-card::before {{
     content: "";
     position: absolute;
@@ -109,21 +103,18 @@ input[type="text"], input[type="number"], select {{
     pointer-events: none;
 }}
 
-/* اللون الأخضر الزجاجي اللامع (الخيار الموفق) */
 .flat-exact {{ 
     background: radial-gradient(circle at center, #76d74b 0%, #3ca012 70%, #1e5a04 100%); 
     border: 1px solid #a3ff78; 
     box-shadow: inset 0 0 15px rgba(255,255,255,0.4), 0 0 15px rgba(60,160,18,0.4); 
 }}
 
-/* اللون الأزرق الزجاجي اللامع */
 .flat-plus {{ 
     background: radial-gradient(circle at center, #00d2ff 0%, #007bb5 70%, #00466b 100%); 
     border: 1px solid #7be8ff; 
     box-shadow: inset 0 0 15px rgba(255,255,255,0.4), 0 0 15px rgba(0,123,181,0.4); 
 }}
 
-/* اللون البرتقالي/الأحمر الناري الزجاجي اللامع */
 .flat-minus {{ 
     background: radial-gradient(circle at center, #ff5e3a 0%, #ff2a00 60%, #990000 100%); 
     border: 1px solid #ff9d85; 
@@ -132,7 +123,6 @@ input[type="text"], input[type="number"], select {{
 
 .flat-warning-card {{ background: linear-gradient(135deg,#26090b,#120405); border: 2px solid #ff4500; border-radius:12px; padding:18px; color:#ffb3b9; font-weight:bold; text-align:center; max-width:500px; margin: 10px auto; }}
 .flat-phone-text {{ color:white; font-size:20px; font-weight:800; text-align: right; text-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 2; }}
-.image-placeholder-box {{ width:50px; height:50px; border-radius:50%; background: rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; border: 1px solid rgba(255,255,255,0.4); z-index: 2; }}
 .drawer {{ position:fixed; top:0; right:-320px; width:290px; height:100%; background: rgba(22,27,34,.95); backdrop-filter:blur(20px); border-left: 2px solid #00bfff; transition:.4s; z-index:200000; padding:30px; }}
 .drawer.open {{ right:0; }}
 .metric-box {{ background: rgba(255,255,255,.05); padding:10px; border-radius:8px; margin-bottom:10px; text-align:center; border: 1px solid rgba(0,191,255,.2); }}
@@ -147,7 +137,8 @@ def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_i
     card_class = class_map.get(plan_type, "flat-exact")
     cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; direction:rtl; text-align:right; margin-top:20px; margin-bottom:10px; max-width:500px; margin-left:auto; margin-right:auto;")]
     for model in models_list:
-        cards.append(ui.HTML(f"""<div class="ammar-flat-card {card_class}"><div class="image-placeholder-box">🔮</div><div class="flat-phone-text">{escape(str(model))}</div></div>"""))
+        # تم مسح صندوق الـ placeholder وحذف البلونات البنفسجية 🔮 بالكامل لتصبح البطاقات زجاجية مسطحة ونظيفة
+        cards.append(ui.HTML(f"""<div class="ammar-flat-card {card_class}"><div class="flat-phone-text" style="width:100%; text-align:right;">{escape(str(model))}</div></div>"""))
     return ui.div(*cards)
 
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
@@ -181,4 +172,3 @@ def draw_plan_3_modal(phone_name, size, panel, sensor):
         class_="custom-modal-backdrop",
         id="plan_3_modal_container"
     )
-
