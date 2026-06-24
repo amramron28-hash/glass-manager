@@ -4,77 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZEGAAR AMMAR GLASS MANAGER</title>
-    
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00bfff">
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #060e1c; color: white; padding: 20px; font-family: Arial, sans-serif; margin: 0; }
-        .box { border: 2px solid #00bfff; padding: 20px; border-radius: 15px; margin-top: 20px; background: #0b1a33; }
-        input, button { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; box-sizing: border-box; font-size: 16px; }
-        button { background: #00bfff; color: #060e1c; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0099cc; }
-        h3 { color: #00bfff; }
+        body { background: #060e1c; color: white; padding: 20px; font-family: Arial; }
+        .box { border: 2px solid #00bfff; padding: 20px; border-radius: 15px; background: #0b1a33; margin-bottom: 20px; }
+        input, button { padding: 12px; width: 100%; margin-bottom: 10px; border-radius: 5px; border: none; }
+        button { background: #00bfff; color: #060e1c; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="box">
     <input type="text" id="phone-name" placeholder="ابحث عن اسم الهاتف...">
-    <button onclick="workflow.startSearch()">بحث</button>
+    <button onclick="searchPhone()">بحث</button>
 </div>
 
-<div id="app-view" class="box">
-    <p>أدخل اسم الهاتف للبدء...</p>
-</div>
+<div id="results" class="box"></div>
 
 <script>
-    // تسجيل الـ Service Worker لتفعيل خيار التثبيت (PWA)
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('service-worker.js')
-                .then(() => console.log('Service Worker تم تسجيله.'))
-                .catch(err => console.log('خطأ في تسجيل Service Worker: ', err));
-        });
+    // إعداد Supabase (ضع مفاتيحك هنا)
+    const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_KEY');
+
+    async function searchPhone() {
+        const name = document.getElementById('phone-name').value;
+        const resDiv = document.getElementById('results');
+        
+        // استعلام ذكي من Supabase
+        const { data, error } = await supabase
+            .from('glass_models')
+            .select('*')
+            .ilike('model_name', `%${name}%`);
+
+        if (data && data.length > 0) {
+            resDiv.innerHTML = `<h3>نتائج البحث:</h3><ul>${data.map(i => `<li>${i.model_name} - قياس: ${i.size}</li>`).join('')}</ul>`;
+        } else {
+            resDiv.innerHTML = `<p>⚠️ الموديل غير موجود. <button onclick="alert('خطة الطوارئ!')">إضافة يدوي</button></p>`;
+        }
     }
 
-    const workflow = {
-        state: 'SEARCH',
-        
-        startSearch: async () => {
-            if (workflow.state !== 'SEARCH') return;
-            const name = document.getElementById('phone-name').value;
-            if(!name) return alert("يرجى إدخال اسم الهاتف");
-            
-            // هنا ستضع منطق البحث الخاص بـ Supabase
-            const found = false; 
-            
-            if (found) {
-                document.getElementById('app-view').innerHTML = "<h3>تم العثور على الهاتف</h3>";
-            } else {
-                workflow.switchTo('PLAN_2');
-            }
-        },
-        
-        switchTo: (plan) => {
-            workflow.state = plan;
-            document.getElementById('phone-name').disabled = true;
-            
-            if (plan === 'PLAN_2') {
-                document.getElementById('app-view').innerHTML = `
-                    <h3>خطة 2: تحديد المواصفات</h3>
-                    <button onclick="workflow.switchTo('PLAN_3')">لم أجد تطابقاً (انتقال للطوارئ)</button>
-                    <button onclick="location.reload()">إلغاء</button>
-                `;
-            } else if (plan === 'PLAN_3') {
-                document.getElementById('app-view').innerHTML = `
-                    <h3>خطة الطوارئ: إضافة مجموعة جديدة</h3>
-                    <input type="text" id="new-group" placeholder="اسم المجموعة">
-                    <button onclick="alert('تم الحفظ!'); location.reload();">حفظ</button>
-                `;
-            }
-        }
-    };
+    // تسجيل الـ Service Worker للتثبيت
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js');
+    }
 </script>
 </body>
 </html>
