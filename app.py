@@ -303,12 +303,44 @@ def server(input, output, session):
         if not p: 
             return None
         
+        target_size = None
         target_sensor = ""
+        target_panel = ""
+        
         for r in cloud_rows():
             if str(r.get("model_name") or "").strip().lower() == p.lower():
+                try:
+                    target_size = float(r.get("size") or 0)
+                except ValueError:
+                    target_size = None
                 target_sensor = str(r.get("sensor") or "").strip()
+                target_panel = str(r.get("panel") or "").strip()
                 break
                 
-        return ui.HTML(run_system_workflows(p, database(), target_sensor))
-
-app = App(app_ui, server)
+        html_out = run_system_workflows(p, database(), target_sensor)
+        
+        if target_size is not None:
+            red_matches = []
+            for r in cloud_rows():
+                r_name = str(r.get("model_name") or "").strip()
+                r_sensor = str(r.get("sensor") or "").strip()
+                r_panel = str(r.get("panel") or "").strip()
+                try:
+                    r_size = float(r.get("size") or 0)
+                except ValueError:
+                    continue
+                    
+                if r_name.lower() != p.lower() and r_panel == target_panel and r_sensor != target_sensor:
+                    diff = r_size - target_size
+                    if abs(diff) <= 0.035:
+                        label = ""
+                        if abs(diff) < 0.005:
+                            label = "مطابق تماماً بالحجم"
+                        elif diff > 0:
+                            label = f"أكبر بقليل +{abs(diff):.2f}"
+                        else:
+                            label = f"أصغر بقليل -{abs(diff):.2f}"
+                        if r_name not in red_matches:
+                            red_matches.append((r_name, label))
+                            
+            if red_matches:
