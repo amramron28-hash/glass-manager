@@ -190,11 +190,10 @@ app_ui = ui.page_fluid(
 
         class_="header-bar"
 
-    ),
-
-ui.img(
-    src="www/AMMAR.jpg",
-    width="200px"
+ui.a(
+    "اختبار الصورة",
+    href="/AMMAR.jpg",
+    target="_blank"
 ),
 
 
