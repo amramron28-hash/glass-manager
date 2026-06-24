@@ -235,7 +235,7 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.p2_search)
     def process_p2():
-        compat = get_compatibles_strict(database(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""), current_search_phone())
+        compat = get_compatibles_strict(database(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""), str(current_search_phone() or ""))
         if compat.get("exact") or compat.get("plus") or compat.get("minus"):
             active_modal.set(None)
             ui.modal_show(ui.modal(ui.h3("🎉 تم العثور على مجموعات متوافقة!", style="color:#2ecc71;text-align:center;"), ui.p("هل تريد الدمج تلقائياً مع هذه المجموعة في السحاب؟"), ui.input_action_button("btn_merge", "🔗 ادمج الهاتف فوراً", class_="btn-neon"), ui.modal_button("إلغاء")))
