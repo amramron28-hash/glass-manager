@@ -1,4 +1,4 @@
-import os
+Import os
 from shiny import App, ui, render, reactive
 from supabase import create_client
 
@@ -154,21 +154,15 @@ def server(input, output, session):
 
     @render.ui
     def suggestions_curtain():
-        if not show_curtain(): 
-            return None
+        if not show_curtain(): return None
         q = input.search_query().strip().lower()
-        if not q: 
-            return None
-        
+        if not q: return None
         matches = []
         for r in cloud_rows():
             name = str(r.get("model_name") or "").strip()
-            if name and q in name.lower() and name not in matches:
-                matches.append(name)
+            if name and q in name.lower() and name not in matches: matches.append(name)
         matches = matches[:8]
-        
-        if not matches: 
-            return None
+        if not matches: return None
         rows = []
         for name in matches:
             safe_name = name.replace("'", "\\'").replace('"', '\\"')
@@ -191,16 +185,13 @@ def server(input, output, session):
     @render.ui
     def modal_layer():
         m = active_modal()
-        if m == "plan_2": 
-            return draw_plan_2_modal(current_search_phone(), unique_panels(), unique_sensors())
-        if m == "plan_3": 
-            return draw_plan_3_modal(current_search_phone(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""))
+        if m == "plan_2": return draw_plan_2_modal(current_search_phone(), unique_panels(), unique_sensors())
+        if m == "plan_3": return draw_plan_3_modal(current_search_phone(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""))
         return None
 
     @reactive.effect
     @reactive.event(input.p2_cancel)
-    def cancel_p2(): 
-        active_modal.set(None)
+    def cancel_p2(): active_modal.set(None)
 
     @reactive.effect
     @reactive.event(input.btn_add_panel)
@@ -213,8 +204,7 @@ def server(input, output, session):
         value = input.new_p().strip()
         if value:
             current = custom_panels()
-            if value not in current: 
-                custom_panels.set(current + [value])
+            if value not in current: custom_panels.set(current + [value])
         ui.modal_remove()
 
     @reactive.effect
@@ -228,8 +218,7 @@ def server(input, output, session):
         value = input.new_s().strip()
         if value:
             current = custom_sensors()
-            if value not in current: 
-                custom_sensors.set(current + [value])
+            if value not in current: custom_sensors.set(current + [value])
         ui.modal_remove()
 
     @reactive.effect
@@ -239,8 +228,7 @@ def server(input, output, session):
         if compat.get("exact") or compat.get("plus") or compat.get("minus"):
             active_modal.set(None)
             ui.modal_show(ui.modal(ui.h3("🎉 تم العثور على مجموعات متوافقة!", style="color:#2ecc71;text-align:center;"), ui.p("هل تريد الدمج تلقائياً مع هذه المجموعة في السحاب؟"), ui.input_action_button("btn_merge", "🔗 ادمج الهاتف فوراً", class_="btn-neon"), ui.modal_button("إلغاء")))
-        else: 
-            active_modal.set("plan_3")
+        else: active_modal.set("plan_3")
 
     @reactive.effect
     @reactive.event(input.btn_merge)
@@ -249,28 +237,19 @@ def server(input, output, session):
         if input.switch_monitor():
             exists = any(phone.lower() == str(r.get("model_name") or "").strip().lower() for r in cloud_rows())
             if exists:
-                if input.switch_notif(): 
-                    ui.notification_show("🚨 المراقب الصامت: الموديل موجود مسبقاً", type="error", duration=5)
+                if input.switch_notif(): ui.notification_show("🚨 المراقب الصامت: الموديل موجود مسبقاً", type="error", duration=5)
                 ui.modal_remove()
                 return
         try:
-            supabase.table("phones").insert({
-                "model_name": phone, 
-                "size": str(input.p2_size() or ""), 
-                "panel": str(input.p2_panel() or ""), 
-                "sensor": str(input.p2_sensor() or "")
-            }).execute()
+            supabase.table("phones").insert({"model_name": phone, "size": str(input.p2_size() or ""), "panel": str(input.p2_panel() or ""), "sensor": str(input.p2_sensor() or "")}).execute()
             db_trigger.set(db_trigger() + 1)
             ui.modal_remove()
-            if input.switch_notif(): 
-                ui.notification_show("✔️ تم الدمج بنجاح", type="message")
-        except Exception as e: 
-            print(e)
+            if input.switch_notif(): ui.notification_show("✔️ تم الدمج بنجاح", type="message")
+        except Exception as e: print(e)
 
     @reactive.effect
     @reactive.event(input.p3_cancel)
-    def cancel_p3(): 
-        active_modal.set("plan_2")
+    def cancel_p3(): active_modal.set("plan_2")
 
     @reactive.effect
     @reactive.event(input.p3_submit)
@@ -279,79 +258,51 @@ def server(input, output, session):
         if input.switch_monitor():
             exists = any(phone.lower() == str(r.get("model_name") or "").strip().lower() for r in cloud_rows())
             if exists:
-                if input.switch_notif(): 
-                    ui.notification_show("🚨 تم منع إنشاء مجموعة مكررة", type="error", duration=5)
+                if input.switch_notif(): ui.notification_show("🚨 تم منع إنشاء مجموعة مكررة", type="error", duration=5)
                 active_modal.set(None)
                 return
         try:
-            supabase.table("phones").insert({
-                "model_name": phone, 
-                "size": str(input.p2_size() or ""), 
-                "panel": str(input.p2_panel() or ""), 
-                "sensor": str(input.p2_sensor() or "")
-            }).execute()
+            supabase.table("phones").insert({"model_name": phone, "size": str(input.p2_size() or ""), "panel": str(input.p2_panel() or ""), "sensor": str(input.p2_sensor() or "")}).execute()
             db_trigger.set(db_trigger() + 1)
             active_modal.set(None)
-            if input.switch_notif(): 
-                ui.notification_show("🚨 تم تأسيس مرجع فني جديد", type="warning")
-        except Exception as e: 
-            print(e)
+            if input.switch_notif(): ui.notification_show("🚨 تم تأسيس مرجع فني جديد", type="warning")
+        except Exception as e: print(e)
 
     @render.ui
     def results_area():
         p = input.search_query().strip()
-        if not p: 
-            return None
-        
+        if not p: return None
         target_size = None
         target_sensor = ""
         target_panel = ""
-        
         for r in cloud_rows():
             if str(r.get("model_name") or "").strip().lower() == p.lower():
-                try:
-                    target_size = float(r.get("size") or 0)
-                except ValueError:
-                    target_size = None
+                try: target_size = float(r.get("size") or 0)
+                except ValueError: target_size = None
                 target_sensor = str(r.get("sensor") or "").strip()
                 target_panel = str(r.get("panel") or "").strip()
                 break
-                
         html_out = run_system_workflows(p, database(), target_sensor)
-        
+        red_matches = []
         if target_size is not None:
-            red_matches = []
             for r in cloud_rows():
                 r_name = str(r.get("model_name") or "").strip()
                 r_sensor = str(r.get("sensor") or "").strip()
                 r_panel = str(r.get("panel") or "").strip()
-                try:
-                    r_size = float(r.get("size") or 0)
-                except ValueError:
-                    continue
-                    
+                try: r_size = float(r.get("size") or 0)
+                except ValueError: continue
                 if r_name.lower() != p.lower() and r_panel == target_panel and r_sensor != target_sensor:
                     diff = r_size - target_size
                     if abs(diff) <= 0.035:
-                        label = ""
-                        if abs(diff) < 0.005:
-                            label = "مطابق تماماً بالحجم"
-                        elif diff > 0:
-                            label = f"أكبر بقليل +{abs(diff):.2f}"
-                        else:
-                            label = f"أصغر بقليل -{abs(diff):.2f}"
-                        if r_name not in red_matches:
-                            red_matches.append((r_name, label))
-                            
+                        label = "مطابق تماماً" if abs(diff) < 0.005 else (f"أكبر بقليل +{abs(diff):.2f}" if diff > 0 else f"أصغر بقليل {diff:.2f}")
+                        if r_name not in [x[0] for x in red_matches]: red_matches.append((r_name, label))
+        red_html = ""
         if red_matches:
-                red_html = '<div class="sensor-warning-block" style="margin-top:15px;margin-bottom:15px;">'
-                red_html += '<div style="color:#ff4d4d;font-weight:bold;margin-bottom:10px;text-align:right;font-size:15px;">⚠️ تنبيه حساس مختلف (احذر انطفاء الشاشة):</div>'
-                for name, lbl in red_matches:
-                    red_html += f'<div class="suggestion-row" style="background:linear-gradient(145deg, #cc2e2e, #8a1f1f);color:white;padding:12px;margin-bottom:8px;border-radius:10px;text-align:center;font-weight:bold;box-shadow:0 4px 6px rgba(0,0,0,0.3);">{name} <span style="font-size:11px;background:rgba(0,0,0,0.4);padding:2px 6px;border-radius:5px;margin-right:5px;">{lbl}</span></div>'
-                red_html += '</div>'
-                html_out = red_html + html_out
-                
-        return ui.HTML(html_out)
+            red_html = '<div class="sensor-warning-block" style="margin-top:20px;border-top:2px solid #ff4d4d;padding-top:15px;">'
+            red_html += '<div style="color:#ff4d4d;font-weight:bold;margin-bottom:10px;text-align:right;font-size:15px;">⚠️ تحذير: اختلاف في الحساس (تطابق حجمي):</div>'
+            for name, lbl in red_matches:
+                red_html += f'<div class="suggestion-row" style="background:linear-gradient(145deg, #cc2e2e, #8a1f1f);color:white;padding:10px;margin-bottom:8px;border-radius:8px;text-align:center;">{name} <span style="font-size:11px;background:rgba(0,0,0,0.3);padding:2px 5px;border-radius:4px;">{lbl}</span></div>'
+            red_html += '</div>'
+        return ui.HTML(html_out + red_html)
 
 app = App(app_ui, server)
-
