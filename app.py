@@ -11,7 +11,6 @@ from ui_components import (
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def convert_database(rows):
@@ -30,39 +29,12 @@ def convert_database(rows):
 
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
-    ui.tags.head(
-        ui.tags.link(rel="manifest", href="/manifest.json"),
-        ui.tags.style("""
-            .neon-glass-card {
-                background: rgba(255, 255, 255, 0.05);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(0, 191, 255, 0.3);
-                box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
-                color: #00e5ff;
-                padding: 15px;
-                margin-bottom: 12px;
-                border-radius: 15px;
-                text-align: center;
-                font-weight: bold;
-            }
-            .neon-red-card {
-                border: 1px solid rgba(255, 0, 85, 0.5);
-                box-shadow: 0 0 15px rgba(255, 0, 85, 0.3);
-                color: #ff4d4d;
-            }
-        """),
-        ui.tags.script("""
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/service-worker.js');
-                });
-            }
-            Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
-                let d = document.getElementById('settings_drawer');
-                if(d){ msg === 'open' ? d.classList.add('open') : d.classList.remove('open'); }
-            });
-        """)
-    ),
+    ui.tags.head(ui.tags.script("""
+        Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
+            let d = document.getElementById('settings_drawer');
+            if(d){ msg === 'open' ? d.classList.add('open') : d.classList.remove('open'); }
+        });
+    """)),
     ui.div(
         ui.h3("⚙️ الإعدادات", style="color:#00bfff;text-align:right;margin-bottom:25px;"),
         ui.div(ui.input_switch("switch_notif", "🔔 تفعيل جرس الإشعارات", value=True), class_="metric-box"),
@@ -81,7 +53,7 @@ app_ui = ui.page_fluid(
         ui.output_ui("suggestions_curtain"),
         class_="search-box"
     ),
-    ui.output_ui("results_area"),
+    ui.div(ui.output_ui("results_area"), class_="results-container"),
     ui.output_ui("modal_layer")
 )
 def server(input, output, session):
@@ -89,134 +61,27 @@ def server(input, output, session):
     current_search_phone = reactive.Value("")
     show_curtain = reactive.Value(False)
     active_modal = reactive.Value(None)
-    custom_panels = reactive.Value([])
-    custom_sensors = reactive.Value([])
-    is_programmatic_update = reactive.Value(False)
+    custom_panels, custom_sensors, is_programmatic_update = reactive.Value([]), reactive.Value([]), reactive.Value(False)
 
-    # مصفوفة الألوان النيون الزجاجية
     neon_colors = {
-        "green": {"border": "#00FF66", "bg": "rgba(11, 79, 53, 0.6)"},
-        "blue": {"border": "#00E5FF", "bg": "rgba(15, 76, 129, 0.6)"},
-        "orange": {"border": "#FF9100", "bg": "rgba(74, 46, 0, 0.6)"},
-        "red": {"border": "#FF1744", "bg": "rgba(74, 14, 23, 0.6)"}
+        "green": {"border": "#00FF66", "bg": "rgba(11, 79, 53, 0.3)"},
+        "blue": {"border": "#00E5FF", "bg": "rgba(15, 76, 129, 0.3)"},
+        "orange": {"border": "#FF9100", "bg": "rgba(74, 46, 0, 0.3)"},
+        "red": {"border": "#FF1744", "bg": "rgba(74, 14, 23, 0.3)"}
     }
 
     def get_card_style(color_key):
         c = neon_colors.get(color_key, neon_colors["blue"])
-        return f"""
-            background: {c['bg']} !important;
-            backdrop-filter: blur(10px) !important;
-            border: 1px solid {c['border']} !important;
-            box-shadow: 0 0 15px {c['border']}44 !important;
-            color: {c['border']} !important;
-            padding: 12px !important;
-            margin-bottom: 10px !important;
-            border-radius: 12px !important;
-            text-align: center !important;
-            font-weight: bold !important;
-            text-shadow: 0 0 5px {c['border']} !important;
-        """
+        return f"background:{c['bg']} !important; backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important; border:1px solid {c['border']} !important; box-shadow:0 4px 15px rgba(0,0,0,0.2) !important; color:#ffffff !important; padding:12px !important; margin-bottom:10px !important; border-radius:15px !important; text-align:center !important; font-weight:bold !important; border-left:5px solid {c['border']} !important;"
 
     @reactive.calc
     def cloud_rows():
         db_trigger()
-        try:
-            result = supabase.table("phones").select("*").execute()
-            return result.data or []
-        except Exception: return []
+        try: return supabase.table("phones").select("*").execute().data or []
+        except: return []
 
     @reactive.calc
     def database(): return convert_database(cloud_rows())
-
-    @reactive.calc
-    def unique_panels():
-        values = {str(r.get("panel") or "").strip() for r in cloud_rows() if r.get("panel")}
-        values.update(custom_panels())
-        return sorted(list(values))
-
-    @reactive.calc
-    def unique_sensors():
-        values = {str(r.get("sensor") or "").strip() for r in cloud_rows() if r.get("sensor")}
-        values.update(custom_sensors())
-        return sorted(list(values))
-
-    @reactive.effect
-    @reactive.event(input.btn_settings)
-    async def open_drawer(): await session.send_custom_message("toggle_drawer", "open")
-
-    @reactive.effect
-    @reactive.event(input.close_drawer)
-    async def close_drawer(): await session.send_custom_message("toggle_drawer", "close")
-
-    @render.ui
-    def drawer_status_area():
-        total = len(cloud_rows())
-        notif = ("🟢 جرس الإشعارات: نشط" if input.switch_notif() else "🔴 جرس الإشعارات: متوقف")
-        monitor = ("🟢 المراقب الصامت: يحرس البيانات" if input.switch_monitor() else "🔴 المراقب الصامت: متوقف")
-        return ui.div(
-            ui.div(f"📊 إجمالي الهواتف بالسحاب: {total}", class_="metric-box"),
-            ui.div(notif, style="font-size:13px;"),
-            ui.div(monitor, style="font-size:13px;")
-        )
-
-    @reactive.effect
-    @reactive.event(input.search_query)
-    def track_search():
-        if is_programmatic_update(): is_programmatic_update.set(False)
-        else: show_curtain.set(True)
-
-    @render.ui
-    def suggestions_curtain():
-        if not show_curtain(): return None
-        q = input.search_query().strip().lower()
-        if not q: return None
-        matches = [str(r.get("model_name") or "").strip() for r in cloud_rows()]
-        matches = list(set([m for m in matches if q in m.lower()]))[:8]
-        if not matches: return None
-        return ui.div(*[ui.div(m, class_="suggestion-row", onclick=f"Shiny.setInputValue('selected_model', '{m.replace(chr(39),chr(92)+chr(39))}', {{priority:'event'}});") for m in matches], class_="suggestions-curtain")
-
-    @reactive.effect
-    @reactive.event(input.selected_model)
-    def fill_search():
-        is_programmatic_update.set(True)
-        ui.update_text("search_query", value=input.selected_model())
-        show_curtain.set(False)
-
-    @render.ui
-    def modal_layer():
-        m = active_modal()
-        if m == "plan_2": return draw_plan_2_modal(current_search_phone(), unique_panels(), unique_sensors())
-        if m == "plan_3": return draw_plan_3_modal(current_search_phone(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""))
-        return None
-
-    @reactive.effect
-    @reactive.event(input.btn_add_panel)
-    def add_panel(): ui.modal_show(ui.modal(ui.input_text("new_p", "اسم الشاشة:"), ui.input_action_button("save_p", "إضافة"), ui.modal_button("تراجع")))
-
-    @reactive.effect
-    @reactive.event(input.save_p)
-    def save_p():
-        val = input.new_p().strip()
-        if val: custom_panels.set(custom_panels() + [val])
-        ui.modal_remove()
-
-    @reactive.effect
-    @reactive.event(input.p2_search)
-    def process_p2():
-        compat = get_compatibles_strict(database(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""), str(current_search_phone() or ""))
-        if compat.get("exact") or compat.get("plus") or compat.get("minus"):
-            active_modal.set(None)
-            ui.modal_show(ui.modal(ui.h3("🎉 تم العثور!"), ui.input_action_button("btn_merge", "🔗 دمج"), ui.modal_button("إلغاء")))
-        else: active_modal.set("plan_3")
-
-    @reactive.effect
-    @reactive.event(input.btn_merge)
-    def do_merge():
-        try:
-            supabase.table("phones").insert({"model_name": str(current_search_phone() or ""), "size": str(input.p2_size() or ""), "panel": str(input.p2_panel() or ""), "sensor": str(input.p2_sensor() or "")}).execute()
-            db_trigger.set(db_trigger() + 1)
-            ui.modal_remove()
-        except: pass
 
     @render.ui
     def results_area():
