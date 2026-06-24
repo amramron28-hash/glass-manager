@@ -63,7 +63,7 @@ html, body, .container-fluid {{
 
 .search-box {{ position:relative; width:90%; max-width:500px; margin:25px auto; }}
 
-/* تثبيت شريط البحث والمحاذاة لليمين بشكل حاسم */
+/* توجيه شريط البحث والمحاذاة لجهة اليسار الثابتة ليتناسق مع الموديلات */
 input[type="text"], input[type="number"], select {{ 
     width:100% !important; 
     background:#111827 !important; 
@@ -71,20 +71,19 @@ input[type="text"], input[type="number"], select {{
     border:1px solid #00bfff !important; 
     border-radius:12px !important; 
     padding:12px !important; 
-    direction: rtl !important; 
-    text-align: right !important;
+    direction: ltr !important; 
+    text-align: left !important;
 }}
 
 .suggestions-curtain {{ position:absolute; top:60px; right:0; left:0; background: rgba(22,27,34,.96); border: 1px solid #00bfff; border-radius:12px; max-height:240px; overflow-y:auto; z-index:99999; backdrop-filter:blur(15px); }}
-.suggestion-row {{ padding:12px; color:white; cursor:pointer; border-bottom: 1px solid rgba(255,255,255,.08); text-align:right; direction: rtl !important; }}
+.suggestion-row {{ padding:12px; color:white; cursor:pointer; border-bottom: 1px solid rgba(255,255,255,.08); text-align:left; direction: ltr !important; }}
 .suggestion-row:hover {{ background: rgba(0,191,255,.18); }}
 .glass-card {{ background: rgba(255,255,255,.06); backdrop-filter:blur(15px); border: 1px solid rgba(0,191,255,.35); border-radius:20px; padding:20px; margin:15px auto; max-width:500px; }}
 
-/* إجبار حاوية بطاقات النتائج الزجاجية على الترتيب والبدء التام من جهة اليمين */
+/* توجيه الحاوية المرنة لتدفع النصوص وتلصقها في جهة اليسار الصريحة */
 .ammar-flat-card {{ 
     display:flex !important; 
-    justify-content: flex-start !important; 
-    flex-direction: row-reverse !important; 
+    justify-content: flex-end !important; 
     align-items:center !important; 
     padding:16px 24px; 
     margin-bottom:14px; 
@@ -125,7 +124,7 @@ input[type="text"], input[type="number"], select {{
 }}
 
 .flat-warning-card {{ background: linear-gradient(135deg,#26090b,#120405); border: 2px solid #ff4500; border-radius:12px; padding:18px; color:#ffb3b9; font-weight:bold; text-align:center; max-width:500px; margin: 10px auto; }}
-.flat-phone-text {{ color:white; font-size:20px; font-weight:800; text-align: right !important; text-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 2; width: 100% !important; direction: rtl !important; }}
+.flat-phone-text {{ color:white; font-size:20px; font-weight:800; text-align: left !important; text-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 2; width: 100% !important; direction: ltr !important; }}
 .drawer {{ position:fixed; top:0; right:-320px; width:290px; height:100%; background: rgba(22,27,34,.95); backdrop-filter:blur(20px); border-left: 2px solid #00bfff; transition:.4s; z-index:200000; padding:30px; }}
 .drawer.open {{ right:0; }}
 .metric-box {{ background: rgba(255,255,255,.05); padding:10px; border-radius:8px; margin-bottom:10px; text-align:center; border: 1px solid rgba(0,191,255,.2); }}
@@ -140,8 +139,8 @@ def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_i
     card_class = class_map.get(plan_type, "flat-exact")
     cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; direction:rtl !important; text-align:right !important; margin-top:20px; margin-bottom:10px; max-width:500px; margin-left:auto; margin-right:auto;")]
     for model in models_list:
-        # حقن كود تنسيق صارم ومباشر هنا لإجبار النص الإنجليزي على البدء والالتصاق بأقصى اليمين دون أي انحراف
-        cards.append(ui.HTML(f"""<div class="ammar-flat-card {card_class}" style="direction: rtl !important; text-align: right !important;"><div class="flat-phone-text" style="width:100% !important; text-align:right !important; direction: ltr !important;">{escape(str(model))}</div></div>"""))
+        # إجبار نصوص الهواتف الإنجليزية على الالتصاق والبدء من أقصى جهة اليسار بدقة متناهية
+        cards.append(ui.HTML(f"""<div class="ammar-flat-card {card_class}" style="direction: ltr !important; text-align: left !important;"><div class="flat-phone-text" style="width:100% !important; text-align:left !important; direction: ltr !important;">{escape(str(model))}</div></div>"""))
     return ui.div(*cards)
 
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
