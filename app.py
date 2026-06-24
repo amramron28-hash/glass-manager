@@ -39,8 +39,6 @@ def convert_database(rows):
     return db
 
 app_ui = ui.page_fluid(
-    ui.p("Current Path: " + os.getcwd()),
-    ui.p("Files: " + str(os.listdir("."))),
     inject_pwa_and_styles(),
     ui.tags.head(
         ui.tags.link(rel="manifest", href="/manifest.json"),
@@ -308,3 +306,4 @@ def server(input, output, session):
         return ui.HTML(run_system_workflows(p, database(), None))
 
 app = App(app_ui, server)
+
