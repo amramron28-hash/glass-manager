@@ -185,7 +185,7 @@ app_ui = ui.page_fluid(
     ),
 
 ui.img(
-    src="AMMAR.jpg",
+    src="www/AMMAR.jpg",
     width="200px"
 ),
 
