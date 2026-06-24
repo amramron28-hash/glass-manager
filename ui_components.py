@@ -63,6 +63,7 @@ html, body, .container-fluid {{
 
 .search-box {{ position:relative; width:90%; max-width:500px; margin:25px auto; }}
 
+/* إجبار حقل البحث وعناصر الاختيار على المحاذاة الصارمة لجهة اليمين دائماً */
 input[type="text"], input[type="number"], select {{ 
     width:100%; 
     background:#111827 !important; 
@@ -70,8 +71,8 @@ input[type="text"], input[type="number"], select {{
     border:1px solid #00bfff !important; 
     border-radius:12px !important; 
     padding:12px !important; 
-    direction: auto !important; 
-    text-align: start !important;
+    direction: rtl !important; 
+    text-align: right !important;
 }}
 
 .suggestions-curtain {{ position:absolute; top:60px; right:0; left:0; background: rgba(22,27,34,.96); border: 1px solid #00bfff; border-radius:12px; max-height:240px; overflow-y:auto; z-index:99999; backdrop-filter:blur(15px); }}
@@ -81,7 +82,7 @@ input[type="text"], input[type="number"], select {{
 
 .ammar-flat-card {{ 
     display:flex; 
-    justify-content:space-between; 
+    justify-content: flex-end; 
     align-items:center; 
     padding:16px 24px; 
     margin-bottom:14px; 
@@ -137,8 +138,8 @@ def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_i
     card_class = class_map.get(plan_type, "flat-exact")
     cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; direction:rtl; text-align:right; margin-top:20px; margin-bottom:10px; max-width:500px; margin-left:auto; margin-right:auto;")]
     for model in models_list:
-        # تم مسح صندوق الـ placeholder وحذف البلونات البنفسجية 🔮 بالكامل لتصبح البطاقات زجاجية مسطحة ونظيفة
-        cards.append(ui.HTML(f"""<div class="ammar-flat-card {card_class}"><div class="flat-phone-text" style="width:100%; text-align:right;">{escape(str(model))}</div></div>"""))
+        # إجبار نصوص الهواتف بالكامل على البقاء في جهة اليمين بشكل مطلق وثابت ومتناسق
+        cards.append(ui.HTML(f"""<div class="ammar-flat-card {card_class}" style="direction: rtl !important;"><div class="flat-phone-text" style="width:100%; text-align:right !important;">{escape(str(model))}</div></div>"""))
     return ui.div(*cards)
 
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
