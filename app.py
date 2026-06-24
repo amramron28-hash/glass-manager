@@ -1,4 +1,4 @@
-Import os
+import os
 from shiny import App, ui, render, reactive
 from supabase import create_client
 
@@ -306,3 +306,4 @@ def server(input, output, session):
         return ui.HTML(html_out + red_html)
 
 app = App(app_ui, server)
+
