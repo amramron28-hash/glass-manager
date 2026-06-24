@@ -12,28 +12,18 @@ from ui_components import (
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-supabase = create_client(
-    SUPABASE_URL,
-    SUPABASE_KEY
-)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def convert_database(rows):
     db = {}
     for item in rows:
-        if not isinstance(item, dict):
-            continue
+        if not isinstance(item, dict): continue
         size = str(item.get("size") or "").strip()
         panel = str(item.get("panel") or "").strip()
         sensor = str(item.get("sensor") or "").strip()
         model = str(item.get("model_name") or "").strip()
-        
-        if not size or not model:
-            continue
-            
-        db.setdefault(size, {})
-        db[size].setdefault(panel, {})
-        db[size][panel].setdefault(sensor, {"models": []})
-        
+        if not size or not model: continue
+        db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
         if model not in db[size][panel][sensor]["models"]:
             db[size][panel][sensor]["models"].append(model)
     return db
@@ -42,24 +32,37 @@ app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
     ui.tags.head(
         ui.tags.link(rel="manifest", href="/manifest.json"),
+        ui.tags.style("""
+            .neon-glass-card {
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(0, 191, 255, 0.3);
+                box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
+                color: #00e5ff;
+                padding: 15px;
+                margin-bottom: 12px;
+                border-radius: 15px;
+                text-align: center;
+                font-weight: bold;
+            }
+            .neon-red-card {
+                border: 1px solid rgba(255, 0, 85, 0.5);
+                box-shadow: 0 0 15px rgba(255, 0, 85, 0.3);
+                color: #ff4d4d;
+            }
+        """),
         ui.tags.script("""
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/service-worker.js')
-            .then(function(reg) { console.log('Service Worker Registered', reg); })
-            .catch(function(err) { console.log('Service Worker Failed', err); });
-        });
-    }
-""")
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/service-worker.js');
+                });
+            }
+            Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
+                let d = document.getElementById('settings_drawer');
+                if(d){ msg === 'open' ? d.classList.add('open') : d.classList.remove('open'); }
+            });
+        """)
     ),
-    ui.HTML("""
-        <script>
-        Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
-            let d = document.getElementById('settings_drawer');
-            if(d){ if(msg === 'open'){ d.classList.add('open'); } else { d.classList.remove('open'); } }
-        });
-        </script>
-    """),
     ui.div(
         ui.h3("⚙️ الإعدادات", style="color:#00bfff;text-align:right;margin-bottom:25px;"),
         ui.div(ui.input_switch("switch_notif", "🔔 تفعيل جرس الإشعارات", value=True), class_="metric-box"),
@@ -96,78 +99,51 @@ def server(input, output, session):
         try:
             result = supabase.table("phones").select("*").execute()
             return result.data or []
-        except Exception:
-            return []
+        except Exception: return []
 
     @reactive.calc
-    def database():
-        return convert_database(cloud_rows())
+    def database(): return convert_database(cloud_rows())
 
     @reactive.calc
     def unique_panels():
-        values = set()
-        for r in cloud_rows():
-            val = str(r.get("panel") or "").strip()
-            if val:
-                values.add(val)
+        values = {str(r.get("panel") or "").strip() for r in cloud_rows() if r.get("panel")}
         values.update(custom_panels())
         return sorted(list(values))
 
     @reactive.calc
     def unique_sensors():
-        values = set()
-        for r in cloud_rows():
-            val = str(r.get("sensor") or "").strip()
-            if val:
-                values.add(val)
+        values = {str(r.get("sensor") or "").strip() for r in cloud_rows() if r.get("sensor")}
         values.update(custom_sensors())
         return sorted(list(values))
 
     @reactive.effect
     @reactive.event(input.btn_settings)
-    async def open_drawer(): 
-        await session.send_custom_message("toggle_drawer", "open")
+    async def open_drawer(): await session.send_custom_message("toggle_drawer", "open")
 
     @reactive.effect
     @reactive.event(input.close_drawer)
-    async def close_drawer(): 
-        await session.send_custom_message("toggle_drawer", "close")
+    async def close_drawer(): await session.send_custom_message("toggle_drawer", "close")
 
     @render.ui
     def drawer_status_area():
         total = len(cloud_rows())
-        notif = ("🟢 جرس الإشعارات: نشط" if input.switch_notif() else "🔴 جرس الإشعارات: متوقف")
-        monitor = ("🟢 المراقب الصامت: يحرس البيانات" if input.switch_monitor() else "🔴 المراقب الصامت: متوقف")
-        return ui.div(
-            ui.div(f"📊 إجمالي الهواتف بالسحاب: {total}", class_="metric-box"),
-            ui.div(notif, style="font-size:13px;"),
-            ui.div(monitor, style="font-size:13px;")
-        )
+        return ui.div(ui.div(f"📊 إجمالي الهواتف: {total}", class_="metric-box"))
 
     @reactive.effect
     @reactive.event(input.search_query)
     def track_search():
-        if is_programmatic_update(): 
-            is_programmatic_update.set(False)
-        else: 
-            show_curtain.set(True)
+        if is_programmatic_update(): is_programmatic_update.set(False)
+        else: show_curtain.set(True)
 
     @render.ui
     def suggestions_curtain():
         if not show_curtain(): return None
         q = input.search_query().strip().lower()
         if not q: return None
-        matches = []
-        for r in cloud_rows():
-            name = str(r.get("model_name") or "").strip()
-            if name and q in name.lower() and name not in matches: matches.append(name)
-        matches = matches[:8]
+        matches = [str(r.get("model_name") or "").strip() for r in cloud_rows()]
+        matches = list(set([m for m in matches if q in m.lower()]))[:8]
         if not matches: return None
-        rows = []
-        for name in matches:
-            safe_name = name.replace("'", "\\'").replace('"', '\\"')
-            rows.append(ui.div(name, class_="suggestion-row", onclick=f"Shiny.setInputValue('selected_model', '{safe_name}', {{priority:'event'}});"))
-        return ui.div(*rows, class_="suggestions-curtain")
+        return ui.div(*[ui.div(m, class_="suggestion-row", onclick=f"Shiny.setInputValue('selected_model', '{m.replace(chr(39),chr(92)+chr(39))}', {{priority:'event'}});") for m in matches], class_="suggestions-curtain")
 
     @reactive.effect
     @reactive.event(input.selected_model)
@@ -175,12 +151,6 @@ def server(input, output, session):
         is_programmatic_update.set(True)
         ui.update_text("search_query", value=input.selected_model())
         show_curtain.set(False)
-
-    @reactive.effect
-    @reactive.event(input.trigger_plan_2)
-    def launch_plan_2():
-        current_search_phone.set(input.trigger_plan_2())
-        active_modal.set("plan_2")
 
     @render.ui
     def modal_layer():
@@ -190,120 +160,40 @@ def server(input, output, session):
         return None
 
     @reactive.effect
-    @reactive.event(input.p2_cancel)
-    def cancel_p2(): active_modal.set(None)
-
-    @reactive.effect
-    @reactive.event(input.btn_add_panel)
-    def add_panel():
-        ui.modal_show(ui.modal(ui.input_text("new_p", "اسم الشاشة الجديدة:"), ui.input_action_button("save_p", "إضافة", class_="btn-neon"), ui.modal_button("تراجع"), title="✨ إضافة شاشة"))
-
-    @reactive.effect
-    @reactive.event(input.save_p)
-    def save_p():
-        value = input.new_p().strip()
-        if value:
-            current = custom_panels()
-            if value not in current: custom_panels.set(current + [value])
-        ui.modal_remove()
-
-    @reactive.effect
-    @reactive.event(input.btn_add_sensor)
-    def add_sensor():
-        ui.modal_show(ui.modal(ui.input_text("new_s", "اسم المستشعر الجديد:"), ui.input_action_button("save_s", "إضافة", class_="btn-neon"), ui.modal_button("تراجع"), title="✨ إضافة مستشعر"))
-
-    @reactive.effect
-    @reactive.event(input.save_s)
-    def save_s():
-        value = input.new_s().strip()
-        if value:
-            current = custom_sensors()
-            if value not in current: custom_sensors.set(current + [value])
-        ui.modal_remove()
-
-    @reactive.effect
     @reactive.event(input.p2_search)
     def process_p2():
         compat = get_compatibles_strict(database(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""), str(current_search_phone() or ""))
         if compat.get("exact") or compat.get("plus") or compat.get("minus"):
             active_modal.set(None)
-            ui.modal_show(ui.modal(ui.h3("🎉 تم العثور على مجموعات متوافقة!", style="color:#2ecc71;text-align:center;"), ui.p("هل تريد الدمج تلقائياً مع هذه المجموعة في السحاب؟"), ui.input_action_button("btn_merge", "🔗 ادمج الهاتف فوراً", class_="btn-neon"), ui.modal_button("إلغاء")))
+            ui.modal_show(ui.modal(ui.h3("🎉 تم العثور!"), ui.input_action_button("btn_merge", "🔗 دمج", class_="btn-neon"), ui.modal_button("إلغاء")))
         else: active_modal.set("plan_3")
-
-    @reactive.effect
-    @reactive.event(input.btn_merge)
-    def do_merge():
-        phone = str(current_search_phone() or "").strip()
-        if input.switch_monitor():
-            exists = any(phone.lower() == str(r.get("model_name") or "").strip().lower() for r in cloud_rows())
-            if exists:
-                if input.switch_notif(): ui.notification_show("🚨 المراقب الصامت: الموديل موجود مسبقاً", type="error", duration=5)
-                ui.modal_remove()
-                return
-        try:
-            supabase.table("phones").insert({"model_name": phone, "size": str(input.p2_size() or ""), "panel": str(input.p2_panel() or ""), "sensor": str(input.p2_sensor() or "")}).execute()
-            db_trigger.set(db_trigger() + 1)
-            ui.modal_remove()
-            if input.switch_notif(): ui.notification_show("✔️ تم الدمج بنجاح", type="message")
-        except Exception as e: print(e)
-
-    @reactive.effect
-    @reactive.event(input.p3_cancel)
-    def cancel_p3(): active_modal.set("plan_2")
-
-    @reactive.effect
-    @reactive.event(input.p3_submit)
-    def do_p3():
-        phone = str(current_search_phone() or "").strip()
-        if input.switch_monitor():
-            exists = any(phone.lower() == str(r.get("model_name") or "").strip().lower() for r in cloud_rows())
-            if exists:
-                if input.switch_notif(): ui.notification_show("🚨 تم منع إنشاء مجموعة مكررة", type="error", duration=5)
-                active_modal.set(None)
-                return
-        try:
-            supabase.table("phones").insert({"model_name": phone, "size": str(input.p2_size() or ""), "panel": str(input.p2_panel() or ""), "sensor": str(input.p2_sensor() or "")}).execute()
-            db_trigger.set(db_trigger() + 1)
-            active_modal.set(None)
-            if input.switch_notif(): ui.notification_show("🚨 تم تأسيس مرجع فني جديد", type="warning")
-        except Exception as e: print(e)
 
     @render.ui
     def results_area():
         p = input.search_query().strip()
         if not p: return None
-        target_size = None
-        target_sensor = ""
-        target_panel = ""
+        target_size, target_sensor, target_panel = None, "", ""
         for r in cloud_rows():
             if str(r.get("model_name") or "").strip().lower() == p.lower():
                 try: target_size = float(r.get("size") or 0)
-                except ValueError: target_size = None
-                target_sensor = str(r.get("sensor") or "").strip()
-                target_panel = str(r.get("panel") or "").strip()
+                except: target_size = None
+                target_sensor, target_panel = str(r.get("sensor") or ""), str(r.get("panel") or "")
                 break
+        
         html_out = run_system_workflows(p, database(), target_sensor)
+        
         red_matches = []
         if target_size is not None:
             for r in cloud_rows():
-                r_name = str(r.get("model_name") or "").strip()
-                r_sensor = str(r.get("sensor") or "").strip()
-                r_panel = str(r.get("panel") or "").strip()
+                r_name, r_sensor, r_panel = str(r.get("model_name") or ""), str(r.get("sensor") or ""), str(r.get("panel") or "")
                 try: r_size = float(r.get("size") or 0)
-                except ValueError: continue
-                if r_name.lower() != p.lower() and r_panel == target_panel and r_sensor != target_sensor:
-                    diff = r_size - target_size
-                    if abs(diff) <= 0.035:
-                        label = "مطابق تماماً" if abs(diff) < 0.005 else (f"أكبر بقليل +{abs(diff):.2f}" if diff > 0 else f"أصغر بقليل {diff:.2f}")
-                        if r_name not in [x[0] for x in red_matches]: red_matches.append((r_name, label))
-        red_html = ""
-        if red_matches:
-            red_html = '<div class="sensor-warning-block" style="margin-top:20px;border-top:2px solid #ff4d4d;padding-top:15px;">'
-            red_html += '<div style="color:#ff4d4d;font-weight:bold;margin-bottom:10px;text-align:right;font-size:15px;">⚠️ تحذير: اختلاف في الحساس (تطابق حجمي):</div>'
-            for name, lbl in red_matches:
-                red_html += f'<div class="suggestion-row" style="background:linear-gradient(145deg, #cc2e2e, #8a1f1f);color:white;padding:10px;margin-bottom:8px;border-radius:8px;text-align:center;">{name} <span style="font-size:11px;background:rgba(0,0,0,0.3);padding:2px 5px;border-radius:4px;">{lbl}</span></div>'
-            red_html += '</div>'
-        return ui.HTML(html_out + red_html)
+                except: continue
+                if r_name.lower() != p.lower() and r_panel == target_panel and r_sensor != target_sensor and abs(r_size - target_size) <= 0.035:
+                    lbl = "مطابق" if abs(r_size - target_size) < 0.005 else (f"+{abs(r_size-target_size):.2f}" if r_size > target_size else f"-{abs(r_size-target_size):.2f}")
+                    if r_name not in [x[0] for x in red_matches]: red_matches.append((r_name, lbl))
+        
+        red_html = "".join([f'<div class="neon-glass-card neon-red-card">{name} <span style="font-size:10px;background:rgba(255,0,0,0.2);padding:2px 5px;border-radius:5px;">{lbl}</span></div>' for name, lbl in red_matches])
+        
+        return ui.HTML(f"{html_out}<div style='margin-top:20px;'>{red_html}</div>")
 
 app = App(app_ui, server)
-
