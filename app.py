@@ -302,6 +302,13 @@ def server(input, output, session):
         p = input.search_query().strip()
         if not p: 
             return None
-        return ui.HTML(run_system_workflows(p, database(), None))
+        
+        target_sensor = ""
+        for r in cloud_rows():
+            if str(r.get("model_name") or "").strip().lower() == p.lower():
+                target_sensor = str(r.get("sensor") or "").strip()
+                break
+                
+        return ui.HTML(run_system_workflows(p, database(), target_sensor))
 
 app = App(app_ui, server)
