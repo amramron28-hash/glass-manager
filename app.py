@@ -184,7 +184,10 @@ app_ui = ui.page_fluid(
 
     ),
 
-
+ui.img(
+    src="AMMAR.jpg",
+    width="200px"
+),
 
 
     ui.div(
