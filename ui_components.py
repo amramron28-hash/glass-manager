@@ -15,52 +15,48 @@ def inject_pwa_and_styles():
                 break
     bg_style = f"background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,{_bg_cache}');" if _bg_cache else "background-image: none;"
     return ui.HTML(f"""<style>
-        html, body, .container-fluid {{ background-color:#0a0e17 !important; {bg_style} background-size:92% auto !important; background-position:center center !important; background-repeat:no-repeat !important; background-attachment:fixed !important; color:white !important; direction:rtl !important; }}
-        .glass-card-base {{ backdrop-filter:blur(15px); border: 1px solid rgba(255,255,255,0.2); border-radius:20px; padding:20px; margin:15px auto; max-width:500px; box-shadow: inset 0 0 15px rgba(255,255,255,0.1); }}
-        .card-green {{ background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(76,175,80,0.4) 50%, rgba(46,125,50,0.6) 100%); }}
-        .card-blue  {{ background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(33,150,243,0.4) 50%, rgba(21,101,192,0.6) 100%); }}
-        .card-red   {{ background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(244,67,54,0.4) 50%, rgba(198,40,40,0.6) 100%); }}
-        .card-orange{{ background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,152,0,0.4) 50%, rgba(239,108,0,0.6) 100%); }}
-        .flat-phone-text {{ color:white; font-size:20px; font-weight:800; direction: ltr !important; text-align:left; }}
-        .custom-modal-backdrop {{ position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }}
+        html, body {{ background-color:#0a0e17 !important; {bg_style} color:white !important; direction:rtl !important; font-family: sans-serif; }}
+        /* الهيدر والشعار */
+        .header-bar {{ display:flex; justify-content:space-between; align-items:center; padding:15px; background:rgba(13,17,23,.8); backdrop-filter:blur(10px); border-bottom:1px solid #00bfff; }}
+        .brand-neon-main {{ color: #00bfff; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px #00bfff; }}
+        /* البحث والستارة */
+        .search-box {{ position:relative; width:90%; max-width:500px; margin:20px auto; }}
+        .suggestions-curtain {{ position:absolute; top:60px; right:0; left:0; background:rgba(22,27,34,.95); border:1px solid #00bfff; border-radius:15px; max-height:300px; overflow-y:auto; z-index:999; backdrop-filter:blur(10px); }}
+        /* البطاقات */
+        .glass-card-base {{ backdrop-filter:blur(15px); border:1px solid rgba(255,255,255,.2); border-radius:20px; padding:20px; margin:15px auto; box-shadow:0 4px 15px rgba(0,0,0,.3); }}
+        .metric-box {{ background:rgba(255,255,255,.05); padding:10px; border-radius:10px; text-align:center; border:1px solid #00bfff; margin:5px; }}
+        .custom-modal-backdrop {{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.85); z-index:999999; display:flex; justify-content:center; align-items:center; }}
     </style>""")
 
-def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
-    return ui.HTML(f"""<div class="glass-card-base card-blue" style="box-shadow: 0 0 15px rgba(0, 191, 255, 0.25);">
-        <h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3>
-        <div style="text-align:right; direction: rtl;">
-            📏 المقاس: <span style="color:#00bfff;">{escape(str(size_grp))}</span><br>
-            📺 الشاشة: <span style="color:#00bfff;">{escape(str(panel_grp))}</span><br>
-            👁️ المستشعر: <span style="color:#00bfff;">{escape(str(sensor_grp))}</span>
-        </div>
-    </div>""")
+def draw_header(title="ZEGAAR AMMAR GLASS MANAGER"):
+    return ui.div(ui.input_action_button("btn_settings", "⚙️", style="background:transparent; border:none; color:white; font-size:20px;"), 
+                  ui.span(title, class_="brand-neon-main"), class_="header-bar")
 
-def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
-    if not models_list: return ui.div()
+def draw_suggestions_curtain(items):
+    return ui.div(*[ui.div(item, style="padding:10px; border-bottom:1px solid #333;") for item in items], class_="suggestions-curtain")
+
+def draw_dashboard_modal(notification_count, silent_mode, phone_count):
+    return ui.div(ui.div(
+        ui.h4("⚙️ لوحة التحكم", style="text-align:center; color:#00bfff;"),
+        ui.div(ui.p(f"🔔 الإشعارات: {notification_count}", class_="metric-box"),
+               ui.p(f"🔇 مراقب صامت: {'مفعل' if silent_mode else 'معطل'}", class_="metric-box"),
+               ui.p(f"📱 إجمالي الهواتف: {phone_count}", class_="metric-box")),
+        ui.input_action_button("close_modal", "إغلاق", style="width:100%; margin-top:10px;"),
+        class_="glass-card-base", style="background:#161b22; width:300px;"), class_="custom-modal-backdrop")
+
+def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
+    return ui.HTML(f"""<div class="glass-card-base"><h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3><div style="text-align:right;">📏 المقاس: {escape(str(size_grp))}<br>📺 الشاشة: {escape(str(panel_grp))}<br>👁️ المستشعر: {escape(str(sensor_grp))}</div></div>""")
+
+def draw_neon_section(title, models_list, plan_type="exact"):
     class_map = {"exact": "card-green", "plus": "card-blue", "minus": "card-red"}
     card_class = class_map.get(plan_type, "card-blue")
-    cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; direction:rtl; text-align:right; margin:20px auto; max-width:500px;")]
+    cards = [ui.h4(f"📱 {title}", style="text-align:right; margin-top:20px;")]
     for model in models_list:
-        cards.append(ui.HTML(f"""<div class="glass-card-base {card_class}" style="direction: ltr;"><div class="flat-phone-text">{escape(str(model))}</div></div>"""))
+        cards.append(ui.div(model, class_=f"glass-card-base {card_class}"))
     return ui.div(*cards)
 
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
-    return ui.div(ui.div(
-        ui.h3(f"📋 المواصفات لـ {phone_name}", style="color:#00bfff; text-align:center;"),
-        ui.input_numeric("p2_size", "مقاس الشاشة:", value=6.5),
-        ui.input_select("p2_panel", "نوع الشاشة:", choices={p:p for p in existing_panels if p}),
-        ui.input_select("p2_sensor", "المستشعر:", choices={s:s for s in existing_sensors if s}),
-        ui.div(ui.input_action_button("p2_search", "فحص", class_="btn-success"), ui.input_action_button("p2_cancel", "إلغاء"), style="display:flex; gap:10px;"),
-        class_="glass-card-base card-blue", style="max-width:400px;"),
-        class_="custom-modal-backdrop"
-    )
+    return ui.div(ui.div(ui.h3(f"📋 لـ {phone_name}"), ui.input_numeric("p2_size", "مقاس:", 6.5), ui.input_select("p2_panel", "شاشة:", choices={p:p for p in existing_panels}), ui.input_select("p2_sensor", "مستشعر:", choices={s:s for s in existing_sensors}), ui.input_action_button("p2_search", "فحص"), class_="glass-card-base", style="background:#161b22; width:300px;"), class_="custom-modal-backdrop")
 
 def draw_plan_3_modal(phone_name, size, panel, sensor):
-    return ui.div(ui.div(
-        ui.h3("🚨 إنشاء مجموعة جديدة", style="color:#e67e22; text-align:center;"),
-        ui.p(f"للهاتف: {phone_name}", style="text-align:center; color:#ccc;"),
-        ui.input_action_button("p3_submit", "💾 حفظ المجموعة", style="width:100%; background:#e67e22; color:white;"),
-        ui.input_action_button("p3_cancel", "تراجع", style="width:100%; background:#7f8c8d; color:white;"),
-        class_="glass-card-base card-orange", style="max-width:400px;"),
-        class_="custom-modal-backdrop"
-    )
+    return ui.div(ui.div(ui.h3("🚨 مجموعة جديدة"), ui.p(f"الهاتف: {phone_name}"), ui.input_action_button("p3_submit", "حفظ"), class_="glass-card-base", style="background:#161b22; width:300px;"), class_="custom-modal-backdrop")
