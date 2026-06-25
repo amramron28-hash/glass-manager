@@ -49,7 +49,7 @@ app_ui = ui.page_fluid(
 
         ui.tags.link(
             rel="manifest",
-            href="/manifest.json"
+            href="manifest.json"
         ),
 
         ui.tags.style("""
@@ -126,7 +126,7 @@ app_ui = ui.page_fluid(
                 function(){
 
                     navigator.serviceWorker.register(
-                        '/service-worker.js'
+                        'service-worker.js'
                     );
 
                 }
