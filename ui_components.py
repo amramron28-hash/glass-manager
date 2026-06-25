@@ -143,7 +143,6 @@ input[type="text"], input[type="number"], select {{
     margin:20px auto; 
     max-width:500px; 
 }}
-
 /* =========================================
    RESULT CARDS (AMMAR FLAT CARDS)
 ========================================= */
@@ -284,4 +283,15 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
                 ui.div(
                     ui.input_select("p2_sensor", "👁️ اختر نوع مستشعر التقارب الصارم:", choices=sensor_options), 
                     ui.input_action_button("btn_add_sensor", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), 
-
+                    style="display:flex; gap:5px; width:100%; margin-bottom:20px; align-items: center;"
+                ), 
+                ui.div(
+                    ui.input_action_button("p2_search", "🔍 فحص وتطابق المجموعات", class_="btn-neon", style="background:#2ecc71; color:white; padding:12px; border:none; border-radius:8px; width:100%; font-weight:bold;"),
+                    style="width:100%;"
+                ),
+                class_="glass-card",
+                style="width:90%; max-width:500px; background:rgba(22,27,34,.98); border:1px solid #00bfff;"
+            ),
+            class_="custom-modal-backdrop"
+        )
+    )
