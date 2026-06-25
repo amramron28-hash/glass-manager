@@ -92,38 +92,58 @@ input[type="text"], input[type="number"], select {{
     box-sizing:border-box; 
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }}
 
+/* تأثير اللمعان العلوي المنعكس على البطاقة الزجاجية */
 .ammar-flat-card::before {{
     content: "";
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 50%;
+    height: 40%;
     background: linear-gradient(rgba(255,255,255,0.25), rgba(255,255,255,0));
     border-radius: 24px 24px 0 0;
     pointer-events: none;
+    z-index: 1;
 }}
 
+/* 1. كارت الزجاج الأخضر النقي المطور (Exact) */
 .flat-exact {{ 
-    background: radial-gradient(circle at center, #76d74b 0%, #3ca012 70%, #1e5a04 100%); 
-    border: 1px solid #a3ff78; 
-    box-shadow: inset 0 0 15px rgba(255,255,255,0.4), 0 0 15px rgba(60,160,18,0.4); 
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(76, 187, 85, 0.35) 50%, rgba(34, 111, 41, 0.5) 100%) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.3) !important; 
+    box-shadow: inset 0 0 15px rgba(255,255,255,0.3), 0 8px 20px rgba(0,0,0,0.4) !important; 
 }}
 
+/* 2. كارت الزجاج الأزرق النقي المطور (Plus) */
 .flat-plus {{ 
-    background: radial-gradient(circle at center, #00d2ff 0%, #007bb5 70%, #00466b 100%); 
-    border: 1px solid #7be8ff; 
-    box-shadow: inset 0 0 15px rgba(255,255,255,0.4), 0 0 15px rgba(0,123,181,0.4); 
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(41, 98, 255, 0.4) 50%, rgba(13, 50, 163, 0.55) 100%) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.3) !important; 
+    box-shadow: inset 0 0 15px rgba(255,255,255,0.3), 0 8px 20px rgba(0,0,0,0.4) !important; 
 }}
 
+/* 3. كارت الزجاج البرتقالي النقي المطور (Warning) */
+.flat-warning-card {{ 
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 140, 0, 0.35) 50%, rgba(139, 69, 19, 0.55) 100%) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.3) !important; 
+    box-shadow: inset 0 0 15px rgba(255,255,255,0.3), 0 8px 20px rgba(0,0,0,0.4) !important; 
+    border-radius: 24px !important; 
+    padding: 16px 24px !important;
+    color: white !important;
+    max-width: 500px; 
+    margin: 10px auto; 
+    font-weight: bold;
+    text-align: center;
+}}
+
+/* 4. كارت الزجاج الأحمر النقي المطور (Minus) */
 .flat-minus {{ 
-    background: radial-gradient(circle at center, #ff5e3a 0%, #ff2a00 60%, #990000 100%); 
-    border: 1px solid #ff9d85; 
-    box-shadow: inset 0 0 15px rgba(255,255,255,0.4), 0 0 15px rgba(255,42,0,0.4); 
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 42, 0, 0.35) 50%, rgba(153, 0, 0, 0.55) 100%) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.3) !important; 
+    box-shadow: inset 0 0 15px rgba(255,255,255,0.3), 0 8px 20px rgba(0,0,0,0.4) !important; 
 }}
 
-.flat-warning-card {{ background: linear-gradient(135deg,#26090b,#120405); border: 2px solid #ff4500; border-radius:12px; padding:18px; color:#ffb3b9; font-weight:bold; text-align:center; max-width:500px; margin: 10px auto; }}
 .flat-phone-text {{ color:white; font-size:20px; font-weight:800; text-align: left !important; text-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 2; width: 100% !important; direction: ltr !important; }}
 .drawer {{ position:fixed; top:0; right:-320px; width:290px; height:100%; background: rgba(22,27,34,.95); backdrop-filter:blur(20px); border-left: 2px solid #00bfff; transition:.4s; z-index:200000; padding:30px; }}
 .drawer.open {{ right:0; }}
@@ -133,44 +153,18 @@ input[type="text"], input[type="number"], select {{
 
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
     return ui.HTML(f"""<div class="glass-card" style="box-shadow: 0 0 15px rgba(0, 191, 255, 0.25);"><h3 style="color:#00bfff; text-align:center; margin-bottom:15px;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right; direction: rtl !important;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff;">{escape(str(size_grp))}</span><br>📺 <b>نوع الشاشة:</b> <span style="color:#00bfff;">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر الحركي:</b> <span style="color:#00bfff;">{escape(str(sensor_grp))}</span></div></div>""")
+
 def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
     if not models_list: return ui.div()
     class_map = {"exact": "flat-exact", "plus": "flat-plus", "minus": "flat-minus"}
     card_class = class_map.get(plan_type, "flat-exact")
     cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; direction:rtl !important; text-align:right !important; margin-top:20px; margin-bottom:10px; max-width:500px; margin-left:auto; margin-right:auto;")]
     for model in models_list:
-        # إجبار نصوص الهواتف الإنجليزية على الالتصاق والبدء من أقصى جهة اليسار بدقة متناهية
         cards.append(ui.HTML(f"""<div class="ammar-flat-card {card_class}" style="direction: ltr !important; text-align: left !important;"><div class="flat-phone-text" style="width:100% !important; text-align:left !important; direction: ltr !important;">{escape(str(model))}</div></div>"""))
     return ui.div(*cards)
 
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
     panel_options = {p: p for p in existing_panels if p}
     sensor_options = {s: s for s in existing_sensors if s}
-    return ui.div(ui.div(ui.div(ui.h3(f"📋 المواصفات الفنية لـ {phone_name}", style="color:#3498db; text-align:center; margin-bottom:20px;"), ui.input_numeric("p2_size", "📏 أدخل مقاس الشاشة يدوياً (مثال: 6.53):", value=None, step=0.01), ui.p("", style="margin-bottom:15px;"), ui.div(ui.input_select("p2_panel", "📺 اختر شكل ونوع الشاشة:", choices=panel_options), ui.input_action_button("btn_add_panel", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), style="display:flex; gap:5px; width:100%; margin-bottom:15px; align-items: center;"), ui.div(ui.input_select("p2_sensor", "👁️ اختر نوع مستشعر التقارب الصارم:", choices=sensor_options), ui.input_action_button("btn_add_sensor", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), style="display:flex; gap:5px; width:100%; margin-bottom:20px; align-items: center;"), ui.div(ui.input_action_button("p2_search", "🔍 فحص وتطابق المجموعات", class_="btn-neon", style="background:#2ecc71; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; flex:2;"), ui.input_action_button("p2_cancel", "إلغلاق", class_="btn-neon", style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; flex:1;"), style="display:flex; gap:10px; justify-content:space-between;"), class_="glass-card", style="width:90%; max-width:450px; background:#161b22; border-color:#3498db; border-width:2px; box-shadow: 0 0 25px rgba(52, 152, 219, 0.4);"), class_="custom-modal-backdrop"), id="plan_2_modal_container")
+    return ui.div(ui.div(ui.div(ui.h3(f"📋 المواصفات الفنية لـ {phone_name}", style="color:#3498db; text-align:center; margin-bottom:20px;"), ui.input_numeric("p2_size", "📏 أدخل مقاس الشاشة يدوياً (مثال: 6.53):", value=None, step=0.01), ui.p("", style="margin-bottom:15px;"), ui.div(ui.input_select("p2_panel", "📺 اختر شكل ونوع الشاشة:", choices=panel_options), ui.input_action_button("btn_add_panel", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), style="display:flex; gap:5px; width:100%; margin-bottom:15px; align-items: center;"), ui.div(ui.input_select("p2_sensor", "👁️ اختر نوع مستشعر التقارب الصارم:", choices=sensor_options), ui.input_action_button("btn_add_sensor", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), style="display:flex; gap:5px; width:100%; margin-bottom:20px; align-items: center;"), ui.div(ui.input_action_button("p2_search", "🔍 فحص وتطابق المجموعات", class_="btn-neon", style="background:#2ecc71; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; width:100%;"), style="text-align:center;")))))
 
-def draw_plan_3_modal(phone_name, size, panel, sensor):
-    info_str = f"📐 المقاس المقترح: {size} | 📺 الشاشة: {panel} | 👁️ المستشعر: {sensor}"
-    card_body = ui.div(
-        ui.h3("🚨 خطة الطوارئ 3: إنشاء مجموعة جديدة", style="color:#e67e22; text-align:center; margin-bottom:15px;"),
-        ui.p(f"النظام لم يعثر على أي مجموعة مطابقة للمواصفات المدخلة للهاتف ({phone_name}).", style="text-align:center; color:#bbb; font-size:14px;"),
-        ui.div(info_str, style="background:rgba(230,126,34,0.1); border:1px solid #e67e22; padding:10px; border-radius:8px; font-size:13px; text-align:center; margin-bottom:20px; color:#e67e22;"),
-        ui.p("هل تريد تسجيل هذا الهاتف وتأسيس مرجع فني ومجموعة جديدة له في السحاب?", style="text-align:right; font-size:14px; margin-bottom:20px;"),
-        ui.div(
-            ui.input_action_button("p3_submit", "💾 نعم، أنشئ المجموعة واحفظ", class_="btn-neon", style="background:#e67e22; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; flex:2;"),
-            ui.input_action_button("p3_cancel", "تراجع", class_="btn-neon", style="background:#7f8c8d; color:white; padding:12px; border:none; border-radius:8px; flex:1;"),
-            style="display:flex; gap:10px;"
-        ),
-        class_="glass-card",
-        style="""
-            width:90%;
-            max-width:500px;
-            background:#161b22;
-            border:2px solid #e67e22;
-            box-shadow:0 0 25px rgba(230,126,34,.35);
-        """
-    )
-    return ui.div(
-        card_body,
-        class_="custom-modal-backdrop",
-        id="plan_3_modal_container"
-    )
