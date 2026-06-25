@@ -189,3 +189,13 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
             )
         )
     )
+
+def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
+    """الدالة المفقودة التي تم إضافتها لإصلاح خطأ الاستيراد"""
+    panel_options = {p: p for p in existing_panels if p}
+    sensor_options = {s: s for s in existing_sensors if s}
+    return ui.div(
+        ui.div(
+            ui.div(
+                ui.h3(f"📋 الخطة الفنية المتقدمة لـ {phone_name}", style="color:#e67e22; text-align:center; margin-bottom:20px;"),
+                ui.input_numeric("p3_size", "📏 أدخل مقاس الشاشة بدقة عالية:", value=None, step=0.01),
