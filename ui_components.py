@@ -166,5 +166,26 @@ def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_i
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
     panel_options = {p: p for p in existing_panels if p}
     sensor_options = {s: s for s in existing_sensors if s}
-    return ui.div(ui.div(ui.div(ui.h3(f"📋 المواصفات الفنية لـ {phone_name}", style="color:#3498db; text-align:center; margin-bottom:20px;"), ui.input_numeric("p2_size", "📏 أدخل مقاس الشاشة يدوياً (مثال: 6.53):", value=None, step=0.01), ui.p("", style="margin-bottom:15px;"), ui.div(ui.input_select("p2_panel", "📺 اختر شكل ونوع الشاشة:", choices=panel_options), ui.input_action_button("btn_add_panel", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), style="display:flex; gap:5px; width:100%; margin-bottom:15px; align-items: center;"), ui.div(ui.input_select("p2_sensor", "👁️ اختر نوع مستشعر التقارب الصارم:", choices=sensor_options), ui.input_action_button("btn_add_sensor", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), style="display:flex; gap:5px; width:100%; margin-bottom:20px; align-items: center;"), ui.div(ui.input_action_button("p2_search", "🔍 فحص وتطابق المجموعات", class_="btn-neon", style="background:#2ecc71; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; width:100%;"), style="text-align:center;")))))
-
+    return ui.div(
+        ui.div(
+            ui.div(
+                ui.h3(f"📋 المواصفات الفنية لـ {phone_name}", style="color:#3498db; text-align:center; margin-bottom:20px;"),
+                ui.input_numeric("p2_size", "📏 أدخل مقاس الشاشة يدوياً (مثال: 6.53):", value=None, step=0.01),
+                ui.p("", style="margin-bottom:15px;"),
+                ui.div(
+                    ui.input_select("p2_panel", "📺 اختر شكل ونوع الشاشة:", choices=panel_options),
+                    ui.input_action_button("btn_add_panel", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"),
+                    style="display:flex; gap:5px; width:100%; margin-bottom:15px; align-items: center;"
+                ),
+                ui.div(
+                    ui.input_select("p2_sensor", "👁️ اختر نوع مستشعر التقارب الصارم:", choices=sensor_options),
+                    ui.input_action_button("btn_add_sensor", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"),
+                    style="display:flex; gap:5px; width:100%; margin-bottom:20px; align-items: center;"
+                ),
+                ui.div(
+                    ui.input_action_button("p2_search", "🔍 فحص وتطابق المجموعات", class_="btn-neon", style="background:#2ecc71; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; width:100%;"),
+                    style="text-align:center;"
+                )
+            )
+        )
+    )
