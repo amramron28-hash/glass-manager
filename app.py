@@ -13,34 +13,27 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def convert_database(rows):
-    db = {}
-    for item in rows:
-        if not isinstance(item, dict): continue
-        size, panel, sensor, model = str(item.get("size") or "").strip(), str(item.get("panel") or "").strip(), str(item.get("sensor") or "").strip(), str(item.get("model_name") or "").strip()
-        if not size or not model: continue
-        db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
-        if model not in db[size][panel][sensor]["models"]: db[size][panel][sensor]["models"].append(model)
-    return db
+# --- تنسيق الزجاج النيون المباشر على البطاقات ---
+glass_css = """
+    .suggestion-row, .card-result {
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1), 0 4px 10px rgba(0,0,0,0.2) !important;
+        border-radius: 20px !important;
+        padding: 15px !important;
+        margin-bottom: 12px !important;
+        color: white !important;
+        text-align: center !important;
+        font-weight: bold !important;
+    }
+"""
 
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
     ui.tags.head(
-        ui.tags.style("""
-            /* تنسيق زجاجي نيون سريع جداً يطبق تلقائياً على أي بطاقة نتائج */
-            .suggestion-row, .card-result, .shiny-html-output > div {
-                background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(41, 98, 255, 0.5) 50%, rgba(13, 50, 163, 0.6) 100%) !important;
-                border: 1px solid rgba(255, 255, 255, 0.4) !important;
-                box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.1) !important;
-                backdrop-filter: blur(4px) !important;
-                border-radius: 15px !important;
-                padding: 12px !important;
-                margin-bottom: 10px !important;
-                color: white !important;
-                text-align: center !important;
-                font-weight: bold !important;
-            }
-        """),
+        ui.tags.style(glass_css),
         ui.tags.script("""
             Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
                 let d = document.getElementById('settings_drawer');
@@ -48,45 +41,35 @@ app_ui = ui.page_fluid(
             });
         """)
     ),
+    # ... بقية الـ UI كما هي (الدرج، الهيدر، البحث) ...
     ui.div(
-        ui.h3("⚙️ الإعدادات", style="color:#00bfff;text-align:right;margin-bottom:25px;"),
+        ui.h3("⚙️ الإعدادات", style="color:#00bfff;text-align:right;"),
         ui.div(ui.input_switch("switch_notif", "🔔 تفعيل جرس الإشعارات", value=True), class_="metric-box"),
         ui.div(ui.input_switch("switch_monitor", "🛡️ تشغيل المراقب الصامت", value=True), class_="metric-box"),
-        ui.output_ui("drawer_status_area"),
-        ui.input_action_button("close_drawer", "إغلاق الترس", class_="btn-neon", style="width:100%;"),
+        ui.input_action_button("close_drawer", "إغلاق", class_="btn-neon"),
         id="settings_drawer", class_="drawer"
     ),
     ui.div(
-        ui.div(ui.div("ZEGAAR AMMAR", class_="brand-neon-main"), ui.div("GLASS MANAGER", class_="brand-neon-sub"), class_="brand-neon-title"),
-        ui.input_action_button("btn_settings", "⚙️", class_="btn-neon", style="font-size:20px;padding:10px 15px;"),
+        ui.div("ZEGAAR AMMAR", class_="brand-neon-main"), 
+        ui.input_action_button("btn_settings", "⚙️", class_="btn-neon"),
         class_="header-bar"
     ),
-    ui.div(
-        ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."),
-        ui.output_ui("suggestions_curtain"),
-        class_="search-box"
-    ),
+    ui.div(ui.input_text("search_query", "", placeholder="🔍 ابحث..."), ui.output_ui("suggestions_curtain"), class_="search-box"),
     ui.div(ui.output_ui("results_area"), class_="results-container"),
     ui.output_ui("modal_layer")
 )
 def server(input, output, session):
     db_trigger = reactive.Value(0)
-    current_search_phone = reactive.Value("")
-    show_curtain = reactive.Value(False)
-    active_modal = reactive.Value(None)
-    custom_panels, custom_sensors, is_programmatic_update = reactive.Value([]), reactive.Value([]), reactive.Value(False)
-
-    # التنسيق الخاص بالبطاقات التحذيرية (الحمراء)
-    red_style = "background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 23, 68, 0.45) 50%, rgba(163, 13, 35, 0.6) 100%) !important; border: 1px solid rgba(255, 255, 255, 0.4) !important; box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.1) !important; backdrop-filter: blur(4px) !important; border-radius: 15px !important; padding: 12px !important; margin-bottom: 10px !important; color: white !important; text-align: center !important; font-weight: bold !important;"
+    
+    # دالة الألوان المخصصة للحدود المتوهجة
+    def get_card_style_with_glow(color_hex):
+        return f"border-left: 5px solid {color_hex} !important; box-shadow: 0 0 10px {color_hex}44, inset 0 0 10px rgba(255,255,255,0.05) !important;"
 
     @reactive.calc
     def cloud_rows():
         db_trigger()
         try: return supabase.table("phones").select("*").execute().data or []
         except: return []
-
-    @reactive.calc
-    def database(): return convert_database(cloud_rows())
 
     @render.ui
     def results_area():
@@ -101,10 +84,10 @@ def server(input, output, session):
                 target_sensor, target_panel = str(r.get("sensor") or ""), str(r.get("panel") or "")
                 break
         
-        # النتائج الأساسية من النظام
-        html_out = run_system_workflows(p, database(), target_sensor)
+        # النتائج الأساسية
+        html_out = run_system_workflows(p, convert_database(cloud_rows()), target_sensor)
         
-        # النتائج الحمراء (التحذيرية)
+        # معالجة النتائج الحمراء (التحذيرية) بنفس تنسيق الزجاج
         red_matches = []
         if target_size is not None:
             for r in cloud_rows():
@@ -115,7 +98,9 @@ def server(input, output, session):
                     lbl = "مطابق" if abs(r_size - target_size) < 0.005 else (f"+{abs(r_size-target_size):.2f}" if r_size > target_size else f"-{abs(r_size-target_size):.2f}")
                     if r_name not in [x[0] for x in red_matches]: red_matches.append((r_name, lbl))
         
-        red_html = "".join([f'<div style="{red_style}">{name} <span style="font-size:10px; background:rgba(0,0,0,0.3); padding:2px 5px; border-radius:5px;">{lbl}</span></div>' for name, lbl in red_matches])
+        # تطبيق التنسيق الزجاجي + حدود حمراء للتحذير
+        glow_style = get_card_style_with_glow("#FF1744")
+        red_html = "".join([f'<div class="card-result" style="{glow_style}">{name} <span style="font-size:10px; background:rgba(0,0,0,0.2); padding:2px 5px; border-radius:5px;">{lbl}</span></div>' for name, lbl in red_matches])
         
         return ui.HTML(f"{html_out}<div style='margin-top:20px;'>{red_html}</div>")
 
