@@ -347,11 +347,9 @@ def server(input, output, session):
 
         }
 
-
         values.update(
             custom_panels()
         )
-
 
         return sorted(
             list(values)
@@ -372,11 +370,9 @@ def server(input, output, session):
 
         }
 
-
         values.update(
             custom_sensors()
         )
-
 
         return sorted(
             list(values)
@@ -446,11 +442,7 @@ def server(input, output, session):
             return None
 
 
-        q = (
-            input.search_query()
-            .strip()
-            .lower()
-        )
+        q = input.search_query().strip().lower()
 
 
         if not q:
@@ -502,10 +494,7 @@ def server(input, output, session):
 
                     class_="suggestion-row",
 
-
-                    onclick=
-
-                    f"""
+                    onclick=f"""
 
                     Shiny.setInputValue(
 
@@ -541,7 +530,6 @@ def server(input, output, session):
             input.selected_model()
         )
 
-
         ui.update_text(
 
             "search_query",
@@ -549,7 +537,6 @@ def server(input, output, session):
             value=input.selected_model()
 
         )
-
 
         show_curtain.set(False)
 
@@ -566,7 +553,6 @@ def server(input, output, session):
                 input.search_query().strip()
 
             )
-
 
         active_modal.set(
             "plan_2"
@@ -614,7 +600,6 @@ def server(input, output, session):
     @reactive.event(input.p2_search)
     def process_p2():
 
-
         compat = get_compatibles_strict(
 
             database(),
@@ -635,7 +620,6 @@ def server(input, output, session):
         print(compat)
 
 
-
         exact = compat.get("exact", []) or []
 
         plus = compat.get("plus", []) or []
@@ -648,7 +632,6 @@ def server(input, output, session):
 
 
             active_modal.set(None)
-
 
             result_html = ""
 
@@ -666,12 +649,7 @@ def server(input, output, session):
 
                 """
 
-
-                result_html += "<br>".join(
-
-                    map(str, exact)
-
-                )
+                result_html += "<br>".join(map(str, exact))
 
 
 
@@ -687,12 +665,7 @@ def server(input, output, session):
 
                 """
 
-
-                result_html += "<br>".join(
-
-                    map(str, plus)
-
-                )
+                result_html += "<br>".join(map(str, plus))
 
 
 
@@ -708,12 +681,7 @@ def server(input, output, session):
 
                 """
 
-
-                result_html += "<br>".join(
-
-                    map(str, minus)
-
-                )
+                result_html += "<br>".join(map(str, minus))
 
 
 
@@ -725,18 +693,13 @@ def server(input, output, session):
                         "🎉 تم العثور على موديلات متوافقة"
                     ),
 
-                    ui.HTML(
-                        result_html
-                    ),
-
+                    ui.HTML(result_html),
 
                     ui.hr(),
-
 
                     ui.p(
                         "هل تريد دمج الهاتف الجديد داخل هذه المجموعة؟"
                     ),
-
 
                     ui.input_action_button(
 
@@ -748,11 +711,9 @@ def server(input, output, session):
 
                     ),
 
-
                     ui.modal_button(
                         "إغلاق"
                     ),
-
 
                     size="l"
 
@@ -763,7 +724,59 @@ def server(input, output, session):
 
         else:
 
-
             active_modal.set(
                 "plan_3"
-    )
+            )
+
+
+
+    @render.ui
+    def results_area():
+
+        p = input.search_query().strip()
+
+
+        if not p:
+
+            return None
+
+
+
+        html_out = run_system_workflows(
+
+            p,
+
+            database(),
+
+            ""
+
+        )
+
+
+
+        return ui.div(
+
+            ui.HTML(html_out),
+
+
+            ui.input_action_button(
+
+                "trigger_plan_2",
+
+                "🔵 ابدأ إدخال المواصفات والمطابقة الفنية (الخطة 2)",
+
+                class_="btn-plan2-fix"
+
+            )
+
+        )
+
+
+
+app = App(
+
+    app_ui,
+
+    server
+
+)
