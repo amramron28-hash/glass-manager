@@ -600,8 +600,10 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.p2_search)
     def process_p2():
+        
 print("P2 BUTTON CLICKED")
-        compat = get_compatibles_strict(
+       
+compat = get_compatibles_strict(
 
             database(),
 
