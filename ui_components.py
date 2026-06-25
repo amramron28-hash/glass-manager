@@ -8,7 +8,6 @@ from shiny import ui
 _bg_cache = None
 
 
-
 def inject_pwa_and_styles():
 
     global _bg_cache
@@ -33,7 +32,6 @@ def inject_pwa_and_styles():
                 break
 
 
-
     if _bg_cache:
 
         bg_style = f"""
@@ -52,11 +50,9 @@ def inject_pwa_and_styles():
         bg_style = "background-image:none;"
 
 
-
     return ui.HTML(f"""
 
 <style>
-
 
 html, body, .container-fluid {{
 
@@ -81,7 +77,6 @@ html, body, .container-fluid {{
 }}
 
 
-
 .header-bar {{
 
     display:flex;
@@ -103,10 +98,7 @@ html, body, .container-fluid {{
 }}
 
 
-
 .brand-neon-title {{
-
-    text-align:right;
 
     display:flex;
 
@@ -114,8 +106,9 @@ html, body, .container-fluid {{
 
     gap:4px;
 
-}}
+    text-align:right;
 
+}}
 
 
 .brand-neon-main {{
@@ -126,12 +119,7 @@ html, body, .container-fluid {{
 
     font-weight:900;
 
-    text-shadow:
-    0 0 5px rgba(0,191,255,.7),
-    0 0 15px rgba(0,191,255,.5);
-
 }}
-
 
 
 .brand-neon-sub {{
@@ -142,10 +130,7 @@ html, body, .container-fluid {{
 
     font-weight:700;
 
-    letter-spacing:2px;
-
 }}
-
 
 
 .search-box {{
@@ -159,7 +144,6 @@ html, body, .container-fluid {{
     margin:30px auto;
 
 }}
-
 
 
 input[type="text"],
@@ -185,7 +169,6 @@ select {{
     text-align:left !important;
 
 }}
-
 
 
 .suggestions-curtain {{
@@ -215,7 +198,6 @@ select {{
 }}
 
 
-
 .suggestion-row {{
 
     padding:12px;
@@ -227,12 +209,11 @@ select {{
     border-bottom:
     1px solid rgba(255,255,255,.08);
 
-    direction:ltr !important;
+    direction:ltr;
 
     text-align:left;
 
 }}
-
 
 
 .suggestion-row:hover {{
@@ -241,7 +222,6 @@ select {{
     rgba(0,191,255,.18);
 
 }}
-
 
 
 .glass-card {{
@@ -265,7 +245,6 @@ select {{
 }}
 
 
-
 .ammar-flat-card {{
 
     padding:16px 24px;
@@ -277,7 +256,6 @@ select {{
     width:100%;
 
 }}
-
 
 
 .flat-exact {{
@@ -292,7 +270,6 @@ rgba(34,111,41,.60)
 }}
 
 
-
 .flat-plus {{
 
 background:
@@ -305,7 +282,6 @@ rgba(13,50,163,.60)
 }}
 
 
-
 .flat-minus {{
 
 background:
@@ -316,7 +292,6 @@ rgba(230,126,34,.60)
 );
 
 }}
-
 
 
 .flat-warning-card {{
@@ -337,7 +312,6 @@ text-align:center;
 }}
 
 
-
 .flat-phone-text {{
 
 color:white;
@@ -351,7 +325,6 @@ direction:ltr;
 text-align:left;
 
 }}
-
 
 
 .drawer {{
@@ -378,13 +351,11 @@ padding:30px;
 }}
 
 
-
 .drawer.open {{
 
 right:0;
 
 }}
-
 
 
 .metric-box {{
@@ -401,7 +372,6 @@ margin-bottom:10px;
 text-align:center;
 
 }}
-
 
 
 .custom-modal-backdrop {{
@@ -429,199 +399,493 @@ align-items:center;
 
 }}
 
-
 </style>
 
 """)
-def draw_warning_card(message):
+def draw_technical_coords(
+    size_grp,
+    panel_grp,
+    sensor_grp,
+    model_name=""
+):
+
     return ui.HTML(f"""
-    <div class="flat-warning-card">
-        ⚠️ {escape(str(message))}
+
+    <div class="glass-card">
+
+        <h3 style="
+        color:#00bfff;
+        text-align:center;
+        ">
+
+        📱 {escape(str(model_name))}
+
+        </h3>
+
+
+        <div style="
+        font-size:16px;
+        line-height:2;
+        text-align:right;
+        direction:rtl;
+        ">
+
+
+        📏 <b>المقاس الفني:</b>
+
+        <span style="color:#00bfff">
+
+        {escape(str(size_grp))}
+
+        </span>
+
+
+        <br>
+
+
+        📺 <b>نوع الشاشة:</b>
+
+        <span style="color:#00bfff">
+
+        {escape(str(panel_grp))}
+
+        </span>
+
+
+        <br>
+
+
+        👁️ <b>المستشعر:</b>
+
+        <span style="color:#00bfff">
+
+        {escape(str(sensor_grp))}
+
+        </span>
+
+
+        </div>
+
+
     </div>
+
     """)
 
 
-def draw_merge_confirm_modal(phone_name):
-    return ui.div(
-        ui.div(
-            ui.div(
-                ui.h3(
-                    f"🔗 دمج الهاتف {phone_name}",
-                    style="color:#00bfff;text-align:center;"
-                ),
 
-                ui.p(
-                    "سيتم إضافة الهاتف داخل المجموعة الحالية بعد التأكيد.",
-                    style="text-align:center;color:white;"
-                ),
+def draw_neon_section(
+    title,
+    models_list,
+    color_hex="#00bfff",
+    badge_icon="📱",
+    plan_type="exact"
+):
 
-                ui.input_action_button(
-                    "btn_merge",
-                    "✅ تأكيد الدمج والتعلم",
-                    class_="btn-neon",
-                    style="""
-                    width:100%;
-                    background:#2ecc71;
-                    color:white;
-                    padding:12px;
-                    border-radius:10px;
-                    border:none;
-                    """
-                ),
+    if not models_list:
 
-                ui.modal_button(
-                    "إلغاء"
-                ),
-
-                class_="glass-card",
-                style="""
-                width:90%;
-                max-width:500px;
-                background:rgba(22,27,34,.98);
-                border:1px solid #00bfff;
-                """
-            ),
-
-            class_="custom-modal-backdrop"
-        )
-    )
-
-
-def draw_database_status(total):
-    return ui.div(
-
-        ui.div(
-            f"📊 قاعدة البيانات: {total} هاتف",
-            class_="metric-box"
-        )
-
-    )
-
-
-def draw_simple_result(title, models, icon="📱"):
-
-    if not models:
         return ui.div()
 
-    items = [
+
+    class_map = {
+
+        "exact": "flat-exact",
+
+        "plus": "flat-plus",
+
+        "minus": "flat-minus"
+
+    }
+
+
+    card_class = class_map.get(
+        plan_type,
+        "flat-exact"
+    )
+
+
+    cards = []
+
+
+    cards.append(
+
         ui.h4(
-            f"{icon} {title}",
-            style="""
-            color:#00bfff;
+
+            f"{badge_icon} {title}",
+
+            style=f"""
+
+            color:{color_hex};
+
             text-align:right;
+
             direction:rtl;
+
             """
+
         )
-    ]
 
-    for model in models:
+    )
 
-        items.append(
+
+    for model in models_list:
+
+
+        cards.append(
 
             ui.HTML(
+
                 f"""
-                <div class="ammar-flat-card flat-exact">
+
+                <div class="ammar-flat-card {card_class}">
+
 
                     <div class="flat-phone-text">
-                        {escape(str(model))}
+
+                    {escape(str(model))}
+
                     </div>
 
+
                 </div>
+
                 """
+
             )
 
         )
 
-    return ui.div(*items)
+
+    return ui.div(*cards)
+
+
+
+
+
+def draw_plan_2_modal(
+    phone_name,
+    existing_panels,
+    existing_sensors
+):
+
+    panel_options = {
+
+        p:p for p in existing_panels if p
+
+    }
+
+
+    sensor_options = {
+
+        s:s for s in existing_sensors if s
+
+    }
+
+
+
+    return ui.div(
+
+        ui.div(
+
+            ui.div(
+
+
+                ui.h3(
+
+                    f"📋 المواصفات الفنية لـ {phone_name}",
+
+                    style="""
+                    color:#3498db;
+                    text-align:center;
+                    """
+
+                ),
+
+
+
+                ui.input_numeric(
+
+                    "p2_size",
+
+                    "📏 مقاس الشاشة:",
+
+                    value=None,
+
+                    step=0.01
+
+                ),
+
+
+
+                ui.input_select(
+
+                    "p2_panel",
+
+                    "📺 نوع الشاشة:",
+
+                    choices=panel_options
+
+                ),
+
+
+
+                ui.input_select(
+
+                    "p2_sensor",
+
+                    "👁️ نوع المستشعر:",
+
+                    choices=sensor_options
+
+                ),
+
+
+
+                ui.input_action_button(
+
+                    "p2_search",
+
+                    "🔍 فحص المطابقة",
+
+                    class_="btn-neon",
+
+                    style="""
+
+                    width:100%;
+
+                    background:#2ecc71;
+
+                    color:white;
+
+                    padding:12px;
+
+                    border-radius:8px;
+
+                    border:none;
+
+                    """
+
+                ),
+
+
+
+                class_="glass-card",
+
+                style="""
+
+                width:90%;
+
+                max-width:500px;
+
+                background:rgba(22,27,34,.98);
+
+                """
+
+            ),
+
+
+            class_="custom-modal-backdrop"
+
+        )
+
+    )
+def draw_plan_3_modal(
+    phone_name,
+    existing_panels,
+    existing_sensors
+):
+
+    panel_options = {
+
+        p:p for p in existing_panels if p
+
+    }
+
+
+    sensor_options = {
+
+        s:s for s in existing_sensors if s
+
+    }
+
+
+
+    return ui.div(
+
+        ui.div(
+
+            ui.div(
+
+
+                ui.h3(
+
+                    f"🔮 الخطة البديلة المتقدمة لـ {phone_name}",
+
+                    style="""
+                    color:#e67e22;
+                    text-align:center;
+                    """
+
+                ),
+
+
+
+                ui.input_numeric(
+
+                    "p3_size",
+
+                    "📏 المقاس المقترح:",
+
+                    value=None,
+
+                    step=0.01
+
+                ),
+
+
+
+                ui.input_select(
+
+                    "p3_panel",
+
+                    "📺 تخصيص نوع الشاشة:",
+
+                    choices=panel_options
+
+                ),
+
+
+
+                ui.input_select(
+
+                    "p3_sensor",
+
+                    "👁️ تخصيص المستشعر:",
+
+                    choices=sensor_options
+
+                ),
+
+
+
+                ui.input_action_button(
+
+                    "p3_search",
+
+                    "⚡ تشغيل البحث الذكي",
+
+                    class_="btn-neon",
+
+                    style="""
+
+                    width:100%;
+
+                    background:#e67e22;
+
+                    color:white;
+
+                    padding:12px;
+
+                    border-radius:8px;
+
+                    border:none;
+
+                    """
+
+                ),
+
+
+
+                class_="glass-card",
+
+                style="""
+
+                width:90%;
+
+                max-width:500px;
+
+                background:rgba(22,27,34,.98);
+
+                """
+
+            ),
+
+
+            class_="custom-modal-backdrop"
+
+        )
+
+    )
+
+
+
+
+
+def draw_warning_card(message):
+
+    return ui.HTML(f"""
+
+    <div class="flat-warning-card">
+
+        ⚠️ {escape(str(message))}
+
+    </div>
+
+    """)
+
+
+
+
+
+def draw_database_status(total):
+
+    return ui.div(
+
+        ui.div(
+
+            f"📊 قاعدة البيانات: {total} هاتف",
+
+            class_="metric-box"
+
+        )
+
+    )
+
+
+
 
 
 def draw_empty_database():
 
     return ui.HTML(
+
         """
+
         <div class="flat-warning-card">
+
             ⚠️ قاعدة البيانات فارغة
+
         </div>
+
         """
-        )
-def draw_merge_confirm_modal(phone_name):
-
-    return ui.div(
-
-        ui.div(
-
-            ui.div(
-
-                ui.h3(
-                    f"🔗 تأكيد دمج {escape(str(phone_name))}",
-                    style="""
-                    color:#00bfff;
-                    text-align:center;
-                    """
-                ),
-
-                ui.p(
-                    "سيتم إضافة الهاتف إلى قاعدة البيانات بعد التأكيد.",
-                    style="""
-                    color:white;
-                    text-align:center;
-                    """
-                ),
-
-                ui.input_action_button(
-                    "btn_merge",
-                    "✅ تأكيد الدمج والتعلم",
-                    class_="btn-neon",
-                    style="""
-                    width:100%;
-                    padding:12px;
-                    background:#2ecc71;
-                    color:white;
-                    border:none;
-                    border-radius:10px;
-                    """
-                ),
-
-                ui.modal_button(
-                    "إغلاق"
-                ),
-
-                class_="glass-card",
-
-                style="""
-                width:90%;
-                max-width:500px;
-                background:rgba(22,27,34,.98);
-                border:1px solid #00bfff;
-                """
-
-            ),
-
-            class_="custom-modal-backdrop"
-
-        )
 
     )
 
 
-def draw_database_stats(total):
 
-    return ui.div(
-
-        ui.div(
-            f"📊 عدد السجلات: {total}",
-            class_="metric-box"
-        )
-
-    )
 
 
 def draw_empty_search():
 
     return ui.HTML(
+
         """
+
         <div class="flat-warning-card">
+
             ⚠️ لم يتم العثور على نتائج
+
         </div>
+
         """
-)
+
+    )
