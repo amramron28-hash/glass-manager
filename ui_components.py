@@ -1,117 +1,354 @@
-import os, base64
-from html import escape
-from shiny import ui
+/* =========================================
+   ZEGAAR AMMAR GLASS MANAGER UI
+========================================= */
 
-_bg_cache = None
-
-def inject_pwa_and_styles():
-    global _bg_cache
-    if _bg_cache is None:
-        for p in ["phone_image.webp", "./phone_image.webp", "/app/phone_image.webp"]:
-            if os.path.exists(p):
-                with open(p, "rb") as f:
-                    _bg_cache = base64.b64encode(f.read()).decode()
-                break
-
-    if _bg_cache:
-        bg_style = f"background-image: linear-gradient(rgba(10,14,23,.20), rgba(10,14,23,.20)), url('data:image/webp;base64,{_bg_cache}');"
-    else:
-        bg_style = "background-image: none;"
-
-    return ui.HTML(f"""<style>
-html, body, .container-fluid {{
+html, body, .container-fluid{
     background-color:#0a0e17 !important;
-    {bg_style}
+    color:white !important;
+    direction:rtl !important;
+    font-family:"Segoe UI",sans-serif !important;
+}
+
+body{
+    background-image:
+        linear-gradient(
+            rgba(10,14,23,.20),
+            rgba(10,14,23,.20)
+        ),
+        url('/phone_image.webp') !important;
+
     background-size:92% auto !important;
     background-position:center center !important;
     background-repeat:no-repeat !important;
     background-attachment:fixed !important;
-    color:white !important;
-    direction:rtl !important;
-}}
+}
 
-.flat-exact {{
-    background: linear-gradient(135deg, rgba(255,255,255,.30) 0%, rgba(76,187,85,.45) 50%, rgba(34,111,41,.60) 100%);
+/* =========================================
+   HEADER
+========================================= */
+
+.header-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:12px 25px;
+
+    background:rgba(13,17,23,.55);
+
+    backdrop-filter:blur(12px);
+
+    border-bottom:
+    1px solid rgba(0,191,255,.25);
+}
+
+.brand-neon-title{
+    text-align:right;
+    line-height:1.05;
+}
+
+.brand-neon-main{
+    color:#00bfff;
+    font-size:30px;
+    font-weight:900;
+
+    text-shadow:
+    0 0 5px rgba(0,191,255,.7),
+    0 0 15px rgba(0,191,255,.5);
+}
+
+.brand-neon-sub{
+    color:#87ceeb;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    letter-spacing:4px;
+
+    text-shadow:
+    0 0 5px rgba(135,206,235,.6);
+}
+
+/* =========================================
+   SEARCH
+========================================= */
+
+.search-box{
+    position:relative;
+    width:90%;
+    max-width:500px;
+    margin:30px auto;
+}
+
+input[type="text"]{
+
+    width:100% !important;
+
+    background:
+    rgba(17,24,39,.90)!important;
+
+    color:white!important;
+
+    border:
+    1px solid #00bfff!important;
+
+    border-radius:14px!important;
+
+    padding:14px!important;
+
+    box-shadow:
+    0 0 15px rgba(0,191,255,.15)!important;
+
+    direction:ltr!important;
+
+    text-align:left!important;
+}
+
+/* =========================================
+   AUTOCOMPLETE
+========================================= */
+
+.suggestions-curtain{
+
+    position:absolute;
+
+    top:60px;
+
+    right:0;
+    left:0;
+
+    background:
+    rgba(22,27,34,.96);
+
+    border:
+    1px solid #00bfff;
+
+    border-radius:12px;
+
+    max-height:240px;
+
+    overflow-y:auto;
+
+    z-index:99999;
+
+    backdrop-filter:blur(15px);
+
+    box-shadow:
+    0 8px 30px rgba(0,0,0,.6);
+}
+
+.suggestion-row{
+
+    padding:12px;
+
+    color:white;
+
+    cursor:pointer;
+
+    border-bottom:
+    1px solid rgba(255,255,255,.08);
+
+    direction:ltr;
+
+    text-align:left;
+}
+
+.suggestion-row:hover{
+
+    background:
+    rgba(0,191,255,.18);
+}
+
+/* =========================================
+   GLASS CARD
+========================================= */
+
+.glass-card{
+
+    background:
+    rgba(255,255,255,.06);
+
+    backdrop-filter:
+    blur(15px);
+
+    border:
+    1px solid rgba(0,191,255,.35);
+
+    border-radius:20px;
+
+    padding:20px;
+
+    margin:20px auto;
+
+    max-width:500px;
+}
+
+/* =========================================
+   RESULT CARDS
+========================================= */
+
+.ammar-flat-card{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:flex-end;
+
+    padding:16px 24px;
+
+    margin-bottom:14px;
+
+    border-radius:24px;
+
+    width:100%;
+
+    position:relative;
+
+    overflow:hidden;
+}
+
+.flat-exact{
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.30) 0%,
+        rgba(76,187,85,.45) 50%,
+        rgba(34,111,41,.60) 100%
+    );
+
     border:1px solid rgba(255,255,255,.4);
-    box-shadow: inset 0 0 15px rgba(255,255,255,.5), 0 8px 32px rgba(0,0,0,.1);
-    backdrop-filter: blur(1px);
-}}
 
-.flat-plus {{
-    background: linear-gradient(135deg, rgba(255,255,255,.30) 0%, rgba(41,98,255,.50) 50%, rgba(13,50,163,.60) 100%);
+    box-shadow:
+    inset 0 0 15px rgba(255,255,255,.5),
+    0 8px 32px rgba(0,0,0,.1);
+
+    backdrop-filter:blur(1px);
+}
+
+.flat-plus{
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.30) 0%,
+        rgba(41,98,255,.50) 50%,
+        rgba(13,50,163,.60) 100%
+    );
+
     border:1px solid rgba(255,255,255,.4);
-    box-shadow: inset 0 0 15px rgba(255,255,255,.5), 0 8px 32px rgba(0,0,0,.1);
-    backdrop-filter: blur(1px);
-}}
 
-.flat-minus {{
-    background: linear-gradient(135deg, rgba(255,255,255,.30) 0%, rgba(255,82,82,.45) 50%, rgba(183,28,28,.60) 100%);
+    box-shadow:
+    inset 0 0 15px rgba(255,255,255,.5),
+    0 8px 32px rgba(0,0,0,.1);
+
+    backdrop-filter:blur(1px);
+}
+
+.flat-minus{
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.30) 0%,
+        rgba(255,165,0,.45) 50%,
+        rgba(230,126,34,.60) 100%
+    );
+
     border:1px solid rgba(255,255,255,.4);
-    box-shadow: inset 0 0 15px rgba(255,255,255,.5), 0 8px 32px rgba(0,0,0,.1);
-    backdrop-filter: blur(1px);
-}}
 
-.flat-warning {{
-    background: linear-gradient(135deg, rgba(255,255,255,.30) 0%, rgba(255,165,0,.45) 50%, rgba(230,126,34,.60) 100%);
+    box-shadow:
+    inset 0 0 15px rgba(255,255,255,.5),
+    0 8px 32px rgba(0,0,0,.1);
+
+    backdrop-filter:blur(1px);
+}
+
+.flat-warning-card{
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(255,255,255,.30) 0%,
+        rgba(255,82,82,.45) 50%,
+        rgba(183,28,28,.60) 100%
+    );
+
     border:1px solid rgba(255,255,255,.4);
-    box-shadow: inset 0 0 15px rgba(255,255,255,.5), 0 8px 32px rgba(0,0,0,.1);
-    backdrop-filter: blur(1px);
-}}
-</style>""")
 
-def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
-    return ui.HTML(f"""<div class="glass-card"><h3>📱 {escape(str(model_name))}</h3></div>""")
+    box-shadow:
+    inset 0 0 15px rgba(255,255,255,.5),
+    0 8px 32px rgba(0,0,0,.1);
 
-def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
-    if not models_list:
-        return ui.div()
+    backdrop-filter:blur(1px);
+}
 
-    class_map = {
-        "exact": "flat-exact",
-        "plus": "flat-plus",
-        "minus": "flat-minus",
-        "warning": "flat-warning"
-    }
+.flat-phone-text{
 
-    card_class = class_map.get(plan_type, "flat-exact")
+    color:white;
 
-    cards = [
-        ui.h4(
-            f"{badge_icon} {title}",
-            style=f"color:{color_hex}; direction:rtl !important; text-align:right !important;"
-        )
-    ]
+    font-size:20px;
 
-    for model in models_list:
-        cards.append(
-            ui.HTML(
-                f'<div class="ammar-flat-card {card_class}"><div class="flat-phone-text">{escape(str(model))}</div></div>'
-            )
-        )
+    font-weight:800;
 
-    return ui.div(*cards)
+    width:100%;
 
-def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
-    panel_options = {p: p for p in existing_panels if p}
-    sensor_options = {s: s for s in existing_sensors if s}
+    text-align:left!important;
 
-    return ui.div(
-        ui.div(
-            ui.div(
-                ui.h3(f"📋 المواصفات الفنية لـ {phone_name}")
-            )
-        ),
-        id="plan_2_modal_container"
-    )
+    direction:ltr!important;
+}
 
-def draw_plan_3_modal(phone_name, size, panel, sensor):
-    info_str = f"📐 المقاس المقترح: {size} | 📺 الشاشة: {panel} | 👁️ المستشعر: {sensor}"
+/* =========================================
+   DRAWER
+========================================= */
 
-    return ui.div(
-        ui.div(
-            ui.h3("🚨 خطة الطوارئ 3: إنشاء مجموعة جديدة"),
-            ui.p(info_str)
-        ),
-        class_="custom-modal-backdrop",
-        id="plan_3_modal_container"
-    )
+.drawer{
+
+    position:fixed;
+
+    top:0;
+
+    right:-320px;
+
+    width:290px;
+
+    height:100%;
+
+    background:
+    rgba(22,27,34,.95);
+
+    backdrop-filter:
+    blur(20px);
+
+    border-left:
+    2px solid #00bfff;
+
+    transition:.4s;
+
+    z-index:200000;
+
+    padding:30px;
+}
+
+.drawer.open{
+    right:0;
+}
+
+.metric-box{
+
+    background:
+    rgba(255,255,255,.05);
+
+    padding:10px;
+
+    border-radius:8px;
+
+    margin-bottom:10px;
+
+    text-align:center;
+
+    border:
+    1px solid rgba(0,191,255,.2);
+}
