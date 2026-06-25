@@ -122,3 +122,97 @@ def extract_numeric_size(size_string):
     except Exception:
         pass
     return None
+def run_system_workflows(phone, db_data, suggestions=None):
+
+    from ui_components import (
+        draw_technical_coords,
+        draw_neon_section,
+        draw_warning_card
+    )
+
+    if not phone:
+        return ""
+
+
+    size, panel, sensor, real_name = find_model_coords(
+        db_data,
+        phone
+    )
+
+
+    output = []
+
+
+    if real_name:
+
+
+        output.append(
+            str(
+                draw_technical_coords(
+                    size,
+                    panel,
+                    sensor,
+                    real_name
+                )
+            )
+        )
+
+
+        compatible = get_compatibles_strict(
+            db_data,
+            phone
+        )
+
+
+        output.append(
+            str(
+                draw_neon_section(
+                    "مطابقة تماماً",
+                    compatible.get("exact", []),
+                    "#2ecc71",
+                    "🟢",
+                    "exact"
+                )
+            )
+        )
+
+
+        output.append(
+            str(
+                draw_neon_section(
+                    "أكبر بقليل",
+                    compatible.get("plus", []),
+                    "#3498db",
+                    "🔵",
+                    "plus"
+                )
+            )
+        )
+
+
+        output.append(
+            str(
+                draw_neon_section(
+                    "أصغر قليلاً",
+                    compatible.get("minus", []),
+                    "#e67e22",
+                    "🟠",
+                    "minus"
+                )
+            )
+        )
+
+
+    else:
+
+
+        output.append(
+            str(
+                draw_warning_card(
+                    f"الموديل {phone} غير موجود"
+                )
+            )
+        )
+
+
+    return "\n".join(output)
