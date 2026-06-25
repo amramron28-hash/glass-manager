@@ -50,6 +50,19 @@ app_ui = ui.page_fluid(
                 box-shadow: 0 0 15px rgba(255, 0, 85, 0.3);
                 color: #ff4d4d;
             }
+            .btn-plan2-fix {
+                width: 100%;
+                max-width: 500px;
+                margin: 15px auto;
+                padding: 14px;
+                background: linear-gradient(135deg, #007bff, #0056b3) !important;
+                color: white !important;
+                border: 1px solid #00bfff !important;
+                border-radius: 14px !important;
+                font-weight: bold;
+                box-shadow: 0 4px 15px rgba(0,123,255,0.4) !important;
+                display: block;
+            }
         """),
         ui.tags.script("""
             if ('serviceWorker' in navigator) {
@@ -84,6 +97,7 @@ app_ui = ui.page_fluid(
     ui.output_ui("results_area"),
     ui.output_ui("modal_layer")
 )
+
 def server(input, output, session):
     db_trigger = reactive.Value(0)
     current_search_phone = reactive.Value("")
@@ -99,10 +113,12 @@ def server(input, output, session):
         try:
             result = supabase.table("phones").select("*").execute()
             return result.data or []
-        except Exception: return []
+        except Exception:
+            return []
 
     @reactive.calc
-    def database(): return convert_database(cloud_rows())
+    def database():
+        return convert_database(cloud_rows())
 
     @reactive.calc
     def unique_panels():
@@ -118,11 +134,13 @@ def server(input, output, session):
 
     @reactive.effect
     @reactive.event(input.btn_settings)
-    async def open_drawer(): await session.send_custom_message("toggle_drawer", "open")
+    async def open_drawer():
+        await session.send_custom_message("toggle_drawer", "open")
 
     @reactive.effect
     @reactive.event(input.close_drawer)
-    async def close_drawer(): await session.send_custom_message("toggle_drawer", "close")
+    async def close_drawer():
+        await session.send_custom_message("toggle_drawer", "close")
 
     @render.ui
     def drawer_status_area():
@@ -132,68 +150,180 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.search_query)
     def track_search():
-        if is_programmatic_update(): is_programmatic_update.set(False)
-        else: show_curtain.set(True)
+        if is_programmatic_update():
+            is_programmatic_update.set(False)
+        else:
+            show_curtain.set(True)
 
     @render.ui
     def suggestions_curtain():
-        if not show_curtain(): return None
+        if not show_curtain():
+            return None
+
         q = input.search_query().strip().lower()
-        if not q: return None
+
+        if not q:
+            return None
+
         matches = [str(r.get("model_name") or "").strip() for r in cloud_rows()]
         matches = list(set([m for m in matches if q in m.lower()]))[:8]
-        if not matches: return None
-        return ui.div(*[ui.div(m, class_="suggestion-row", onclick=f"Shiny.setInputValue('selected_model', '{m.replace(chr(39),chr(92)+chr(39))}', {{priority:'event'}});") for m in matches], class_="suggestions-curtain")
 
+        if not matches:
+            return None
+
+        return ui.div(
+            *[
+                ui.div(
+                    m,
+                    class_="suggestion-row",
+                    onclick=f"Shiny.setInputValue('selected_model', '{m.replace(chr(39),chr(92)+chr(39))}', {{priority:'event'}});"
+                )
+                for m in matches
+            ],
+            class_="suggestions-curtain"
+        )
     @reactive.effect
     @reactive.event(input.selected_model)
     def fill_search():
         is_programmatic_update.set(True)
+        current_search_phone.set(input.selected_model())
         ui.update_text("search_query", value=input.selected_model())
         show_curtain.set(False)
+
+    @reactive.effect
+    @reactive.event(input.trigger_plan_2)
+    def open_plan_2():
+        if not current_search_phone():
+            current_search_phone.set(input.search_query().strip())
+        active_modal.set("plan_2")
 
     @render.ui
     def modal_layer():
         m = active_modal()
-        if m == "plan_2": return draw_plan_2_modal(current_search_phone(), unique_panels(), unique_sensors())
-        if m == "plan_3": return draw_plan_3_modal(current_search_phone(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""))
+
+        if m == "plan_2":
+            return draw_plan_2_modal(
+                current_search_phone(),
+                unique_panels(),
+                unique_sensors()
+            )
+
+        if m == "plan_3":
+            return draw_plan_3_modal(
+                current_search_phone(),
+                unique_panels(),
+                unique_sensors()
+            )
+
         return None
 
     @reactive.effect
     @reactive.event(input.p2_search)
     def process_p2():
-        compat = get_compatibles_strict(database(), str(input.p2_size() or ""), str(input.p2_panel() or ""), str(input.p2_sensor() or ""), str(current_search_phone() or ""))
+        compat = get_compatibles_strict(
+            database(),
+            str(input.p2_size() or ""),
+            str(input.p2_panel() or ""),
+            str(input.p2_sensor() or ""),
+            str(current_search_phone() or "")
+        )
+
         if compat.get("exact") or compat.get("plus") or compat.get("minus"):
             active_modal.set(None)
-            ui.modal_show(ui.modal(ui.h3("🎉 تم العثور!"), ui.input_action_button("btn_merge", "🔗 دمج", class_="btn-neon"), ui.modal_button("إلغاء")))
-        else: active_modal.set("plan_3")
+
+            ui.modal_show(
+                ui.modal(
+                    ui.h3("🎉 تم العثور على تطابق بالمجموعات!"),
+                    ui.p("هل تريد دمج هذا الهاتف المبحوث عنه في هذه المجموعة ليتعلمه النظام مستقبلاً؟"),
+                    ui.input_action_button(
+                        "btn_merge",
+                        "🔗 تأكيد الدمج والتعلم",
+                        class_="btn-neon"
+                    ),
+                    ui.modal_button("إلغاء")
+                )
+            )
+        else:
+            active_modal.set("plan_3")
 
     @render.ui
     def results_area():
         p = input.search_query().strip()
-        if not p: return None
-        target_size, target_sensor, target_panel = None, "", ""
+
+        if not p:
+            return None
+
+        target_size = None
+        target_sensor = ""
+        target_panel = ""
+
         for r in cloud_rows():
             if str(r.get("model_name") or "").strip().lower() == p.lower():
-                try: target_size = float(r.get("size") or 0)
-                except: target_size = None
-                target_sensor, target_panel = str(r.get("sensor") or ""), str(r.get("panel") or "")
+                try:
+                    target_size = float(r.get("size") or 0)
+                except:
+                    target_size = None
+
+                target_sensor = str(r.get("sensor") or "")
+                target_panel = str(r.get("panel") or "")
                 break
-        
-        html_out = run_system_workflows(p, database(), target_sensor)
-        
+
+        html_out = run_system_workflows(
+            p,
+            database(),
+            target_sensor
+        )
+
         red_matches = []
+
         if target_size is not None:
             for r in cloud_rows():
-                r_name, r_sensor, r_panel = str(r.get("model_name") or ""), str(r.get("sensor") or ""), str(r.get("panel") or "")
-                try: r_size = float(r.get("size") or 0)
-                except: continue
-                if r_name.lower() != p.lower() and r_panel == target_panel and r_sensor != target_sensor and abs(r_size - target_size) <= 0.035:
-                    lbl = "مطابق" if abs(r_size - target_size) < 0.005 else (f"+{abs(r_size-target_size):.2f}" if r_size > target_size else f"-{abs(r_size-target_size):.2f}")
-                    if r_name not in [x[0] for x in red_matches]: red_matches.append((r_name, lbl))
-        
-        red_html = "".join([f'<div class="neon-glass-card neon-red-card">{name} <span style="font-size:10px;background:rgba(255,0,0,0.2);padding:2px 5px;border-radius:5px;">{lbl}</span></div>' for name, lbl in red_matches])
-        
-        return ui.HTML(f"{html_out}<div style='margin-top:20px;'>{red_html}</div>")
+
+                r_name = str(r.get("model_name") or "")
+                r_sensor = str(r.get("sensor") or "")
+                r_panel = str(r.get("panel") or "")
+
+                try:
+                    r_size = float(r.get("size") or 0)
+                except:
+                    continue
+
+                if (
+                    r_name.lower() != p.lower()
+                    and r_panel == target_panel
+                    and r_sensor != target_sensor
+                    and abs(r_size - target_size) <= 0.035
+                ):
+
+                    lbl = (
+                        "مطابق"
+                        if abs(r_size - target_size) < 0.005
+                        else (
+                            f"+{abs(r_size-target_size):.2f}"
+                            if r_size > target_size
+                            else f"-{abs(r_size-target_size):.2f}"
+                        )
+                    )
+
+                    if r_name not in [x[0] for x in red_matches]:
+                        red_matches.append((r_name, lbl))
+
+        red_html = "".join([
+            f'<div class="neon-glass-card neon-red-card">{name} '
+            f'<span style="font-size:10px;background:rgba(255,0,0,0.2);'
+            f'padding:2px 5px;border-radius:5px;">{lbl}</span></div>'
+            for name, lbl in red_matches
+        ])
+
+        return ui.div(
+            ui.HTML(
+                f"{html_out}<div style='margin-top:20px;'>{red_html}</div>"
+            ),
+            ui.input_action_button(
+                "trigger_plan_2",
+                "🔵 ابدأ إدخال المواصفات والمطابقة الفنية (الخطة 2)",
+                class_="btn-plan2-fix"
+            )
+        )
 
 app = App(app_ui, server)
