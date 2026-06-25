@@ -35,7 +35,7 @@ html, body, .container-fluid {{
 }}
 
 /* =========================================
-   HEADER & BRAND LOGO ONE LINE
+   HEADER & BRAND LOGO TWO LINES
 ========================================= */
 .header-bar {{ 
     display:flex; 
@@ -50,22 +50,26 @@ html, body, .container-fluid {{
 
 .brand-neon-title {{
     text-align: right;
-    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }}
 .brand-neon-main {{
     color: #00bfff;
     font-size: 28px;
     font-weight: 900;
     text-shadow: 0 0 5px rgba(0,191,255,.7), 0 0 15px rgba(0,191,255,.5);
-    display: inline-block;
+    line-height: 1;
+    text-transform: uppercase;
 }}
 .brand-neon-sub {{
     color: #87ceeb;
-    font-size: 24px;
+    font-size: 16px;
     font-weight: 700;
-    margin-right: 8px;
+    letter-spacing: 2px;
     text-shadow: 0 0 5px rgba(135,206,235,.6);
-    display: inline-block;
+    line-height: 1;
+    text-transform: uppercase;
 }}
 
 /* =========================================
