@@ -254,7 +254,7 @@ input[type="text"], input[type="number"], select {{
 </style>""")
 
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
-    return ui.HTML(f"""<div class="glass-card" style="box-shadow: 0 0 15px rgba(0, 191, 255, 0.25);"><h3 style="color:#00bfff; text-align:center; margin-bottom:15px;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right; direction: rtl !important;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff;">{escape(str(size_grp))}</span><br>📺 <b>نوع الشاشة:</b> <span style="color:#00bfff;">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر الحركي:</b> <span style="color:#00bfff;">{escape(str(sensor_grp))}</span></div></div>""")
+    return ui.HTML(f"""<div class="glass-card" style="box-shadow: 0 0 15px rgba(0, 191, 255, 0.25);"><h3 style="color:#00bfff; text-align:center; margin-bottom:15px;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right; direction: rtl !important;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff;">{escape(str(size_grp))}</span>br📺 <b>نوع الشاشة:</b> <span style="color:#00bfff;">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر الحركي:</b> <span style="color:#00bfff;">{escape(str(sensor_grp))}</span></div></div>""")
 
 def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
     if not models_list: return ui.div()
@@ -268,7 +268,6 @@ def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_i
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
     panel_options = {p: p for p in existing_panels if p}
     sensor_options = {s: s for s in existing_sensors if s}
-    
     return ui.div(
         ui.div(
             ui.div(
@@ -291,6 +290,34 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
                 ),
                 class_="glass-card",
                 style="width:90%; max-width:500px; background:rgba(22,27,34,.98); border:1px solid #00bfff;"
+            ),
+            class_="custom-modal-backdrop"
+        )
+    )
+
+def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
+    panel_options = {p: p for p in existing_panels if p}
+    sensor_options = {s: s for s in existing_sensors if s}
+    return ui.div(
+        ui.div(
+            ui.div(
+                ui.h3(f"🔮 الخطة البديلة المتقدمة لـ {phone_name}", style="color:#e67e22; text-align:center; margin-bottom:20px;"), 
+                ui.input_numeric("p3_size", "📏 مقاس الشاشة المقترح:", value=None, step=0.01), 
+                ui.p("", style="margin-bottom:15px;"), 
+                ui.div(
+                    ui.input_select("p3_panel", "📺 تخصيص شكل الشاشة:", choices=panel_options), 
+                    style="width:100%; margin-bottom:15px;"
+                ), 
+                ui.div(
+                    ui.input_select("p3_sensor", "👁️ تخصيص مستشعر التقارب المتقدم:", choices=sensor_options), 
+                    style="width:100%; margin-bottom:20px;"
+                ), 
+                ui.div(
+                    ui.input_action_button("p3_search", "⚡ تشغيل فحص المطابقة الذكي", class_="btn-neon", style="background:#e67e22; color:white; padding:12px; border:none; border-radius:8px; width:100%; font-weight:bold;"),
+                    style="width:100%;"
+                ),
+                class_="glass-card",
+                style="width:90%; max-width:500px; background:rgba(22,27,34,.98); border:1px solid #e67e22;"
             ),
             class_="custom-modal-backdrop"
         )
