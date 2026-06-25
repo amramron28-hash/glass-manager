@@ -58,10 +58,26 @@ app_ui = ui.page_fluid(
     ui.div(ui.output_ui("results_area"), class_="results-container"),
     ui.output_ui("modal_layer")
 )
+# --- الجزء الثاني: منطق التطبيق (Server) ---
+
+def convert_database(rows):
+    db = {}
+    for item in rows:
+        if not isinstance(item, dict): continue
+        size = str(item.get("size") or "").strip()
+        panel = str(item.get("panel") or "").strip()
+        sensor = str(item.get("sensor") or "").strip()
+        model = str(item.get("model_name") or "").strip()
+        if not size or not model: continue
+        db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
+        if model not in db[size][panel][sensor]["models"]:
+            db[size][panel][sensor]["models"].append(model)
+    return db
+
 def server(input, output, session):
     db_trigger = reactive.Value(0)
     
-    # دالة الألوان المخصصة للحدود المتوهجة
+    # دالة التنسيق للبطاقات التي تحتاج حدوداً متوهجة (للبطاقات الحمراء)
     def get_card_style_with_glow(color_hex):
         return f"border-left: 5px solid {color_hex} !important; box-shadow: 0 0 10px {color_hex}44, inset 0 0 10px rgba(255,255,255,0.05) !important;"
 
@@ -76,6 +92,9 @@ def server(input, output, session):
         p = input.search_query().strip()
         if not p: return None
         
+        # جلب قاعدة البيانات المنسقة
+        current_db = convert_database(cloud_rows())
+        
         target_size, target_sensor, target_panel = None, "", ""
         for r in cloud_rows():
             if str(r.get("model_name") or "").strip().lower() == p.lower():
@@ -84,10 +103,10 @@ def server(input, output, session):
                 target_sensor, target_panel = str(r.get("sensor") or ""), str(r.get("panel") or "")
                 break
         
-        # النتائج الأساسية
-        html_out = run_system_workflows(p, convert_database(cloud_rows()), target_sensor)
+        # 1. النتائج الأساسية (تأتي من Workflows)
+        html_out = run_system_workflows(p, current_db, target_sensor)
         
-        # معالجة النتائج الحمراء (التحذيرية) بنفس تنسيق الزجاج
+        # 2. النتائج الحمراء (التحذيرية) - تظهر في الأسفل بتنسيق الزجاج النيون
         red_matches = []
         if target_size is not None:
             for r in cloud_rows():
@@ -98,10 +117,11 @@ def server(input, output, session):
                     lbl = "مطابق" if abs(r_size - target_size) < 0.005 else (f"+{abs(r_size-target_size):.2f}" if r_size > target_size else f"-{abs(r_size-target_size):.2f}")
                     if r_name not in [x[0] for x in red_matches]: red_matches.append((r_name, lbl))
         
-        # تطبيق التنسيق الزجاجي + حدود حمراء للتحذير
+        # تطبيق التنسيق الزجاجي (الكلاس card-result يأخذ التنسيق من CSS في الجزء الأول)
         glow_style = get_card_style_with_glow("#FF1744")
         red_html = "".join([f'<div class="card-result" style="{glow_style}">{name} <span style="font-size:10px; background:rgba(0,0,0,0.2); padding:2px 5px; border-radius:5px;">{lbl}</span></div>' for name, lbl in red_matches])
         
         return ui.HTML(f"{html_out}<div style='margin-top:20px;'>{red_html}</div>")
 
+# ربط التطبيق
 app = App(app_ui, server)
