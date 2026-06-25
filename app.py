@@ -1,4 +1,5 @@
 import os
+print("RUNNING:", os.path.abspath(__file__)) 
 from shiny import App, ui, render, reactive
 from supabase import create_client
 
