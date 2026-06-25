@@ -63,30 +63,13 @@ def server(input, output, session):
     active_modal = reactive.Value(None)
     custom_panels, custom_sensors, is_programmatic_update = reactive.Value([]), reactive.Value([]), reactive.Value(False)
 
-    # مصفوفة الألوان النيون الزجاجية (تم ضبط الشفافية على 0.15 لتأثير زجاجي خفيف)
-    neon_colors = {
-        "green": {"border": "#00FF66", "bg": "rgba(0, 255, 102, 0.15)"},
-        "blue": {"border": "#00E5FF", "bg": "rgba(0, 229, 255, 0.15)"},
-        "orange": {"border": "#FF9100", "bg": "rgba(255, 145, 0, 0.15)"},
-        "red": {"border": "#FF1744", "bg": "rgba(255, 23, 68, 0.15)"}
+    # مصفوفة التنسيقات الزجاجية المخصصة
+    styles = {
+        "blue": "background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(41, 98, 255, 0.5) 50%, rgba(13, 50, 163, 0.6) 100%); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.1); backdrop-filter: blur(4px); border-radius: 15px; padding: 12px; margin-bottom: 10px; color: white; text-align: center; font-weight: bold;",
+        "green": "background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(76, 187, 85, 0.45) 50%, rgba(34, 111, 41, 0.6) 100%); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.1); backdrop-filter: blur(4px); border-radius: 15px; padding: 12px; margin-bottom: 10px; color: white; text-align: center; font-weight: bold;",
+        "red": "background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 23, 68, 0.45) 50%, rgba(163, 13, 35, 0.6) 100%); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.1); backdrop-filter: blur(4px); border-radius: 15px; padding: 12px; margin-bottom: 10px; color: white; text-align: center; font-weight: bold;",
+        "orange": "background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 145, 0, 0.45) 50%, rgba(163, 90, 13, 0.6) 100%); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.1); backdrop-filter: blur(4px); border-radius: 15px; padding: 12px; margin-bottom: 10px; color: white; text-align: center; font-weight: bold;"
     }
-
-    def get_card_style(color_key):
-        c = neon_colors.get(color_key, neon_colors["blue"])
-        return f"""
-            background: {c['bg']} !important;
-            backdrop-filter: blur(20px) !important;
-            -webkit-backdrop-filter: blur(20px) !important;
-            border: 1px solid {c['border']} !important;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
-            color: #ffffff !important;
-            padding: 12px !important;
-            margin-bottom: 10px !important;
-            border-radius: 15px !important;
-            text-align: center !important;
-            font-weight: bold !important;
-            border-left: 5px solid {c['border']} !important;
-        """
 
     @reactive.calc
     def cloud_rows():
@@ -96,14 +79,6 @@ def server(input, output, session):
 
     @reactive.calc
     def database(): return convert_database(cloud_rows())
-
-    @reactive.effect
-    @reactive.event(input.btn_settings)
-    async def open_drawer(): await session.send_custom_message("toggle_drawer", "open")
-
-    @reactive.effect
-    @reactive.event(input.close_drawer)
-    async def close_drawer(): await session.send_custom_message("toggle_drawer", "close")
 
     @render.ui
     def results_area():
@@ -118,10 +93,10 @@ def server(input, output, session):
                 target_sensor, target_panel = str(r.get("sensor") or ""), str(r.get("panel") or "")
                 break
         
-        # 1. النتائج الأساسية (تأتي من Workflows)
+        # النتائج الأساسية (تأتي من Workflows)
         html_out = run_system_workflows(p, database(), target_sensor)
         
-        # 2. النتائج الحمراء (ترتيبها في الأسفل)
+        # معالجة النتائج الحمراء (التنبيهية)
         red_matches = []
         if target_size is not None:
             for r in cloud_rows():
@@ -132,10 +107,10 @@ def server(input, output, session):
                     lbl = "مطابق" if abs(r_size - target_size) < 0.005 else (f"+{abs(r_size-target_size):.2f}" if r_size > target_size else f"-{abs(r_size-target_size):.2f}")
                     if r_name not in [x[0] for x in red_matches]: red_matches.append((r_name, lbl))
         
-        style_red = get_card_style("red")
-        red_html = "".join([f'<div style="{style_red}">{name} <span style="font-size:10px; background:rgba(0,0,0,0.3); padding:2px 5px; border-radius:5px;">{lbl}</span></div>' for name, lbl in red_matches])
+        red_style = styles["red"]
+        red_html = "".join([f'<div style="{red_style}">{name} <span style="font-size:10px; background:rgba(0,0,0,0.3); padding:2px 5px; border-radius:5px;">{lbl}</span></div>' for name, lbl in red_matches])
         
-        # الدمج: النتائج الأساسية في الأعلى، ثم الأحمر في الأسفل
         return ui.HTML(f"{html_out}<div style='margin-top:20px;'>{red_html}</div>")
 
 app = App(app_ui, server)
+
