@@ -284,3 +284,4 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
                 ui.div(
                     ui.input_select("p2_sensor", "👁️ اختر نوع مستشعر التقارب الصارم:", choices=sensor_options), 
                     ui.input_action_button("btn_add_sensor", "➕", class_="btn-neon", style="padding:10px; margin-top:24px; background:#3498db; border:none; color:white; border-radius:8px;"), 
+
