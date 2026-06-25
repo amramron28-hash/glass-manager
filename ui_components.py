@@ -35,7 +35,7 @@ html, body, .container-fluid {{
 }}
 
 /* =========================================
-   HEADER
+   HEADER & BRAND LOGO ONE LINE
 ========================================= */
 .header-bar {{ 
     display:flex; 
@@ -50,20 +50,22 @@ html, body, .container-fluid {{
 
 .brand-neon-title {{
     text-align: right;
-    line-height: 1.05;
+    white-space: nowrap;
 }}
 .brand-neon-main {{
     color: #00bfff;
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 900;
     text-shadow: 0 0 5px rgba(0,191,255,.7), 0 0 15px rgba(0,191,255,.5);
+    display: inline-block;
 }}
 .brand-neon-sub {{
     color: #87ceeb;
-    font-size: 18px;
+    font-size: 24px;
     font-weight: 700;
-    letter-spacing: 4px;
+    margin-right: 8px;
     text-shadow: 0 0 5px rgba(135,206,235,.6);
+    display: inline-block;
 }}
 
 /* =========================================
@@ -254,7 +256,7 @@ input[type="text"], input[type="number"], select {{
 </style>""")
 
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
-    return ui.HTML(f"""<div class="glass-card" style="box-shadow: 0 0 15px rgba(0, 191, 255, 0.25);"><h3 style="color:#00bfff; text-align:center; margin-bottom:15px;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right; direction: rtl !important;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff;">{escape(str(size_grp))}</span>br📺 <b>نوع الشاشة:</b> <span style="color:#00bfff;">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر الحركي:</b> <span style="color:#00bfff;">{escape(str(sensor_grp))}</span></div></div>""")
+    return ui.HTML(f"""<div class="glass-card" style="box-shadow: 0 0 15px rgba(0, 191, 255, 0.25);"><h3 style="color:#00bfff; text-align:center; margin-bottom:15px;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right; direction: rtl !important;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff;">{escape(str(size_grp))}</span><br>📺 <b>نوع الشاشة:</b> <span style="color:#00bfff;">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر الحركي:</b> <span style="color:#00bfff;">{escape(str(sensor_grp))}</span></div></div>""")
 
 def draw_neon_section(title=None, models_list=None, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
     if not models_list: return ui.div()
