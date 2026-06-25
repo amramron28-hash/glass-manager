@@ -772,11 +772,11 @@ def server(input, output, session):
         )
 
 
+print("BEFORE APP CREATE")
 
 app = App(
-
     app_ui,
-
     server
-
 )
+
+print("APP CREATED")
