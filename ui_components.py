@@ -889,3 +889,124 @@ def draw_empty_search():
         """
 
     )
+app_ui = ui.page_fluid(
+
+    inject_pwa_and_styles(),
+
+
+    ui.tags.head(
+
+        ui.tags.link(
+            rel="manifest",
+            href="manifest.json"
+        ),
+
+
+        ui.tags.script("""
+
+        if ('serviceWorker' in navigator) {
+
+            window.addEventListener(
+                'load',
+                function(){
+
+                    navigator.serviceWorker.register(
+                        'service-worker.js'
+                    );
+
+                }
+            );
+
+        }
+
+
+        Shiny.addCustomMessageHandler(
+            'toggle_drawer',
+            function(msg){
+
+                let d =
+                document.getElementById(
+                    'settings_drawer'
+                );
+
+
+                if(d){
+
+                    if(msg === 'open')
+                        d.classList.add('open');
+
+                    else
+                        d.classList.remove('open');
+
+                }
+
+            }
+        );
+
+
+        """)
+
+    ),
+
+
+
+    ui.div(
+
+        ui.div(
+            "ZEGAAR AMMAR",
+            class_="brand-neon-main"
+        ),
+
+
+        ui.div(
+            "GLASS MANAGER",
+            class_="brand-neon-sub"
+        ),
+
+
+        class_="brand-neon-title"
+
+    ),
+
+
+
+    ui.input_action_button(
+        "btn_settings",
+        "⚙️",
+        class_="btn-neon"
+    ),
+
+
+
+    ui.div(
+
+        ui.input_text(
+            "search_query",
+            "",
+            placeholder="🔍 ابحث عن موديل الهاتف..."
+        ),
+
+
+        ui.output_ui(
+            "suggestions_curtain"
+        ),
+
+
+        class_="search-box"
+
+    ),
+
+
+
+    ui.output_ui(
+        "results_area"
+    ),
+
+
+
+    ui.output_ui(
+        "modal_layer"
+    )
+
+
+)
