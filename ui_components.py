@@ -77,7 +77,7 @@ app_ui = ui.page_fluid(
         ui.tags.link(rel="manifest", href="manifest.json"),
         ui.tags.script("""
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function(){ navigator.serviceWorker.register('service-worker.js'); });
+            window.addEventListener('load', function(){ navigator.serviceWorker.register('service-worker.js/'); });
         }
         Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
             let d = document.getElementById('settings_drawer');
