@@ -33,7 +33,6 @@ def inject_pwa_and_styles():
     .flat-warning-card {{ background:rgba(255,82,82,.45); border-radius:12px; padding:18px; color:white; font-weight:bold; text-align:center; }}
     .flat-phone-text {{ color:white; font-size:20px; font-weight:800; direction:ltr; text-align:left; }}
     
-    /* 🌟 تحسينات التموضع الهيكلي للنافذة الجانبية الذكية لتفتح بسلاسة وتغطي اليمين */
     .drawer {{ position:fixed; top:0; right:-310px; width:300px; height:100%; background:rgba(15,22,36,.98); backdrop-filter:blur(20px); border-left:1px solid rgba(0,191,255,.3); transition:.4s ease-in-out; z-index:200000; padding:30px; box-shadow:-5px 0 25px rgba(0,0,0,0.5); }}
     .drawer.open {{ right:0 !important; }}
     .drawer-close-btn {{ background:transparent; border:none; color:#ff5252; font-size:24px; cursor:pointer; float:left; font-weight:bold; }}
@@ -101,9 +100,14 @@ app_ui = ui.page_fluid(
         class_="header-bar"
     ),
     
-    # 🌟 حقن حاوية النافذة الجانبية (Drawer) لتستجيب لفتح وإغلاق الثلاث نقاط وتضمين الخصائص العدادات
+    # 🌟 تصحيح الخطأ الفادح: استخدام ui.tags.button القياسية المدعومة بدلاً من ui.button لتجنب الانهيار وإحياء النافذة الجانبية
     ui.div(
-        ui.button("×", id="btn_close_drawer", class_="drawer-close-btn", onclick="Shiny.setInputValue('btn_close_drawer_trigger', Math.random(), {priority:'event'});"),
+        ui.tags.button(
+            "×", 
+            id="btn_close_drawer", 
+            class_="drawer-close-btn", 
+            onclick="Shiny.setInputValue('btn_close_drawer_trigger', Math.random(), {priority:'event'});"
+        ),
         ui.h3("⚙️ الإعدادات العامة", style="color:#00bfff; text-align:center; margin-bottom:25px; font-weight:800;"),
         
         # ربط العدادات البرمجية الصامتة وجرس الإشعارات لتحديث فوري 100/100
