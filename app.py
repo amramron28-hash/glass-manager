@@ -2,6 +2,9 @@ import os
 import shiny
 
 print("RUNNING:", os.path.abspath(__file__))
+print("CURRENT DIR:", os.getcwd())
+print("WWW EXISTS:", os.path.isdir("www"))
+print("WWW FILES:", os.listdir("www") if os.path.isdir("www") else "NOT FOUND")
 print("Shiny version:", shiny.__version__)
 
 from shiny import App
