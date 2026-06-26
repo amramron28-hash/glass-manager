@@ -298,4 +298,25 @@ def server(input, output, session):
             )
 
         return None
+    # 🌟 دالة ربط المراقب الصامت لإغلاق النافذة الجانبية فوراً عند الضغط على زر (×)
+    @reactive.effect
+    @reactive.event(input.btn_close_drawer_trigger)
+    async def close_drawer():
+        await session.send_custom_message("toggle_drawer", "close")
+
+    # 📊 دالة حساب وإرجاع عداد الأرقام الكلي لقاعدة البيانات داخل النافذة الجانبية
+    @render.ui
+    def database_status_area():
+        db = database_data()
+        total_phones = 0
+        
+        # حساب أعداد الموديلات الفعلية داخل الشجرة بدقة هندسية
+        for size, panels in db.items():
+            for panel, sensors in panels.items():
+                for sensor, s_data in sensors.items():
+                    total_phones += len(s_data.get("models", []))
+                    
+        # استدعاء كارت العداد الأصلي المكتوب بملف الـ UI ليعمل فورا
+        from ui_components import draw_database_status
+        return draw_database_status(total_phones)
 
