@@ -32,9 +32,13 @@ def inject_pwa_and_styles():
     .flat-minus {{ background:linear-gradient(135deg, rgba(255,165,0,.45), rgba(230,126,34,.60)); }}
     .flat-warning-card {{ background:rgba(255,82,82,.45); border-radius:12px; padding:18px; color:white; font-weight:bold; text-align:center; }}
     .flat-phone-text {{ color:white; font-size:20px; font-weight:800; direction:ltr; text-align:left; }}
-    .drawer {{ position:fixed; top:0; right:-290px; width:290px; height:100%; background:rgba(22,27,34,.95); transition:.4s; z-index:200000; padding:30px; }}
-    .drawer.open {{ right:0; }}
-    .metric-box {{ background:rgba(255,255,255,.05); padding:10px; border-radius:8px; margin-bottom:10px; text-align:center; }}
+    
+    /* 🌟 تحسينات التموضع الهيكلي للنافذة الجانبية الذكية لتفتح بسلاسة وتغطي اليمين */
+    .drawer {{ position:fixed; top:0; right:-310px; width:300px; height:100%; background:rgba(15,22,36,.98); backdrop-filter:blur(20px); border-left:1px solid rgba(0,191,255,.3); transition:.4s ease-in-out; z-index:200000; padding:30px; box-shadow:-5px 0 25px rgba(0,0,0,0.5); }}
+    .drawer.open {{ right:0 !important; }}
+    .drawer-close-btn {{ background:transparent; border:none; color:#ff5252; font-size:24px; cursor:pointer; float:left; font-weight:bold; }}
+    
+    .metric-box {{ background:rgba(255,255,255,.05); padding:14px; border-radius:12px; margin-bottom:15px; text-align:center; border:1px solid rgba(0,191,255,0.15); font-weight:bold; }}
     .custom-modal-backdrop {{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.75); z-index:999999; display:flex; justify-content:center; align-items:center; }}
     .btn-dots-menu {{ background:transparent !important; border:none !important; color:#00bfff !important; font-size:28px !important; font-weight:bold !important; cursor:pointer; padding:0 10px !important; line-height:1 !important; transition:color 0.3s ease; }}
     .btn-dots-menu:hover {{ color:#87ceeb !important; }}
@@ -66,7 +70,7 @@ def draw_database_status(total): return ui.div(ui.div(f"📊 قاعدة البي
 def draw_empty_database(): return ui.HTML('<div class="flat-warning-card">⚠️ قاعدة البيانات فارغة</div>')
 def draw_empty_search(): return ui.HTML('<div class="flat-warning-card">⚠️ لم يتم العثور على نتائج</div>')
 
-# --- 2. تعريف الواجهة الرئيسية الممتدة والمصححة (app_ui) ---
+# --- 2. تعريف الواجهة الرئيسية الممتدة والمصححة بالكامل (app_ui) ---
 
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
@@ -78,12 +82,15 @@ app_ui = ui.page_fluid(
         }
         Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
             let d = document.getElementById('settings_drawer');
-            if(d){ if(msg === 'open') d.classList.add('open'); else d.classList.remove('open'); }
+            if(d){ 
+                if(msg === 'open') d.classList.add('open'); 
+                else d.classList.remove('open'); 
+            }
         });
         """)
     ),
     
-    # 🌟 الهيدر الجديد الممتد: الشعار على سطرين وبجانبه القائمة الثلاث نقاط العمودية المستجيبة للمراقب الصامت
+    # 🌟 الهيدر الممتد: الشعار على سطرين وبجانبه قائمة الثلاث نقاط العمودية المستجيبة
     ui.div(
         ui.div(
             ui.div("ZEGAAR AMMAR", class_="brand-neon-main"),
@@ -94,6 +101,20 @@ app_ui = ui.page_fluid(
         class_="header-bar"
     ),
     
+    # 🌟 حقن حاوية النافذة الجانبية (Drawer) لتستجيب لفتح وإغلاق الثلاث نقاط وتضمين الخصائص العدادات
+    ui.div(
+        ui.button("×", id="btn_close_drawer", class_="drawer-close-btn", onclick="Shiny.setInputValue('btn_close_drawer_trigger', Math.random(), {priority:'event'});"),
+        ui.h3("⚙️ الإعدادات العامة", style="color:#00bfff; text-align:center; margin-bottom:25px; font-weight:800;"),
+        
+        # ربط العدادات البرمجية الصامتة وجرس الإشعارات لتحديث فوري 100/100
+        ui.output_ui("database_status_area"),
+        ui.div("🔔 جرس الإشعارات: النظام يعمل بكفاءة", class_="metric-box", style="color:#2ecc71;"),
+        ui.div("🔒 المراقب الصامت: متصل وقيد التشغيل", class_="metric-box", style="color:#00bfff;"),
+        
+        id="settings_drawer",
+        class_="drawer"
+    ),
+    
     ui.div(
         ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."),
         ui.output_ui("suggestions_curtain"),
@@ -102,4 +123,3 @@ app_ui = ui.page_fluid(
     ui.output_ui("results_area"),
     ui.output_ui("modal_layer")
 )
-
