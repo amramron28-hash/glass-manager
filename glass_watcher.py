@@ -1,415 +1,302 @@
-import threading
-import time
-import json
 import os
+import json
+import time
+import shutil
+import urllib.request
+import urllib.error
 from datetime import datetime
 
-from database import supabase
+from database import load_db
 
 
-# ==========================
-# ملف ذاكرة التنبيهات
-# ==========================
+BACKUP_FILE = os.path.join("www", "models_db.json")
+LOG_FILE = "glass_watcher.log"
 
-ALERT_FILE = "watcher_alerts.json"
+STATUS_ONLINE = "ONLINE"
+STATUS_FALLBACK = "FALLBACK"
+STATUS_OFFLINE = "OFFLINE"
 
 
-def load_alerts():
+class GlassWatcher:
 
-    try:
+    def __init__(self):
 
-        if os.path.exists(ALERT_FILE):
+        self.status = STATUS_OFFLINE
+        self.last_sync = None
+        self.last_error = ""
+        self.source = "NONE"
 
-            with open(
-                ALERT_FILE,
-                "r",
-                encoding="utf-8"
-            ) as f:
+        self.db = {}
 
-                return json.load(f)
+        self.stats = {
+            "phones": 0,
+            "sizes": 0,
+            "panels": 0,
+            "sensors": 0,
+            "duplicates": 0,
+            "empty_groups": 0
+        }
 
-    except:
+    def log(self, message):
 
-        pass
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        line = f"[{now}] {message}"
 
-    return []
+        print(line)
 
+        try:
 
+            with open(LOG_FILE, "a", encoding="utf-8") as f:
+                f.write(line + "\n")
 
-def save_alerts(alerts):
+        except Exception:
+            pass
 
-    try:
+    def save_backup(self):
 
-        with open(
-            ALERT_FILE,
-            "w",
-            encoding="utf-8"
-        ) as f:
+        try:
 
-            json.dump(
-                alerts,
-                f,
-                ensure_ascii=False,
-                indent=2
-            )
+            os.makedirs("www", exist_ok=True)
 
-    except:
+            with open(BACKUP_FILE, "w", encoding="utf-8") as f:
 
-        pass
+                json.dump(
+                    self.db,
+                    f,
+                    ensure_ascii=False,
+                    indent=2
+                )
 
+            return True
 
+        except Exception as e:
 
+            self.log(f"BACKUP_SAVE_ERROR : {e}")
 
-# ==========================
-# قراءة البيانات الحية
-# ==========================
+            return False
 
-def fetch_phones():
+    def load_backup(self):
 
-    try:
+        try:
 
-        result = (
-            supabase
-            .table("phones")
-            .select("*")
-            .execute()
-        )
+            with open(BACKUP_FILE, "r", encoding="utf-8") as f:
 
+                self.db = json.load(f)
 
-        return result.data or []
+            self.source = "LOCAL_BACKUP"
 
+            self.status = STATUS_FALLBACK
 
-    except Exception as e:
+            self.log("Loaded backup database")
 
-        return []
+            return True
 
+        except Exception as e:
 
+            self.last_error = str(e)
 
+            self.log(f"BACKUP_LOAD_ERROR : {e}")
 
+            return False
 
-# ==========================
-# تنظيف النص
-# ==========================
+    def load_from_supabase(self):
 
-def clean_text(v):
+        try:
 
-    if not v:
+            db = load_db()
 
-        return ""
+            if not isinstance(db, dict):
+                raise Exception("Database is not dictionary")
 
+            if len(db) == 0:
+                raise Exception("Database is empty")
 
-    return (
-        str(v)
-        .lower()
-        .strip()
-    )
+            self.db = db
 
+            self.source = "SUPABASE"
 
+            self.status = STATUS_ONLINE
 
+            self.last_sync = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+            self.last_error = ""
 
-# ==========================
-# 🧠 فحص التكرار والتداخل
-# ==========================
+            self.save_backup()
 
-def run_silent_check():
+            self.log("Connected to Supabase")
 
+            return True
 
-    rows = fetch_phones()
+        except Exception as e:
 
+            self.last_error = str(e)
 
-    alerts = []
+            self.log(f"SUPABASE_ERROR : {e}")
 
-    seen = {}
+            return False
 
 
+    def synchronize(self):
 
-    for row in rows:
+        if self.load_from_supabase():
 
+            return self.db
 
-        model = clean_text(
-            row.get("model_name")
-        )
+        self.log("Switching to backup database")
 
+        if self.load_backup():
 
-        size = clean_text(
-            row.get("size")
-        )
+            return self.db
 
+        self.status = STATUS_OFFLINE
 
-        panel = clean_text(
-            row.get("panel")
-        )
+        self.source = "NONE"
 
+        self.db = {}
 
-        sensor = clean_text(
-            row.get("sensor")
-        )
+        return {}
 
 
+    def count_statistics(self):
 
-        if not model:
+        phones = 0
+        sizes = 0
+        panels = set()
+        sensors = set()
+        duplicates = 0
+        empty_groups = 0
 
+        for size, panel_dict in self.db.items():
 
-            alerts.append(
-                {
-                    "type":
-                    "missing_model",
+            sizes += 1
 
-                    "time":
-                    str(datetime.now()),
+            has_models = False
 
-                    "message":
-                    "سجل بدون اسم هاتف",
+            for panel, sensor_dict in panel_dict.items():
 
-                    "id":
-                    row.get("id")
-                }
-            )
+                panels.add(panel)
 
+                for sensor, data in sensor_dict.items():
 
-            continue
+                    sensors.add(sensor)
 
+                    models = data.get("models", [])
 
+                    phones += len(models)
 
+                    if len(models) != len(set(models)):
+                        duplicates += 1
 
+                    if models:
+                        has_models = True
 
-        key = (
+            if not has_models:
+                empty_groups += 1
 
-            model,
+        self.stats = {
 
-            size,
+            "phones": phones,
 
-            panel,
+            "sizes": sizes,
 
-            sensor
+            "panels": len(panels),
 
-        )
+            "sensors": len(sensors),
 
+            "duplicates": duplicates,
 
+            "empty_groups": empty_groups
 
-        if key in seen:
+        }
 
+        return self.stats
+    def check_required_files(self):
 
-            alerts.append(
+        report = {}
 
-                {
+        files = [
 
-                "type":
-                "duplicate",
+            BACKUP_FILE,
 
-                "time":
-                str(datetime.now()),
+            os.path.join("www", "service-worker.js"),
 
-                "message":
-                f"تكرار الهاتف: {row.get('model_name')}",
+            os.path.join("www", "manifest.json")
 
-                "id":
-                row.get("id")
+        ]
 
-                }
+        for file in files:
 
-            )
+            report[file] = os.path.isfile(file)
 
+            if not report[file]:
 
-        else:
+                self.log(f"MISSING_FILE : {file}")
 
-            seen[key] = row
+        return report
 
 
+    def health_report(self):
 
+        return {
 
+            "status": self.status,
 
-    save_alerts(alerts)
+            "source": self.source,
 
+            "last_sync": self.last_sync,
 
-    return alerts
-# ==========================
-# 🔎 كشف نفس الهاتف بمواصفات مختلفة
-# ==========================
+            "last_error": self.last_error,
 
-def detect_conflicts():
+            "statistics": self.stats,
 
-    rows = fetch_phones()
-
-
-    conflicts = []
-
-    models_map = {}
-
-
-
-    for row in rows:
-
-
-        model = clean_text(
-            row.get("model_name")
-        )
-
-
-        if not model:
-
-            continue
-
-
-
-        data = {
-
-            "size":
-            clean_text(row.get("size")),
-
-            "panel":
-            clean_text(row.get("panel")),
-
-            "sensor":
-            clean_text(row.get("sensor"))
+            "files": self.check_required_files()
 
         }
 
 
+    def monitor(self):
 
-        if model not in models_map:
+        self.synchronize()
 
+        self.count_statistics()
 
-            models_map[model] = []
+        return self.health_report()
 
 
-        models_map[model].append(data)
+watcher = GlassWatcher()
 
 
+def get_database():
 
+    return watcher.synchronize()
 
 
-    for model, items in models_map.items():
+def get_status():
 
+    return watcher.health_report()
 
-        unique = []
 
+def refresh():
 
-        for item in items:
+    return watcher.monitor()
 
 
-            if item not in unique:
+def get_statistics():
 
-                unique.append(item)
+    return watcher.count_statistics()
 
 
+def is_online():
 
+    return watcher.status == STATUS_ONLINE
 
-        if len(unique) > 1:
 
+def is_fallback():
 
-            conflicts.append(
+    return watcher.status == STATUS_FALLBACK
 
-                {
 
-                "type":
-                "conflict",
+def is_offline():
 
-                "time":
-                str(datetime.now()),
-
-                "message":
-                f"اختلاف بيانات للهاتف: {model}",
-
-                "details":
-                unique
-
-                }
-
-            )
-
-
-
-    return conflicts
-
-
-
-
-
-# ==========================
-# 🧠 تشغيل الفحص الكامل
-# ==========================
-
-def watcher_cycle():
-
-
-    alerts = []
-
-
-    alerts.extend(
-        run_silent_check()
-    )
-
-
-    alerts.extend(
-        detect_conflicts()
-    )
-
-
-
-    save_alerts(alerts)
-
-
-
-# ==========================
-# 🔁 الخيط الخلفي
-# ==========================
-
-def start_watcher(
-    interval=300
-):
-
-
-    def loop():
-
-
-        while True:
-
-
-            try:
-
-                watcher_cycle()
-
-
-            except Exception:
-
-
-                pass
-
-
-
-            time.sleep(
-                interval
-            )
-
-
-
-    thread = threading.Thread(
-
-        target=loop,
-
-        daemon=True
-
-    )
-
-
-    thread.start()
-
-
-
-    return thread
-
-
-
-
-
-# ==========================
-# 📤 قراءة التنبيهات للواجهة
-# ==========================
-
-def get_watcher_alerts():
-
-
-    return load_alerts()
+    return watcher.status == STATUS_OFFLINE
