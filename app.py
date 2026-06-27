@@ -1,32 +1,20 @@
 import os
+from pathlib import Path
 import shiny
 
 print("RUNNING:", os.path.abspath(__file__))
 print("CURRENT DIR:", os.getcwd())
-print("WWW EXISTS:", os.path.isdir("www"))
-print("WWW FILES:", os.listdir("www") if os.path.isdir("www") else "NOT FOUND")
-print("Shiny version:", shiny.__version__)
 
-from shiny import App
+print("APP FILE:", Path(__file__).resolve())
+print("WWW ABS:", Path("www").resolve())
+print("WWW EXISTS:", Path("www").is_dir())
+print("SERVICE EXISTS:", Path("www/service-worker.js").exists())
 
-from ui_components import app_ui
-from server import server
+if Path("www").is_dir():
+    print("WWW FILES:", os.listdir("www"))
+else:
+    print("WWW FILES: NOT FOUND")
 
-print("BEFORE APP CREATE")
-
-app = App(
-    app_ui,
-    server
-)
-
-print("APP CREATED")
-import os
-import shiny
-
-print("RUNNING:", os.path.abspath(__file__))
-print("CURRENT DIR:", os.getcwd())
-print("WWW EXISTS:", os.path.isdir("www"))
-print("WWW FILES:", os.listdir("www") if os.path.isdir("www") else "NOT FOUND")
 print("Shiny version:", shiny.__version__)
 
 from shiny import App
