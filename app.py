@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import inspect
 import shiny
 
 print("RUNNING:", os.path.abspath(__file__))
@@ -18,6 +19,8 @@ else:
 print("Shiny version:", shiny.__version__)
 
 from shiny import App
+
+print("APP SIGNATURE:", inspect.signature(App))
 
 from ui_components import app_ui
 from server import server
