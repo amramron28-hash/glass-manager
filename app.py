@@ -29,7 +29,8 @@ print("BEFORE APP CREATE")
 
 app = App(
     app_ui,
-    server
+    server,
+    static_assets="www"
 )
 
 print("APP CREATED")
