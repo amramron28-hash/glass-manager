@@ -6,31 +6,32 @@ import shiny
 print("RUNNING:", os.path.abspath(__file__))
 print("CURRENT DIR:", os.getcwd())
 
-print("APP FILE:", Path(__file__).resolve())
-print("WWW ABS:", Path("www").resolve())
-print("WWW EXISTS:", Path("www").is_dir())
-print("SERVICE EXISTS:", Path("www/service-worker.js").exists())
+APP_DIR = Path(__file__).parent.resolve()
+WWW_DIR = APP_DIR / "www"
 
-if Path("www").is_dir():
-    print("WWW FILES:", os.listdir("www"))
+print("APP FILE:", Path(__file__).resolve())
+print("WWW ABS:", WWW_DIR)
+print("WWW EXISTS:", WWW_DIR.is_dir())
+print("SERVICE EXISTS:", (WWW_DIR / "service-worker.js").exists())
+
+if WWW_DIR.is_dir():
+    print("WWW FILES:", os.listdir(WWW_DIR))
 else:
     print("WWW FILES: NOT FOUND")
 
 print("Shiny version:", shiny.__version__)
 
 from shiny import App
-
-print("APP SIGNATURE:", inspect.signature(App))
-
 from ui_components import app_ui
 from server import server
 
+print("APP SIGNATURE:", inspect.signature(App))
 print("BEFORE APP CREATE")
 
 app = App(
     app_ui,
     server,
-    static_assets="www"
+    static_assets=WWW_DIR
 )
 
 print("APP CREATED")
