@@ -248,7 +248,7 @@ class SilentMonitor:
         return self.health_report()
 
 
-watcher = SilentMonitor()
+watcher = GlassWatcher()
 
 
 def get_database():
