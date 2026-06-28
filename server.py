@@ -708,7 +708,7 @@ def server(input, output, session):
 
                 print(
 
-                    f"GLASS_WATCHER_STATUS: {status}"
+                    f"SILENT_MONITOR_STATUS: {status}"
 
                 )
 
