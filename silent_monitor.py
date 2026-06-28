@@ -17,7 +17,7 @@ STATUS_FALLBACK = "FALLBACK"
 STATUS_OFFLINE = "OFFLINE"
 
 
-class GlassWatcher:
+class SilentMonitor:
 
     def __init__(self):
 
