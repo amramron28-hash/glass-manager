@@ -264,7 +264,7 @@ class SilentMonitor:
         return self.health_report()
 
 
-watcher = GlassWatcher()
+watcher = SilentMonitor()
 
 
 def get_database():
@@ -275,7 +275,6 @@ def get_database():
 def get_status():
 
     return watcher.health_report()
-
 
 def refresh():
 
