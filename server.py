@@ -8,7 +8,7 @@ from shiny import reactive
 
 from database import add_model
 
-from glass_watcher import (
+from silent_monitor.py import (
     get_database,
     refresh,
     get_status,
