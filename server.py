@@ -8,7 +8,7 @@ from shiny import reactive
 
 from database import add_model
 
-from silent_monitor.py import (
+from silent_monitor import (
     get_database,
     refresh,
     get_status,
