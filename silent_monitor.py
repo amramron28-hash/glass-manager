@@ -17,7 +17,7 @@ STATUS_FALLBACK = "FALLBACK"
 STATUS_OFFLINE = "OFFLINE"
 
 
-class SilentMonitor:
+class GlassWatcher:
 
     def __init__(self):
 
@@ -264,7 +264,7 @@ class SilentMonitor:
         return self.health_report()
 
 
-watcher = SilentMonitor()
+watcher = GlassWatcher()
 
 
 def get_database():
@@ -275,6 +275,7 @@ def get_database():
 def get_status():
 
     return watcher.health_report()
+
 
 def refresh():
 
@@ -299,3 +300,105 @@ def is_fallback():
 def is_offline():
 
     return watcher.status == STATUS_OFFLINE
+    def load_from_supabase(self):
+
+        try:
+
+            db = load_db()
+
+            if not isinstance(db, dict):
+                raise Exception("Database is not dictionary")
+
+            if len(db) == 0:
+                raise Exception("Database is empty")
+
+            self.db = db
+
+            self.source = "SUPABASE"
+            self.status = STATUS_ONLINE
+            self.last_sync = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.last_error = ""
+
+            self.save_backup()
+
+            self.log("Silent Monitor connected to Supabase")
+
+            return True
+
+        except Exception as e:
+
+            self.last_error = str(e)
+
+            self.log(f"SUPABASE_ERROR : {e}")
+
+            return False
+
+
+    def synchronize(self):
+
+        if self.load_from_supabase():
+
+            return self.db
+
+        self.log("Silent Monitor switched to backup database")
+
+        if self.load_backup():
+
+            return self.db
+
+        self.status = STATUS_OFFLINE
+        self.source = "NONE"
+        self.db = {}
+
+        return {}
+
+
+    def count_statistics(self):
+
+        phones = 0
+        sizes = 0
+        panels = set()
+        sensors = set()
+        duplicates = 0
+        empty_groups = 0
+
+        for size, panel_dict in self.db.items():
+
+            sizes += 1
+
+            has_models = False
+
+            for panel, sensor_dict in panel_dict.items():
+
+                panels.add(panel)
+
+                for sensor, data in sensor_dict.items():
+
+                    sensors.add(sensor)
+
+                    models = data.get("models", [])
+
+                    phones += len(models)
+
+                    if len(models) != len(set(models)):
+                        duplicates += 1
+
+                    if models:
+                        has_models = True
+
+            if not has_models:
+                empty_groups += 1
+
+        self.stats = {
+
+            "phones": phones,
+            "sizes": sizes,
+            "panels": len(panels),
+            "sensors": len(sensors),
+            "duplicates": duplicates,
+            "empty_groups": empty_groups
+
+        }
+
+        return self.stats
+
