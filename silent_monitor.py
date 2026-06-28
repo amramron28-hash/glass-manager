@@ -10,7 +10,7 @@ from database import load_db
 
 
 BACKUP_FILE = os.path.join("www", "models_db.json")
-LOG_FILE = "glass_watcher.log"
+LOG_FILE = "silent_monitor.log"
 
 STATUS_ONLINE = "ONLINE"
 STATUS_FALLBACK = "FALLBACK"
