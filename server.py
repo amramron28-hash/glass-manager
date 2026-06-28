@@ -542,3 +542,180 @@ def server(input, output, session):
             class_="suggestions-curtain"
 
             )
+    @render.ui
+    def results_area():
+
+        phone = current_search_phone().strip()
+
+        if not phone:
+
+            return None
+
+        db = database_data()
+
+        size, panel, sensor, real_name = find_model_coords(
+            db,
+            phone
+        )
+
+        if real_name:
+
+            return ui.HTML(
+                run_system_workflows(
+                    phone,
+                    db,
+                    ""
+                )
+            )
+
+        result = p2_computed_results()
+
+        if isinstance(result, dict):
+
+            return ui.div(
+
+                draw_technical_coords(
+                    p2_input_size(),
+                    p2_input_panel(),
+                    p2_input_sensor(),
+                    f"{phone} (مواصفات يدوية)"
+                ),
+
+                draw_neon_section(
+                    "مطابقة تماماً",
+                    result.get("exact", []),
+                    "#2ecc71",
+                    "🟢",
+                    "exact"
+                ),
+
+                draw_neon_section(
+                    "أكبر بقليل",
+                    result.get("plus", []),
+                    "#3498db",
+                    "🔵",
+                    "plus"
+                ),
+
+                draw_neon_section(
+                    "أصغر قليلاً",
+                    result.get("minus", []),
+                    "#e67e22",
+                    "🟠",
+                    "minus"
+                ),
+
+                ui.input_action_button(
+                    "btn_learn_and_merge",
+                    "🔄 دمج الهاتف داخل هذه المجموعة",
+                    style="""
+                    width:100%;
+                    background:#2ecc71;
+                    color:white;
+                    padding:14px;
+                    border:none;
+                    border-radius:12px;
+                    font-weight:bold;
+                    margin-top:15px;
+                    """
+                )
+
+            )
+
+        if result == "__EMPTY_PLAN2__":
+
+            return ui.div(
+
+                draw_warning_card(
+                    "لم يتم العثور على مجموعة مطابقة، سيتم إنشاء مجموعة جديدة."
+                )
+
+            )
+
+        return ui.div(
+
+            draw_warning_card(
+                f"الموديل {phone} غير موجود داخل قاعدة البيانات."
+            ),
+
+            ui.input_action_button(
+                "trigger_plan_2",
+                "🔵 بدء المطابقة الفنية",
+                style="""
+                width:100%;
+                background:#00bfff;
+                color:white;
+                padding:14px;
+                border:none;
+                border-radius:12px;
+                font-weight:bold;
+                """
+            )
+
+        )
+    @render.ui
+    def modal_layer():
+
+        mode = active_modal()
+
+        if mode == "plan_2":
+
+            return draw_plan_2_modal(
+
+                current_search_phone(),
+
+                custom_panels(),
+
+                custom_sensors()
+
+            )
+
+        if mode == "plan_3":
+
+            return draw_plan_3_modal(
+
+                current_search_phone(),
+
+                custom_panels(),
+
+                custom_sensors()
+
+            )
+
+        return None
+
+
+    @render.ui
+    def database_status_area():
+
+        stats = get_statistics()
+
+        return draw_database_status(
+
+            stats.get("phones", 0)
+
+        )
+
+
+    @reactive.effect
+    def watcher_status():
+
+        try:
+
+            status = get_status()
+
+            if status != "ONLINE":
+
+                print(
+
+                    f"GLASS_WATCHER_STATUS: {status}"
+
+                )
+
+        except Exception as e:
+
+            print(
+
+                f"WATCHER_STATUS_ERROR: {e}"
+
+            )
