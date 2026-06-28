@@ -7,6 +7,7 @@ from database import load_db
 
 
 BACKUP_FILE = os.path.join("www", "models_db.json")
+MODELS_INDEX_FILE = "models_index.txt"
 LOG_FILE = "silent_monitor.log"
 
 STATUS_ONLINE = "ONLINE"
@@ -46,10 +47,8 @@ class SilentMonitor:
         print(line)
 
         try:
-
             with open(LOG_FILE, "a", encoding="utf-8") as f:
                 f.write(line + "\n")
-
         except Exception:
             pass
 
@@ -75,6 +74,40 @@ class SilentMonitor:
             self.log(f"BACKUP_SAVE_ERROR : {e}")
 
             return False
+
+    def build_models_index(self):
+
+        try:
+
+            models = set()
+
+            for panel_dict in self.db.values():
+
+                for sensor_dict in panel_dict.values():
+
+                    for data in sensor_dict.values():
+
+                        for model in data.get("models", []):
+
+                            if isinstance(model, str):
+
+                                model = model.strip()
+
+                                if model:
+
+                                    models.add(model)
+
+            models = sorted(models)
+
+            with open(MODELS_INDEX_FILE, "w", encoding="utf-8") as f:
+
+                f.write("\n".join(models))
+
+            self.log(f"MODELS_INDEX_UPDATED : {len(models)} models")
+
+        except Exception as e:
+
+            self.log(f"MODELS_INDEX_ERROR : {e}")
 
     def load_backup(self):
 
@@ -108,7 +141,7 @@ class SilentMonitor:
             if not isinstance(db, dict):
                 raise Exception("Database is not dictionary")
 
-            if len(db) == 0:
+            if not db:
                 raise Exception("Database is empty")
 
             self.db = db
@@ -119,6 +152,7 @@ class SilentMonitor:
             self.last_error = ""
 
             self.save_backup()
+            self.build_models_index()
 
             self.log("Silent Monitor connected to Supabase")
 
@@ -168,19 +202,19 @@ class SilentMonitor:
         duplicates = 0
         empty_groups = 0
 
-        for size, panel_dict in self.db.items():
+        for panel_dict in self.db.values():
 
             sizes += 1
 
             has_models = False
 
-            for panel, sensor_dict in panel_dict.items():
+            for panel_name, sensor_dict in panel_dict.items():
 
-                panels.add(panel)
+                panels.add(panel_name)
 
-                for sensor, data in sensor_dict.items():
+                for sensor_name, data in sensor_dict.items():
 
-                    sensors.add(sensor)
+                    sensors.add(sensor_name)
 
                     models = data.get("models", [])
 
@@ -196,14 +230,12 @@ class SilentMonitor:
                 empty_groups += 1
 
         self.stats = {
-
             "phones": phones,
             "sizes": sizes,
             "panels": len(panels),
             "sensors": len(sensors),
             "duplicates": duplicates,
             "empty_groups": empty_groups
-
         }
 
         return self.stats
@@ -213,11 +245,10 @@ class SilentMonitor:
         report = {}
 
         files = [
-
             BACKUP_FILE,
+            MODELS_INDEX_FILE,
             os.path.join("www", "service-worker.js"),
             os.path.join("www", "manifest.json")
-
         ]
 
         for file in files:
@@ -233,20 +264,17 @@ class SilentMonitor:
     def health_report(self):
 
         return {
-
             "status": self.status,
             "source": self.source,
             "last_sync": self.last_sync,
             "last_error": self.last_error,
             "statistics": self.stats,
             "files": self.check_required_files()
-
         }
 
     def monitor(self):
 
         self.synchronize()
-
         self.count_statistics()
 
         return self.health_report()
@@ -256,35 +284,28 @@ watcher = SilentMonitor()
 
 
 def get_database():
-
     return watcher.synchronize()
 
 
 def get_status():
-
     return watcher.health_report()
 
 
 def refresh():
-
     return watcher.monitor()
 
 
 def get_statistics():
-
     return watcher.count_statistics()
 
 
 def is_online():
-
     return watcher.status == STATUS_ONLINE
 
 
 def is_fallback():
-
     return watcher.status == STATUS_FALLBACK
 
 
 def is_offline():
-
     return watcher.status == STATUS_OFFLINE
