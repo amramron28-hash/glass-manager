@@ -35,6 +35,7 @@ from ui_components import (
 MODELS_INDEX_FILE = "models_index.txt"
 
 
+
 def load_models_index():
 
     try:
@@ -46,9 +47,13 @@ def load_models_index():
         ) as f:
 
             return [
+
                 line.strip()
+
                 for line in f
+
                 if line.strip()
+
             ]
 
     except Exception:
@@ -56,41 +61,56 @@ def load_models_index():
         return []
 
 
+
+
 def convert_database_from_raw(rows):
 
     db = {}
 
     if not isinstance(rows, list):
+
         return db
+
 
     for item in rows:
 
+
         if not isinstance(item, dict):
+
             continue
+
 
         size = str(
             item.get("size") or ""
         ).strip()
 
+
         panel = str(
             item.get("panel") or ""
         ).strip()
 
+
         sensor = str(
             item.get("sensor") or ""
         ).strip()
+
 
         model = str(
             item.get("model_name") or ""
         ).strip()
 
 
+
         if not size or not model:
+
             continue
 
 
+
         db.setdefault(size, {})
+
         db[size].setdefault(panel, {})
+
         db[size][panel].setdefault(
             sensor,
             {
@@ -99,12 +119,71 @@ def convert_database_from_raw(rows):
         )
 
 
+
         if model not in db[size][panel][sensor]["models"]:
 
             db[size][panel][sensor]["models"].append(model)
 
 
+
     return db
+
+
+
+
+
+def setup_server_state(input, output, session):
+
+
+    db_trigger = reactive.Value(0)
+
+    current_search_phone = reactive.Value("")
+
+    show_curtain = reactive.Value(False)
+
+    active_modal = reactive.Value(None)
+
+
+    p2_computed_results = reactive.Value(None)
+
+    p2_input_size = reactive.Value("")
+
+    p2_input_panel = reactive.Value("")
+
+    p2_input_sensor = reactive.Value("")
+
+
+    custom_panels = reactive.Value([])
+
+    custom_sensors = reactive.Value([])
+
+
+
+    return (
+
+        db_trigger,
+
+        current_search_phone,
+
+        show_curtain,
+
+        active_modal,
+
+        p2_computed_results,
+
+        p2_input_size,
+
+        p2_input_panel,
+
+        p2_input_sensor,
+
+        custom_panels,
+
+        custom_sensors
+
+    )
+
+
 
 
 
@@ -112,26 +191,43 @@ def server(input, output, session):
 
 
     (
+
         db_trigger,
+
         current_search_phone,
+
         show_curtain,
+
         active_modal,
+
         p2_computed_results,
+
         p2_input_size,
+
         p2_input_panel,
+
         p2_input_sensor,
+
         custom_panels,
+
         custom_sensors
 
     ) = setup_server_state(
+
         input,
+
         output,
+
         session
+
     )
 
 
+
     models_index = reactive.Value(
+
         load_models_index()
+
     )
 
 
@@ -139,11 +235,15 @@ def server(input, output, session):
     @reactive.calc
     def database_data():
 
+
         db_trigger()
+
 
         try:
 
+
             db = get_database()
+
 
 
             if isinstance(db, dict):
@@ -151,20 +251,26 @@ def server(input, output, session):
                 return db
 
 
+
             if isinstance(db, list):
 
                 return convert_database_from_raw(db)
 
 
+
             return {}
+
 
 
         except Exception as e:
 
 
             print(
+
                 f"SERVER_DATABASE_ERROR: {e}"
+
             )
+
 
             return {}
 
@@ -184,7 +290,9 @@ def server(input, output, session):
 
 
             models_index.set(
+
                 load_models_index()
+
             )
 
 
@@ -192,120 +300,10 @@ def server(input, output, session):
 
 
             print(
+
                 f"WATCHER_REFRESH_ERROR: {e}"
-            )
 
-
-
-    @render.ui
-    def suggestions_curtain():
-
-
-        if not show_curtain():
-
-            return None
-
-
-
-        query = (
-            current_search_phone()
-            .strip()
-            .lower()
         )
-
-
-        if not query:
-
-            return None
-
-
-
-        db = database_data()
-
-
-        all_models = set()
-
-
-
-        for size, panels in db.items():
-
-
-            if not isinstance(panels, dict):
-
-                continue
-
-
-
-            for panel, sensors in panels.items():
-
-
-                if not isinstance(sensors, dict):
-
-                    continue
-
-
-
-                for sensor, sensor_data in sensors.items():
-
-
-                    if not isinstance(sensor_data, dict):
-
-                        continue
-
-
-
-                    for model in sensor_data.get(
-                        "models",
-                        []
-                    ):
-
-                        all_models.add(model)
-
-
-
-        matches = [
-
-            model
-
-            for model in sorted(all_models)
-
-            if query in model.lower()
-
-        ][:8]
-
-
-
-        if not matches:
-
-            return None
-
-
-
-        return ui.div(
-
-            *[
-
-                ui.div(
-
-                    model,
-
-                    class_="suggestion-row",
-
-                    onclick=(
-                        f"Shiny.setInputValue("
-                        f"'selected_model','{model}',"
-                        f"{{priority:'event'}});"
-                    )
-
-                )
-
-                for model in matches
-
-            ],
-
-            class_="suggestions-curtain"
-
-            )
     @render.ui
     def results_area():
 
