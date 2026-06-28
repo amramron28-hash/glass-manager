@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from datetime import datetime
 
 from database import load_db
@@ -12,6 +13,8 @@ STATUS_ONLINE = "ONLINE"
 STATUS_FALLBACK = "FALLBACK"
 STATUS_OFFLINE = "OFFLINE"
 
+CACHE_SECONDS = 60
+
 
 class SilentMonitor:
 
@@ -23,6 +26,7 @@ class SilentMonitor:
         self.source = "NONE"
 
         self.db = {}
+        self.last_refresh_time = 0
 
         self.stats = {
             "phones": 0,
@@ -94,6 +98,7 @@ class SilentMonitor:
             self.log(f"BACKUP_LOAD_ERROR : {e}")
 
             return False
+
     def load_from_supabase(self):
 
         try:
@@ -127,16 +132,24 @@ class SilentMonitor:
 
             return False
 
-
     def synchronize(self):
 
+        now = time.time()
+
+        if self.db and (now - self.last_refresh_time) < CACHE_SECONDS:
+            return self.db
+
         if self.load_from_supabase():
+
+            self.last_refresh_time = now
 
             return self.db
 
         self.log("Silent Monitor switched to backup database")
 
         if self.load_backup():
+
+            self.last_refresh_time = now
 
             return self.db
 
@@ -145,7 +158,6 @@ class SilentMonitor:
         self.db = {}
 
         return {}
-
 
     def count_statistics(self):
 
@@ -195,6 +207,7 @@ class SilentMonitor:
         }
 
         return self.stats
+
     def check_required_files(self):
 
         report = {}
@@ -202,9 +215,7 @@ class SilentMonitor:
         files = [
 
             BACKUP_FILE,
-
             os.path.join("www", "service-worker.js"),
-
             os.path.join("www", "manifest.json")
 
         ]
@@ -219,25 +230,18 @@ class SilentMonitor:
 
         return report
 
-
     def health_report(self):
 
         return {
 
             "status": self.status,
-
             "source": self.source,
-
             "last_sync": self.last_sync,
-
             "last_error": self.last_error,
-
             "statistics": self.stats,
-
             "files": self.check_required_files()
 
         }
-
 
     def monitor(self):
 
