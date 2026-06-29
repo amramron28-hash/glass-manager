@@ -63,10 +63,10 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
 def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
     panel_options = {p:p for p in existing_panels if p}
     sensor_options = {s:s for s in existing_sensors if s}
-    return ui.div(ui.div(ui.div(ui.h3(f"🔮 الخطة البديلة المتقدمة لـ {phone_name}", style="color:#e67e22; text-align:center;"), ui.input_numeric("p3_size", " المقاس المقترح:", value=None, step=0.01), ui.input_select("p3_panel", "📺 تخصيص نوع الشاشة:", choices=panel_options), ui.input_select("p3_sensor", "👁️ تخصيص المستشعر:", choices=sensor_options), ui.input_action_button("p3_search", "⚡ تشغيل البحث الذكي", class_="btn-neon", style="width:100%; background:#e67e22; color:white; padding:12px; border-radius:8px; border:none;"), class_="glass-card", style="width:90%; max-width:500px; background:rgba(22,27,34,.98);"), class_="custom-modal-backdrop"))
+    return ui.div(ui.div(ui.div(ui.h3(f"🔮 الخطة البديلة المتقدمة لـ {phone_name}", style="color:#e67e22; text-align:center;"), ui.input_numeric("p3_size", "📏 المقاس المقترح:", value=None, step=0.01), ui.input_select("p3_panel", "📺 تخصيص نوع الشاشة:", choices=panel_options), ui.input_select("p3_sensor", "👁️ تخصيص المستشعر:", choices=sensor_options), ui.input_action_button("p3_search", "⚡ تشغيل البحث الذكي", class_="btn-neon", style="width:100%; background:#e67e22; color:white; padding:12px; border-radius:8px; border:none;"), class_="glass-card", style="width:90%; max-width:500px; background:rgba(22,27,34,.98);"), class_="custom-modal-backdrop"))
 
 def draw_warning_card(message): 
-    return ui.HTML(f'<div class="flat-warning-card">️ {escape(str(message))}</div>')
+    return ui.HTML(f'<div class="flat-warning-card">⚠️ {escape(str(message))}</div>')
 
 def draw_database_status(total): 
     return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
@@ -120,7 +120,7 @@ app_ui = ui.page_fluid(
         ),
         ui.h3("⚙️ الإعدادات العامة", style="color:#00bfff; text-align:center; margin-bottom:25px; font-weight:800;"),
         
-        #  عداد قاعدة البيانات (ديناميكي)
+        # 📊 عداد قاعدة البيانات (ديناميكي - مربوط بـ database_status_area في server.py)
         ui.output_ui("database_status_area"),
         
         # 🔔 جرس الإشعارات (ديناميكي - مربوط بـ notifications_area في server.py)
@@ -135,7 +135,7 @@ app_ui = ui.page_fluid(
     
     # 🌟 مربع البحث
     ui.div(
-        ui.input_text("search_query", "", placeholder=" ابحث عن موديل الهاتف..."),
+        ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."),
         ui.output_ui("suggestions_curtain"),
         class_="search-box"
     ),
@@ -143,4 +143,4 @@ app_ui = ui.page_fluid(
     # 🌟 مناطق العرض الرئيسية
     ui.output_ui("results_area"),
     ui.output_ui("modal_layer")
-)
+                        )
