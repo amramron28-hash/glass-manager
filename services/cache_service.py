@@ -1,121 +1,108 @@
-from typing import Dict, List, Optional, Set
-from services.index_service import build_fast_index
-from logic_engine import extract_numeric_size
+from typing import Any, Callable, Dict, Tuple, Optional
+import time
 from core.logger import get_logger
 
-log = get_logger("plan_engine")
-
-TOLERANCE = 0.05  # حد التفاوت المسموح به في المقاسات
+log = get_logger("cache_service")
 
 
-def compute_plan_matches(
-    size_val: str,
-    panel_val: str,
-    sensor_val: str,
-    db: Dict,
-    fast_index: Optional[Dict] = None
-) -> Dict[str, List[str]]:
+class ResultCache:
     """
-    حساب نتائج المطابقة الفنية باستخدام الفهرس السريع.
+    تخزين مؤقت ذكي للنتائج الثقيلة مع دعم invalidation يدوي و TTL.
+    يُستخدم لتجنب إعادة حساب العمليات المكلفة مثل run_system_workflows.
+    """
     
-    Args:
-        size_val: المقاس المطلوب
-        panel_val: نوع الشاشة
-        sensor_val: نوع المستشعر
-        db: قاعدة البيانات الكاملة
-        fast_index: الفهرس السريع (اختياري - سيتم بناؤه إذا لم يُمرر)
+    def __init__(self):
+        self._cache: Dict[Tuple, Any] = {}
+        self._timestamps: Dict[Tuple, float] = {}
+        self._version = 0
+    
+    def invalidate(self) -> None:
+        """مسح الكاش بالكامل (يُستدعى عند تحديث قاعدة البيانات)"""
+        old_count = len(self._cache)
+        self._cache.clear()
+        self._timestamps.clear()
+        self._version += 1
+        log.info(f"Cache invalidated: {old_count} entries cleared, new version: {self._version}")
+    
+    def get_or_compute(
+        self, 
+        key: Tuple, 
+        compute_fn: Callable, 
+        ttl: Optional[int] = None
+    ) -> Any:
+        """
+        جلب من الكاش أو حساب وتخزين جديد.
         
-    Returns:
-        Dict: {"exact": [...], "plus": [...], "minus": [...]}
-    """
-    empty = {"exact": [], "plus": [], "minus": []}
-    
-    if not all([size_val, panel_val, sensor_val]):
-        log.warning("Plan computation attempted with missing parameters")
-        return empty
-    
-    target_val = extract_numeric_size(str(size_val))
-    if target_val is None:
-        log.warning(f"Invalid size value: {size_val}")
-        return empty
-    
-    # بناء الفهرس إذا لم يُمرر
-    if fast_index is None:
-        fast_index = build_fast_index(db)
-    
-    results = {"exact": [], "plus": [], "minus": []}
-    group_key = (panel_val, sensor_val)
-    
-    if group_key not in fast_index:
-        log.info(f"No matches found for group: {group_key}")
-        return results
-    
-    size_map = fast_index[group_key]
-    
-    for s_key, models_set in size_map.items():
-        s_val = extract_numeric_size(s_key)
-        if s_val is None:
-            continue
+        Args:
+            key: مفتاح التخزين الفريد
+            compute_fn: الدالة التي تحسب القيمة إذا لم تكن موجودة
+            ttl: وقت الصلاحية بالثواني (اختياري، لا نهائي إذا لم يُحدد)
+            
+        Returns:
+            القيمة المخزنة أو المحسوبة حديثاً
+        """
+        cache_key = (self._version, key)
+        now = time.time()
         
-        diff = s_val - target_val
+        # التحقق من وجود القيمة وصلاحيتها
+        if cache_key in self._cache:
+            if ttl is None:
+                return self._cache[cache_key]
+            
+            timestamp = self._timestamps.get(cache_key, 0)
+            if now - timestamp < ttl:
+                log.debug(f"Cache hit for key: {key}")
+                return self._cache[cache_key]
+            else:
+                log.debug(f"Cache expired for key: {key}")
+                del self._cache[cache_key]
+                if cache_key in self._timestamps:
+                    del self._timestamps[cache_key]
         
-        # تحويل الـ set إلى list للتعامل معه
-        models_list = list(models_set) if isinstance(models_set, set) else models_set
+        # حساب القيمة الجديدة وتخزينها
+        log.debug(f"Cache miss for key: {key}, computing...")
+        value = compute_fn()
+        self._cache[cache_key] = value
+        self._timestamps[cache_key] = now
         
-        for model in models_list:
-            if abs(diff) < 0.001:
-                if model not in results["exact"]:
-                    results["exact"].append(model)
-            elif 0 < diff <= TOLERANCE:
-                if model not in results["plus"]:
-                    results["plus"].append(model)
-            elif -TOLERANCE <= diff < 0:
-                if model not in results["minus"]:
-                    results["minus"].append(model)
+        log.info(f"Cached new value for key: {key}")
+        return value
     
-    total_matches = sum(len(v) for v in results.values())
-    log.info(f"Plan matches computed: {total_matches} total "
-             f"(exact: {len(results['exact'])}, plus: {len(results['plus'])}, minus: {len(results['minus'])})")
+    def clear_expired(self, default_ttl: int = 300) -> int:
+        """مسح القيم منتهية الصلاحية فقط"""
+        now = time.time()
+        expired_keys = [
+            k for k, t in self._timestamps.items() 
+            if now - t >= default_ttl
+        ]
+        
+        for k in expired_keys:
+            del self._cache[k]
+            del self._timestamps[k]
+        
+        if expired_keys:
+            log.info(f"Cleared {len(expired_keys)} expired cache entries")
+        
+        return len(expired_keys)
     
-    return results
+    def stats(self) -> Dict[str, int]:
+        """إحصائيات حالة الكاش"""
+        return {
+            "total_entries": len(self._cache),
+            "version": self._version
+        }
 
 
-def is_empty_result(results: Dict[str, List[str]]) -> bool:
-    """التحقق من أن النتائج فارغة"""
-    return not any(results.values())
+# Instances عامة جاهزة للاستيراد المباشر في server.py
+workflow_cache = ResultCache()
+coords_cache = ResultCache()
+index_cache = ResultCache()
 
 
-def get_unique_models_from_results(results: Dict[str, List[str]]) -> Set[str]:
-    """
-    استخراج جميع الموديلات الفريدة من نتائج المطابقة.
-    مفيد لإزالة التكرارات عند الدمج.
-    """
-    unique = set()
-    for category in results.values():
-        unique.update(category)
-    return unique
-
-
-def validate_plan_inputs(
-    size_val: str,
-    panel_val: str,
-    sensor_val: str
-) -> tuple:
-    """
-    التحقق من صحة مدخلات الخطة.
-    
-    Returns:
-        Tuple: (is_valid, error_message)
-    """
-    if not size_val:
-        return False, "المقاس مطلوب"
-    if not panel_val:
-        return False, "نوع الشاشة مطلوب"
-    if not sensor_val:
-        return False, "المستشعر مطلوب"
-    
-    target_val = extract_numeric_size(str(size_val))
-    if target_val is None:
-        return False, f"المقاس غير صالح: {size_val}"
-    
-    return True, None
+def get_cache_stats() -> Dict[str, Dict[str, int]]:
+    """الحصول على إحصائيات جميع الكاشات مرة واحدة"""
+    return {
+        "workflow": workflow_cache.stats(),
+        "coords": coords_cache.stats(),
+        "index": index_cache.stats()
+    }
