@@ -38,7 +38,7 @@ def load_db():
     db = {}
     
     for row in rows:
-        # إزالة المسافات الزائدة من القيم والمفاتيح
+        # ✅ إزالة المسافات الزائدة من القيم والمفاتيح عند القراءة
         size = str(row.get("size") or "").strip()
         model = str(row.get("model_name") or "").strip()
         panel = str(row.get("panel") or "Notch Screen").strip()
