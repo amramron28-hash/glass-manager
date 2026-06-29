@@ -4,20 +4,24 @@ FROM python:3.10-slim
 # إعداد دليل العمل الأساسي داخل السيرفر
 WORKDIR /code
 
-# تثبيت الحزم والمكتبات المطلوبة لتطبيقك مباشرة في السحاب
-RUN pip install --no-cache-dir --upgrade shiny supabase pandas python-dotenv requests
+# تثبيت الحزم والمكتبات المطلوبة باستخدام requirements.txt لضمان التوافق والإصدارات الصحيحة
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # نسخ باقي ملفات مشروعك الذكية (workflows, logic_engine...) إلى السيرفر
 COPY . .
 
-# منح صلاحيات كاملة للمجلد لضمان سلاسة قراءة وتعديل الملفات
-RUN chmod -R 777 /code
+# إنشاء مجلدات السجلات والبيانات المحلية مسبقاً لتجنب أخطاء الصلاحيات لاحقاً
+RUN mkdir -p /code/logs /code/www && \
+    chown -R 1000:1000 /code
 
-# منح صلاحيات كاملة للمستخدم الافتراضي لتشغيل النظام بأمان وضمان عدم توقفه
-RUN useradd -m -u 1000 user
-USER user
-ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH
+# إنشاء مستخدم غير جذري لتشغيل التطبيق بأمان (أفضل من chmod 777)
+RUN useradd -m -u 1000 appuser
+USER appuser
+
+ENV HOME=/home/appuser \
+    PATH=/home/appuser/.local/bin:$PATH \
+    PYTHONUNBUFFERED=1
 
 # المنفذ الخاص الذي يقرأه موقع Hugging Face لتشغيل التطبيق
 EXPOSE 7860
