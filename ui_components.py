@@ -142,4 +142,4 @@ app_ui = ui.page_fluid(
     # 🌟 مناطق العرض الرئيسية
     ui.output_ui("results_area"),
     ui.output_ui("modal_layer")
-)
+                        )
