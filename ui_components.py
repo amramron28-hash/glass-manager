@@ -63,14 +63,24 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
 def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
     panel_options = {p:p for p in existing_panels if p}
     sensor_options = {s:s for s in existing_sensors if s}
-    return ui.div(ui.div(ui.div(ui.h3(f"🔮 الخطة البديلة المتقدمة ل لـ {phone_name}", style="color:#e67e22; text-align:center;"), ui.input_numeric("p3_size", "📏 المقاس المقترح:", value=None, step=0.01), ui.input_select("p3_panel", "📺 تخصيص نوع الشاشة:", choices=panel_options), ui.input_select("p3_sensor", "👁️ تخصيص المستشعر:", choices=sensor_options), ui.input_action_button("p3_search", "⚡ تشغيل البحث الذكي", class_="btn-neon", style="width:100%; background:#e67e22; color:white; padding:12px; border-radius:8px; border:none;"), class_="glass-card", style="width:90%; max-width:500px; background:rgba(22,27,34,.98);"), class_="custom-modal-backdrop"))
-def draw_warning_card(message): return ui.HTML(f'<div class="flat-warning-card">⚠️ {escape(str(message))}</div>')
-def draw_database_status(total): return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
-def draw_empty_database(): return ui.HTML('<div class="flat-warning-card">⚠️ قاعدة البيانات فارغة</div>')
-def draw_empty_search(): return ui.HTML('<div class="flat-warning-card">⚠️ لم يتم العثور على نتائج</div>')
+    return ui.div(ui.div(ui.div(ui.h3(f"🔮 الخطة البديلة المتقدمة لـ {phone_name}", style="color:#e67e22; text-align:center;"), ui.input_numeric("p3_size", " المقاس المقترح:", value=None, step=0.01), ui.input_select("p3_panel", "📺 تخصيص نوع الشاشة:", choices=panel_options), ui.input_select("p3_sensor", "👁️ تخصيص المستشعر:", choices=sensor_options), ui.input_action_button("p3_search", "⚡ تشغيل البحث الذكي", class_="btn-neon", style="width:100%; background:#e67e22; color:white; padding:12px; border-radius:8px; border:none;"), class_="glass-card", style="width:90%; max-width:500px; background:rgba(22,27,34,.98);"), class_="custom-modal-backdrop"))
 
-# --- 2. تعريف الواجهة الرئيسية الممتدة والمصححة بالكامل (app_ui) ---
+def draw_warning_card(message): 
+    return ui.HTML(f'<div class="flat-warning-card">️ {escape(str(message))}</div>')
 
+def draw_database_status(total): 
+    return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
+
+def draw_empty_database(): 
+    return ui.HTML('<div class="flat-warning-card">⚠️ قاعدة البيانات فارغة</div>')
+
+def draw_empty_search(): 
+    return ui.HTML('<div class="flat-warning-card">⚠️ لم يتم العثور على نتائج</div>')
+
+
+# ================================================================
+# تعريف الواجهة الرئيسية (app_ui) - مصححة بالكامل
+# ================================================================
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
     ui.tags.head(
@@ -89,7 +99,7 @@ app_ui = ui.page_fluid(
         """)
     ),
     
-    # 🌟 الهيدر الممتد: الشعار على سطرين وبجانبه القائمة الثلاث نقاط العمودية
+    # 🌟 الهيدر الممتد: الشعار على سطرين وبجانبه زر الإعدادات (⋮)
     ui.div(
         ui.div(
             ui.div("ZEGAAR AMMAR", class_="brand-neon-main"),
@@ -100,7 +110,7 @@ app_ui = ui.page_fluid(
         class_="header-bar"
     ),
     
-    # 🌟 حقن حاوية النافذة الجانبية المتكاملة مع تفعيل زر جافا سكريبت الصامت للإغلاق السريع
+    # 🌟 نافذة الإعدادات الجانبية (Drawer)
     ui.div(
         ui.tags.button(
             "×", 
@@ -110,22 +120,27 @@ app_ui = ui.page_fluid(
         ),
         ui.h3("⚙️ الإعدادات العامة", style="color:#00bfff; text-align:center; margin-bottom:25px; font-weight:800;"),
         
-        # 📊 مساحة العرض الديناميكية لعداد أرقام قاعدة البيانات ليعمل فورا
+        #  عداد قاعدة البيانات (ديناميكي)
         ui.output_ui("database_status_area"),
         
-        # 🔔 جرس الإشعارات والمراقب الصامت يعملان بكامل طاقتهم
-        ui.div("🔔 جرس الإشعارات: النظام يعمل بكفاءة", class_="metric-box", style="color:#2ecc71;"),
-        ui.div("🔒 المراقب الصامت: متصل وقيد التشغيل", class_="metric-box", style="color:#00bfff;"),
+        # 🔔 جرس الإشعارات (ديناميكي - مربوط بـ notifications_area في server.py)
+        ui.output_ui("notifications_area"),
+        
+        # 🔒 المراقب الصامت (ديناميكي - مربوط بـ monitor_area في server.py)
+        ui.output_ui("monitor_area"),
         
         id="settings_drawer",
         class_="drawer"
     ),
     
+    # 🌟 مربع البحث
     ui.div(
-        ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."),
+        ui.input_text("search_query", "", placeholder=" ابحث عن موديل الهاتف..."),
         ui.output_ui("suggestions_curtain"),
         class_="search-box"
     ),
+    
+    # 🌟 مناطق العرض الرئيسية
     ui.output_ui("results_area"),
     ui.output_ui("modal_layer")
 )
