@@ -77,7 +77,6 @@ def draw_empty_database():
 def draw_empty_search(): 
     return ui.HTML('<div class="flat-warning-card">⚠️ لم يتم العثور على نتائج</div>')
 
-
 # ================================================================
 # تعريف الواجهة الرئيسية (app_ui) - مصححة بالكامل
 # ================================================================
@@ -143,4 +142,4 @@ app_ui = ui.page_fluid(
     # 🌟 مناطق العرض الرئيسية
     ui.output_ui("results_area"),
     ui.output_ui("modal_layer")
-                        )
+)
