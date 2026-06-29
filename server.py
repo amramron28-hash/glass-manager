@@ -47,8 +47,10 @@ def convert_database_from_raw(rows):
         panel = str(item.get("panel") or "Notch Screen").strip()
         sensor = str(item.get("sensor") or "hardware_top_sensor").strip()
         model = str(item.get("model_name") or "").strip()
+
         if not size or not model:
             continue
+
         db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
         if model not in db[size][panel][sensor]["models"]:
             db[size][panel][sensor]["models"].append(model)
@@ -62,23 +64,27 @@ def server(input, output, session):
     show_curtain = reactive.Value(False)
     active_modal = reactive.Value(None)  # None | "plan_2" | "plan_3"
     suggestions_list = reactive.Value([])
-    
     plan_results = reactive.Value(None)
+
     plan_inputs = {
         "size": reactive.Value(""),
         "panel": reactive.Value(""),
         "sensor": reactive.Value(""),
     }
     current_plan_type = reactive.Value(None)
-    
+
     custom_panels = reactive.Value([])
     custom_sensors = reactive.Value([])
-    
+
     # الفهارس السريعة (Trie + DB Index)
     autocomplete_index = reactive.Value(None)
-    fast_index = reactive.Value(None)
-    
+
     models_index = reactive.Value(load_models_index())
+
+    # ===== متغيرات تحسين الأداء =====
+    _db_version = reactive.Value(0)           # عداد نسخة البيانات (بديل id())
+    _last_db_size = reactive.Value(0)         # لتجنب إعادة البناء غير الضروري
+    _last_monitor_status = reactive.Value("") # لتجنب تكرار Logs المراقب
 
     # ===== Data Layer =====
     @reactive.calc
@@ -99,37 +105,77 @@ def server(input, output, session):
     def fast_index_calc():
         return build_fast_index(database_data())
 
+    # ===== Watchers =====
     @reactive.effect
     def watcher_refresh():
+        """مراقب ذكي: يعيد البناء فقط عند تغير البيانات فعلياً"""
+        reactive.invalidate_later(5)
         db_trigger()
+
         try:
+            # التحقق من حجم قاعدة البيانات أولاً لتوفير الموارد
+            stats = get_statistics()
+            current_size = stats.get("phones", 0) if isinstance(stats, dict) else 0
+
+            # إذا لم يتغير الحجم وكان الفهرس موجوداً، نتخطى إعادة البناء
+            if _last_db_size() == current_size and autocomplete_index() is not None:
+                # فقط نحدث الاقتراحات الحية إذا كانت الستارة مفتوحة
+                if show_curtain():
+                    query = current_phone()
+                    trie = autocomplete_index()
+                    if query and trie:
+                        matches = trie.search_prefix(query, 10)
+                        suggestions_list.set(matches)
+                return
+
+            # إذا تغير الحجم، نقوم بالتحديث الكامل
+            log.info(f"[WATCHER] Data changed: {current_size} phones. Rebuilding...")
+            _last_db_size.set(current_size)
             refresh()
+
             new_index = load_models_index()
-            models_index.set(new_index)
-            
-            # إعادة بناء Trie
-            autocomplete_index.set(build_autocomplete_index(new_index))
-            
-            # إعادة بناء الفهرس السريع (يُحسب lazily عبر reactive.calc)
-            _ = fast_index_calc()
-            
-            # Invalidate الكاش عند تحديث البيانات
-            workflow_cache.invalidate()
-            coords_cache.invalidate()
-            
-            # تحديث قوائم الخيارات
-            panels, sensors = extract_panels_sensors(database_data())
-            custom_panels.set(panels)
-            custom_sensors.set(sensors)
-            
-            # تحديث الاقتراحات إذا كانت الستارة مفتوحة
+            if autocomplete_index() is None or new_index != models_index():
+                models_index.set(new_index)
+                autocomplete_index.set(build_autocomplete_index(new_index))
+
+                # Invalidate الكاش عند تحديث البيانات باستخدام version counter
+                workflow_cache.invalidate()
+                coords_cache.invalidate()
+                _db_version.set(_db_version() + 1)
+
+                # تحديث قوائم الخيارات
+                panels, sensors = extract_panels_sensors(database_data())
+                custom_panels.set(panels)
+                custom_sensors.set(sensors)
+
+            # تحديث الاقتراحات بعد البناء
             if show_curtain():
                 query = current_phone()
-                if query and autocomplete_index():
-                    matches = autocomplete_index().search_prefix(query, 10)
+                trie = autocomplete_index()
+                if query and trie:
+                    matches = trie.search_prefix(query, 10)
                     suggestions_list.set(matches)
+
         except Exception as e:
             log.error(f"Refresh error: {e}")
+
+    @reactive.effect
+    def watcher_status():
+        """مراقبة حالة المراقب الصامت (تسجيل فقط عند التغير)"""
+        reactive.invalidate_later(5)
+        try:
+            status = get_status()
+            current_status = status.get("status", "UNKNOWN") if isinstance(status, dict) else "UNKNOWN"
+
+            # تسجيل فقط عند تغير الحالة لمنع تكرار الـ Logs
+            if current_status != _last_monitor_status():
+                _last_monitor_status.set(current_status)
+                if current_status != "ONLINE":
+                    log.warning(f"Silent Monitor Warning: {status}")
+                else:
+                    log.info("Silent Monitor: ONLINE")
+        except Exception as e:
+            log.error(f"Status watcher error: {e}")
 
     # ===== Search & Autocomplete =====
     @reactive.effect
@@ -137,19 +183,19 @@ def server(input, output, session):
     def handle_search():
         query = input.search_query().strip()
         current_phone.set(query)
-        
+
         if not query:
             suggestions_list.set([])
             show_curtain.set(False)
             return
-        
+
         trie = autocomplete_index()
         if not trie:
             return
-        
+
         matches = trie.search_prefix(query, 10)
         exact_match = trie.contains_exact(query)
-        
+
         if matches and not exact_match:
             suggestions_list.set(matches)
             show_curtain.set(True)
@@ -164,7 +210,7 @@ def server(input, output, session):
         items = suggestions_list()
         if not items:
             return None
-        
+
         rows = []
         for item in items:
             safe_item = json.dumps(item)
@@ -185,25 +231,29 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.selected_model_trigger)
     def confirm_selection():
+        """تأكيد اختيار موديل من الاقتراحات"""
         show_curtain.set(False)
+        # إبطال الكاش لإعادة تقييم Plan 1 فوراً
+        workflow_cache.invalidate()
+        coords_cache.invalidate()
 
     # ===== Plan 2 / Plan 3 Logic =====
     def process_plan(size_val, panel_val, sensor_val, plan_type):
         if not all([size_val, panel_val, sensor_val]):
             plan_results.set(None)
             return
-        
+
         results = compute_plan_matches(
             size_val, panel_val, sensor_val,
             database_data(),
             fast_index_calc()
         )
-        
+
         plan_inputs["size"].set(str(size_val))
         plan_inputs["panel"].set(panel_val)
         plan_inputs["sensor"].set(sensor_val)
         current_plan_type.set(plan_type)
-        
+
         plan_results.set(None if is_empty_result(results) else results)
 
     @reactive.effect
@@ -241,7 +291,7 @@ def server(input, output, session):
         plan_inputs["panel"].set("")
         plan_inputs["sensor"].set("")
         current_plan_type.set(None)
-        active_modal.set(None)  # إغلاق Modal عبر Reactive State فقط
+        active_modal.set(None)
         workflow_cache.invalidate()
         coords_cache.invalidate()
 
@@ -255,18 +305,28 @@ def server(input, output, session):
     def learn_p3():
         _save_current_model()
 
+    @reactive.effect
+    @reactive.event(input.btn_foundation)
+    def foundation_new_group():
+        """تأسيس مجموعة جديدة (Plan 3 foundation)"""
+        _save_current_model()
+
     def _save_current_model():
         phone = current_phone()
         size = plan_inputs["size"]()
         panel = plan_inputs["panel"]()
         sensor = plan_inputs["sensor"]()
-        
+
         if not all([phone, size, panel, sensor]):
             log.warning("Save attempted with missing data")
             return
-        
+
         try:
             if add_model(size, panel, sensor, phone):
+                # تحديث فوري لقاعدة البيانات والإحصائيات
+                refresh()
+                workflow_cache.invalidate()
+                coords_cache.invalidate()
                 db_trigger.set(db_trigger() + 1)
                 reset_ui_after_save()
                 log.info(f"Model saved: {phone}")
@@ -278,12 +338,13 @@ def server(input, output, session):
     # ===== UI Rendering =====
     @reactive.calc
     def cached_coords():
-        """تخزين مؤقت لإحداثيات الموديل"""
+        """تخزين مؤقت لإحداثيات الموديل (يستخدم _db_version بدلاً من id())"""
         phone = current_phone().strip()
         if not phone:
             return None
+        version = _db_version()
         return coords_cache.get_or_compute(
-            (phone, id(database_data())),
+            (phone, version),
             lambda: find_model_coords(database_data(), phone)
         )
 
@@ -294,8 +355,10 @@ def server(input, output, session):
         if not coords or not coords[3]:
             return None
         phone = current_phone().strip()
+        version = _db_version()
+        plan_type = current_plan_type()
         return workflow_cache.get_or_compute(
-            (phone, id(database_data())),
+            (phone, version, plan_type),
             lambda: run_system_workflows(phone, database_data(), "")
         )
 
@@ -304,19 +367,20 @@ def server(input, output, session):
         phone = current_phone().strip()
         if not phone:
             return None
-        
-        # استخدام النتيجة المخزنة
-        workflow_res = cached_workflow()
-        if workflow_res:
-            return ui.div(ui.HTML(workflow_res))
-        
+
         res = plan_results()
         plan_type = current_plan_type()
-        
+
+        # عرض workflow فقط إذا لم تكن هناك خطة نشطة (Plan 1)
+        if plan_type is None:
+            workflow_res = cached_workflow()
+            if workflow_res:
+                return ui.div(ui.HTML(workflow_res))
+
         btn_id = "btn_learn_and_merge" if plan_type == "plan_2" else "btn_learn_and_merge_p3"
         btn_color = "#2ecc71" if plan_type == "plan_2" else "#e67e22"
         suffix = "(مواصفات يدوية)" if plan_type == "plan_2" else "(خطة بديلة)"
-        
+
         if isinstance(res, dict):
             return ui.div(
                 draw_technical_coords(
@@ -334,26 +398,41 @@ def server(input, output, session):
                     style=(
                         f"width:100%; background:{btn_color}; color:white; "
                         f"padding:14px; border:none; border-radius:12px; "
-                        f"font-weight:bold; margin-top:15px;"
+                        f"font-weight:bold; margin-top:15px; "
                     ),
                 ),
             )
-        
+
+        # فشل Plan 3 → عرض زر التأسيس
+        if res is None and plan_type == "plan_3":
+            return ui.div(
+                draw_warning_card("لم يتم العثور على مطابقات. هل تريد تأسيس مجموعة جديدة؟"),
+                ui.input_action_button(
+                    "btn_foundation",
+                    "➕ تأسيس مجموعة جديدة بهذا الهاتف",
+                    style=(
+                        "width:100%; background:#9b59b6; color:white; "
+                        "padding:14px; border:none; border-radius:12px; "
+                        "font-weight:bold; margin-top:15px; "
+                    ),
+                ),
+            )
+
         if res is None and plan_type:
-            return ui.div(draw_warning_card("لم يتم العثور على مجموعة مطابقة."))
-        
+            return ui.div(draw_warning_card("لم يتم العثور على مجموعة مطابقة. "))
+
         return ui.div(
-            draw_warning_card(f"الموديل {phone} غير موجود داخل قاعدة البيانات."),
+            draw_warning_card(f"الموديل {phone} غير موجود داخل قاعدة البيانات. "),
             ui.div(
                 ui.input_action_button(
                     "trigger_plan_2",
                     "🔵 بدء المطابقة الفنية (Plan 2)",
-                    style="width:100%; background:#00bfff; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-bottom:10px;",
+                    style="width:100%; background:#00bfff; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-bottom:10px; ",
                 ),
                 ui.input_action_button(
                     "trigger_plan_3",
                     "🟠 بدء الخطة البديلة (Plan 3)",
-                    style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold;",
+                    style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; ",
                 ),
             ),
         )
@@ -369,6 +448,7 @@ def server(input, output, session):
 
     @render.ui
     def database_status_area():
+        """عرض عداد قاعدة البيانات ديناميكياً"""
         try:
             stats = get_statistics()
             count = stats.get("phones", 0) if isinstance(stats, dict) else 0
@@ -377,11 +457,41 @@ def server(input, output, session):
             log.error(f"Stats error: {e}")
             return ui.div(draw_database_status(0))
 
+    # ===== عناصر الإعدادات والمراقبة =====
+
     @reactive.effect
-    def watcher_status():
+    @reactive.event(input.btn_settings)
+    def open_drawer():
+        """فتح قائمة الإعدادات الجانبية"""
+        session.send_custom_message("toggle_drawer", "open")
+
+    @reactive.effect
+    @reactive.event(input.btn_close_drawer_trigger)
+    def close_drawer():
+        """إغلاق قائمة الإعدادات الجانبية"""
+        session.send_custom_message("toggle_drawer", "close")
+
+    @render.ui
+    def notifications_area():
+        """عرض حالة جرس الإشعارات ديناميكياً"""
         try:
             status = get_status()
-            if isinstance(status, dict) and status.get("status") != "ONLINE":
-                log.warning(f"Silent Monitor: {status}")
-        except Exception as e:
-            log.error(f"Status watcher error: {e}")
+            source = status.get("source", "غير معروف") if isinstance(status, dict) else "غير متصل"
+            return ui.div(f"🔔 المصدر: {source}", class_="metric-box")
+        except Exception:
+            return ui.div("🔔 جرس الإشعارات: غير متاح", class_="metric-box")
+
+    @render.ui
+    def monitor_area():
+        """عرض حالة المراقب الصامت ديناميكياً"""
+        try:
+            status = get_status()
+            state = status.get("status", "OFFLINE") if isinstance(status, dict) else "OFFLINE"
+            color = "#2ecc71" if state == "ONLINE" else "#e74c3c"
+            return ui.div(
+                f"🔒 الحالة: {state}",
+                style=f"color: {color}; font-weight: bold;",
+                class_="metric-box"
+            )
+        except Exception:
+            return ui.div("🔒 المراقب: غير متاح", class_="metric-box")
