@@ -5,7 +5,7 @@ from core.logger import get_logger
 
 log = get_logger("database")
 
-# 🎯 الرابط والمفتاح
+#  الرابط والمفتاح
 URL = "https://mgmphimlcdchtbiyhhbt.supabase.co/rest/v1/phones"
 KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
 
