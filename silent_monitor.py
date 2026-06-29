@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import traceback
 from datetime import datetime
 
 from database import load_db
@@ -71,7 +72,8 @@ class SilentMonitor:
 
         except Exception as e:
 
-            self.log(f"BACKUP_SAVE_ERROR : {e}")
+            traceback.print_exc()
+            self.log(f"BACKUP_SAVE_ERROR : {type(e).__name__}: {e}")
 
             return False
 
@@ -83,9 +85,18 @@ class SilentMonitor:
 
             for panel_dict in self.db.values():
 
+                if not isinstance(panel_dict, dict):
+                    continue
+
                 for sensor_dict in panel_dict.values():
 
+                    if not isinstance(sensor_dict, dict):
+                        continue
+
                     for data in sensor_dict.values():
+
+                        if not isinstance(data, dict):
+                            continue
 
                         for model in data.get("models", []):
 
@@ -107,7 +118,8 @@ class SilentMonitor:
 
         except Exception as e:
 
-            self.log(f"MODELS_INDEX_ERROR : {e}")
+            traceback.print_exc()
+            self.log(f"MODELS_INDEX_ERROR : {type(e).__name__}: {e}")
 
     def load_backup(self):
 
@@ -126,9 +138,11 @@ class SilentMonitor:
 
         except Exception as e:
 
+            traceback.print_exc()
+
             self.last_error = str(e)
 
-            self.log(f"BACKUP_LOAD_ERROR : {e}")
+            self.log(f"BACKUP_LOAD_ERROR : {type(e).__name__}: {e}")
 
             return False
 
@@ -160,9 +174,11 @@ class SilentMonitor:
 
         except Exception as e:
 
+            traceback.print_exc()
+
             self.last_error = str(e)
 
-            self.log(f"SUPABASE_ERROR : {e}")
+            self.log(f"SUPABASE_ERROR : {type(e).__name__}: {e}")
 
             return False
 
@@ -204,6 +220,9 @@ class SilentMonitor:
 
         for panel_dict in self.db.values():
 
+            if not isinstance(panel_dict, dict):
+                continue
+
             sizes += 1
 
             has_models = False
@@ -212,9 +231,15 @@ class SilentMonitor:
 
                 panels.add(panel_name)
 
+                if not isinstance(sensor_dict, dict):
+                    continue
+
                 for sensor_name, data in sensor_dict.items():
 
                     sensors.add(sensor_name)
+
+                    if not isinstance(data, dict):
+                        continue
 
                     models = data.get("models", [])
 
