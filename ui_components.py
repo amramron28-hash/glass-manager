@@ -5,7 +5,6 @@ from shiny import ui
 
 _bg_cache = None
 
-
 def inject_pwa_and_styles():
     global _bg_cache
     if _bg_cache is None:
@@ -47,36 +46,17 @@ def inject_pwa_and_styles():
     .btn-add-option {{ background:#00bfff; color:white; border:none; border-radius:14px; width:48px; height:48px; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }}
     </style>""")
 
-
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
-    return ui.HTML(f"""<div class="glass-card">
-        <h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3>
-        <div style="font-size:16px; line-height:2; text-align:right; direction:rtl;">
-            📏 <b>المقاس الفني:</b> <span style="color:#00bfff">{escape(str(size_grp))}</span><br>
-            📺 <b>نوع الشاشة:</b> <span style="color:#00bfff">{escape(str(panel_grp))}</span><br>
-            👁️ <b>المستشعر:</b> <span style="color:#00bfff">{escape(str(sensor_grp))}</span>
-        </div>
-    </div>""")
-
+    return ui.HTML(f"""<div class="glass-card"><h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right; direction:rtl;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff">{escape(str(size_grp))}</span><br>📺 <b>نوع الشاشة:</b> <span style="color:#00bfff">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر:</b> <span style="color:#00bfff">{escape(str(sensor_grp))}</span></div></div>""")
 
 def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
-    if not models_list:
-        return ui.div()
+    if not models_list: return ui.div()
     class_map = {"exact": "flat-exact", "plus": "flat-plus", "minus": "flat-minus"}
     card_class = class_map.get(plan_type, "flat-exact")
     cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; text-align:right; direction:rtl;")]
     for model in models_list:
         cards.append(ui.HTML(f'<div class="ammar-flat-card {card_class}"><div class="flat-phone-text">{escape(str(model))}</div></div>'))
     return ui.div(*cards)
-
-
-def draw_warning_card(message):
-    return ui.HTML(f'<div class="flat-warning-card">⚠️ {escape(str(message))}</div>')
-
-
-def draw_database_status(total):
-    return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
-
 
 # ==========================================
 # دوال النوافذ المنبثقة مع زر (+) للإضافة
@@ -120,7 +100,6 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
         )
     )
 
-
 def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
     """نافذة Plan 3 مع دعم الإضافة الفورية للخيارات"""
     panel_options = {p: p for p in existing_panels if p}
@@ -157,9 +136,14 @@ def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
         )
     )
 
+def draw_warning_card(message): 
+    return ui.HTML(f'<div class="flat-warning-card">⚠️ {escape(str(message))}</div>')
+
+def draw_database_status(total): 
+    return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
 
 # ================================================================
-# تعريف الواجهة الرئيسية (app_ui)
+# تعريف الواجهة الرئيسية (app_ui) - مصححة بالكامل
 # ================================================================
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
