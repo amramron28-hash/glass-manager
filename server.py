@@ -54,7 +54,7 @@ def server(input, output, session):
     db_trigger = reactive.Value(0)
     current_phone = reactive.Value("")
     show_curtain = reactive.Value(False)
-    active_modal = reactive.Value(None)  # None | "plan_2" | "plan_3" | "add_panel" | "add_sensor"
+    active_modal = reactive.Value(None)
     suggestions_list = reactive.Value([])
     plan_results = reactive.Value(None)
 
@@ -70,7 +70,6 @@ def server(input, output, session):
     _last_db_size = reactive.Value(-1)
     _last_monitor_status = reactive.Value("")
 
-    # Cache منفصل للإحصائيات والحالة
     _cached_stats = reactive.Value(None)
     _cached_status = reactive.Value(None)
     _stats_time = reactive.Value(0)
@@ -112,7 +111,7 @@ def server(input, output, session):
             _cached_stats.set(s)
             _stats_time.set(now)
             return s
-        except:
+        except Exception:
             return {}
 
     @reactive.calc
@@ -125,7 +124,7 @@ def server(input, output, session):
             _cached_status.set(s)
             _status_time.set(now)
             return s
-        except:
+        except Exception:
             return {}
 
     # ===== Watchers =====
@@ -252,10 +251,13 @@ def server(input, output, session):
             active_modal.set("plan_3")
             current_plan_type.set("plan_3")
             plan_results.set(None)
-            # ✅ إصلاح زر التأسيس: تعبئة المدخلات مسبقاً
-            if not plan_inputs["size"](): plan_inputs["size"].set(6.5)
-            if not plan_inputs["panel"](): plan_inputs["panel"].set(custom_panels()[0] if custom_panels() else "OLED")
-            if not plan_inputs["sensor"](): plan_inputs["sensor"].set(custom_sensors()[0] if custom_sensors() else "Virtual")
+            # تعبئة plan_inputs قبل إظهار زر التأسيس
+            if not plan_inputs["size"]():
+                plan_inputs["size"].set(6.5)
+            if not plan_inputs["panel"]():
+                plan_inputs["panel"].set(custom_panels()[0] if custom_panels() else "OLED")
+            if not plan_inputs["sensor"]():
+                plan_inputs["sensor"].set(custom_sensors()[0] if custom_sensors() else "Virtual")
 
     @reactive.effect
     @reactive.event(input.p2_search)
@@ -393,7 +395,7 @@ def server(input, output, session):
 
     @render.ui
     def results_area():
-        """✅ منطق تسلسل الخطط المصحح باستخدام if/elif/else"""
+        """✅ منطق تسلسل الخطط المعزول بـ if/elif/else"""
         ph = current_phone().strip()
         if not ph:
             return None
@@ -411,7 +413,7 @@ def server(input, output, session):
                 ui.div(
                     ui.input_action_button(
                         "trigger_plan_2",
-                        "🔵 بدء المطابقة الفنية (Plan 2)",
+                        " بدء المطابقة الفنية (Plan 2)",
                         style="width:100%; background:#00bfff; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-bottom:10px;"
                     ),
                     ui.input_action_button(
@@ -558,7 +560,7 @@ def server(input, output, session):
             s = get_cached_status()
             src = s.get("source", "غير معروف") if isinstance(s, dict) else "غير متصل"
             return ui.div(f"🔔 المصدر: {src}", class_="metric-box")
-        except:
+        except Exception:
             return ui.div("🔔 غير متاح", class_="metric-box")
 
     @render.ui
@@ -572,5 +574,5 @@ def server(input, output, session):
                 style=f"color: {col}; font-weight: bold;",
                 class_="metric-box"
             )
-        except:
+        except Exception:
             return ui.div("🔒 غير متاح", class_="metric-box")
