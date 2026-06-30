@@ -41,12 +41,11 @@ def inject_pwa_and_styles():
     .custom-modal-backdrop {{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.75); z-index:999999; display:flex; justify-content:center; align-items:center; }}
     .btn-dots-menu {{ background:transparent !important; border:none !important; color:#00bfff !important; font-size:28px !important; font-weight:bold !important; cursor:pointer; padding:0 10px !important; line-height:1 !important; transition:color 0.3s ease; }}
     .btn-dots-menu:hover {{ color:#87ceeb !important; }}
-    
-    /* ✅ تنسيقات زر الإضافة (+) */
     .input-with-add {{ display:flex; gap:8px; align-items:center; margin-bottom:14px; }}
     .input-with-add select, .input-with-add input {{ flex:1; margin-bottom:0 !important; }}
     .btn-add-option {{ background:#00bfff; color:white; border:none; border-radius:14px; width:48px; height:48px; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }}
     </style>""")
+
 
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
     return ui.HTML(f"""<div class="glass-card">
@@ -58,8 +57,9 @@ def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
         </div>
     </div>""")
 
+
 def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
-    if not models_list: 
+    if not models_list:
         return ui.div()
     class_map = {"exact": "flat-exact", "plus": "flat-plus", "minus": "flat-minus"}
     card_class = class_map.get(plan_type, "flat-exact")
@@ -68,41 +68,30 @@ def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱"
         cards.append(ui.HTML(f'<div class="ammar-flat-card {card_class}"><div class="flat-phone-text">{escape(str(model))}</div></div>'))
     return ui.div(*cards)
 
-# ==========================================
-# ✅ دوال النوافذ المنبثقة مع زر (+) للإضافة
-# ==========================================
+
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
-    """نافذة Plan 2 مع دعم الإضافة الفورية للخيارات"""
+    """✅ نافذة Plan 2 مع زر (+) للإضافة"""
     panel_options = {p: p for p in existing_panels if p}
     sensor_options = {s: s for s in existing_sensors if s}
-    
     return ui.div(
         ui.div(
             ui.div(
                 ui.h3(f"📋 المواصفات الفنية لـ {phone_name}", style="color:#3498db; text-align:center;"),
-                
-                # مقاس الشاشة
                 ui.input_numeric("p2_size", "📏 مقاس الشاشة:", value=None, step=0.01),
-                
-                # نوع الشاشة مع زر +
                 ui.div(
                     ui.input_select("p2_panel", "📺 نوع الشاشة:", choices=panel_options),
-                    ui.tags.button("+", id="btn_add_panel_p2", class_="btn-add-option", 
+                    ui.tags.button("+", id="btn_add_panel_p2", class_="btn-add-option",
                                    onclick="Shiny.setInputValue('show_add_panel', true, {priority:'event'});"),
                     class_="input-with-add"
                 ),
-                
-                # المستشعر مع زر +
                 ui.div(
                     ui.input_select("p2_sensor", "👁️ نوع المستشعر:", choices=sensor_options),
                     ui.tags.button("+", id="btn_add_sensor_p2", class_="btn-add-option",
                                    onclick="Shiny.setInputValue('show_add_sensor', true, {priority:'event'});"),
                     class_="input-with-add"
                 ),
-                
-                ui.input_action_button("p2_search", "🔍 فحص المطابقة", class_="btn-neon",
+                ui.input_action_button("p2_search", "🔍 فحص المطابقة",
                                        style="width:100%; background:#2ecc71; color:white; padding:12px; border-radius:8px; border:none;"),
-                
                 class_="glass-card",
                 style="width:90%; max-width:500px; background:rgba(22,27,34,.98);"
             ),
@@ -110,37 +99,30 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
         )
     )
 
+
 def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
-    """نافذة Plan 3 مع دعم الإضافة الفورية للخيارات"""
+    """✅ نافذة Plan 3 مع زر (+) للإضافة"""
     panel_options = {p: p for p in existing_panels if p}
     sensor_options = {s: s for s in existing_sensors if s}
-    
     return ui.div(
         ui.div(
             ui.div(
                 ui.h3(f"🔮 خطة الطوارئ لـ {phone_name}", style="color:#e67e22; text-align:center;"),
-                
                 ui.input_numeric("p3_size", "📏 المقاس المقترح:", value=None, step=0.01),
-                
-                # نوع الشاشة مع زر +
                 ui.div(
                     ui.input_select("p3_panel", "📺 تخصيص نوع الشاشة:", choices=panel_options),
                     ui.tags.button("+", id="btn_add_panel_p3", class_="btn-add-option",
                                    onclick="Shiny.setInputValue('show_add_panel', true, {priority:'event'});"),
                     class_="input-with-add"
                 ),
-                
-                # المستشعر مع زر +
                 ui.div(
                     ui.input_select("p3_sensor", "👁️ تخصيص المستشعر:", choices=sensor_options),
                     ui.tags.button("+", id="btn_add_sensor_p3", class_="btn-add-option",
                                    onclick="Shiny.setInputValue('show_add_sensor', true, {priority:'event'});"),
                     class_="input-with-add"
                 ),
-                
-                ui.input_action_button("p3_search", "⚡ تشغيل البحث الذكي", class_="btn-neon",
+                ui.input_action_button("p3_search", "⚡ تشغيل البحث الذكي",
                                        style="width:100%; background:#e67e22; color:white; padding:12px; border-radius:8px; border:none;"),
-                
                 class_="glass-card",
                 style="width:90%; max-width:500px; background:rgba(22,27,34,.98);"
             ),
@@ -148,17 +130,22 @@ def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
         )
     )
 
-def draw_warning_card(message): 
+
+def draw_warning_card(message):
     return ui.HTML(f'<div class="flat-warning-card">⚠️ {escape(str(message))}</div>')
 
-def draw_database_status(total): 
+
+def draw_database_status(total):
     return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
 
+
 # ================================================================
-# تعريف الواجهة الرئيسية (app_ui) - مصححة بالكامل
+# ✅ تعريف الواجهة الرئيسية - مصححة بالكامل
 # ================================================================
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
+    
+    # PWA + JavaScript للـ Drawer
     ui.tags.head(
         ui.tags.link(rel="manifest", href="manifest.json"),
         ui.tags.script("""
@@ -167,15 +154,15 @@ app_ui = ui.page_fluid(
         }
         Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
             let d = document.getElementById('settings_drawer');
-            if(d){ 
-                if(msg === 'open') d.classList.add('open'); 
-                else d.classList.remove('open'); 
+            if(d){
+                if(msg === 'open') d.classList.add('open');
+                else d.classList.remove('open');
             }
         });
         """)
     ),
     
-    # 🌟 الهيدر
+    # الهيدر
     ui.div(
         ui.div(
             ui.div("ZEGAAR AMMAR", class_="brand-neon-main"),
@@ -186,33 +173,33 @@ app_ui = ui.page_fluid(
         class_="header-bar"
     ),
     
-    # 🌟 نافذة الإعدادات الجانبية (Drawer)
+    # نافذة الإعدادات الجانبية (Drawer)
     ui.div(
         ui.tags.button(
-            "×", 
-            id="btn_close_drawer", 
-            class_="drawer-close-btn", 
+            "×",
+            id="btn_close_drawer",
+            class_="drawer-close-btn",
             onclick="Shiny.setInputValue('btn_close_drawer_trigger', Math.random(), {priority:'event'});"
         ),
         ui.h3("⚙️ الإعدادات العامة", style="color:#00bfff; text-align:center; margin-bottom:25px; font-weight:800;"),
         
-        # ✅ عناصر ديناميكية مربوطة بـ server.py
+        # عناصر ديناميكية مربوطة بـ server.py
         ui.output_ui("database_status_area"),
-        ui.output_ui("notifications_area"),      # ✅ تم التصحيح من نص ثابت إلى ديناميكي
-        ui.output_ui("monitor_area"),             # ✅ تم التصحيح من نص ثابت إلى ديناميكي
+        ui.output_ui("notifications_area"),
+        ui.output_ui("monitor_area"),
         
         id="settings_drawer",
         class_="drawer"
     ),
     
-    # 🌟 مربع البحث
+    # مربع البحث
     ui.div(
-        ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."),
+        ui.input_text("search_query", placeholder="🔍 ابحث عن موديل الهاتف..."),
         ui.output_ui("suggestions_curtain"),
         class_="search-box"
     ),
     
-    # 🌟 مناطق العرض الرئيسية
+    # مناطق العرض
     ui.output_ui("results_area"),
     ui.output_ui("modal_layer")
 )
