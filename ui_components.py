@@ -3,15 +3,12 @@ import base64
 from html import escape
 from shiny import ui
 
-# استيراد خدمات المراقبة
+# استيراد خدمات المراقبة لجعل البيانات ديناميكية
 from silent_monitor import get_status, get_statistics
 
 _bg_cache = None
 
 
-# ==========================================
-# 1. حقن PWA والأنماط
-# ==========================================
 def inject_pwa_and_styles():
     """حقن PWA وربط style.css الخارجي"""
     global _bg_cache
@@ -22,13 +19,16 @@ def inject_pwa_and_styles():
                     _bg_cache = base64.b64encode(f.read()).decode()
                 break
     
-    bg_style = f"background-image:linear-gradient(rgba(10,14,23,.20),rgba(10,14,23,.20)),url('data:image/webp;base64,{_bg_cache}');" if _bg_cache else ""
-    
+    # استخدام خلفية CSS خارجية إذا توفرت، وإلا استخدام base64 كاحتياط
+    bg_style = ""
+    if not _bg_cache:
+        bg_style = f"background-image:linear-gradient(rgba(10,14,23,.20),rgba(10,14,23,.20)),url('data:image/webp;base64,{_bg_cache}');"
+
     return ui.tags.head(
-        # ربط ملف CSS الخارجي
+        # ربط ملف CSS الخارجي (الأفضل للأداء والصيانة)
         ui.tags.link(rel="stylesheet", href="style.css"),
         
-        # سطر واحد فقط للخلفية الديناميكية (إذا وُجدت الصورة)
+        # تطبيق الخلفية الديناميكية فقط إذا لزم الأمر
         ui.tags.style(f"html, body {{ {bg_style} }}") if bg_style else None,
         
         # PWA Manifest
@@ -53,27 +53,24 @@ def inject_pwa_and_styles():
 
 
 # ==========================================
-# 2. دوال العرض - الإعدادات
+# دوال العرض - الإعدادات (ديناميكية)
 # ==========================================
 def draw_database_status(total):
     """عرض عداد قاعدة البيانات"""
     return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
 
-
 def draw_notification_status(source="غير معروف"):
-    """عرض حالة جرس الإشعارات ديناميكياً"""
+    """✅ عرض حالة جرس الإشعارات ديناميكياً"""
     return ui.div(f"🔔 المصدر: {escape(str(source))}", class_="metric-box")
 
-
 def draw_silent_monitor_status(status="OFFLINE"):
-    """عرض حالة المراقب الصامت ديناميكياً"""
+    """✅ عرض حالة المراقب الصامت ديناميكياً"""
     color = "#2ecc71" if status == "ONLINE" else "#e74c3c"
     return ui.div(
         f"🔒 الحالة: {escape(str(status))}",
         style=f"color: {color}; font-weight: bold;",
         class_="metric-box"
     )
-
 
 def draw_maintenance_button():
     """زر مركز الصيانة المتقدم"""
@@ -85,7 +82,7 @@ def draw_maintenance_button():
 
 
 # ==========================================
-# 3. دوال العرض - النتائج والبحث
+# دوال العرض - النتائج والبحث
 # ==========================================
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
     """عرض الإحداثيات الفنية للموديل"""
@@ -98,7 +95,6 @@ def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
         </div>
     </div>""")
 
-
 def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
     """عرض قسم من نتائج المطابقة"""
     if not models_list:
@@ -110,14 +106,13 @@ def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱"
         cards.append(ui.HTML(f'<div class="ammar-flat-card {card_class}"><div class="flat-phone-text">{escape(str(model))}</div></div>'))
     return ui.div(*cards)
 
-
 def draw_warning_card(message):
     """بطاقة تحذير"""
     return ui.HTML(f'<div class="flat-warning-card">⚠️ {escape(str(message))}</div>')
 
 
 # ==========================================
-# 4. دوال العرض - نوافذ الخطط (Modal)
+# دوال العرض - نوافذ الخطط (Modal)
 # ==========================================
 def _draw_plan_modal(title, title_color, phone_name, size_label, size_id, panel_label, panel_id, sensor_label, sensor_id, btn_label, btn_id, btn_color, panels, sensors):
     """دالة مشتركة لبناء نوافذ Plan 2 و Plan 3"""
@@ -132,7 +127,6 @@ def _draw_plan_modal(title, title_color, phone_name, size_label, size_id, panel_
         class_="glass-card", style="width:90%; max-width:500px; background:rgba(22,27,34,.98);"
     ), class_="custom-modal-backdrop"))
 
-
 def draw_plan_2_modal(phone_name, panels, sensors):
     """نافذة Plan 2 - المواصفات الفنية"""
     return _draw_plan_modal(
@@ -143,7 +137,6 @@ def draw_plan_2_modal(phone_name, panels, sensors):
         "🔍 فحص المطابقة", "p2_search", "#2ecc71",
         panels, sensors
     )
-
 
 def draw_plan_3_modal(phone_name, panels, sensors):
     """نافذة Plan 3 - الخطة البديلة"""
@@ -158,7 +151,7 @@ def draw_plan_3_modal(phone_name, panels, sensors):
 
 
 # ==========================================
-# 5. تعريف الواجهة الرئيسية (app_ui)
+# تعريف الواجهة الرئيسية (app_ui)
 # ==========================================
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
@@ -184,12 +177,12 @@ app_ui = ui.page_fluid(
         ),
         ui.h3("⚙️ الإعدادات العامة", style="color:#00bfff; text-align:center; margin-bottom:25px; font-weight:800;"),
         
-        # ✅ عناصر ديناميكية مربوطة بـ server.py
+        # ✅ عناصر ديناميكية مربوطة بـ server.py بالأسماء الصحيحة
         ui.output_ui("database_status_area"),
-        ui.output_ui("notifications_area"),
-        ui.output_ui("monitor_area"),
+        ui.output_ui("notifications_area"),      # ✅ الاسم الصحيح للجرس
+        ui.output_ui("monitor_area"),             # ✅ الاسم الصحيح للمراقب
         
-        # ✅ زر مركز الصيانة (من settings_panel.py)
+        # ✅ زر مركز الصيانة
         draw_maintenance_button(),
         
         id="settings_drawer",
@@ -206,4 +199,4 @@ app_ui = ui.page_fluid(
     # 🌟 مناطق العرض الرئيسية
     ui.output_ui("results_area"),
     ui.output_ui("modal_layer")
-)
+    )
