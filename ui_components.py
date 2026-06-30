@@ -1,4 +1,4 @@
-hereimport os
+import os
 import base64
 from html import escape
 from shiny import ui
@@ -16,20 +16,19 @@ def inject_pwa_and_styles():
                     _bg_cache = base64.b64encode(f.read()).decode()
                 break
     
-    # خلفية ديناميكية فقط (إذا وُجدت الصورة)
     bg_style = f"background-image:linear-gradient(rgba(10,14,23,.20),rgba(10,14,23,.20)),url('data:image/webp;base64,{_bg_cache}');" if _bg_cache else ""
     
     return ui.tags.head(
-        # ✅ ربط ملف CSS الخارجي
+        # ربط ملف CSS الخارجي
         ui.tags.link(rel="stylesheet", href="style.css"),
         
-        # ✅ سطر واحد فقط للخلفية الديناميكية
+        # سطر واحد فقط للخلفية الديناميكية
         ui.tags.style(f"html, body {{ {bg_style} }}") if bg_style else None,
         
-        # ✅ PWA Manifest
+        # PWA Manifest
         ui.tags.link(rel="manifest", href="manifest.json"),
         
-        # ✅ JavaScript للـ Drawer و Service Worker
+        # JavaScript للـ Drawer و Service Worker
         ui.tags.script("""
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function(){ 
