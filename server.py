@@ -20,6 +20,7 @@ log = get_logger("server")
 MODELS_INDEX_FILE = "models_index.txt"
 STATS_TTL = 3
 
+
 def load_models_index():
     try:
         with open(MODELS_INDEX_FILE, "r", encoding="utf-8") as f:
@@ -27,6 +28,7 @@ def load_models_index():
     except OSError as e:
         log.error(f"Index load error: {e}")
         return []
+
 
 def convert_database_from_raw(rows):
     db = {}
@@ -46,11 +48,13 @@ def convert_database_from_raw(rows):
             db[size][panel][sensor]["models"].append(model)
     return db
 
+
 def server(input, output, session):
+    # ===== State Management =====
     db_trigger = reactive.Value(0)
     current_phone = reactive.Value("")
     show_curtain = reactive.Value(False)
-    active_modal = reactive.Value(None)
+    active_modal = reactive.Value(None)  # None | "plan_2" | "plan_3" | "add_panel" | "add_sensor"
     suggestions_list = reactive.Value([])
     plan_results = reactive.Value(None)
 
@@ -66,6 +70,7 @@ def server(input, output, session):
     _last_db_size = reactive.Value(-1)
     _last_monitor_status = reactive.Value("")
 
+    # Cache منفصل للإحصائيات والحالة
     _cached_stats = reactive.Value(None)
     _cached_status = reactive.Value(None)
     _stats_time = reactive.Value(0)
@@ -82,6 +87,7 @@ def server(input, output, session):
         _stats_time.set(0)
         _status_time.set(0)
 
+    # ===== Data Layer =====
     @reactive.calc
     def database_data():
         db_trigger()
@@ -122,6 +128,7 @@ def server(input, output, session):
         except:
             return {}
 
+    # ===== Watchers =====
     @reactive.effect
     def watcher_refresh():
         reactive.invalidate_later(5)
@@ -177,6 +184,7 @@ def server(input, output, session):
         except Exception as e:
             log.error(f"Status Err: {e}")
 
+    # ===== Search & Autocomplete =====
     @reactive.effect
     @reactive.event(input.search_query)
     def handle_search():
@@ -218,6 +226,7 @@ def server(input, output, session):
         current_phone.set(input.search_query().strip())
         invalidate_workflow()
 
+    # ===== Plan Logic =====
     def process_plan(sz, pn, sn, pt):
         if not all([sz, pn, sn]):
             plan_results.set(None)
@@ -243,6 +252,10 @@ def server(input, output, session):
             active_modal.set("plan_3")
             current_plan_type.set("plan_3")
             plan_results.set(None)
+            # ✅ إصلاح زر التأسيس: تعبئة المدخلات مسبقاً
+            if not plan_inputs["size"](): plan_inputs["size"].set(6.5)
+            if not plan_inputs["panel"](): plan_inputs["panel"].set(custom_panels()[0] if custom_panels() else "OLED")
+            if not plan_inputs["sensor"](): plan_inputs["sensor"].set(custom_sensors()[0] if custom_sensors() else "Virtual")
 
     @reactive.effect
     @reactive.event(input.p2_search)
@@ -256,6 +269,7 @@ def server(input, output, session):
         active_modal.set(None)
         process_plan(input.p3_size(), input.p3_panel(), input.p3_sensor(), "plan_3")
 
+    # ===== Save & Reset =====
     def reset_ui():
         ui.update_text(session, "search_query", value="")
         current_phone.set("")
@@ -356,6 +370,7 @@ def server(input, output, session):
         else:
             active_modal.set(None)
 
+    # ===== UI Rendering =====
     @reactive.calc
     def cached_coords():
         ph = current_phone().strip()
@@ -378,7 +393,7 @@ def server(input, output, session):
 
     @render.ui
     def results_area():
-        """✅ منطق تسلسل الخطط المصحح بالكامل"""
+        """✅ منطق تسلسل الخطط المصحح باستخدام if/elif/else"""
         ph = current_phone().strip()
         if not ph:
             return None
@@ -386,9 +401,7 @@ def server(input, output, session):
         res = plan_results()
         pt = current_plan_type()
 
-        # ==========================================
         # 🔵 الخطة 1: التطابق التلقائي المباشر
-        # ==========================================
         if pt is None:
             wf = cached_workflow()
             if wf:
@@ -409,10 +422,8 @@ def server(input, output, session):
                 )
             )
 
-        # ==========================================
         # 🟢 الخطة 2: التكامل اليدوي والمجموعات
-        # ==========================================
-        if pt == "plan_2":
+        elif pt == "plan_2":
             if isinstance(res, dict):
                 return ui.div(
                     draw_technical_coords(
@@ -450,10 +461,8 @@ def server(input, output, session):
                     )
                 )
 
-        # ==========================================
         # 🟠 الخطة 3: التأسيس والإنشاء (خطة الطوارئ)
-        # ==========================================
-        if pt == "plan_3":
+        elif pt == "plan_3":
             if isinstance(res, dict):
                 return ui.div(
                     draw_technical_coords(
@@ -481,7 +490,8 @@ def server(input, output, session):
                     )
                 )
 
-        return None
+        else:
+            return None
 
     @render.ui
     def modal_layer():
@@ -514,6 +524,7 @@ def server(input, output, session):
             )
         return None
 
+    # ===== الإعدادات الديناميكية =====
     @render.ui
     def database_status_area():
         try:
