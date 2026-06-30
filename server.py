@@ -1,4 +1,4 @@
-import json
+hereimport json
 import time
 from shiny import ui, render, reactive
 
@@ -20,7 +20,6 @@ log = get_logger("server")
 MODELS_INDEX_FILE = "models_index.txt"
 STATS_TTL = 3
 
-
 def load_models_index():
     try:
         with open(MODELS_INDEX_FILE, "r", encoding="utf-8") as f:
@@ -28,7 +27,6 @@ def load_models_index():
     except OSError as e:
         log.error(f"Index load error: {e}")
         return []
-
 
 def convert_database_from_raw(rows):
     db = {}
@@ -48,13 +46,11 @@ def convert_database_from_raw(rows):
             db[size][panel][sensor]["models"].append(model)
     return db
 
-
 def server(input, output, session):
-    # ===== State Management =====
     db_trigger = reactive.Value(0)
     current_phone = reactive.Value("")
     show_curtain = reactive.Value(False)
-    active_modal = reactive.Value(None)  # None | "plan_2" | "plan_3" | "add_panel" | "add_sensor"
+    active_modal = reactive.Value(None)
     suggestions_list = reactive.Value([])
     plan_results = reactive.Value(None)
 
@@ -70,7 +66,6 @@ def server(input, output, session):
     _last_db_size = reactive.Value(-1)
     _last_monitor_status = reactive.Value("")
 
-    # Cache منفصل للإحصائيات والحالة
     _cached_stats = reactive.Value(None)
     _cached_status = reactive.Value(None)
     _stats_time = reactive.Value(0)
@@ -87,7 +82,6 @@ def server(input, output, session):
         _stats_time.set(0)
         _status_time.set(0)
 
-    # ===== Data Layer =====
     @reactive.calc
     def database_data():
         db_trigger()
@@ -128,7 +122,6 @@ def server(input, output, session):
         except:
             return {}
 
-    # ===== Watchers =====
     @reactive.effect
     def watcher_refresh():
         reactive.invalidate_later(5)
@@ -184,7 +177,6 @@ def server(input, output, session):
         except Exception as e:
             log.error(f"Status Err: {e}")
 
-    # ===== Search & Autocomplete =====
     @reactive.effect
     @reactive.event(input.search_query)
     def handle_search():
@@ -226,7 +218,6 @@ def server(input, output, session):
         current_phone.set(input.search_query().strip())
         invalidate_workflow()
 
-    # ===== Plan Logic =====
     def process_plan(sz, pn, sn, pt):
         if not all([sz, pn, sn]):
             plan_results.set(None)
@@ -256,16 +247,15 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.p2_search)
     def run_plan_2():
-        active_modal.set(None)  # إغلاق المودال
+        active_modal.set(None)
         process_plan(input.p2_size(), input.p2_panel(), input.p2_sensor(), "plan_2")
 
     @reactive.effect
     @reactive.event(input.p3_search)
     def run_plan_3():
-        active_modal.set(None)  # إغلاق المودال
+        active_modal.set(None)
         process_plan(input.p3_size(), input.p3_panel(), input.p3_sensor(), "plan_3")
 
-    # ===== Save & Reset =====
     def reset_ui():
         ui.update_text(session, "search_query", value="")
         current_phone.set("")
@@ -317,26 +307,22 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.show_add_panel)
     def handle_show_add_panel():
-        """فتح نافذة إضافة نوع شاشة جديد"""
         active_modal.set("add_panel")
 
     @reactive.effect
     @reactive.event(input.show_add_sensor)
     def handle_show_add_sensor():
-        """فتح نافذة إضافة مستشعر جديد"""
         active_modal.set("add_sensor")
 
     @reactive.effect
     @reactive.event(input.btn_confirm_add_panel)
     def confirm_add_panel():
-        """تأكيد إضافة نوع شاشة جديد"""
         new_value = input.new_panel_name().strip()
         if new_value:
             current = custom_panels()
             if new_value not in current:
                 custom_panels.set(current + [new_value])
                 log.info(f"Added new panel: {new_value}")
-            # إعادة فتح المودال الأصلي
             if current_plan_type() == "plan_2":
                 active_modal.set("plan_2")
             elif current_plan_type() == "plan_3":
@@ -347,14 +333,12 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.btn_confirm_add_sensor)
     def confirm_add_sensor():
-        """تأكيد إضافة مستشعر جديد"""
         new_value = input.new_sensor_name().strip()
         if new_value:
             current = custom_sensors()
             if new_value not in current:
                 custom_sensors.set(current + [new_value])
                 log.info(f"Added new sensor: {new_value}")
-            # إعادة فتح المودال الأصلي
             if current_plan_type() == "plan_2":
                 active_modal.set("plan_2")
             elif current_plan_type() == "plan_3":
@@ -365,7 +349,6 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.btn_cancel_add)
     def cancel_add():
-        """إلغاء الإضافة والعودة للمودال الأصلي"""
         if current_plan_type() == "plan_2":
             active_modal.set("plan_2")
         elif current_plan_type() == "plan_3":
@@ -373,7 +356,6 @@ def server(input, output, session):
         else:
             active_modal.set(None)
 
-    # ===== UI Rendering =====
     @reactive.calc
     def cached_coords():
         ph = current_phone().strip()
@@ -411,7 +393,6 @@ def server(input, output, session):
             wf = cached_workflow()
             if wf:
                 return ui.div(ui.HTML(wf))
-            # لم يعثر على الموديل → عرض أزرار Plan 2 و Plan 3
             return ui.div(
                 draw_warning_card(f"الموديل {ph} غير موجود في قاعدة البيانات."),
                 ui.div(
@@ -432,7 +413,6 @@ def server(input, output, session):
         # 🟢 الخطة 2: التكامل اليدوي والمجموعات
         # ==========================================
         if pt == "plan_2":
-            # حالة 1: توجد نتائج → عرض النتائج + زر دمج
             if isinstance(res, dict):
                 return ui.div(
                     draw_technical_coords(
@@ -455,7 +435,6 @@ def server(input, output, session):
                         style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:10px;"
                     )
                 )
-            # حالة 2: لا توجد نتائج → رسالة فقط + زر انتقال للخطة 3
             else:
                 return ui.div(
                     draw_warning_card("لم يتم العثور على أي تطابق في المجموعات الحالية بالمواصفات المُدخلة."),
@@ -475,7 +454,6 @@ def server(input, output, session):
         # 🟠 الخطة 3: التأسيس والإنشاء (خطة الطوارئ)
         # ==========================================
         if pt == "plan_3":
-            # حالة 1: توجد نتائج → عرض النتائج + زر دمج
             if isinstance(res, dict):
                 return ui.div(
                     draw_technical_coords(
@@ -493,7 +471,6 @@ def server(input, output, session):
                         style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:15px;"
                     )
                 )
-            # حالة 2: لا توجد نتائج → زر تأسيس مجموعة جديدة
             else:
                 return ui.div(
                     draw_warning_card("لا توجد أي مجموعة مشابهة. هل تريد تأسيس مجموعة جديدة بهذا الهاتف؟"),
@@ -537,10 +514,8 @@ def server(input, output, session):
             )
         return None
 
-    # ===== الإعدادات الديناميكية =====
     @render.ui
     def database_status_area():
-        """✅ حساب العداد مباشرة من قاعدة البيانات"""
         try:
             db = database_data()
             total = 0
