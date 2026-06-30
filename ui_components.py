@@ -49,7 +49,14 @@ def inject_pwa_and_styles():
     </style>""")
 
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
-    return ui.HTML(f"""<div class="glass-card"><h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right; direction:rtl;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff">{escape(str(size_grp))}</span><br>📺 <b>نوع الشاشة:</b> <span style="color:#00bfff">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر:</b> <span style="color:#00bfff">{escape(str(sensor_grp))}</span></div></div>""")
+    return ui.HTML(f"""<div class="glass-card">
+        <h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3>
+        <div style="font-size:16px; line-height:2; text-align:right; direction:rtl;">
+            📏 <b>المقاس الفني:</b> <span style="color:#00bfff">{escape(str(size_grp))}</span><br>
+            📺 <b>نوع الشاشة:</b> <span style="color:#00bfff">{escape(str(panel_grp))}</span><br>
+            👁️ <b>المستشعر:</b> <span style="color:#00bfff">{escape(str(sensor_grp))}</span>
+        </div>
+    </div>""")
 
 def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
     if not models_list: 
@@ -77,7 +84,7 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
                 # مقاس الشاشة
                 ui.input_numeric("p2_size", "📏 مقاس الشاشة:", value=None, step=0.01),
                 
-                # ✅ نوع الشاشة مع زر +
+                # نوع الشاشة مع زر +
                 ui.div(
                     ui.input_select("p2_panel", "📺 نوع الشاشة:", choices=panel_options),
                     ui.tags.button("+", id="btn_add_panel_p2", class_="btn-add-option", 
@@ -85,7 +92,7 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
                     class_="input-with-add"
                 ),
                 
-                # ✅ المستشعر مع زر +
+                # المستشعر مع زر +
                 ui.div(
                     ui.input_select("p2_sensor", "👁️ نوع المستشعر:", choices=sensor_options),
                     ui.tags.button("+", id="btn_add_sensor_p2", class_="btn-add-option",
@@ -115,7 +122,7 @@ def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
                 
                 ui.input_numeric("p3_size", "📏 المقاس المقترح:", value=None, step=0.01),
                 
-                # ✅ نوع الشاشة مع زر +
+                # نوع الشاشة مع زر +
                 ui.div(
                     ui.input_select("p3_panel", "📺 تخصيص نوع الشاشة:", choices=panel_options),
                     ui.tags.button("+", id="btn_add_panel_p3", class_="btn-add-option",
@@ -123,7 +130,7 @@ def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
                     class_="input-with-add"
                 ),
                 
-                # ✅ المستشعر مع زر +
+                # المستشعر مع زر +
                 ui.div(
                     ui.input_select("p3_sensor", "👁️ تخصيص المستشعر:", choices=sensor_options),
                     ui.tags.button("+", id="btn_add_sensor_p3", class_="btn-add-option",
@@ -148,7 +155,7 @@ def draw_database_status(total):
     return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
 
 # ================================================================
-# ✅ تعريف الواجهة الرئيسية (app_ui) - مصححة بالكامل
+# تعريف الواجهة الرئيسية (app_ui) - مصححة بالكامل
 # ================================================================
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
@@ -191,8 +198,8 @@ app_ui = ui.page_fluid(
         
         # ✅ عناصر ديناميكية مربوطة بـ server.py
         ui.output_ui("database_status_area"),
-        ui.output_ui("notifications_area"),      # ✅ تم التصحيح
-        ui.output_ui("monitor_area"),             # ✅ تم التصحيح
+        ui.output_ui("notifications_area"),      # ✅ تم التصحيح من نص ثابت إلى ديناميكي
+        ui.output_ui("monitor_area"),             # ✅ تم التصحيح من نص ثابت إلى ديناميكي
         
         id="settings_drawer",
         class_="drawer"
