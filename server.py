@@ -263,10 +263,10 @@ def server(input, output, session):
         if m == "plan_3": return draw_plan_3_modal(current_phone(), custom_panels(), custom_sensors())
         return None
 
-    # ✅ التصحيح الحاسم: حساب العداد مباشرة من database_data()
+    # ✅ حساب العداد مباشرة من قاعدة البيانات (وليس من statistics)
     @render.ui
     def database_status_area():
-        """✅ حساب العداد مباشرة من قاعدة البيانات (وليس من statistics)"""
+        """✅ حساب العداد مباشرة من قاعدة البيانات"""
         try:
             db = database_data()
             total = 0
