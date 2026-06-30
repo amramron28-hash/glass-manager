@@ -3,11 +3,17 @@ import base64
 from html import escape
 from shiny import ui
 
+# استيراد خدمات المراقبة
+from silent_monitor import get_status, get_statistics
+
 _bg_cache = None
 
 
+# ==========================================
+# 1. حقن PWA والأنماط
+# ==========================================
 def inject_pwa_and_styles():
-    """حقن PWA والأنماط - يستخدم style.css الخارجي"""
+    """حقن PWA وربط style.css الخارجي"""
     global _bg_cache
     if _bg_cache is None:
         for p in ["phone_image.webp", "./phone_image.webp", "/app/phone_image.webp"]:
@@ -22,7 +28,7 @@ def inject_pwa_and_styles():
         # ربط ملف CSS الخارجي
         ui.tags.link(rel="stylesheet", href="style.css"),
         
-        # سطر واحد فقط للخلفية الديناميكية
+        # سطر واحد فقط للخلفية الديناميكية (إذا وُجدت الصورة)
         ui.tags.style(f"html, body {{ {bg_style} }}") if bg_style else None,
         
         # PWA Manifest
@@ -46,6 +52,41 @@ def inject_pwa_and_styles():
     )
 
 
+# ==========================================
+# 2. دوال العرض - الإعدادات
+# ==========================================
+def draw_database_status(total):
+    """عرض عداد قاعدة البيانات"""
+    return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
+
+
+def draw_notification_status(source="غير معروف"):
+    """عرض حالة جرس الإشعارات ديناميكياً"""
+    return ui.div(f"🔔 المصدر: {escape(str(source))}", class_="metric-box")
+
+
+def draw_silent_monitor_status(status="OFFLINE"):
+    """عرض حالة المراقب الصامت ديناميكياً"""
+    color = "#2ecc71" if status == "ONLINE" else "#e74c3c"
+    return ui.div(
+        f"🔒 الحالة: {escape(str(status))}",
+        style=f"color: {color}; font-weight: bold;",
+        class_="metric-box"
+    )
+
+
+def draw_maintenance_button():
+    """زر مركز الصيانة المتقدم"""
+    return ui.input_action_button(
+        "btn_open_maintenance",
+        "🛠 مركز الصيانة المتقدم",
+        style="width:100%; background:#e67e22; color:white; padding:12px; border-radius:10px; border:none; font-weight:bold; margin-top:15px;"
+    )
+
+
+# ==========================================
+# 3. دوال العرض - النتائج والبحث
+# ==========================================
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
     """عرض الإحداثيات الفنية للموديل"""
     return ui.HTML(f"""<div class="glass-card">
@@ -70,6 +111,14 @@ def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱"
     return ui.div(*cards)
 
 
+def draw_warning_card(message):
+    """بطاقة تحذير"""
+    return ui.HTML(f'<div class="flat-warning-card">⚠️ {escape(str(message))}</div>')
+
+
+# ==========================================
+# 4. دوال العرض - نوافذ الخطط (Modal)
+# ==========================================
 def _draw_plan_modal(title, title_color, phone_name, size_label, size_id, panel_label, panel_id, sensor_label, sensor_id, btn_label, btn_id, btn_color, panels, sensors):
     """دالة مشتركة لبناء نوافذ Plan 2 و Plan 3"""
     panel_options = {p: p for p in panels if p}
@@ -108,19 +157,9 @@ def draw_plan_3_modal(phone_name, panels, sensors):
     )
 
 
-def draw_warning_card(message):
-    """بطاقة تحذير"""
-    return ui.HTML(f'<div class="flat-warning-card">⚠️ {escape(str(message))}</div>')
-
-
-def draw_database_status(total):
-    """عرض عداد قاعدة البيانات"""
-    return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
-
-
-# ================================================================
-# تعريف الواجهة الرئيسية (app_ui) - مصححة بالكامل
-# ================================================================
+# ==========================================
+# 5. تعريف الواجهة الرئيسية (app_ui)
+# ==========================================
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
     
@@ -149,6 +188,9 @@ app_ui = ui.page_fluid(
         ui.output_ui("database_status_area"),
         ui.output_ui("notifications_area"),
         ui.output_ui("monitor_area"),
+        
+        # ✅ زر مركز الصيانة (من settings_panel.py)
+        draw_maintenance_button(),
         
         id="settings_drawer",
         class_="drawer"
