@@ -1,4 +1,4 @@
-import json
+hereimport json
 import time
 from shiny import ui, render, reactive
 
@@ -263,12 +263,24 @@ def server(input, output, session):
         if m == "plan_3": return draw_plan_3_modal(current_phone(), custom_panels(), custom_sensors())
         return None
 
+    # ✅ التصحيح الحاسم: حساب العداد مباشرة من database_data()
     @render.ui
     def database_status_area():
+        """✅ حساب العداد مباشرة من قاعدة البيانات (وليس من statistics)"""
         try:
-            s = get_cached_stats(); c = s.get("phones", 0) if isinstance(s, dict) else 0
-            return ui.div(draw_database_status(c))
-        except: return ui.div(draw_database_status(0))
+            db = database_data()
+            total = 0
+            for panels in db.values():
+                if isinstance(panels, dict):
+                    for sensors in panels.values():
+                        if isinstance(sensors, dict):
+                            for data in sensors.values():
+                                if isinstance(data, dict):
+                                    total += len(data.get("models", []))
+            return draw_database_status(total)
+        except Exception as e:
+            log.error(f"Stats error: {e}")
+            return draw_database_status(0)
 
     @reactive.effect
     @reactive.event(input.btn_settings)
