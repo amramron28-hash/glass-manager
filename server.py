@@ -54,7 +54,7 @@ def server(input, output, session):
     db_trigger = reactive.Value(0)
     current_phone = reactive.Value("")
     show_curtain = reactive.Value(False)
-    active_modal = reactive.Value(None)  # None | "plan_2" | "plan_3"
+    active_modal = reactive.Value(None)  # None | "plan_2" | "plan_3" | "add_panel" | "add_sensor"
     suggestions_list = reactive.Value([])
     plan_results = reactive.Value(None)
 
@@ -256,15 +256,13 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.p2_search)
     def run_plan_2():
-        # ✅ إغلاق المودال بعد الضغط على فحص المطابقة
-        active_modal.set(None)
+        active_modal.set(None)  # إغلاق المودال
         process_plan(input.p2_size(), input.p2_panel(), input.p2_sensor(), "plan_2")
 
     @reactive.effect
     @reactive.event(input.p3_search)
     def run_plan_3():
-        # ✅ إغلاق المودال بعد الضغط على فحص المطابقة
-        active_modal.set(None)
+        active_modal.set(None)  # إغلاق المودال
         process_plan(input.p3_size(), input.p3_panel(), input.p3_sensor(), "plan_3")
 
     # ===== Save & Reset =====
@@ -314,6 +312,66 @@ def server(input, output, session):
     @reactive.event(input.btn_foundation)
     def foundation():
         save_model("Foundation")
+
+    # ===== زر (+) لإضافة خيارات جديدة =====
+    @reactive.effect
+    @reactive.event(input.show_add_panel)
+    def handle_show_add_panel():
+        """فتح نافذة إضافة نوع شاشة جديد"""
+        active_modal.set("add_panel")
+
+    @reactive.effect
+    @reactive.event(input.show_add_sensor)
+    def handle_show_add_sensor():
+        """فتح نافذة إضافة مستشعر جديد"""
+        active_modal.set("add_sensor")
+
+    @reactive.effect
+    @reactive.event(input.btn_confirm_add_panel)
+    def confirm_add_panel():
+        """تأكيد إضافة نوع شاشة جديد"""
+        new_value = input.new_panel_name().strip()
+        if new_value:
+            current = custom_panels()
+            if new_value not in current:
+                custom_panels.set(current + [new_value])
+                log.info(f"Added new panel: {new_value}")
+            # إعادة فتح المودال الأصلي
+            if current_plan_type() == "plan_2":
+                active_modal.set("plan_2")
+            elif current_plan_type() == "plan_3":
+                active_modal.set("plan_3")
+            else:
+                active_modal.set(None)
+
+    @reactive.effect
+    @reactive.event(input.btn_confirm_add_sensor)
+    def confirm_add_sensor():
+        """تأكيد إضافة مستشعر جديد"""
+        new_value = input.new_sensor_name().strip()
+        if new_value:
+            current = custom_sensors()
+            if new_value not in current:
+                custom_sensors.set(current + [new_value])
+                log.info(f"Added new sensor: {new_value}")
+            # إعادة فتح المودال الأصلي
+            if current_plan_type() == "plan_2":
+                active_modal.set("plan_2")
+            elif current_plan_type() == "plan_3":
+                active_modal.set("plan_3")
+            else:
+                active_modal.set(None)
+
+    @reactive.effect
+    @reactive.event(input.btn_cancel_add)
+    def cancel_add():
+        """إلغاء الإضافة والعودة للمودال الأصلي"""
+        if current_plan_type() == "plan_2":
+            active_modal.set("plan_2")
+        elif current_plan_type() == "plan_3":
+            active_modal.set("plan_3")
+        else:
+            active_modal.set(None)
 
     # ===== UI Rendering =====
     @reactive.calc
@@ -391,14 +449,13 @@ def server(input, output, session):
                         "🔄 دمج الهاتف داخل هذه المجموعة",
                         style="width:100%; background:#2ecc71; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:15px;"
                     ),
-                    # زر للانتقال للخطة 3 إذا أراد المستخدم
                     ui.input_action_button(
                         "trigger_plan_3",
                         "🟠 لم أجد ما يناسبني - انتقل للخطة 3",
                         style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:10px;"
                     )
                 )
-            # حالة 2: لا توجد نتائج → رسالة فقط (بدون زر تأسيس)
+            # حالة 2: لا توجد نتائج → رسالة فقط + زر انتقال للخطة 3
             else:
                 return ui.div(
                     draw_warning_card("لم يتم العثور على أي تطابق في المجموعات الحالية بالمواصفات المُدخلة."),
@@ -456,6 +513,28 @@ def server(input, output, session):
             return draw_plan_2_modal(current_phone(), custom_panels(), custom_sensors())
         if m == "plan_3":
             return draw_plan_3_modal(current_phone(), custom_panels(), custom_sensors())
+        if m == "add_panel":
+            return ui.modal(
+                ui.input_text("new_panel_name", "اسم نوع الشاشة الجديد:", placeholder="مثال: IPS LCD"),
+                ui.div(
+                    ui.input_action_button("btn_confirm_add_panel", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
+                    ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
+                    style="text-align:center; margin-top:20px;"
+                ),
+                title="➕ إضافة نوع شاشة جديد",
+                easy_close=True
+            )
+        if m == "add_sensor":
+            return ui.modal(
+                ui.input_text("new_sensor_name", "اسم المستشعر الجديد:", placeholder="مثال: Proximity Sensor"),
+                ui.div(
+                    ui.input_action_button("btn_confirm_add_sensor", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
+                    ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
+                    style="text-align:center; margin-top:20px;"
+                ),
+                title="➕ إضافة مستشعر جديد",
+                easy_close=True
+            )
         return None
 
     # ===== الإعدادات الديناميكية =====
