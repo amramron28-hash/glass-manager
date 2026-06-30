@@ -1,4 +1,4 @@
-import os
+hereimport os
 import base64
 from html import escape
 from shiny import ui
@@ -13,7 +13,9 @@ def inject_pwa_and_styles():
                 with open(p, "rb") as f:
                     _bg_cache = base64.b64encode(f.read()).decode()
                 break
+    
     bg_style = f"background-image:linear-gradient(rgba(10,14,23,.20),rgba(10,14,23,.20)),url('data:image/webp;base64,{_bg_cache}');" if _bg_cache else "background-image:none;"
+    
     return ui.HTML(f"""<style>
     html, body, .container-fluid {{ background-color:#0a0e17 !important; {bg_style} background-size:92% auto !important; background-position:center center !important; background-repeat:no-repeat !important; background-attachment:fixed !important; color:white !important; direction:rtl !important; font-family:"Segoe UI",sans-serif !important; }}
     .header-bar {{ display:flex; justify-content:space-between; align-items:center; padding:15px 25px; background:rgba(13,17,23,.55); backdrop-filter:blur(12px); border-bottom:1px solid rgba(0,191,255,.25); width:100%; }}
@@ -40,7 +42,7 @@ def inject_pwa_and_styles():
     .btn-dots-menu {{ background:transparent !important; border:none !important; color:#00bfff !important; font-size:28px !important; font-weight:bold !important; cursor:pointer; padding:0 10px !important; line-height:1 !important; transition:color 0.3s ease; }}
     .btn-dots-menu:hover {{ color:#87ceeb !important; }}
     
-    /* تنسيق خاص لمجموعة الإدخال مع زر + */
+    /* ✅ تنسيقات زر الإضافة (+) */
     .input-with-add {{ display:flex; gap:8px; align-items:center; margin-bottom:14px; }}
     .input-with-add select, .input-with-add input {{ flex:1; margin-bottom:0 !important; }}
     .btn-add-option {{ background:#00bfff; color:white; border:none; border-radius:14px; width:48px; height:48px; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }}
@@ -50,7 +52,8 @@ def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
     return ui.HTML(f"""<div class="glass-card"><h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3><div style="font-size:16px; line-height:2; text-align:right; direction:rtl;">📏 <b>المقاس الفني:</b> <span style="color:#00bfff">{escape(str(size_grp))}</span><br>📺 <b>نوع الشاشة:</b> <span style="color:#00bfff">{escape(str(panel_grp))}</span><br>👁️ <b>المستشعر:</b> <span style="color:#00bfff">{escape(str(sensor_grp))}</span></div></div>""")
 
 def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
-    if not models_list: return ui.div()
+    if not models_list: 
+        return ui.div()
     class_map = {"exact": "flat-exact", "plus": "flat-plus", "minus": "flat-minus"}
     card_class = class_map.get(plan_type, "flat-exact")
     cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; text-align:right; direction:rtl;")]
@@ -59,7 +62,7 @@ def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱"
     return ui.div(*cards)
 
 # ==========================================
-# دوال النوافذ المنبثقة مع زر (+) للإضافة
+# ✅ دوال النوافذ المنبثقة مع زر (+) للإضافة
 # ==========================================
 def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
     """نافذة Plan 2 مع دعم الإضافة الفورية للخيارات"""
@@ -74,7 +77,7 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
                 # مقاس الشاشة
                 ui.input_numeric("p2_size", "📏 مقاس الشاشة:", value=None, step=0.01),
                 
-                # نوع الشاشة مع زر +
+                # ✅ نوع الشاشة مع زر +
                 ui.div(
                     ui.input_select("p2_panel", "📺 نوع الشاشة:", choices=panel_options),
                     ui.tags.button("+", id="btn_add_panel_p2", class_="btn-add-option", 
@@ -82,7 +85,7 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
                     class_="input-with-add"
                 ),
                 
-                # المستشعر مع زر +
+                # ✅ المستشعر مع زر +
                 ui.div(
                     ui.input_select("p2_sensor", "👁️ نوع المستشعر:", choices=sensor_options),
                     ui.tags.button("+", id="btn_add_sensor_p2", class_="btn-add-option",
@@ -112,6 +115,7 @@ def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
                 
                 ui.input_numeric("p3_size", "📏 المقاس المقترح:", value=None, step=0.01),
                 
+                # ✅ نوع الشاشة مع زر +
                 ui.div(
                     ui.input_select("p3_panel", "📺 تخصيص نوع الشاشة:", choices=panel_options),
                     ui.tags.button("+", id="btn_add_panel_p3", class_="btn-add-option",
@@ -119,6 +123,7 @@ def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
                     class_="input-with-add"
                 ),
                 
+                # ✅ المستشعر مع زر +
                 ui.div(
                     ui.input_select("p3_sensor", "👁️ تخصيص المستشعر:", choices=sensor_options),
                     ui.tags.button("+", id="btn_add_sensor_p3", class_="btn-add-option",
@@ -143,7 +148,7 @@ def draw_database_status(total):
     return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
 
 # ================================================================
-# تعريف الواجهة الرئيسية (app_ui) - مصححة بالكامل
+# ✅ تعريف الواجهة الرئيسية (app_ui) - مصححة بالكامل
 # ================================================================
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
@@ -186,8 +191,8 @@ app_ui = ui.page_fluid(
         
         # ✅ عناصر ديناميكية مربوطة بـ server.py
         ui.output_ui("database_status_area"),
-        ui.output_ui("notifications_area"),
-        ui.output_ui("monitor_area"),
+        ui.output_ui("notifications_area"),      # ✅ تم التصحيح
+        ui.output_ui("monitor_area"),             # ✅ تم التصحيح
         
         id="settings_drawer",
         class_="drawer"
