@@ -123,7 +123,6 @@ main,
     background: transparent;
 }
 
-/* Remove default Shiny styling conflicts */
 .shiny-input-container {
     margin-bottom: var(--spacing-md);
 }
@@ -302,25 +301,21 @@ input::placeholder {
     transform: translateY(-2px);
 }
 
-/* Exact Match - Green */
 .flat-exact {
     background: var(--success-bg);
     border: 2px solid var(--success-color);
 }
 
-/* Plus - Blue */
 .flat-plus {
     background: var(--info-bg);
     border: 2px solid var(--info-color);
 }
 
-/* Minus - Orange */
 .flat-minus {
     background: var(--warning-bg);
     border: 2px solid var(--warning-color);
 }
 
-/* Warning - Red */
 .flat-warning-card {
     background: var(--danger-bg);
     border: 2px solid var(--danger-color);
@@ -427,6 +422,8 @@ input::placeholder {
     gap: var(--spacing-xs);
     align-items: center;
     margin-bottom: var(--spacing-md);
+    position: relative;
+    z-index: 1;
 }
 
 .input-with-add select,
@@ -448,6 +445,8 @@ input::placeholder {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    position: relative;
+    z-index: 2;
     transition: all var(--transition-fast);
 }
 
@@ -591,39 +590,28 @@ button:active {
 
 .hidden { display: none; }
 .visible { display: block; }
+
 /* =====================================================
-   FIX : Modal & Suggestions Layer
+   17. FIX: Modal & Suggestions Layer Priority
 ===================================================== */
 
 /* نافذة الاقتراحات */
-.suggestions-curtain{
-    position:absolute;
-    z-index:900;
+.suggestions-curtain {
+    position: absolute;
+    z-index: 900;
 }
 
-/* أي نافذة منبثقة في Shiny */
+/* أي نافذة منبثقة في Shiny يجب أن تكون فوق كل شيء */
 .modal,
 .modal-dialog,
 .modal-content,
 .modal-backdrop,
-.shiny-modal{
-    z-index:1000000 !important;
+.shiny-modal {
+    z-index: 1000000 !important;
 }
 
-/* عند ظهور نافذة منبثقة يتم إخفاء الاقتراحات */
+/* عند ظهور نافذة منبثقة يتم إخفاء الاقتراحات تلقائياً */
 body:has(.modal.show) .suggestions-curtain,
-body:has(.shiny-modal) .suggestions-curtain{
-    display:none !important;
-}
-
-/* زر (+) */
-.btn-add-option{
-    position:relative;
-    z-index:2;
-}
-
-/* حقول الإدخال */
-.input-with-add{
-    position:relative;
-    z-index:1;
-}
+body:has(.shiny-modal) .suggestions-curtain {
+    display: none !important;
+   }
