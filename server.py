@@ -533,9 +533,38 @@ def server(input, output, session):
             log.warning(f"Unexpected plan type: {pt}")
             return ui.div(draw_warning_card("حدث خطأ في نظام الخطط. يرجى إعادة التحميل."))
 
+    # ✅ تم التصحيح: عرض النوافذ المنبثقة بشكل صحيح
     @render.ui
     def modal_layer():
-        return None
+        m = active_modal()
+        if m == "plan_2":
+            return draw_plan_2_modal(current_phone(), custom_panels(), custom_sensors())
+        elif m == "plan_3":
+            return draw_plan_3_modal(current_phone(), custom_panels(), custom_sensors())
+        elif m == "add_panel":
+            return ui.modal(
+                ui.input_text("new_panel_name", "اسم نوع الشاشة الجديد:", placeholder="مثال: IPS LCD"),
+                ui.div(
+                    ui.input_action_button("btn_confirm_add_panel", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
+                    ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
+                    style="text-align:center; margin-top:20px;"
+                ),
+                title="➕ إضافة نوع شاشة جديد",
+                easy_close=True
+            )
+        elif m == "add_sensor":
+            return ui.modal(
+                ui.input_text("new_sensor_name", "اسم المستشعر الجديد:", placeholder="مثال: Proximity Sensor"),
+                ui.div(
+                    ui.input_action_button("btn_confirm_add_sensor", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
+                    ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
+                    style="text-align:center; margin-top:20px;"
+                ),
+                title="➕ إضافة مستشعر جديد",
+                easy_close=True
+            )
+        else:
+            return None
 
     # ===== الإعدادات الديناميكية =====
     @render.ui
