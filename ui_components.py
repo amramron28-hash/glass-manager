@@ -47,9 +47,6 @@ def inject_pwa_and_styles():
     </style>""")
 
 
-# ================================================================
-# ✅ الدوال التي يستوردها server.py (ضرورية لتشغيل التطبيق)
-# ================================================================
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
     return ui.HTML(f"""<div class="glass-card">
         <h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3>
@@ -76,10 +73,17 @@ def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
     """✅ نافذة Plan 2 مع زر (+) للإضافة"""
     panel_options = {p: p for p in existing_panels if p}
     sensor_options = {s: s for s in existing_sensors if s}
+
+    if not panel_options:
+        panel_options = {"__empty__": "لا توجد خيارات"}
+
+    if not sensor_options:
+        sensor_options = {"__empty__": "لا توجد خيارات"}
+
     return ui.div(
         ui.div(
             ui.div(
-                ui.h3(f"📋 المواصفات الفنية لـ {phone_name}", style="color:#3498db; text-align:center;"),
+                ui.h3(f"📋 المواصفات الفنية لـ {str(phone_name)}", style="color:#3498db; text-align:center;"),
                 ui.input_numeric("p2_size", "📏 مقاس الشاشة:", value=None, step=0.01),
                 ui.div(
                     ui.input_select("p2_panel", "📺 نوع الشاشة:", choices=panel_options),
@@ -107,10 +111,17 @@ def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
     """✅ نافذة Plan 3 مع زر (+) للإضافة"""
     panel_options = {p: p for p in existing_panels if p}
     sensor_options = {s: s for s in existing_sensors if s}
+
+    if not panel_options:
+        panel_options = {"__empty__": "لا توجد خيارات"}
+
+    if not sensor_options:
+        sensor_options = {"__empty__": "لا توجد خيارات"}
+
     return ui.div(
         ui.div(
             ui.div(
-                ui.h3(f"🔮 خطة الطوارئ لـ {phone_name}", style="color:#e67e22; text-align:center;"),
+                ui.h3(f"🔮 خطة الطوارئ لـ {str(phone_name)}", style="color:#e67e22; text-align:center;"),
                 ui.input_numeric("p3_size", "📏 المقاس المقترح:", value=None, step=0.01),
                 ui.div(
                     ui.input_select("p3_panel", "📺 تخصيص نوع الشاشة:", choices=panel_options),
