@@ -76,7 +76,6 @@
     --z-suggestions: 99999;
 }
 
-
 /* =====================================================
    2. Global Reset & Base Styles
 ===================================================== */
@@ -115,7 +114,6 @@ body.no-bg-image {
     background-image: linear-gradient(135deg, #0a0e17 0%, #1a2332 50%, #0a0e17 100%);
 }
 
-
 /* =====================================================
    3. Shiny Framework Overrides
 ===================================================== */
@@ -129,7 +127,6 @@ main,
 .shiny-input-container {
     margin-bottom: var(--spacing-md);
 }
-
 
 /* =====================================================
    4. Header Bar
@@ -189,7 +186,6 @@ main,
     transform: scale(1.1);
 }
 
-
 /* =====================================================
    5. Search Box
 ===================================================== */
@@ -227,7 +223,6 @@ input::placeholder {
     color: rgba(255, 255, 255, 0.5);
 }
 
-
 /* =====================================================
    6. Suggestions Curtain
 ===================================================== */
@@ -264,7 +259,6 @@ input::placeholder {
     background: rgba(0, 191, 255, 0.18);
 }
 
-
 /* =====================================================
    7. Glass Cards
 ===================================================== */
@@ -285,7 +279,6 @@ input::placeholder {
     text-align: center;
     margin-bottom: var(--spacing-md);
 }
-
 
 /* =====================================================
    8. Result Cards (Flat Design)
@@ -343,7 +336,6 @@ input::placeholder {
     text-align: left;
 }
 
-
 /* =====================================================
    9. Drawer (Settings Panel)
 ===================================================== */
@@ -391,7 +383,6 @@ input::placeholder {
     clear: both;
 }
 
-
 /* =====================================================
    10. Metric Boxes (Stats & Status)
 ===================================================== */
@@ -409,7 +400,6 @@ input::placeholder {
 .metric-box:hover {
     background: rgba(255, 255, 255, 0.08);
 }
-
 
 /* =====================================================
    11. Modal Backdrop
@@ -429,9 +419,50 @@ input::placeholder {
     -webkit-backdrop-filter: blur(5px);
 }
 
+/* =====================================================
+   12. Add Button (+) for Plan 2 & 3
+===================================================== */
+.input-with-add {
+    display: flex;
+    gap: var(--spacing-xs);
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.input-with-add select,
+.input-with-add input {
+    flex: 1;
+    margin-bottom: 0 !important;
+}
+
+.btn-add-option {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.btn-add-option:hover {
+    background: var(--primary-hover);
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+}
+
+.btn-add-option:active {
+    transform: scale(0.95);
+}
 
 /* =====================================================
-   12. Buttons
+   13. Buttons
 ===================================================== */
 button,
 .btn-neon,
@@ -454,9 +485,8 @@ button:active {
     transform: translateY(0);
 }
 
-
 /* =====================================================
-   13. Responsive Design (Mobile)
+   14. Responsive Design (Mobile)
 ===================================================== */
 @media (max-width: 768px) {
     :root {
@@ -512,9 +542,8 @@ button:active {
     }
 }
 
-
 /* =====================================================
-   14. Animations
+   15. Animations
 ===================================================== */
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -543,9 +572,8 @@ button:active {
     animation: pulse 2s infinite;
 }
 
-
 /* =====================================================
-   15. Utility Classes
+   16. Utility Classes
 ===================================================== */
 .text-center { text-align: center; }
 .text-right { text-align: right; }
