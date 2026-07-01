@@ -591,3 +591,39 @@ button:active {
 
 .hidden { display: none; }
 .visible { display: block; }
+/* =====================================================
+   FIX : Modal & Suggestions Layer
+===================================================== */
+
+/* نافذة الاقتراحات */
+.suggestions-curtain{
+    position:absolute;
+    z-index:900;
+}
+
+/* أي نافذة منبثقة في Shiny */
+.modal,
+.modal-dialog,
+.modal-content,
+.modal-backdrop,
+.shiny-modal{
+    z-index:1000000 !important;
+}
+
+/* عند ظهور نافذة منبثقة يتم إخفاء الاقتراحات */
+body:has(.modal.show) .suggestions-curtain,
+body:has(.shiny-modal) .suggestions-curtain{
+    display:none !important;
+}
+
+/* زر (+) */
+.btn-add-option{
+    position:relative;
+    z-index:2;
+}
+
+/* حقول الإدخال */
+.input-with-add{
+    position:relative;
+    z-index:1;
+}
