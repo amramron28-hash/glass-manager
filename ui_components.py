@@ -47,6 +47,9 @@ def inject_pwa_and_styles():
     </style>""")
 
 
+# ================================================================
+# ✅ الدوال التي يستوردها server.py (ضرورية لتشغيل التطبيق)
+# ================================================================
 def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
     return ui.HTML(f"""<div class="glass-card">
         <h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3>
@@ -192,9 +195,9 @@ app_ui = ui.page_fluid(
         class_="drawer"
     ),
     
-    # مربع البحث
+    # مربع البحث (تم إصلاح خطأ label بإضافة نص فارغ "")
     ui.div(
-        ui.input_text("search_query", placeholder="🔍 ابحث عن موديل الهاتف..."),
+        ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."),
         ui.output_ui("suggestions_curtain"),
         class_="search-box"
     ),
