@@ -7,7 +7,6 @@
    1. CSS Variables (Design System)
 ===================================================== */
 :root {
-    /* Colors */
     --primary-color: #00bfff;
     --primary-hover: #87ceeb;
     --secondary-color: #87ceeb;
@@ -20,8 +19,6 @@
     --info-color: #3498db;
     --info-bg: linear-gradient(135deg, #0b1a33, #060e1c);
     --foundation-color: #9b59b6;
-    
-    /* Backgrounds */
     --bg-dark: #0a0e17;
     --bg-card: rgba(255, 255, 255, 0.06);
     --bg-input: rgba(17, 24, 39, 0.90);
@@ -29,61 +26,35 @@
     --bg-suggestions: rgba(22, 27, 34, 0.96);
     --bg-header: rgba(13, 17, 23, 0.55);
     --bg-metric: rgba(255, 255, 255, 0.05);
-    
-    /* Borders */
     --border-primary: rgba(0, 191, 255, 0.35);
     --border-light: rgba(0, 191, 255, 0.2);
     --border-subtle: rgba(255, 255, 255, 0.08);
-    
-    /* Typography */
     --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     --font-size-base: 16px;
     --font-size-lg: 20px;
     --font-size-xl: 28px;
-    
-    /* Spacing */
     --spacing-xs: 8px;
     --spacing-sm: 12px;
     --spacing-md: 16px;
     --spacing-lg: 24px;
     --spacing-xl: 32px;
-    
-    /* Border Radius */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 20px;
-    
-    /* Shadows */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
-    
-    /* Transitions */
     --transition-fast: 0.2s ease;
     --transition-normal: 0.3s ease;
     --transition-slow: 0.4s ease-in-out;
-    
-    /* Z-Index Layers */
-    --z-base: 1;
-    --z-dropdown: 1000;
     --z-sticky: 1020;
-    --z-fixed: 1030;
-    --z-modal-backdrop: 1040;
-    --z-modal: 1050;
-    --z-popover: 1060;
-    --z-tooltip: 1070;
     --z-drawer: 200000;
-    --z-suggestions: 99999;
 }
 
 /* =====================================================
    2. Global Reset & Base Styles
 ===================================================== */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body, .container-fluid {
     background-color: var(--bg-dark);
@@ -95,481 +66,189 @@ html, body, .container-fluid {
     min-height: 100vh;
 }
 
-/* Background Image with Fallback */
 body {
-    background-image: 
-        linear-gradient(
-            rgba(10, 14, 23, 0.25),
-            rgba(10, 14, 23, 0.25)
-        ),
-        url('/phone_image.webp');
+    background-image: linear-gradient(rgba(10,14,23,0.25),rgba(10,14,23,0.25)), url('/phone_image.webp');
     background-size: 92% auto;
     background-position: center center;
     background-repeat: no-repeat;
     background-attachment: fixed;
 }
 
-/* Fallback when image is missing */
 body.no-bg-image {
     background-image: linear-gradient(135deg, #0a0e17 0%, #1a2332 50%, #0a0e17 100%);
 }
 
 /* =====================================================
-   3. Shiny Framework Overrides
+   3. Shiny Overrides
 ===================================================== */
-.shiny-bound-output,
-main,
-.page-content {
-    background: transparent;
-}
-
-.shiny-input-container {
-    margin-bottom: var(--spacing-md);
-}
+.shiny-bound-output, main, .page-content { background: transparent; }
+.shiny-input-container { margin-bottom: var(--spacing-md); }
 
 /* =====================================================
    4. Header Bar
 ===================================================== */
 .header-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: flex; justify-content: space-between; align-items: center;
     padding: var(--spacing-md) var(--spacing-lg);
     background: var(--bg-header);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-primary);
-    width: 100%;
-    position: sticky;
-    top: 0;
-    z-index: var(--z-sticky);
+    width: 100%; position: sticky; top: 0; z-index: var(--z-sticky);
 }
-
-.brand-neon-title {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    text-align: right;
-    flex-grow: 1;
-}
-
-.brand-neon-main {
-    color: var(--primary-color);
-    font-size: var(--font-size-xl);
-    font-weight: 900;
-    letter-spacing: 0.5px;
-    text-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
-}
-
-.brand-neon-sub {
-    color: var(--secondary-color);
-    font-size: var(--font-size-base);
-    font-weight: 700;
-    opacity: 0.9;
-}
-
-.btn-dots-menu {
-    background: transparent;
-    border: none;
-    color: var(--primary-color);
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    padding: 0 var(--spacing-sm);
-    line-height: 1;
-    transition: color var(--transition-normal);
-}
-
-.btn-dots-menu:hover {
-    color: var(--primary-hover);
-    transform: scale(1.1);
-}
+.brand-neon-title { display: flex; flex-direction: column; gap: 4px; text-align: right; flex-grow: 1; }
+.brand-neon-main { color: var(--primary-color); font-size: var(--font-size-xl); font-weight: 900; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(0,191,255,0.5); }
+.brand-neon-sub { color: var(--secondary-color); font-size: var(--font-size-base); font-weight: 700; opacity: 0.9; }
+.btn-dots-menu { background: transparent; border: none; color: var(--primary-color); font-size: 28px; font-weight: bold; cursor: pointer; padding: 0 var(--spacing-sm); line-height: 1; transition: color var(--transition-normal); }
+.btn-dots-menu:hover { color: var(--primary-hover); transform: scale(1.1); }
 
 /* =====================================================
    5. Search Box
 ===================================================== */
-.search-box {
-    position: relative;
-    max-width: 500px;
-    margin: 35px auto;
-    padding: 0 var(--spacing-md);
-}
-
-input[type="text"],
-input[type="number"],
-select {
-    width: 100%;
-    background: var(--bg-input);
-    color: white;
-    border: 1px solid var(--primary-color);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm);
-    direction: ltr;
-    text-align: left;
+.search-box { position: relative; max-width: 500px; margin: 35px auto; padding: 0 var(--spacing-md); }
+input[type="text"], input[type="number"], select {
+    width: 100%; background: var(--bg-input); color: white;
+    border: 1px solid var(--primary-color); border-radius: var(--radius-md);
+    padding: var(--spacing-sm); direction: ltr; text-align: left;
     font-size: var(--font-size-base);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
-
-input[type="text"]:focus,
-input[type="number"]:focus,
-select:focus {
-    outline: none;
-    border-color: var(--primary-hover);
-    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.2);
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
+    outline: none; border-color: var(--primary-hover); box-shadow: 0 0 0 3px rgba(0,191,255,0.2);
 }
-
-input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-}
+input::placeholder { color: rgba(255,255,255,0.5); }
 
 /* =====================================================
    6. Suggestions Curtain
 ===================================================== */
 .suggestions-curtain {
-    position: absolute;
-    top: 58px;
-    right: var(--spacing-md);
-    left: var(--spacing-md);
-    background: var(--bg-suggestions);
-    border: 1px solid var(--primary-color);
-    border-radius: var(--radius-md);
-    max-height: 240px;
-    overflow-y: auto;
-    z-index: var(--z-suggestions);
+    position: absolute; top: 58px; right: var(--spacing-md); left: var(--spacing-md);
+    background: var(--bg-suggestions); border: 1px solid var(--primary-color);
+    border-radius: var(--radius-md); max-height: 240px; overflow-y: auto;
     box-shadow: var(--shadow-lg);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
 }
-
 .suggestion-row {
-    padding: var(--spacing-sm);
-    color: white;
-    cursor: pointer;
-    text-align: left;
-    border-bottom: 1px solid var(--border-subtle);
-    transition: background var(--transition-fast);
+    padding: var(--spacing-sm); color: white; cursor: pointer; text-align: left;
+    border-bottom: 1px solid var(--border-subtle); transition: background var(--transition-fast);
 }
-
-.suggestion-row:last-child {
-    border-bottom: none;
-}
-
-.suggestion-row:hover {
-    background: rgba(0, 191, 255, 0.18);
-}
+.suggestion-row:last-child { border-bottom: none; }
+.suggestion-row:hover { background: rgba(0,191,255,0.18); }
 
 /* =====================================================
    7. Glass Cards
 ===================================================== */
 .glass-card {
-    background: var(--bg-card);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
-    margin: var(--spacing-lg) auto;
-    max-width: 500px;
+    background: var(--bg-card); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--border-primary); border-radius: var(--radius-lg);
+    padding: var(--spacing-lg); margin: var(--spacing-lg) auto; max-width: 500px;
     box-shadow: var(--shadow-md);
 }
-
-.glass-card h3 {
-    color: var(--primary-color);
-    text-align: center;
-    margin-bottom: var(--spacing-md);
-}
+.glass-card h3 { color: var(--primary-color); text-align: center; margin-bottom: var(--spacing-md); }
 
 /* =====================================================
-   8. Result Cards (Flat Design)
+   8. Result Cards
 ===================================================== */
-.ammar-flat-card,
-.flat-warning-card {
-    padding: 14px 18px;
-    margin-bottom: var(--spacing-sm);
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    direction: ltr;
-    width: 100%;
-    box-sizing: border-box;
-    box-shadow: var(--shadow-sm);
-    transition: transform var(--transition-fast);
+.ammar-flat-card, .flat-warning-card {
+    padding: 14px 18px; margin-bottom: var(--spacing-sm); border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: space-between;
+    direction: ltr; width: 100%; box-sizing: border-box;
+    box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
 }
-
-.ammar-flat-card:hover {
-    transform: translateY(-2px);
-}
-
-.flat-exact {
-    background: var(--success-bg);
-    border: 2px solid var(--success-color);
-}
-
-.flat-plus {
-    background: var(--info-bg);
-    border: 2px solid var(--info-color);
-}
-
-.flat-minus {
-    background: var(--warning-bg);
-    border: 2px solid var(--warning-color);
-}
-
-.flat-warning-card {
-    background: var(--danger-bg);
-    border: 2px solid var(--danger-color);
-    justify-content: center;
-    text-align: center;
-    direction: rtl;
-}
-
-.flat-phone-text {
-    color: white;
-    font-size: var(--font-size-lg);
-    font-weight: 800;
-    text-align: left;
-}
+.ammar-flat-card:hover { transform: translateY(-2px); }
+.flat-exact { background: var(--success-bg); border: 2px solid var(--success-color); }
+.flat-plus { background: var(--info-bg); border: 2px solid var(--info-color); }
+.flat-minus { background: var(--warning-bg); border: 2px solid var(--warning-color); }
+.flat-warning-card { background: var(--danger-bg); border: 2px solid var(--danger-color); justify-content: center; text-align: center; direction: rtl; }
+.flat-phone-text { color: white; font-size: var(--font-size-lg); font-weight: 800; text-align: left; }
 
 /* =====================================================
-   9. Drawer (Settings Panel)
+   9. Drawer
 ===================================================== */
 .drawer {
-    position: fixed;
-    top: 0;
-    right: -320px;
-    width: 290px;
-    height: 100%;
-    background: var(--bg-drawer);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-left: 2px solid var(--primary-color);
-    transition: right var(--transition-slow);
-    z-index: var(--z-drawer);
-    padding: var(--spacing-lg);
-    box-shadow: var(--shadow-lg);
-    overflow-y: auto;
+    position: fixed; top: 0; right: -320px; width: 290px; height: 100%;
+    background: var(--bg-drawer); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-left: 2px solid var(--primary-color); transition: right var(--transition-slow);
+    z-index: var(--z-drawer); padding: var(--spacing-lg);
+    box-shadow: var(--shadow-lg); overflow-y: auto;
 }
-
-.drawer.open {
-    right: 0;
-}
-
-.drawer-close-btn {
-    background: transparent;
-    border: none;
-    color: var(--danger-color);
-    font-size: 24px;
-    cursor: pointer;
-    float: left;
-    font-weight: bold;
-    transition: transform var(--transition-fast);
-}
-
-.drawer-close-btn:hover {
-    transform: rotate(90deg);
-}
-
-.drawer h3 {
-    color: var(--primary-color);
-    text-align: center;
-    margin-bottom: var(--spacing-lg);
-    font-weight: 800;
-    clear: both;
-}
+.drawer.open { right: 0; }
+.drawer-close-btn { background: transparent; border: none; color: var(--danger-color); font-size: 24px; cursor: pointer; float: left; font-weight: bold; transition: transform var(--transition-fast); }
+.drawer-close-btn:hover { transform: rotate(90deg); }
+.drawer h3 { color: var(--primary-color); text-align: center; margin-bottom: var(--spacing-lg); font-weight: 800; clear: both; }
 
 /* =====================================================
-   10. Metric Boxes (Stats & Status)
+   10. Metric Boxes
 ===================================================== */
 .metric-box {
-    background: var(--bg-metric);
-    padding: var(--spacing-sm);
-    border-radius: var(--radius-sm);
-    margin-bottom: var(--spacing-sm);
-    text-align: center;
-    border: 1px solid var(--border-light);
-    font-weight: bold;
+    background: var(--bg-metric); padding: var(--spacing-sm); border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-sm); text-align: center;
+    border: 1px solid var(--border-light); font-weight: bold;
     transition: background var(--transition-fast);
 }
-
-.metric-box:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
+.metric-box:hover { background: rgba(255,255,255,0.08); }
 
 /* =====================================================
    11. Modal Backdrop
 ===================================================== */
 .custom-modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.75);
-    z-index: var(--z-modal-backdrop);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center;
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
 }
 
 /* =====================================================
-   12. Add Button (+) for Plan 2 & 3
+   12. Add Button (+)
 ===================================================== */
-.input-with-add {
-    display: flex;
-    gap: var(--spacing-xs);
-    align-items: center;
-    margin-bottom: var(--spacing-md);
-    position: relative;
-    z-index: 1;
-}
-
-.input-with-add select,
-.input-with-add input {
-    flex: 1;
-    margin-bottom: 0 !important;
-}
-
+.input-with-add { display: flex; gap: var(--spacing-xs); align-items: center; margin-bottom: var(--spacing-md); position: relative; z-index: 1; }
+.input-with-add select, .input-with-add input { flex: 1; margin-bottom: 0 !important; }
 .btn-add-option {
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: var(--radius-md);
-    width: 48px;
-    height: 48px;
-    font-size: 24px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    position: relative;
-    z-index: 2;
-    transition: all var(--transition-fast);
+    background: var(--primary-color); color: white; border: none; border-radius: var(--radius-md);
+    width: 48px; height: 48px; font-size: 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    position: relative; z-index: 2; transition: all var(--transition-fast);
 }
-
-.btn-add-option:hover {
-    background: var(--primary-hover);
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
-}
-
-.btn-add-option:active {
-    transform: scale(0.95);
-}
+.btn-add-option:hover { background: var(--primary-hover); transform: scale(1.1); box-shadow: 0 0 10px rgba(0,191,255,0.5); }
+.btn-add-option:active { transform: scale(0.95); }
 
 /* =====================================================
    13. Buttons
 ===================================================== */
-button,
-.btn-neon,
-input[type="button"] {
-    cursor: pointer;
-    border: none;
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-lg);
-    font-weight: bold;
+button, .btn-neon, input[type="button"] {
+    cursor: pointer; border: none; border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg); font-weight: bold;
     transition: all var(--transition-fast);
 }
-
-button:hover,
-.btn-neon:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-button:active {
-    transform: translateY(0);
-}
+button:hover, .btn-neon:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+button:active { transform: translateY(0); }
 
 /* =====================================================
-   14. Responsive Design (Mobile)
+   14. Responsive
 ===================================================== */
 @media (max-width: 768px) {
-    :root {
-        --font-size-xl: 22px;
-        --font-size-lg: 18px;
-    }
-    
-    .header-bar {
-        padding: var(--spacing-sm);
-    }
-    
-    .brand-neon-main {
-        font-size: var(--font-size-xl);
-    }
-    
-    .search-box {
-        margin: 20px auto;
-        padding: 0 var(--spacing-sm);
-    }
-    
-    .glass-card {
-        margin: var(--spacing-md) auto;
-        padding: var(--spacing-md);
-    }
-    
-    .drawer {
-        width: 260px;
-        right: -280px;
-    }
-    
-    .ammar-flat-card,
-    .flat-warning-card {
-        padding: var(--spacing-sm);
-    }
-    
-    .flat-phone-text {
-        font-size: var(--font-size-base);
-    }
+    :root { --font-size-xl: 22px; --font-size-lg: 18px; }
+    .header-bar { padding: var(--spacing-sm); }
+    .brand-neon-main { font-size: var(--font-size-xl); }
+    .search-box { margin: 20px auto; padding: 0 var(--spacing-sm); }
+    .glass-card { margin: var(--spacing-md) auto; padding: var(--spacing-md); }
+    .drawer { width: 260px; right: -280px; }
+    .ammar-flat-card, .flat-warning-card { padding: var(--spacing-sm); }
+    .flat-phone-text { font-size: var(--font-size-base); }
 }
-
 @media (max-width: 480px) {
-    .brand-neon-main {
-        font-size: 18px;
-    }
-    
-    .brand-neon-sub {
-        font-size: 12px;
-    }
-    
-    .drawer {
-        width: 100%;
-        right: -100%;
-    }
+    .brand-neon-main { font-size: 18px; }
+    .brand-neon-sub { font-size: 12px; }
+    .drawer { width: 100%; right: -100%; }
 }
 
 /* =====================================================
    15. Animations
 ===================================================== */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideInRight {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-}
-
-.fade-in {
-    animation: fadeIn var(--transition-normal);
-}
-
-.slide-in-right {
-    animation: slideInRight var(--transition-slow);
-}
-
-.pulse {
-    animation: pulse 2s infinite;
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.fade-in { animation: fadeIn var(--transition-normal); }
+.slide-in-right { animation: slideInRight var(--transition-slow); }
+.pulse { animation: pulse 2s infinite; }
 
 /* =====================================================
    16. Utility Classes
@@ -577,41 +256,29 @@ button:active {
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 .text-left { text-align: left; }
-
 .mt-1 { margin-top: var(--spacing-xs); }
 .mt-2 { margin-top: var(--spacing-sm); }
 .mt-3 { margin-top: var(--spacing-md); }
 .mt-4 { margin-top: var(--spacing-lg); }
-
 .mb-1 { margin-bottom: var(--spacing-xs); }
 .mb-2 { margin-bottom: var(--spacing-sm); }
 .mb-3 { margin-bottom: var(--spacing-md); }
 .mb-4 { margin-bottom: var(--spacing-lg); }
-
 .hidden { display: none; }
 .visible { display: block; }
 
 /* =====================================================
-   17. FIX: Modal & Suggestions Layer Priority
+   17. FIX: Z-INDEX Layer Priority
 ===================================================== */
-
-/* نافذة الاقتراحات */
 .suggestions-curtain {
-    position: absolute;
-    z-index: 900;
+    z-index: 1000 !important;
 }
-
-/* أي نافذة منبثقة في Shiny يجب أن تكون فوق كل شيء */
 .modal,
 .modal-dialog,
 .modal-content,
-.modal-backdrop,
-.shiny-modal {
-    z-index: 1000000 !important;
+.custom-modal-backdrop {
+    z-index: 300000 !important;
 }
-
-/* عند ظهور نافذة منبثقة يتم إخفاء الاقتراحات تلقائياً */
-body:has(.modal.show) .suggestions-curtain,
-body:has(.shiny-modal) .suggestions-curtain {
-    display: none !important;
+.modal-backdrop {
+    z-index: 299999 !important;
    }
