@@ -135,7 +135,6 @@ def server(input, output, session):
         try:
             stats = get_cached_stats()
             size = stats.get("phones", 0) if isinstance(stats, dict) else 0
-
             if size == 0:
                 autocomplete_index.set(None)
                 models_index.set([])
@@ -143,7 +142,6 @@ def server(input, output, session):
                 custom_sensors.set([])
                 _last_db_size.set(0)
                 return
-
             if _last_db_size() == size and autocomplete_index() is not None:
                 if show_curtain():
                     q = current_phone()
@@ -151,7 +149,6 @@ def server(input, output, session):
                     if q and t:
                         suggestions_list.set(t.search_prefix(q, 10))
                 return
-
             _last_db_size.set(size)
             refresh()
             new_idx = load_models_index()
@@ -162,7 +159,6 @@ def server(input, output, session):
                 p, s = extract_panels_sensors(database_data())
                 custom_panels.set(p)
                 custom_sensors.set(s)
-
             if show_curtain():
                 q = current_phone()
                 t = autocomplete_index()
@@ -211,8 +207,7 @@ def server(input, output, session):
             return None
         return ui.div(
             *[ui.div(
-                i,
-                class_="suggestion-row",
+                i, class_="suggestion-row",
                 onclick=f"Shiny.setInputValue('search_query', {json.dumps(i)}, {{priority:'event'}}); Shiny.setInputValue('selected_model_trigger', Math.random(), {{priority:'event'}});"
             ) for i in suggestions_list()],
             class_="suggestions-curtain"
@@ -233,12 +228,10 @@ def server(input, output, session):
                 log.warning(f"Process plan {pt}: Missing required fields")
                 plan_results.set(None)
                 return
-
             start_time = time.time()
             r = compute_plan_matches(str(sz), pn, sn, database_data(), fast_index_calc())
             elapsed = time.time() - start_time
             log.info(f"Plan {pt} completed in {elapsed:.2f}s")
-
             for k, v in zip(["size", "panel", "sensor"], [str(sz), pn, sn]):
                 plan_inputs[k].set(v)
             current_plan_type.set(pt)
@@ -444,7 +437,7 @@ def server(input, output, session):
 
     @render.ui
     def results_area():
-        """✅ منطق تسلسل الخطط المعزول بـ if/elif/else بدون أي تداخل"""
+        """✅ منطق تسلسل الخطط المعزول: Plan 2 فقط → Plan 3 فقط → تأسيس فقط"""
         ph = current_phone().strip()
         if not ph:
             return None
@@ -461,17 +454,18 @@ def server(input, output, session):
                 return ui.div(ui.HTML(wf))
             return ui.div(
                 draw_warning_card(f"الموديل {ph} غير موجود في قاعدة البيانات."),
-                ui.div(
-                    ui.input_action_button(
-                        "trigger_plan_2",
-                        "🔵 بدء المطابقة الفنية (Plan 2)",
-                        style="width:100%; background:#00bfff; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-bottom:10px;"
-                    ),
-                    ui.input_action_button(
-                        "trigger_plan_3",
-                        "🟠 بدء خطة الطوارئ (Plan 3)",
-                        style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold;"
-                    ),
+                ui.input_action_button(
+                    "trigger_plan_2",
+                    "🔵 بدء المطابقة الفنية (Plan 2)",
+                    style="""
+                        width:100%;
+                        background:#00bfff;
+                        color:white;
+                        padding:14px;
+                        border:none;
+                        border-radius:12px;
+                        font-weight:bold;
+                    """
                 )
             )
 
@@ -497,11 +491,22 @@ def server(input, output, session):
                 )
             else:
                 return ui.div(
-                    draw_warning_card("لم يتم العثور على أي تطابق في المجموعات الحالية بالمواصفات المُدخلة."),
+                    draw_warning_card(
+                        "لم يتم العثور على أي تطابق في المجموعات الحالية بالمواصفات المُدخلة."
+                    ),
                     ui.input_action_button(
                         "trigger_plan_3",
                         "🟠 انتقل لخطة الطوارئ (Plan 3)",
-                        style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:10px;"
+                        style="""
+                            width:100%;
+                            background:#e67e22;
+                            color:white;
+                            padding:14px;
+                            border:none;
+                            border-radius:12px;
+                            font-weight:bold;
+                            margin-top:10px;
+                        """
                     )
                 )
 
@@ -539,7 +544,6 @@ def server(input, output, session):
             log.warning(f"Unexpected plan type: {pt}")
             return ui.div(draw_warning_card("حدث خطأ في نظام الخطط. يرجى إعادة التحميل."))
 
-    # ✅ عرض النوافذ المنبثقة بشكل صحيح
     @render.ui
     def modal_layer():
         m = active_modal()
