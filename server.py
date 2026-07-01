@@ -237,7 +237,7 @@ def server(input, output, session):
             current_plan_type.set(pt)
             plan_results.set(None if is_empty_result(r) else r)
         except Exception as e:
-            log.error(f"Process plan error: {e}")
+            log.error(f"Process plan error: {e}", exc_info=True)
             plan_results.set(None)
 
     @reactive.effect
@@ -272,12 +272,24 @@ def server(input, output, session):
             pn = input.p2_panel()
             sn = input.p2_sensor()
             log.info(f"Plan 2 inputs: size={sz}, panel={pn}, sensor={sn}")
+
             if sz is None or pn in (None, "", "__empty__") or sn in (None, "", "__empty__"):
                 log.warning("Plan 2: Missing or empty required fields")
                 return
+
+            # ✅ تشخيص: طباعة حجم البيانات والفهرس
+            db = database_data()
+            idx = fast_index_calc()
+            log.info(f"[DIAG P2] DB type={type(db)}, DB keys={len(db) if isinstance(db, dict) else 'N/A'}")
+            log.info(f"[DIAG P2] Index type={type(idx)}, Index size={len(idx) if hasattr(idx, '__len__') else 'N/A'}")
+
+            if isinstance(db, dict) and len(db) > 0:
+                first_key = list(db.keys())[0]
+                log.info(f"[DIAG P2] Sample DB key='{first_key}', value_type={type(db[first_key])}")
+
             process_plan(sz, pn, sn, "plan_2")
         except Exception as e:
-            log.error(f"Run Plan 2 error: {e}")
+            log.error(f"Run Plan 2 error: {e}", exc_info=True)
 
     @reactive.effect
     @reactive.event(input.p3_search)
@@ -289,12 +301,24 @@ def server(input, output, session):
             pn = input.p3_panel()
             sn = input.p3_sensor()
             log.info(f"Plan 3 inputs: size={sz}, panel={pn}, sensor={sn}")
+
             if sz is None or pn in (None, "", "__empty__") or sn in (None, "", "__empty__"):
                 log.warning("Plan 3: Missing or empty required fields")
                 return
+
+            # ✅ تشخيص: طباعة حجم البيانات والفهرس
+            db = database_data()
+            idx = fast_index_calc()
+            log.info(f"[DIAG P3] DB type={type(db)}, DB keys={len(db) if isinstance(db, dict) else 'N/A'}")
+            log.info(f"[DIAG P3] Index type={type(idx)}, Index size={len(idx) if hasattr(idx, '__len__') else 'N/A'}")
+
+            if isinstance(db, dict) and len(db) > 0:
+                first_key = list(db.keys())[0]
+                log.info(f"[DIAG P3] Sample DB key='{first_key}', value_type={type(db[first_key])}")
+
             process_plan(sz, pn, sn, "plan_3")
         except Exception as e:
-            log.error(f"Run Plan 3 error: {e}")
+            log.error(f"Run Plan 3 error: {e}", exc_info=True)
 
     # ===== Save & Reset =====
     def reset_ui():
