@@ -233,12 +233,12 @@ def server(input, output, session):
                 log.warning(f"Process plan {pt}: Missing required fields")
                 plan_results.set(None)
                 return
-            
+
             start_time = time.time()
             r = compute_plan_matches(str(sz), pn, sn, database_data(), fast_index_calc())
             elapsed = time.time() - start_time
             log.info(f"Plan {pt} completed in {elapsed:.2f}s")
-            
+
             for k, v in zip(["size", "panel", "sensor"], [str(sz), pn, sn]):
                 plan_inputs[k].set(v)
             current_plan_type.set(pt)
@@ -252,7 +252,6 @@ def server(input, output, session):
     def open_plan_2():
         log.info("Opening Plan 2 modal")
         active_modal.set("plan_2")
-        # ✅ مهم جداً: إعادة تعيين الحالة
         current_plan_type.set("plan_2")
         plan_results.set(None)
 
@@ -261,10 +260,8 @@ def server(input, output, session):
     def open_plan_3():
         log.info("Opening Plan 3 modal")
         active_modal.set("plan_3")
-        # ✅ مهم جداً: إعادة تعيين الحالة
         current_plan_type.set("plan_3")
         plan_results.set(None)
-        # تعبئة plan_inputs بقيم افتراضية
         if not plan_inputs["size"]():
             plan_inputs["size"].set(6.5)
         if not plan_inputs["panel"]():
@@ -281,13 +278,10 @@ def server(input, output, session):
             sz = input.p2_size()
             pn = input.p2_panel()
             sn = input.p2_sensor()
-            
             log.info(f"Plan 2 inputs: size={sz}, panel={pn}, sensor={sn}")
-            
             if not sz or not pn or not sn:
                 log.warning("Plan 2: Missing required fields")
                 return
-            
             process_plan(sz, pn, sn, "plan_2")
         except Exception as e:
             log.error(f"Run Plan 2 error: {e}")
@@ -301,13 +295,10 @@ def server(input, output, session):
             sz = input.p3_size()
             pn = input.p3_panel()
             sn = input.p3_sensor()
-            
             log.info(f"Plan 3 inputs: size={sz}, panel={pn}, sensor={sn}")
-            
             if not sz or not pn or not sn:
                 log.warning("Plan 3: Missing required fields")
                 return
-            
             process_plan(sz, pn, sn, "plan_3")
         except Exception as e:
             log.error(f"Run Plan 3 error: {e}")
@@ -447,7 +438,7 @@ def server(input, output, session):
 
     @render.ui
     def results_area():
-        """✅ منطق تسلسل الخطط المعزول بـ if/elif/else"""
+        """✅ منطق تسلسل الخطط المعزول بـ if/elif/else بدون أي تداخل"""
         ph = current_phone().strip()
         if not ph:
             return None
@@ -455,7 +446,7 @@ def server(input, output, session):
         res = plan_results()
         pt = current_plan_type()
 
-        log.info(f"results_area: phone={ph}, plan_type={pt}, has_results={isinstance(res, dict)}")
+        log.info(f"results_area: phone='{ph}', plan_type='{pt}', has_results={isinstance(res, dict)}")
 
         # 🔵 الخطة 1: التطابق التلقائي المباشر
         if pt is None:
@@ -481,7 +472,7 @@ def server(input, output, session):
         # 🟢 الخطة 2: التكامل اليدوي والمجموعات
         elif pt == "plan_2":
             log.info("Rendering Plan 2 results")
-            if isinstance(res, dict):
+            if isinstance(res, dict) and not is_empty_result(res):
                 return ui.div(
                     draw_technical_coords(
                         plan_inputs["size"](),
@@ -505,18 +496,13 @@ def server(input, output, session):
                         "trigger_plan_3",
                         "🟠 انتقل لخطة الطوارئ (Plan 3)",
                         style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:10px;"
-                    ),
-                    ui.input_action_button(
-                        "trigger_plan_2",
-                        "🔵 إعادة المحاولة بمواصفات مختلفة",
-                        style="width:100%; background:#00bfff; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:10px;"
                     )
                 )
 
         # 🟠 الخطة 3: التأسيس والإنشاء (خطة الطوارئ)
         elif pt == "plan_3":
             log.info("Rendering Plan 3 results")
-            if isinstance(res, dict):
+            if isinstance(res, dict) and not is_empty_result(res):
                 return ui.div(
                     draw_technical_coords(
                         plan_inputs["size"](),
@@ -545,7 +531,7 @@ def server(input, output, session):
 
         else:
             log.warning(f"Unexpected plan type: {pt}")
-            return None
+            return ui.div(draw_warning_card("حدث خطأ في نظام الخطط. يرجى إعادة التحميل."))
 
     @render.ui
     def modal_layer():
