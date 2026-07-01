@@ -279,8 +279,8 @@ def server(input, output, session):
             pn = input.p2_panel()
             sn = input.p2_sensor()
             log.info(f"Plan 2 inputs: size={sz}, panel={pn}, sensor={sn}")
-            if not sz or not pn or not sn:
-                log.warning("Plan 2: Missing required fields")
+            if sz is None or pn in (None, "", "__empty__") or sn in (None, "", "__empty__"):
+                log.warning("Plan 2: Missing or empty required fields")
                 return
             process_plan(sz, pn, sn, "plan_2")
         except Exception as e:
@@ -296,8 +296,8 @@ def server(input, output, session):
             pn = input.p3_panel()
             sn = input.p3_sensor()
             log.info(f"Plan 3 inputs: size={sz}, panel={pn}, sensor={sn}")
-            if not sz or not pn or not sn:
-                log.warning("Plan 3: Missing required fields")
+            if sz is None or pn in (None, "", "__empty__") or sn in (None, "", "__empty__"):
+                log.warning("Plan 3: Missing or empty required fields")
                 return
             process_plan(sz, pn, sn, "plan_3")
         except Exception as e:
@@ -355,6 +355,8 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.show_add_panel)
     def handle_show_add_panel():
+        show_curtain.set(False)
+        suggestions_list.set([])
         m = ui.modal(
             ui.input_text("new_panel_name", "اسم نوع الشاشة الجديد:", placeholder="مثال: IPS LCD"),
             ui.div(
@@ -370,6 +372,8 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.show_add_sensor)
     def handle_show_add_sensor():
+        show_curtain.set(False)
+        suggestions_list.set([])
         m = ui.modal(
             ui.input_text("new_sensor_name", "اسم المستشعر الجديد:", placeholder="مثال: Proximity Sensor"),
             ui.div(
@@ -391,6 +395,7 @@ def server(input, output, session):
                 current = custom_panels()
                 if new_value not in current:
                     custom_panels.set(current + [new_value])
+                    invalidate_workflow()
                     log.info(f"Added new panel: {new_value}")
             ui.modal_remove()
         except Exception as e:
@@ -405,6 +410,7 @@ def server(input, output, session):
                 current = custom_sensors()
                 if new_value not in current:
                     custom_sensors.set(current + [new_value])
+                    invalidate_workflow()
                     log.info(f"Added new sensor: {new_value}")
             ui.modal_remove()
         except Exception as e:
@@ -533,7 +539,7 @@ def server(input, output, session):
             log.warning(f"Unexpected plan type: {pt}")
             return ui.div(draw_warning_card("حدث خطأ في نظام الخطط. يرجى إعادة التحميل."))
 
-    # ✅ تم التصحيح: عرض النوافذ المنبثقة بشكل صحيح
+    # ✅ عرض النوافذ المنبثقة بشكل صحيح
     @render.ui
     def modal_layer():
         m = active_modal()
