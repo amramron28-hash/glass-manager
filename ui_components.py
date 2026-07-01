@@ -1,208 +1,606 @@
-import os
-import base64
-from html import escape
-from shiny import ui
+import json
+import time
+from shiny import ui, render, reactive
 
-_bg_cache = None
+from services.search_service import build_autocomplete_index, find_model_coords
+from services.plan_engine import compute_plan_matches, is_empty_result
+from services.index_service import build_fast_index, extract_panels_sensors
+from services.cache_service import workflow_cache, coords_cache
+from core.logger import get_logger
 
-def inject_pwa_and_styles():
-    global _bg_cache
-    if _bg_cache is None:
-        for p in ["phone_image.webp", "./phone_image.webp", "/app/phone_image.webp"]:
-            if os.path.exists(p):
-                with open(p, "rb") as f:
-                    _bg_cache = base64.b64encode(f.read()).decode()
-                break
-    
-    bg_style = f"background-image:linear-gradient(rgba(10,14,23,.20),rgba(10,14,23,.20)),url('data:image/webp;base64,{_bg_cache}');" if _bg_cache else "background-image:none;"
-    
-    return ui.HTML(f"""<style>
-    html, body, .container-fluid {{ background-color:#0a0e17 !important; {bg_style} background-size:92% auto !important; background-position:center center !important; background-repeat:no-repeat !important; background-attachment:fixed !important; color:white !important; direction:rtl !important; font-family:"Segoe UI",sans-serif !important; }}
-    .header-bar {{ display:flex; justify-content:space-between; align-items:center; padding:15px 25px; background:rgba(13,17,23,.55); backdrop-filter:blur(12px); border-bottom:1px solid rgba(0,191,255,.25); width:100%; }}
-    .brand-neon-title {{ display:flex; flex-direction:column; gap:4px; text-align:right; flex-grow:1; }}
-    .brand-neon-main {{ color:#00bfff; font-size:28px; font-weight:900; letter-spacing:0.5px; }}
-    .brand-neon-sub {{ color:#87ceeb; font-size:16px; font-weight:700; opacity:0.9; }}
-    .search-box {{ position:relative; width:90%; max-width:500px; margin:30px auto; }}
-    input[type="text"], input[type="number"], select {{ width:100% !important; background:rgba(17,24,39,.90) !important; color:white !important; border:1px solid #00bfff !important; border-radius:14px !important; padding:14px !important; direction:ltr !important; text-align:left !important; }}
-    .suggestions-curtain {{ position:absolute; top:60px; right:0; left:0; background:rgba(22,27,34,.96); border:1px solid #00bfff; border-radius:12px; max-height:240px; overflow-y:auto; z-index:99999; }}
-    .suggestion-row {{ padding:12px; color:white; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.08); direction:ltr; text-align:left; }}
-    .suggestion-row:hover {{ background:rgba(0,191,255,.18); }}
-    .glass-card {{ background:rgba(255,255,255,.06); backdrop-filter:blur(15px); border:1px solid rgba(0,191,255,.35); border-radius:20px; padding:20px; margin:20px auto; max-width:500px; }}
-    .ammar-flat-card {{ padding:16px 24px; margin-bottom:14px; border-radius:24px; width:100%; }}
-    .flat-exact {{ background:linear-gradient(135deg, rgba(76,187,85,.45), rgba(34,111,41,.60)); }}
-    .flat-plus {{ background:linear-gradient(135deg, rgba(41,98,255,.50), rgba(13,50,163,.60)); }}
-    .flat-minus {{ background:linear-gradient(135deg, rgba(255,165,0,.45), rgba(230,126,34,.60)); }}
-    .flat-warning-card {{ background:rgba(255,82,82,.45); border-radius:12px; padding:18px; color:white; font-weight:bold; text-align:center; }}
-    .flat-phone-text {{ color:white; font-size:20px; font-weight:800; direction:ltr; text-align:left; }}
-    .drawer {{ position:fixed; top:0; right:-310px; width:300px; height:100%; background:rgba(15,22,36,.98); backdrop-filter:blur(20px); border-left:1px solid rgba(0,191,255,.3); transition:.4s ease-in-out; z-index:200000; padding:30px; box-shadow:-5px 0 25px rgba(0,0,0,0.5); }}
-    .drawer.open {{ right:0 !important; }}
-    .drawer-close-btn {{ background:transparent; border:none; color:#ff5252; font-size:24px; cursor:pointer; float:left; font-weight:bold; }}
-    .metric-box {{ background:rgba(255,255,255,.05); padding:14px; border-radius:12px; margin-bottom:15px; text-align:center; border:1px solid rgba(0,191,255,0.15); font-weight:bold; }}
-    .custom-modal-backdrop {{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.75); z-index:999999; display:flex; justify-content:center; align-items:center; }}
-    .btn-dots-menu {{ background:transparent !important; border:none !important; color:#00bfff !important; font-size:28px !important; font-weight:bold !important; cursor:pointer; padding:0 10px !important; line-height:1 !important; transition:color 0.3s ease; }}
-    .btn-dots-menu:hover {{ color:#87ceeb !important; }}
-    .input-with-add {{ display:flex; gap:8px; align-items:center; margin-bottom:14px; }}
-    .input-with-add select, .input-with-add input {{ flex:1; margin-bottom:0 !important; }}
-    .btn-add-option {{ background:#00bfff; color:white; border:none; border-radius:14px; width:48px; height:48px; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }}
-    </style>""")
-
-
-# ================================================================
-# ✅ الدوال التي يستوردها server.py (ضرورية لتشغيل التطبيق)
-# ================================================================
-def draw_technical_coords(size_grp, panel_grp, sensor_grp, model_name=""):
-    return ui.HTML(f"""<div class="glass-card">
-        <h3 style="color:#00bfff; text-align:center;">📱 {escape(str(model_name))}</h3>
-        <div style="font-size:16px; line-height:2; text-align:right; direction:rtl;">
-            📏 <b>المقاس الفني:</b> <span style="color:#00bfff">{escape(str(size_grp))}</span><br>
-            📺 <b>نوع الشاشة:</b> <span style="color:#00bfff">{escape(str(panel_grp))}</span><br>
-            👁️ <b>المستشعر:</b> <span style="color:#00bfff">{escape(str(sensor_grp))}</span>
-        </div>
-    </div>""")
-
-
-def draw_neon_section(title, models_list, color_hex="#00bfff", badge_icon="📱", plan_type="exact"):
-    if not models_list:
-        return ui.div()
-    class_map = {"exact": "flat-exact", "plus": "flat-plus", "minus": "flat-minus"}
-    card_class = class_map.get(plan_type, "flat-exact")
-    cards = [ui.h4(f"{badge_icon} {title}", style=f"color:{color_hex}; text-align:right; direction:rtl;")]
-    for model in models_list:
-        cards.append(ui.HTML(f'<div class="ammar-flat-card {card_class}"><div class="flat-phone-text">{escape(str(model))}</div></div>'))
-    return ui.div(*cards)
-
-
-def draw_plan_2_modal(phone_name, existing_panels, existing_sensors):
-    """✅ نافذة Plan 2 مع زر (+) للإضافة"""
-    panel_options = {p: p for p in existing_panels if p}
-    sensor_options = {s: s for s in existing_sensors if s}
-    return ui.div(
-        ui.div(
-            ui.div(
-                ui.h3(f"📋 المواصفات الفنية لـ {phone_name}", style="color:#3498db; text-align:center;"),
-                ui.input_numeric("p2_size", "📏 مقاس الشاشة:", value=None, step=0.01),
-                ui.div(
-                    ui.input_select("p2_panel", "📺 نوع الشاشة:", choices=panel_options),
-                    ui.tags.button("+", id="btn_add_panel_p2", class_="btn-add-option",
-                                   onclick="Shiny.setInputValue('show_add_panel', true, {priority:'event'});"),
-                    class_="input-with-add"
-                ),
-                ui.div(
-                    ui.input_select("p2_sensor", "👁️ نوع المستشعر:", choices=sensor_options),
-                    ui.tags.button("+", id="btn_add_sensor_p2", class_="btn-add-option",
-                                   onclick="Shiny.setInputValue('show_add_sensor', true, {priority:'event'});"),
-                    class_="input-with-add"
-                ),
-                ui.input_action_button("p2_search", "🔍 فحص المطابقة",
-                                       style="width:100%; background:#2ecc71; color:white; padding:12px; border-radius:8px; border:none;"),
-                class_="glass-card",
-                style="width:90%; max-width:500px; background:rgba(22,27,34,.98);"
-            ),
-            class_="custom-modal-backdrop"
-        )
-    )
-
-
-def draw_plan_3_modal(phone_name, existing_panels, existing_sensors):
-    """✅ نافذة Plan 3 مع زر (+) للإضافة"""
-    panel_options = {p: p for p in existing_panels if p}
-    sensor_options = {s: s for s in existing_sensors if s}
-    return ui.div(
-        ui.div(
-            ui.div(
-                ui.h3(f"🔮 خطة الطوارئ لـ {phone_name}", style="color:#e67e22; text-align:center;"),
-                ui.input_numeric("p3_size", "📏 المقاس المقترح:", value=None, step=0.01),
-                ui.div(
-                    ui.input_select("p3_panel", "📺 تخصيص نوع الشاشة:", choices=panel_options),
-                    ui.tags.button("+", id="btn_add_panel_p3", class_="btn-add-option",
-                                   onclick="Shiny.setInputValue('show_add_panel', true, {priority:'event'});"),
-                    class_="input-with-add"
-                ),
-                ui.div(
-                    ui.input_select("p3_sensor", "👁️ تخصيص المستشعر:", choices=sensor_options),
-                    ui.tags.button("+", id="btn_add_sensor_p3", class_="btn-add-option",
-                                   onclick="Shiny.setInputValue('show_add_sensor', true, {priority:'event'});"),
-                    class_="input-with-add"
-                ),
-                ui.input_action_button("p3_search", "⚡ تشغيل البحث الذكي",
-                                       style="width:100%; background:#e67e22; color:white; padding:12px; border-radius:8px; border:none;"),
-                class_="glass-card",
-                style="width:90%; max-width:500px; background:rgba(22,27,34,.98);"
-            ),
-            class_="custom-modal-backdrop"
-        )
-    )
-
-
-def draw_warning_card(message):
-    return ui.HTML(f'<div class="flat-warning-card">⚠️ {escape(str(message))}</div>')
-
-
-def draw_database_status(total):
-    return ui.div(ui.div(f"📊 قاعدة البيانات: {total} هاتف", class_="metric-box"))
-
-
-# ================================================================
-# ✅ تعريف الواجهة الرئيسية - مصححة بالكامل
-# ================================================================
-app_ui = ui.page_fluid(
-    inject_pwa_and_styles(),
-    
-    # PWA + JavaScript للـ Drawer
-    ui.tags.head(
-        ui.tags.link(rel="manifest", href="manifest.json"),
-        ui.tags.script("""
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function(){ navigator.serviceWorker.register('/service-worker.js'); });
-        }
-        Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
-            let d = document.getElementById('settings_drawer');
-            if(d){
-                if(msg === 'open') d.classList.add('open');
-                else d.classList.remove('open');
-            }
-        });
-        """)
-    ),
-    
-    # الهيدر
-    ui.div(
-        ui.div(
-            ui.div("ZEGAAR AMMAR", class_="brand-neon-main"),
-            ui.div("GLASS MANAGER", class_="brand-neon-sub"),
-            class_="brand-neon-title"
-        ),
-        ui.input_action_button("btn_settings", "⋮", class_="btn-dots-menu"),
-        class_="header-bar"
-    ),
-    
-    # نافذة الإعدادات الجانبية (Drawer)
-    ui.div(
-        ui.tags.button(
-            "×",
-            id="btn_close_drawer",
-            class_="drawer-close-btn",
-            onclick="Shiny.setInputValue('btn_close_drawer_trigger', Math.random(), {priority:'event'});"
-        ),
-        ui.h3("⚙️ الإعدادات العامة", style="color:#00bfff; text-align:center; margin-bottom:25px; font-weight:800;"),
-        
-        # عناصر ديناميكية مربوطة بـ server.py
-        ui.output_ui("database_status_area"),
-        ui.output_ui("notifications_area"),
-        ui.output_ui("monitor_area"),
-        
-        id="settings_drawer",
-        class_="drawer"
-    ),
-    
-    # مربع البحث (تم إصلاح خطأ label بإضافة نص فارغ "")
-    ui.div(
-        ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."),
-        ui.output_ui("suggestions_curtain"),
-        class_="search-box"
-    ),
-    
-    # مناطق العرض
-    ui.output_ui("results_area"),
-    ui.output_ui("modal_layer")
+from database import add_model
+from silent_monitor import get_database, refresh, get_status, get_statistics
+from logic_engine import run_system_workflows
+from ui_components import (
+    draw_plan_2_modal, draw_plan_3_modal, draw_warning_card,
+    draw_technical_coords, draw_neon_section, draw_database_status
 )
+
+log = get_logger("server")
+MODELS_INDEX_FILE = "models_index.txt"
+STATS_TTL = 3
+
+
+def load_models_index():
+    try:
+        with open(MODELS_INDEX_FILE, "r", encoding="utf-8") as f:
+            return [line.strip() for line in f if line.strip()]
+    except OSError as e:
+        log.error(f"Index load error: {e}")
+        return []
+
+
+def convert_database_from_raw(rows):
+    db = {}
+    if not isinstance(rows, list):
+        return db
+    for item in rows:
+        if not isinstance(item, dict):
+            continue
+        size = str(item.get("size") or "").strip()
+        panel = str(item.get("panel") or "Notch Screen").strip()
+        sensor = str(item.get("sensor") or "hardware_top_sensor").strip()
+        model = str(item.get("model_name") or "").strip()
+        if not size or not model:
+            continue
+        db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
+        if model not in db[size][panel][sensor]["models"]:
+            db[size][panel][sensor]["models"].append(model)
+    return db
+
+
+def server(input, output, session):
+    # ===== State Management =====
+    db_trigger = reactive.Value(0)
+    current_phone = reactive.Value("")
+    show_curtain = reactive.Value(False)
+    active_modal = reactive.Value(None)
+    suggestions_list = reactive.Value([])
+    plan_results = reactive.Value(None)
+
+    plan_inputs = {k: reactive.Value("") for k in ["size", "panel", "sensor"]}
+    current_plan_type = reactive.Value(None)
+
+    custom_panels = reactive.Value([])
+    custom_sensors = reactive.Value([])
+    autocomplete_index = reactive.Value(None)
+    models_index = reactive.Value(load_models_index())
+
+    _db_version = reactive.Value(0)
+    _last_db_size = reactive.Value(-1)
+    _last_monitor_status = reactive.Value("")
+
+    _cached_stats = reactive.Value(None)
+    _cached_status = reactive.Value(None)
+    _stats_time = reactive.Value(0)
+    _status_time = reactive.Value(0)
+
+    def invalidate_workflow():
+        workflow_cache.invalidate()
+        coords_cache.invalidate()
+        _db_version.set(_db_version() + 1)
+
+    def invalidate_stats():
+        _cached_stats.set(None)
+        _cached_status.set(None)
+        _stats_time.set(0)
+        _status_time.set(0)
+
+    # ===== Data Layer =====
+    @reactive.calc
+    def database_data():
+        db_trigger()
+        try:
+            db = get_database()
+            return db if isinstance(db, dict) else (convert_database_from_raw(db) if isinstance(db, list) else {})
+        except Exception as e:
+            log.error(f"DB Error: {e}")
+            return {}
+
+    @reactive.calc
+    def fast_index_calc():
+        return build_fast_index(database_data())
+
+    @reactive.calc
+    def get_cached_stats():
+        now = time.time()
+        if now - _stats_time() < STATS_TTL and _cached_stats() is not None:
+            return _cached_stats()
+        try:
+            s = get_statistics()
+            _cached_stats.set(s)
+            _stats_time.set(now)
+            return s
+        except Exception:
+            return {}
+
+    @reactive.calc
+    def get_cached_status():
+        now = time.time()
+        if now - _status_time() < STATS_TTL and _cached_status() is not None:
+            return _cached_status()
+        try:
+            s = get_status()
+            _cached_status.set(s)
+            _status_time.set(now)
+            return s
+        except Exception:
+            return {}
+
+    # ===== Watchers =====
+    @reactive.effect
+    def watcher_refresh():
+        reactive.invalidate_later(5)
+        db_trigger()
+        try:
+            stats = get_cached_stats()
+            size = stats.get("phones", 0) if isinstance(stats, dict) else 0
+
+            if size == 0:
+                autocomplete_index.set(None)
+                models_index.set([])
+                custom_panels.set([])
+                custom_sensors.set([])
+                _last_db_size.set(0)
+                return
+
+            if _last_db_size() == size and autocomplete_index() is not None:
+                if show_curtain():
+                    q = current_phone()
+                    t = autocomplete_index()
+                    if q and t:
+                        suggestions_list.set(t.search_prefix(q, 10))
+                return
+
+            _last_db_size.set(size)
+            refresh()
+            new_idx = load_models_index()
+            if autocomplete_index() is None or new_idx != models_index():
+                models_index.set(new_idx)
+                autocomplete_index.set(build_autocomplete_index(new_idx))
+                invalidate_workflow()
+                p, s = extract_panels_sensors(database_data())
+                custom_panels.set(p)
+                custom_sensors.set(s)
+
+            if show_curtain():
+                q = current_phone()
+                t = autocomplete_index()
+                if q and t:
+                    suggestions_list.set(t.search_prefix(q, 10))
+        except Exception as e:
+            log.error(f"Refresh Err: {e}")
+
+    @reactive.effect
+    def watcher_status():
+        reactive.invalidate_later(10)
+        try:
+            st = get_cached_status()
+            cur = st.get("status", "UNKNOWN") if isinstance(st, dict) else "UNKNOWN"
+            if cur != _last_monitor_status():
+                _last_monitor_status.set(cur)
+                log.warning(f"Monitor: {cur}") if cur != "ONLINE" else log.info("Monitor: ONLINE")
+        except Exception as e:
+            log.error(f"Status Err: {e}")
+
+    # ===== Search & Autocomplete =====
+    @reactive.effect
+    @reactive.event(input.search_query)
+    def handle_search():
+        q = input.search_query().strip()
+        current_phone.set(q)
+        if not q:
+            suggestions_list.set([])
+            show_curtain.set(False)
+            return
+        t = autocomplete_index()
+        if not t:
+            return
+        m = t.search_prefix(q, 10)
+        ex = t.contains_exact(q)
+        if m and not ex:
+            suggestions_list.set(m)
+            show_curtain.set(True)
+        else:
+            suggestions_list.set([])
+            show_curtain.set(False)
+
+    @render.ui
+    def suggestions_curtain():
+        if not show_curtain() or not suggestions_list():
+            return None
+        return ui.div(
+            *[ui.div(
+                i,
+                class_="suggestion-row",
+                onclick=f"Shiny.setInputValue('search_query', {json.dumps(i)}, {{priority:'event'}}); Shiny.setInputValue('selected_model_trigger', Math.random(), {{priority:'event'}});"
+            ) for i in suggestions_list()],
+            class_="suggestions-curtain"
+        )
+
+    @reactive.effect
+    @reactive.event(input.selected_model_trigger)
+    def confirm_selection():
+        show_curtain.set(False)
+        current_phone.set(input.search_query().strip())
+        invalidate_workflow()
+
+    # ===== Plan Logic =====
+    def process_plan(sz, pn, sn, pt):
+        if not all([sz, pn, sn]):
+            plan_results.set(None)
+            return
+        try:
+            r = compute_plan_matches(str(sz), pn, sn, database_data(), fast_index_calc())
+            for k, v in zip(["size", "panel", "sensor"], [str(sz), pn, sn]):
+                plan_inputs[k].set(v)
+            current_plan_type.set(pt)
+            plan_results.set(None if is_empty_result(r) else r)
+        except Exception as e:
+            log.error(f"Process plan error: {e}")
+            plan_results.set(None)
+
+    @reactive.effect
+    @reactive.event(input.trigger_plan_2)
+    def open_plan_2():
+        if current_phone():
+            active_modal.set("plan_2")
+            current_plan_type.set("plan_2")
+            plan_results.set(None)
+
+    @reactive.effect
+    @reactive.event(input.trigger_plan_3)
+    def open_plan_3():
+        if current_phone():
+            active_modal.set("plan_3")
+            current_plan_type.set("plan_3")
+            plan_results.set(None)
+            # تعبئة plan_inputs قبل إظهار زر التأسيس
+            if not plan_inputs["size"]():
+                plan_inputs["size"].set(6.5)
+            if not plan_inputs["panel"]():
+                plan_inputs["panel"].set(custom_panels()[0] if custom_panels() else "OLED")
+            if not plan_inputs["sensor"]():
+                plan_inputs["sensor"].set(custom_sensors()[0] if custom_sensors() else "Virtual")
+
+    @reactive.effect
+    @reactive.event(input.p2_search)
+    def run_plan_2():
+        try:
+            active_modal.set(None)
+            sz = input.p2_size()
+            pn = input.p2_panel()
+            sn = input.p2_sensor()
+            if sz and pn and sn:
+                process_plan(sz, pn, sn, "plan_2")
+            else:
+                log.warning("Plan 2: Missing required fields")
+        except Exception as e:
+            log.error(f"Run Plan 2 error: {e}")
+
+    @reactive.effect
+    @reactive.event(input.p3_search)
+    def run_plan_3():
+        try:
+            active_modal.set(None)
+            sz = input.p3_size()
+            pn = input.p3_panel()
+            sn = input.p3_sensor()
+            if sz and pn and sn:
+                process_plan(sz, pn, sn, "plan_3")
+            else:
+                log.warning("Plan 3: Missing required fields")
+        except Exception as e:
+            log.error(f"Run Plan 3 error: {e}")
+
+    # ===== Save & Reset =====
+    def reset_ui():
+        ui.update_text(session, "search_query", value="")
+        current_phone.set("")
+        show_curtain.set(False)
+        suggestions_list.set([])
+        plan_results.set(None)
+        current_plan_type.set(None)
+        active_modal.set(None)
+        for k in plan_inputs:
+            plan_inputs[k].set("")
+        invalidate_workflow()
+
+    def save_model(action):
+        ph = current_phone()
+        sz = plan_inputs["size"]()
+        pn = plan_inputs["panel"]()
+        sn = plan_inputs["sensor"]()
+        if not all([ph, sz, pn, sn]):
+            log.warning(f"{action} missing data")
+            return
+        try:
+            if add_model(sz, pn, sn, ph):
+                refresh()
+                invalidate_stats()
+                db_trigger.set(db_trigger() + 1)
+                reset_ui()
+                log.info(f"{action}: {ph}")
+            else:
+                log.error(f"{action} failed: {ph}")
+        except Exception as e:
+            log.error(f"{action} err: {e}")
+
+    @reactive.effect
+    @reactive.event(input.btn_learn_and_merge)
+    def learn_p2():
+        save_model("Merge P2")
+
+    @reactive.effect
+    @reactive.event(input.btn_learn_and_merge_p3)
+    def learn_p3():
+        save_model("Merge P3")
+
+    @reactive.effect
+    @reactive.event(input.btn_foundation)
+    def foundation():
+        save_model("Foundation")
+
+    # ===== زر (+) لإضافة خيارات جديدة =====
+    @reactive.effect
+    @reactive.event(input.show_add_panel)
+    def handle_show_add_panel():
+        active_modal.set("add_panel")
+
+    @reactive.effect
+    @reactive.event(input.show_add_sensor)
+    def handle_show_add_sensor():
+        active_modal.set("add_sensor")
+
+    @reactive.effect
+    @reactive.event(input.btn_confirm_add_panel)
+    def confirm_add_panel():
+        try:
+            new_value = input.new_panel_name().strip()
+            if new_value:
+                current = custom_panels()
+                if new_value not in current:
+                    custom_panels.set(current + [new_value])
+                    log.info(f"Added new panel: {new_value}")
+                if current_plan_type() == "plan_2":
+                    active_modal.set("plan_2")
+                elif current_plan_type() == "plan_3":
+                    active_modal.set("plan_3")
+                else:
+                    active_modal.set(None)
+        except Exception as e:
+            log.error(f"Add panel error: {e}")
+
+    @reactive.effect
+    @reactive.event(input.btn_confirm_add_sensor)
+    def confirm_add_sensor():
+        try:
+            new_value = input.new_sensor_name().strip()
+            if new_value:
+                current = custom_sensors()
+                if new_value not in current:
+                    custom_sensors.set(current + [new_value])
+                    log.info(f"Added new sensor: {new_value}")
+                if current_plan_type() == "plan_2":
+                    active_modal.set("plan_2")
+                elif current_plan_type() == "plan_3":
+                    active_modal.set("plan_3")
+                else:
+                    active_modal.set(None)
+        except Exception as e:
+            log.error(f"Add sensor error: {e}")
+
+    @reactive.effect
+    @reactive.event(input.btn_cancel_add)
+    def cancel_add():
+        if current_plan_type() == "plan_2":
+            active_modal.set("plan_2")
+        elif current_plan_type() == "plan_3":
+            active_modal.set("plan_3")
+        else:
+            active_modal.set(None)
+
+    # ===== UI Rendering =====
+    @reactive.calc
+    def cached_coords():
+        ph = current_phone().strip()
+        if not ph:
+            return None
+        return coords_cache.get_or_compute(
+            (ph, _db_version()),
+            lambda: find_model_coords(database_data(), ph)
+        )
+
+    @reactive.calc
+    def cached_workflow():
+        c = cached_coords()
+        if not c or not c[3]:
+            return None
+        return workflow_cache.get_or_compute(
+            (current_phone().strip(), _db_version(), current_plan_type()),
+            lambda: run_system_workflows(current_phone().strip(), database_data(), "")
+        )
+
+    @render.ui
+    def results_area():
+        """✅ منطق تسلسل الخطط المعزول بـ if/elif/else"""
+        ph = current_phone().strip()
+        if not ph:
+            return None
+
+        res = plan_results()
+        pt = current_plan_type()
+
+        # 🔵 الخطة 1: التطابق التلقائي المباشر
+        if pt is None:
+            wf = cached_workflow()
+            if wf:
+                return ui.div(ui.HTML(wf))
+            return ui.div(
+                draw_warning_card(f"الموديل {ph} غير موجود في قاعدة البيانات."),
+                ui.div(
+                    ui.input_action_button(
+                        "trigger_plan_2",
+                        " بدء المطابقة الفنية (Plan 2)",
+                        style="width:100%; background:#00bfff; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-bottom:10px;"
+                    ),
+                    ui.input_action_button(
+                        "trigger_plan_3",
+                        "🟠 بدء خطة الطوارئ (Plan 3)",
+                        style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold;"
+                    ),
+                )
+            )
+
+        # 🟢 الخطة 2: التكامل اليدوي والمجموعات
+        elif pt == "plan_2":
+            if isinstance(res, dict):
+                return ui.div(
+                    draw_technical_coords(
+                        plan_inputs["size"](),
+                        plan_inputs["panel"](),
+                        plan_inputs["sensor"](),
+                        f"{ph} (مواصفات يدوية)"
+                    ),
+                    draw_neon_section("مطابقة تماماً", res.get("exact", []), "#2ecc71", "🟢", "exact"),
+                    draw_neon_section("أكبر بقليل", res.get("plus", []), "#3498db", "", "plus"),
+                    draw_neon_section("أصغر قليلاً", res.get("minus", []), "#e67e22", "🟠", "minus"),
+                    ui.input_action_button(
+                        "btn_learn_and_merge",
+                        "🔄 دمج الهاتف داخل هذه المجموعة",
+                        style="width:100%; background:#2ecc71; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:15px;"
+                    ),
+                    ui.input_action_button(
+                        "trigger_plan_3",
+                        "🟠 لم أجد ما يناسبني - انتقل للخطة 3",
+                        style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:10px;"
+                    )
+                )
+            else:
+                return ui.div(
+                    draw_warning_card("لم يتم العثور على أي تطابق في المجموعات الحالية بالمواصفات المُدخلة."),
+                    ui.input_action_button(
+                        "trigger_plan_3",
+                        "🟠 انتقل لخطة الطوارئ (Plan 3)",
+                        style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:10px;"
+                    ),
+                    ui.input_action_button(
+                        "trigger_plan_2",
+                        "🔵 إعادة المحاولة بمواصفات مختلفة",
+                        style="width:100%; background:#00bfff; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:10px;"
+                    )
+                )
+
+        # 🟠 الخطة 3: التأسيس والإنشاء (خطة الطوارئ)
+        elif pt == "plan_3":
+            if isinstance(res, dict):
+                return ui.div(
+                    draw_technical_coords(
+                        plan_inputs["size"](),
+                        plan_inputs["panel"](),
+                        plan_inputs["sensor"](),
+                        f"{ph} (خطة طوارئ)"
+                    ),
+                    draw_neon_section("مطابقة تماماً", res.get("exact", []), "#2ecc71", "🟢", "exact"),
+                    draw_neon_section("أكبر بقليل", res.get("plus", []), "#3498db", "", "plus"),
+                    draw_neon_section("أصغر قليلاً", res.get("minus", []), "#e67e22", "🟠", "minus"),
+                    ui.input_action_button(
+                        "btn_learn_and_merge_p3",
+                        "🔄 دمج الهاتف داخل هذه المجموعة",
+                        style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:15px;"
+                    )
+                )
+            else:
+                return ui.div(
+                    draw_warning_card("لا توجد أي مجموعة مشابهة. هل تريد تأسيس مجموعة جديدة بهذا الهاتف؟"),
+                    ui.input_action_button(
+                        "btn_foundation",
+                        "➕ تأسيس مجموعة جديدة",
+                        style="width:100%; background:#9b59b6; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:15px;"
+                    )
+                )
+
+        else:
+            return None
+
+    @render.ui
+    def modal_layer():
+        m = active_modal()
+        if m == "plan_2":
+            return draw_plan_2_modal(current_phone(), custom_panels(), custom_sensors())
+        if m == "plan_3":
+            return draw_plan_3_modal(current_phone(), custom_panels(), custom_sensors())
+        if m == "add_panel":
+            return ui.modal(
+                ui.input_text("new_panel_name", "اسم نوع الشاشة الجديد:", placeholder="مثال: IPS LCD"),
+                ui.div(
+                    ui.input_action_button("btn_confirm_add_panel", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
+                    ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
+                    style="text-align:center; margin-top:20px;"
+                ),
+                title="➕ إضافة نوع شاشة جديد",
+                easy_close=True
+            )
+        if m == "add_sensor":
+            return ui.modal(
+                ui.input_text("new_sensor_name", "اسم المستشعر الجديد:", placeholder="مثال: Proximity Sensor"),
+                ui.div(
+                    ui.input_action_button("btn_confirm_add_sensor", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
+                    ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
+                    style="text-align:center; margin-top:20px;"
+                ),
+                title="➕ إضافة مستشعر جديد",
+                easy_close=True
+            )
+        return None
+
+    # ===== الإعدادات الديناميكية =====
+    @render.ui
+    def database_status_area():
+        try:
+            db = database_data()
+            total = 0
+            for panels in db.values():
+                if isinstance(panels, dict):
+                    for sensors in panels.values():
+                        if isinstance(sensors, dict):
+                            for data in sensors.values():
+                                if isinstance(data, dict):
+                                    total += len(data.get("models", []))
+            return draw_database_status(total)
+        except Exception as e:
+            log.error(f"Stats error: {e}")
+            return draw_database_status(0)
+
+    @reactive.effect
+    @reactive.event(input.btn_settings)
+    async def open_drawer():
+        await session.send_custom_message("toggle_drawer", "open")
+
+    @reactive.effect
+    @reactive.event(input.btn_close_drawer_trigger)
+    async def close_drawer():
+        await session.send_custom_message("toggle_drawer", "close")
+
+    @render.ui
+    def notifications_area():
+        try:
+            s = get_cached_status()
+            src = s.get("source", "غير معروف") if isinstance(s, dict) else "غير متصل"
+            return ui.div(f"🔔 المصدر: {src}", class_="metric-box")
+        except Exception:
+            return ui.div("🔔 غير متاح", class_="metric-box")
+
+    @render.ui
+    def monitor_area():
+        try:
+            s = get_cached_status()
+            st = s.get("status", "OFFLINE") if isinstance(s, dict) else "OFFLINE"
+            col = "#2ecc71" if st == "ONLINE" else "#e74c3c"
+            return ui.div(
+                f"🔒 الحالة: {st}",
+                style=f"color: {col}; font-weight: bold;",
+                class_="metric-box"
+            )
+        except Exception:
+            return ui.div("🔒 غير متاح", class_="metric-box")
