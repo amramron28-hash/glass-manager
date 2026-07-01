@@ -228,11 +228,34 @@ def server(input, output, session):
                 log.warning(f"Process plan {pt}: Missing required fields")
                 plan_results.set(None)
                 return
+
+            db = database_data()
+            idx = fast_index_calc()
+
+            # ✅ تشخيص: طباعة المفاتيح المتاحة في قاعدة البيانات
+            log.info(f"[DIAG] DB top-level keys (sizes): {list(db.keys())[:10]}")
+            sz_str = str(sz).strip()
+            if sz_str in db:
+                log.info(f"[DIAG] Size '{sz_str}' found. Panels available: {list(db[sz_str].keys())}")
+                if pn in db[sz_str]:
+                    log.info(f"[DIAG] Panel '{pn}' found. Sensors available: {list(db[sz_str][pn].keys())}")
+                else:
+                    log.warning(f"[DIAG] Panel '{pn}' NOT found in size '{sz_str}'. Available: {list(db[sz_str].keys())}")
+            else:
+                log.warning(f"[DIAG] Size '{sz_str}' NOT found in DB. Available sizes: {list(db.keys())[:20]}")
+
             start_time = time.time()
-            r = compute_plan_matches(str(sz), pn, sn, database_data(), fast_index_calc())
+            r = compute_plan_matches(sz_str, pn, sn, db, idx)
             elapsed = time.time() - start_time
-            log.info(f"Plan {pt} completed in {elapsed:.2f}s")
-            for k, v in zip(["size", "panel", "sensor"], [str(sz), pn, sn]):
+
+            # ✅ تشخيص: طباعة النتائج الخام
+            log.info(f"[DIAG] Plan {pt} completed in {elapsed:.2f}s")
+            if isinstance(r, dict):
+                log.info(f"[DIAG] Results: exact={len(r.get('exact', []))}, plus={len(r.get('plus', []))}, minus={len(r.get('minus', []))}")
+            else:
+                log.info(f"[DIAG] Results type={type(r)}, value={r}")
+
+            for k, v in zip(["size", "panel", "sensor"], [sz_str, pn, sn]):
                 plan_inputs[k].set(v)
             current_plan_type.set(pt)
             plan_results.set(None if is_empty_result(r) else r)
@@ -277,16 +300,6 @@ def server(input, output, session):
                 log.warning("Plan 2: Missing or empty required fields")
                 return
 
-            # ✅ تشخيص: طباعة حجم البيانات والفهرس
-            db = database_data()
-            idx = fast_index_calc()
-            log.info(f"[DIAG P2] DB type={type(db)}, DB keys={len(db) if isinstance(db, dict) else 'N/A'}")
-            log.info(f"[DIAG P2] Index type={type(idx)}, Index size={len(idx) if hasattr(idx, '__len__') else 'N/A'}")
-
-            if isinstance(db, dict) and len(db) > 0:
-                first_key = list(db.keys())[0]
-                log.info(f"[DIAG P2] Sample DB key='{first_key}', value_type={type(db[first_key])}")
-
             process_plan(sz, pn, sn, "plan_2")
         except Exception as e:
             log.error(f"Run Plan 2 error: {e}", exc_info=True)
@@ -305,16 +318,6 @@ def server(input, output, session):
             if sz is None or pn in (None, "", "__empty__") or sn in (None, "", "__empty__"):
                 log.warning("Plan 3: Missing or empty required fields")
                 return
-
-            # ✅ تشخيص: طباعة حجم البيانات والفهرس
-            db = database_data()
-            idx = fast_index_calc()
-            log.info(f"[DIAG P3] DB type={type(db)}, DB keys={len(db) if isinstance(db, dict) else 'N/A'}")
-            log.info(f"[DIAG P3] Index type={type(idx)}, Index size={len(idx) if hasattr(idx, '__len__') else 'N/A'}")
-
-            if isinstance(db, dict) and len(db) > 0:
-                first_key = list(db.keys())[0]
-                log.info(f"[DIAG P3] Sample DB key='{first_key}', value_type={type(db[first_key])}")
 
             process_plan(sz, pn, sn, "plan_3")
         except Exception as e:
