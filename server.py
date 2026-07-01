@@ -227,49 +227,90 @@ def server(input, output, session):
 
     # ===== Plan Logic =====
     def process_plan(sz, pn, sn, pt):
-        if not all([sz, pn, sn]):
+        try:
+            log.info(f"Processing {pt}: size={sz}, panel={pn}, sensor={sn}")
+            if not all([sz, pn, sn]):
+                log.warning(f"Process plan {pt}: Missing required fields")
+                plan_results.set(None)
+                return
+            
+            start_time = time.time()
+            r = compute_plan_matches(str(sz), pn, sn, database_data(), fast_index_calc())
+            elapsed = time.time() - start_time
+            log.info(f"Plan {pt} completed in {elapsed:.2f}s")
+            
+            for k, v in zip(["size", "panel", "sensor"], [str(sz), pn, sn]):
+                plan_inputs[k].set(v)
+            current_plan_type.set(pt)
+            plan_results.set(None if is_empty_result(r) else r)
+        except Exception as e:
+            log.error(f"Process plan error: {e}")
             plan_results.set(None)
-            return
-        r = compute_plan_matches(str(sz), pn, sn, database_data(), fast_index_calc())
-        for k, v in zip(["size", "panel", "sensor"], [str(sz), pn, sn]):
-            plan_inputs[k].set(v)
-        current_plan_type.set(pt)
-        plan_results.set(None if is_empty_result(r) else r)
 
     @reactive.effect
     @reactive.event(input.trigger_plan_2)
     def open_plan_2():
-        if current_phone():
-            active_modal.set("plan_2")
-            current_plan_type.set("plan_2")
-            plan_results.set(None)
+        log.info("Opening Plan 2 modal")
+        active_modal.set("plan_2")
+        # ✅ مهم جداً: إعادة تعيين الحالة
+        current_plan_type.set("plan_2")
+        plan_results.set(None)
 
     @reactive.effect
     @reactive.event(input.trigger_plan_3)
     def open_plan_3():
-        if current_phone():
-            active_modal.set("plan_3")
-            current_plan_type.set("plan_3")
-            plan_results.set(None)
-            # تعبئة plan_inputs قبل إظهار زر التأسيس
-            if not plan_inputs["size"]():
-                plan_inputs["size"].set(6.5)
-            if not plan_inputs["panel"]():
-                plan_inputs["panel"].set(custom_panels()[0] if custom_panels() else "OLED")
-            if not plan_inputs["sensor"]():
-                plan_inputs["sensor"].set(custom_sensors()[0] if custom_sensors() else "Virtual")
+        log.info("Opening Plan 3 modal")
+        active_modal.set("plan_3")
+        # ✅ مهم جداً: إعادة تعيين الحالة
+        current_plan_type.set("plan_3")
+        plan_results.set(None)
+        # تعبئة plan_inputs بقيم افتراضية
+        if not plan_inputs["size"]():
+            plan_inputs["size"].set(6.5)
+        if not plan_inputs["panel"]():
+            plan_inputs["panel"].set(custom_panels()[0] if custom_panels() else "OLED")
+        if not plan_inputs["sensor"]():
+            plan_inputs["sensor"].set(custom_sensors()[0] if custom_sensors() else "Virtual")
 
     @reactive.effect
     @reactive.event(input.p2_search)
     def run_plan_2():
-        active_modal.set(None)
-        process_plan(input.p2_size(), input.p2_panel(), input.p2_sensor(), "plan_2")
+        try:
+            log.info("Running Plan 2 search")
+            active_modal.set(None)
+            sz = input.p2_size()
+            pn = input.p2_panel()
+            sn = input.p2_sensor()
+            
+            log.info(f"Plan 2 inputs: size={sz}, panel={pn}, sensor={sn}")
+            
+            if not sz or not pn or not sn:
+                log.warning("Plan 2: Missing required fields")
+                return
+            
+            process_plan(sz, pn, sn, "plan_2")
+        except Exception as e:
+            log.error(f"Run Plan 2 error: {e}")
 
     @reactive.effect
     @reactive.event(input.p3_search)
     def run_plan_3():
-        active_modal.set(None)
-        process_plan(input.p3_size(), input.p3_panel(), input.p3_sensor(), "plan_3")
+        try:
+            log.info("Running Plan 3 search")
+            active_modal.set(None)
+            sz = input.p3_size()
+            pn = input.p3_panel()
+            sn = input.p3_sensor()
+            
+            log.info(f"Plan 3 inputs: size={sz}, panel={pn}, sensor={sn}")
+            
+            if not sz or not pn or not sn:
+                log.warning("Plan 3: Missing required fields")
+                return
+            
+            process_plan(sz, pn, sn, "plan_3")
+        except Exception as e:
+            log.error(f"Run Plan 3 error: {e}")
 
     # ===== Save & Reset =====
     def reset_ui():
@@ -323,54 +364,65 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.show_add_panel)
     def handle_show_add_panel():
-        active_modal.set("add_panel")
+        m = ui.modal(
+            ui.input_text("new_panel_name", "اسم نوع الشاشة الجديد:", placeholder="مثال: IPS LCD"),
+            ui.div(
+                ui.input_action_button("btn_confirm_add_panel", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
+                ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
+                style="text-align:center; margin-top:20px;"
+            ),
+            title="➕ إضافة نوع شاشة جديد",
+            easy_close=True
+        )
+        ui.modal_show(m)
 
     @reactive.effect
     @reactive.event(input.show_add_sensor)
     def handle_show_add_sensor():
-        active_modal.set("add_sensor")
+        m = ui.modal(
+            ui.input_text("new_sensor_name", "اسم المستشعر الجديد:", placeholder="مثال: Proximity Sensor"),
+            ui.div(
+                ui.input_action_button("btn_confirm_add_sensor", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
+                ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
+                style="text-align:center; margin-top:20px;"
+            ),
+            title="➕ إضافة مستشعر جديد",
+            easy_close=True
+        )
+        ui.modal_show(m)
 
     @reactive.effect
     @reactive.event(input.btn_confirm_add_panel)
     def confirm_add_panel():
-        new_value = input.new_panel_name().strip()
-        if new_value:
-            current = custom_panels()
-            if new_value not in current:
-                custom_panels.set(current + [new_value])
-                log.info(f"Added new panel: {new_value}")
-            if current_plan_type() == "plan_2":
-                active_modal.set("plan_2")
-            elif current_plan_type() == "plan_3":
-                active_modal.set("plan_3")
-            else:
-                active_modal.set(None)
+        try:
+            new_value = input.new_panel_name().strip()
+            if new_value:
+                current = custom_panels()
+                if new_value not in current:
+                    custom_panels.set(current + [new_value])
+                    log.info(f"Added new panel: {new_value}")
+            ui.modal_remove()
+        except Exception as e:
+            log.error(f"Add panel error: {e}")
 
     @reactive.effect
     @reactive.event(input.btn_confirm_add_sensor)
     def confirm_add_sensor():
-        new_value = input.new_sensor_name().strip()
-        if new_value:
-            current = custom_sensors()
-            if new_value not in current:
-                custom_sensors.set(current + [new_value])
-                log.info(f"Added new sensor: {new_value}")
-            if current_plan_type() == "plan_2":
-                active_modal.set("plan_2")
-            elif current_plan_type() == "plan_3":
-                active_modal.set("plan_3")
-            else:
-                active_modal.set(None)
+        try:
+            new_value = input.new_sensor_name().strip()
+            if new_value:
+                current = custom_sensors()
+                if new_value not in current:
+                    custom_sensors.set(current + [new_value])
+                    log.info(f"Added new sensor: {new_value}")
+            ui.modal_remove()
+        except Exception as e:
+            log.error(f"Add sensor error: {e}")
 
     @reactive.effect
     @reactive.event(input.btn_cancel_add)
     def cancel_add():
-        if current_plan_type() == "plan_2":
-            active_modal.set("plan_2")
-        elif current_plan_type() == "plan_3":
-            active_modal.set("plan_3")
-        else:
-            active_modal.set(None)
+        ui.modal_remove()
 
     # ===== UI Rendering =====
     @reactive.calc
@@ -403,6 +455,8 @@ def server(input, output, session):
         res = plan_results()
         pt = current_plan_type()
 
+        log.info(f"results_area: phone={ph}, plan_type={pt}, has_results={isinstance(res, dict)}")
+
         # 🔵 الخطة 1: التطابق التلقائي المباشر
         if pt is None:
             wf = cached_workflow()
@@ -413,7 +467,7 @@ def server(input, output, session):
                 ui.div(
                     ui.input_action_button(
                         "trigger_plan_2",
-                        " بدء المطابقة الفنية (Plan 2)",
+                        "🔵 بدء المطابقة الفنية (Plan 2)",
                         style="width:100%; background:#00bfff; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-bottom:10px;"
                     ),
                     ui.input_action_button(
@@ -426,6 +480,7 @@ def server(input, output, session):
 
         # 🟢 الخطة 2: التكامل اليدوي والمجموعات
         elif pt == "plan_2":
+            log.info("Rendering Plan 2 results")
             if isinstance(res, dict):
                 return ui.div(
                     draw_technical_coords(
@@ -441,11 +496,6 @@ def server(input, output, session):
                         "btn_learn_and_merge",
                         "🔄 دمج الهاتف داخل هذه المجموعة",
                         style="width:100%; background:#2ecc71; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:15px;"
-                    ),
-                    ui.input_action_button(
-                        "trigger_plan_3",
-                        "🟠 لم أجد ما يناسبني - انتقل للخطة 3",
-                        style="width:100%; background:#e67e22; color:white; padding:14px; border:none; border-radius:12px; font-weight:bold; margin-top:10px;"
                     )
                 )
             else:
@@ -465,6 +515,7 @@ def server(input, output, session):
 
         # 🟠 الخطة 3: التأسيس والإنشاء (خطة الطوارئ)
         elif pt == "plan_3":
+            log.info("Rendering Plan 3 results")
             if isinstance(res, dict):
                 return ui.div(
                     draw_technical_coords(
@@ -493,37 +544,11 @@ def server(input, output, session):
                 )
 
         else:
+            log.warning(f"Unexpected plan type: {pt}")
             return None
 
     @render.ui
     def modal_layer():
-        m = active_modal()
-        if m == "plan_2":
-            return draw_plan_2_modal(current_phone(), custom_panels(), custom_sensors())
-        if m == "plan_3":
-            return draw_plan_3_modal(current_phone(), custom_panels(), custom_sensors())
-        if m == "add_panel":
-            return ui.modal(
-                ui.input_text("new_panel_name", "اسم نوع الشاشة الجديد:", placeholder="مثال: IPS LCD"),
-                ui.div(
-                    ui.input_action_button("btn_confirm_add_panel", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
-                    ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
-                    style="text-align:center; margin-top:20px;"
-                ),
-                title="➕ إضافة نوع شاشة جديد",
-                easy_close=True
-            )
-        if m == "add_sensor":
-            return ui.modal(
-                ui.input_text("new_sensor_name", "اسم المستشعر الجديد:", placeholder="مثال: Proximity Sensor"),
-                ui.div(
-                    ui.input_action_button("btn_confirm_add_sensor", "✅ إضافة", style="background:#2ecc71; color:white; padding:10px 20px; border:none; border-radius:8px; margin-left:10px;"),
-                    ui.input_action_button("btn_cancel_add", "❌ إلغاء", style="background:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:8px;"),
-                    style="text-align:center; margin-top:20px;"
-                ),
-                title="➕ إضافة مستشعر جديد",
-                easy_close=True
-            )
         return None
 
     # ===== الإعدادات الديناميكية =====
