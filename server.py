@@ -49,6 +49,20 @@ def convert_database_from_raw(rows):
     return db
 
 
+def _fuzzy_find(key, available_keys):
+    """✅ بحث مرن: يطابق حتى لو كان الاسم مختلفاً قليلاً"""
+    if key in available_keys:
+        return key
+    key_lower = key.lower().strip()
+    for k in available_keys:
+        k_lower = k.lower().strip()
+        if key_lower == k_lower:
+            return k
+        if key_lower in k_lower or k_lower in key_lower:
+            return k
+    return None
+
+
 def server(input, output, session):
     # ===== State Management =====
     db_trigger = reactive.Value(0)
@@ -231,24 +245,48 @@ def server(input, output, session):
 
             db = database_data()
             idx = fast_index_calc()
-
-            # ✅ تشخيص: طباعة المفاتيح المتاحة في قاعدة البيانات
-            log.info(f"[DIAG] DB top-level keys (sizes): {list(db.keys())[:10]}")
             sz_str = str(sz).strip()
-            if sz_str in db:
-                log.info(f"[DIAG] Size '{sz_str}' found. Panels available: {list(db[sz_str].keys())}")
-                if pn in db[sz_str]:
-                    log.info(f"[DIAG] Panel '{pn}' found. Sensors available: {list(db[sz_str][pn].keys())}")
-                else:
-                    log.warning(f"[DIAG] Panel '{pn}' NOT found in size '{sz_str}'. Available: {list(db[sz_str].keys())}")
-            else:
-                log.warning(f"[DIAG] Size '{sz_str}' NOT found in DB. Available sizes: {list(db.keys())[:20]}")
 
+            # ✅ مطابقة مرنة للمقاس
+            matched_size = _fuzzy_find(sz_str, list(db.keys()))
+            if not matched_size:
+                log.warning(f"[FUZZY] Size '{sz_str}' not matched. Available: {list(db.keys())[:20]}")
+                plan_results.set(None)
+                current_plan_type.set(pt)
+                for k, v in zip(["size", "panel", "sensor"], [sz_str, pn, sn]):
+                    plan_inputs[k].set(v)
+                return
+            log.info(f"[FUZZY] Size '{sz_str}' → matched to '{matched_size}'")
+
+            # ✅ مطابقة مرنة للشاشة
+            available_panels = list(db[matched_size].keys())
+            matched_panel = _fuzzy_find(pn, available_panels)
+            if not matched_panel:
+                log.warning(f"[FUZZY] Panel '{pn}' not matched in size '{matched_size}'. Available: {available_panels}")
+                plan_results.set(None)
+                current_plan_type.set(pt)
+                for k, v in zip(["size", "panel", "sensor"], [sz_str, pn, sn]):
+                    plan_inputs[k].set(v)
+                return
+            log.info(f"[FUZZY] Panel '{pn}' → matched to '{matched_panel}'")
+
+            # ✅ مطابقة مرنة للمستشعر
+            available_sensors = list(db[matched_size][matched_panel].keys())
+            matched_sensor = _fuzzy_find(sn, available_sensors)
+            if not matched_sensor:
+                log.warning(f"[FUZZY] Sensor '{sn}' not matched. Available: {available_sensors}")
+                plan_results.set(None)
+                current_plan_type.set(pt)
+                for k, v in zip(["size", "panel", "sensor"], [sz_str, pn, sn]):
+                    plan_inputs[k].set(v)
+                return
+            log.info(f"[FUZZY] Sensor '{sn}' → matched to '{matched_sensor}'")
+
+            # ✅ استخدام القيم المطابقة للبحث
             start_time = time.time()
-            r = compute_plan_matches(sz_str, pn, sn, db, idx)
+            r = compute_plan_matches(matched_size, matched_panel, matched_sensor, db, idx)
             elapsed = time.time() - start_time
 
-            # ✅ تشخيص: طباعة النتائج الخام
             log.info(f"[DIAG] Plan {pt} completed in {elapsed:.2f}s")
             if isinstance(r, dict):
                 log.info(f"[DIAG] Results: exact={len(r.get('exact', []))}, plus={len(r.get('plus', []))}, minus={len(r.get('minus', []))}")
