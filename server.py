@@ -50,15 +50,22 @@ def convert_database_from_raw(rows):
 
 
 def _fuzzy_find(key, available_keys):
-    """✅ بحث مرن: يطابق حتى لو كان الاسم مختلفاً قليلاً"""
+    """✅ بحث مرن متعدد المستويات مع تنظيف الرموز"""
+    if not key or not available_keys:
+        return None
     if key in available_keys:
         return key
-    key_lower = key.lower().strip()
+    key_lower = key.lower().strip().replace("_", " ").replace("-", " ").replace("/", " ")
     for k in available_keys:
-        k_lower = k.lower().strip()
+        k_lower = k.lower().strip().replace("_", " ").replace("-", " ").replace("/", " ")
         if key_lower == k_lower:
             return k
         if key_lower in k_lower or k_lower in key_lower:
+            return k
+        key_words = set(key_lower.split())
+        k_words = set(k_lower.split())
+        common = key_words & k_words
+        if len(common) >= max(1, min(len(key_words), len(k_words)) * 0.5):
             return k
     return None
 
@@ -247,7 +254,6 @@ def server(input, output, session):
             idx = fast_index_calc()
             sz_str = str(sz).strip()
 
-            # ✅ مطابقة مرنة للمقاس
             matched_size = _fuzzy_find(sz_str, list(db.keys()))
             if not matched_size:
                 log.warning(f"[FUZZY] Size '{sz_str}' not matched. Available: {list(db.keys())[:20]}")
@@ -258,11 +264,10 @@ def server(input, output, session):
                 return
             log.info(f"[FUZZY] Size '{sz_str}' → matched to '{matched_size}'")
 
-            # ✅ مطابقة مرنة للشاشة
             available_panels = list(db[matched_size].keys())
             matched_panel = _fuzzy_find(pn, available_panels)
             if not matched_panel:
-                log.warning(f"[FUZZY] Panel '{pn}' not matched in size '{matched_size}'. Available: {available_panels}")
+                log.warning(f"[FUZZY] Panel '{pn}' not matched. Available: {available_panels}")
                 plan_results.set(None)
                 current_plan_type.set(pt)
                 for k, v in zip(["size", "panel", "sensor"], [sz_str, pn, sn]):
@@ -270,24 +275,28 @@ def server(input, output, session):
                 return
             log.info(f"[FUZZY] Panel '{pn}' → matched to '{matched_panel}'")
 
-            # ✅ مطابقة مرنة للمستشعر
             available_sensors = list(db[matched_size][matched_panel].keys())
             matched_sensor = _fuzzy_find(sn, available_sensors)
             if not matched_sensor:
-                log.warning(f"[FUZZY] Sensor '{sn}' not matched. Available: {available_sensors}")
-                plan_results.set(None)
-                current_plan_type.set(pt)
-                for k, v in zip(["size", "panel", "sensor"], [sz_str, pn, sn]):
-                    plan_inputs[k].set(v)
-                return
-            log.info(f"[FUZZY] Sensor '{sn}' → matched to '{matched_sensor}'")
+                log.warning(f"[FUZZY] Sensor '{sn}' not matched. Available: {available_sensors}. Using fallback.")
+                if available_sensors:
+                    matched_sensor = available_sensors[0]
+                    log.info(f"[FUZZY] Fallback: using '{matched_sensor}' instead of '{sn}'")
+                else:
+                    log.error(f"[FUZZY] No sensors available for size='{matched_size}', panel='{matched_panel}'")
+                    plan_results.set(None)
+                    current_plan_type.set(pt)
+                    for k, v in zip(["size", "panel", "sensor"], [sz_str, pn, sn]):
+                        plan_inputs[k].set(v)
+                    return
+            else:
+                log.info(f"[FUZZY] Sensor '{sn}' → matched to '{matched_sensor}'")
 
-            # ✅ استخدام القيم المطابقة للبحث
             start_time = time.time()
             r = compute_plan_matches(matched_size, matched_panel, matched_sensor, db, idx)
             elapsed = time.time() - start_time
 
-            log.info(f"[DIAG] Plan {pt} completed in {elapsed:.2f}s")
+            log.info(f"[DIAG] Plan {pt} completed in {elapsed:.2f}s | size='{matched_size}' panel='{matched_panel}' sensor='{matched_sensor}'")
             if isinstance(r, dict):
                 log.info(f"[DIAG] Results: exact={len(r.get('exact', []))}, plus={len(r.get('plus', []))}, minus={len(r.get('minus', []))}")
             else:
@@ -333,11 +342,9 @@ def server(input, output, session):
             pn = input.p2_panel()
             sn = input.p2_sensor()
             log.info(f"Plan 2 inputs: size={sz}, panel={pn}, sensor={sn}")
-
             if sz is None or pn in (None, "", "__empty__") or sn in (None, "", "__empty__"):
                 log.warning("Plan 2: Missing or empty required fields")
                 return
-
             process_plan(sz, pn, sn, "plan_2")
         except Exception as e:
             log.error(f"Run Plan 2 error: {e}", exc_info=True)
@@ -352,11 +359,9 @@ def server(input, output, session):
             pn = input.p3_panel()
             sn = input.p3_sensor()
             log.info(f"Plan 3 inputs: size={sz}, panel={pn}, sensor={sn}")
-
             if sz is None or pn in (None, "", "__empty__") or sn in (None, "", "__empty__"):
                 log.warning("Plan 3: Missing or empty required fields")
                 return
-
             process_plan(sz, pn, sn, "plan_3")
         except Exception as e:
             log.error(f"Run Plan 3 error: {e}", exc_info=True)
@@ -502,7 +507,7 @@ def server(input, output, session):
 
     @render.ui
     def results_area():
-        """✅ منطق تسلسل الخطط المعزول: Plan 2 فقط → Plan 3 فقط → تأسيس فقط"""
+        """✅ منطق تسلسل الخطط المعزول + استعادة البطاقات الحمراء في الخطة 1"""
         ph = current_phone().strip()
         if not ph:
             return None
@@ -517,8 +522,45 @@ def server(input, output, session):
             wf = cached_workflow()
             if wf:
                 return ui.div(ui.HTML(wf))
-            return ui.div(
-                draw_warning_card(f"الموديل {ph} غير موجود في قاعدة البيانات."),
+
+            # ✅ استعادة البطاقات الحمراء: بحث عن موديلات مشابهة بمستشعر مختلف
+            db = database_data()
+            warning_cards = []
+            ph_lower = ph.lower().strip()
+
+            for size_key, panels in db.items():
+                if not isinstance(panels, dict):
+                    continue
+                for panel_key, sensors in panels.items():
+                    if not isinstance(sensors, dict):
+                        continue
+                    for sensor_key, data in sensors.items():
+                        if not isinstance(data, dict):
+                            continue
+                        for model in data.get("models", []):
+                            if ph_lower in model.lower():
+                                # وجدنا موديل مشابه - اعرض تحذيرات المستشعر المختلف
+                                for other_sensor, other_data in sensors.items():
+                                    if other_sensor != sensor_key and isinstance(other_data, dict):
+                                        for m in other_data.get("models", [])[:3]:
+                                            warning_cards.append(
+                                                ui.HTML(f'<div class="flat-warning-card" style="margin-bottom:8px;">⚠️ {escape(str(m))} - نفس المقاس والشاشة لكن المستشعر مختلف: {escape(str(other_sensor))}</div>')
+                                            )
+                                break
+                        if warning_cards:
+                            break
+                    if warning_cards:
+                        break
+                if warning_cards:
+                    break
+
+            result_elements = [draw_warning_card(f"الموديل {ph} غير موجود في قاعدة البيانات.")]
+
+            if warning_cards:
+                result_elements.append(ui.h4("⚠️ تنبيه: موديلات مشابهة بمستشعر مختلف:", style="color:#ff5252; text-align:right; direction:rtl; margin-top:15px;"))
+                result_elements.extend(warning_cards)
+
+            result_elements.append(
                 ui.input_action_button(
                     "trigger_plan_2",
                     "🔵 بدء المطابقة الفنية (Plan 2)",
@@ -530,9 +572,12 @@ def server(input, output, session):
                         border:none;
                         border-radius:12px;
                         font-weight:bold;
+                        margin-top:15px;
                     """
                 )
             )
+
+            return ui.div(*result_elements)
 
         # 🟢 الخطة 2: التكامل اليدوي والمجموعات
         elif pt == "plan_2":
