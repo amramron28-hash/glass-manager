@@ -19,7 +19,7 @@ from .modal_handlers import (
 )
 
 # تصحيح مسارات استدعاء الخدمات المضافة حديثاً لتطابق أسماء الملفات الفعلية بدقة
-from .watcher_service import execute_refresh_logic, execute_status_logic
+from .service_watcher import execute_refresh_logic, execute_status_logic
 from .search_controller import process_search_query
 
 __all__ = [
