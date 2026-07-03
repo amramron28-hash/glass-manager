@@ -50,7 +50,7 @@ def execute_refresh_logic(
         last_db_size.set(db_size)
         refresh_fn()
 
-        new_models = load_models_index()
+        new_models = load_models_index() or []
 
         if autocomplete_index() is None or new_models != models_index():
             models_index.set(new_models)
