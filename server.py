@@ -4,19 +4,15 @@ import json
 import time
 from shiny import ui, render, reactive
 
-# استدعاء موحد ونظيف من البوابة الموحدة لمجلد الخدمات
+# استدعاء الخدمات الموحدة والثوابت المستقرة
 import services as svs
+import config
 from core.logger import get_logger
-from database import add_model
 from silent_monitor import get_database, refresh, get_status, get_statistics
 from logic_engine import run_system_workflows
-from ui_components import (
-    draw_plan_2_modal, draw_plan_3_modal, draw_warning_card,
-    draw_technical_coords, draw_neon_section
-)
+from ui_components import draw_plan_2_modal, draw_plan_3_modal, draw_neon_section
 
 log = get_logger("server")
-STATS_TTL = 3
 
 
 def server(input, output, session):
@@ -28,7 +24,7 @@ def server(input, output, session):
     suggestions_list = reactive.Value([])
     plan_results = reactive.Value(None)
 
-    plan_inputs = {k: reactive.Value("") for k in ["size", "panel", "sensor"]}
+    plan_inputs = {key: reactive.Value("") for key in ["size", "panel", "sensor"]}
     current_plan_type = reactive.Value(None)
 
     custom_panels = reactive.Value([])
@@ -65,8 +61,8 @@ def server(input, output, session):
             if isinstance(db, dict):
                 return db
             return svs.convert_database_from_raw(db) if isinstance(db, list) else {}
-        except Exception as e:
-            log.error(f"DB Error: {e}")
+        except (TypeError, ValueError, KeyError, AttributeError, IndexError) as error:
+            log.error(f"Database Mapping Exception Caught: {error}")
             return {}
 
     @reactive.calc
@@ -76,27 +72,27 @@ def server(input, output, session):
     @reactive.calc
     def get_cached_stats_data():
         now = time.time()
-        if now - _stats_time() < STATS_TTL and _cached_stats() is not None:
+        if now - _stats_time() < config.STATS_REFRESH_TTL and _cached_stats() is not None:
             return _cached_stats()
         try:
-            s = get_statistics()
-            _cached_stats.set(s)
+            statistics = get_statistics()
+            _cached_stats.set(statistics)
             _stats_time.set(now)
-            return s
-        except Exception:
+            return statistics
+        except (RuntimeError, KeyError, AttributeError, IndexError):
             return {}
 
     @reactive.calc
     def get_cached_status_data():
         now = time.time()
-        if now - _status_time() < STATS_TTL and _cached_status() is not None:
+        if now - _status_time() < config.STATS_REFRESH_TTL and _cached_status() is not None:
             return _cached_status()
         try:
-            s = get_status()
-            _cached_status.set(s)
+            status = get_status()
+            _cached_status.set(status)
             _status_time.set(now)
-            return s
-        except Exception:
+            return status
+        except (RuntimeError, KeyError, AttributeError, IndexError):
             return {}
 
     # ===== Watchers =====
@@ -104,74 +100,23 @@ def server(input, output, session):
     def watcher_refresh():
         reactive.invalidate_later(5)
         db_trigger()
-        try:
-            stats = get_cached_stats_data()
-            size = stats.get("phones", 0) if isinstance(stats, dict) else 0
-            if size == 0:
-                autocomplete_index.set(None)
-                models_index.set([])
-                custom_panels.set([])
-                custom_sensors.set([])
-                _last_db_size.set(0)
-                return
-            if _last_db_size() == size and autocomplete_index() is not None:
-                if show_curtain():
-                    q = current_phone()
-                    t = autocomplete_index()
-                    if q and t:
-                        suggestions_list.set(t.search_prefix(q, 10))
-                return
-            _last_db_size.set(size)
-            refresh()
-            new_idx = svs.load_models_index()
-            if autocomplete_index() is None or new_idx != models_index():
-                models_index.set(new_idx)
-                autocomplete_index.set(svs.build_autocomplete_index(new_idx))
-                invalidate_workflow()
-                p, s_list = svs.extract_panels_sensors(database_data())
-                custom_panels.set(p)
-                custom_sensors.set(s_list)
-            if show_curtain():
-                q = current_phone()
-                t = autocomplete_index()
-                if q and t:
-                    suggestions_list.set(t.search_prefix(q, 10))
-        except Exception as e:
-            log.error(f"Refresh Err: {e}")
+        svs.execute_refresh_logic(
+            get_cached_stats_data, database_data, autocomplete_index, models_index,
+            custom_panels, custom_sensors, _last_db_size, show_curtain, current_phone, suggestions_list, refresh, invalidate_workflow
+        )
 
     @reactive.effect
     def watcher_status():
         reactive.invalidate_later(10)
-        try:
-            st = get_cached_status_data()
-            cur = st.get("status", "UNKNOWN") if isinstance(st, dict) else "UNKNOWN"
-            if cur != _last_monitor_status():
-                _last_monitor_status.set(cur)
-                log.warning(f"Monitor: {cur}") if cur != "ONLINE" else log.info("Monitor: ONLINE")
-        except Exception as e:
-            log.error(f"Status Err: {e}")
+        svs.execute_status_logic(get_cached_status_data, _last_monitor_status)
 
     # ===== Search & Autocomplete =====
     @reactive.effect
     @reactive.event(input.search_query)
     def handle_search():
-        q = input.search_query().strip()
-        current_phone.set(q)
-        if not q:
-            suggestions_list.set([])
-            show_curtain.set(False)
-            return
-        t = autocomplete_index()
-        if not t:
-            return
-        m = t.search_prefix(q, 10)
-        ex = t.contains_exact(q)
-        if m and not ex:
-            suggestions_list.set(m)
-            show_curtain.set(True)
-        else:
-            suggestions_list.set([])
-            show_curtain.set(False)
+        svs.process_search_query(
+            input.search_query(), current_phone, suggestions_list, show_curtain, autocomplete_index
+        )
 
     @render.ui
     def suggestions_curtain():
@@ -179,9 +124,9 @@ def server(input, output, session):
             return None
         return ui.div(
             *[ui.div(
-                i, class_="suggestion-row",
-                onclick=f"Shiny.setInputValue('search_query', {json.dumps(i)}, {{priority:'event'}}); Shiny.setInputValue('selected_model_trigger', Math.random(), {{priority:'event'}});"
-            ) for i in suggestions_list()],
+                row, class_="suggestion-row",
+                onclick=f"Shiny.setInputValue('search_query', {json.dumps(row)}, {{priority:'event'}}); Shiny.setInputValue('selected_model_trigger', Math.random(), {{priority:'event'}});"
+            ) for row in suggestions_list()],
             class_="suggestions-curtain"
         )
 
@@ -192,24 +137,24 @@ def server(input, output, session):
         current_phone.set(input.search_query().strip())
         invalidate_workflow()
 
-    # ===== Plan Execution Layer =====
-    def execute_mapped_plan(sz, pn, sn, pt):
+    # ===== Unified Plan Logic =====
+    def run_plan(screen_size, panel_name, sensor_name, plan_type):
         try:
             db = database_data()
             idx = fast_index_calc()
             
-            output_data = svs.process_plan(sz, pn, sn, db, idx)
+            output_data = svs.process_plan(screen_size, panel_name, sensor_name, db, idx, plan_type)
             
-            for k, v in zip(["size", "panel", "sensor"], [sz, pn, sn]):
-                plan_inputs[k].set(str(v).strip())
-            current_plan_type.set(pt)
+            for key, val in zip(["size", "panel", "sensor"], [screen_size, panel_name, sensor_name]):
+                plan_inputs[key].set(str(val).strip())
+            current_plan_type.set(plan_type)
             
-            if output_data:
-                plan_results.set(output_data["results"])
+            if isinstance(output_data, dict):
+                plan_results.set(output_data.get("results"))
             else:
                 plan_results.set(None)
-        except Exception as e:
-            log.error(f"Execution plan error: {e}", exc_info=True)
+        except (ValueError, TypeError, KeyError, AttributeError, IndexError) as error:
+            log.error(f"Unified run_plan Execution Exception: {error}")
             plan_results.set(None)
 
     @reactive.effect
@@ -226,27 +171,27 @@ def server(input, output, session):
         current_plan_type.set("plan_3")
         plan_results.set(None)
         if not plan_inputs["size"]():
-            plan_inputs["size"].set("6.5")
+            plan_inputs["size"].set(config.DEFAULT_SCREEN_SIZE)
         if not plan_inputs["panel"]():
-            plan_inputs["panel"].set(custom_panels()[0] if custom_panels() else "OLED")
+            plan_inputs["panel"].set(custom_panels() if custom_panels() else config.DEFAULT_PANEL_NAME)
         if not plan_inputs["sensor"]():
-            plan_inputs["sensor"].set(custom_sensors()[0] if custom_sensors() else "Virtual")
+            plan_inputs["sensor"].set(custom_sensors() if custom_sensors() else config.DEFAULT_SENSOR_NAME)
 
     @reactive.effect
     @reactive.event(input.p2_search)
-    def run_plan_2():
-        sz, pn, sn = input.p2_size(), input.p2_panel(), input.p2_sensor()
-        if sz is not None and pn not in (None, "", "__empty__") and sn not in (None, "", "__empty__"):
+    def trigger_run_plan_2():
+        screen_size, panel_name, sensor_name = input.p2_size(), input.p2_panel(), input.p2_sensor()
+        if screen_size is not None and panel_name not in (None, "", "__empty__") and sensor_name not in (None, "", "__empty__"):
             active_modal.set(None)
-            execute_mapped_plan(sz, pn, sn, "plan_2")
+            run_plan(screen_size, panel_name, sensor_name, "plan_2")
 
     @reactive.effect
     @reactive.event(input.p3_search)
-    def run_plan_3():
-        sz, pn, sn = input.p3_size(), input.p3_panel(), input.p3_sensor()
-        if sz is not None and pn not in (None, "", "__empty__") and sn not in (None, "", "__empty__"):
+    def trigger_run_plan_3():
+        screen_size, panel_name, sensor_name = input.p3_size(), input.p3_panel(), input.p3_sensor()
+        if screen_size is not None and panel_name not in (None, "", "__empty__") and sensor_name not in (None, "", "__empty__"):
             active_modal.set(None)
-            execute_mapped_plan(sz, pn, sn, "plan_3")
+            run_plan(screen_size, panel_name, sensor_name, "plan_3")
 
     # ===== Save & Reset Pipeline =====
     def trigger_reset_ui():
@@ -279,7 +224,7 @@ def server(input, output, session):
     def foundation():
         trigger_save_model("Foundation")
 
-    # ===== Modals UI Triggers & Handlers (إصلاح وإكمال الجزء المقطوع) =====
+    # ===== Modals UI Triggers & Handlers =====
     @reactive.effect
     @reactive.event(input.show_add_panel)
     def handle_show_add_panel_event():
@@ -292,3 +237,38 @@ def server(input, output, session):
 
     @reactive.effect
     @reactive.event(input.btn_confirm_add_panel)
+    def confirm_add_panel_event():
+        svs.confirm_add_panel(input, custom_panels, invalidate_workflow)
+
+    @reactive.effect
+    @reactive.event(input.btn_confirm_add_sensor)
+    def confirm_add_sensor_event():
+        svs.confirm_add_sensor(input, custom_sensors, invalidate_workflow)
+
+    @reactive.effect
+    @reactive.event(input.btn_cancel_add)
+    def cancel_add_event():
+        svs.cancel_add()
+
+    # ===== Render Output View Components =====
+    @render.ui
+    def dynamic_modal_container():
+        mode = active_modal()
+        if mode == "plan_2":
+            return draw_plan_2_modal(current_phone(), custom_panels(), custom_sensors())
+        if mode == "plan_3":
+            return draw_plan_3_modal(current_phone(), custom_panels(), custom_sensors())
+        return None
+
+    @render.ui
+    def results_workflow_view():
+        phone_name = current_phone().strip()
+        if not phone_name or show_curtain():
+            return None
+        
+        results_cache = plan_results()
+        if results_cache is not None:
+            plan_type = current_plan_type()
+            return ui.div(
+                svs.build_plan_results_header(plan_type),
+                draw_neon_section("تطابق تام ومباشر", results_cache.get("exact", []), "#2ecc71", "🟢", "exact"),
