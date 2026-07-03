@@ -90,7 +90,7 @@ def server(input, output, session):
         try:
             status = get_status()
             _cached_status.set(status)
-            _status_time.set(now)
+            _stats_time.set(now)
             return status
         except (RuntimeError, KeyError, AttributeError, IndexError):
             return {}
@@ -272,3 +272,4 @@ def server(input, output, session):
             return ui.div(
                 svs.build_plan_results_header(plan_type),
                 draw_neon_section("تطابق تام ومباشر", results_cache.get("exact", []), "#2ecc71", "🟢", "exact"),
+
