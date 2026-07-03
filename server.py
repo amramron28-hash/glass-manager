@@ -1,4 +1,4 @@
-# server.py (الجزء الأول من قطعتين - مصحح وسائط الـ Watchers)
+# server.py (الجزء الأول من قطعتين - مرتبط بـ config.py المحترف الجديد)
 
 import json
 import time
@@ -95,33 +95,20 @@ def server(input, output, session):
         except (RuntimeError, KeyError, AttributeError, IndexError):
             return {}
 
-    # ===== Watchers (ضبط وتثبيت الأسماء لتطابق ملف service_watcher.py بدقة) =====
+    # ===== Watchers (الربط الديناميكي مع ثوابت الـ config المحترفة) =====
     @reactive.effect
     def watcher_refresh():
-        reactive.invalidate_later(5)
+        reactive.invalidate_later(config.REFRESH_INTERVAL_SEC)  # استدعاء من ملف التعديل الموحد
         db_trigger()
         svs.execute_refresh_logic(
-            cached_stats=get_cached_stats_data,
-            database_data=database_data,
-            autocomplete_index=autocomplete_index,
-            models_index=models_index,
-            custom_panels=custom_panels,
-            custom_sensors=custom_sensors,
-            last_db_size=_last_db_size,
-            show_curtain=show_curtain,
-            current_phone=current_phone,
-            suggestions_list=suggestions_list,
-            refresh_fn=refresh,
-            invalidate_workflow_fn=invalidate_workflow
+            get_cached_stats_data, database_data, autocomplete_index, models_index,
+            custom_panels, custom_sensors, _last_db_size, show_curtain, current_phone, suggestions_list, refresh, invalidate_workflow
         )
 
     @reactive.effect
     def watcher_status():
-        reactive.invalidate_later(10)
-        svs.execute_status_logic(
-            get_cached_status_data=get_cached_status_data,
-            last_monitor_status=_last_monitor_status
-        )
+        reactive.invalidate_later(config.STATUS_INTERVAL_SEC)   # استدعاء من ملف التعديل الموحد
+        svs.execute_status_logic(get_cached_status_data, _last_monitor_status)
 
     # ===== Search & Autocomplete =====
     @reactive.effect
@@ -139,7 +126,7 @@ def server(input, output, session):
             *[ui.div(
                 row, class_="suggestion-row",
                 onclick=f"Shiny.setInputValue('search_query', {json.dumps(row)}, {{priority:'event'}}); Shiny.setInputValue('selected_model_trigger', Math.random(), {{priority:'event'}});"
-            ) for row in suggestions_list()],
+            ) for row in suggestions_list()[:config.MAX_SUGGESTIONS]],  # تحديد عدد الاقتراحات من الـ config
             class_="suggestions-curtain"
         )
 
@@ -182,6 +169,8 @@ def server(input, output, session):
         active_modal.set("plan_3")
         current_plan_type.set("plan_3")
         plan_results.set(None)
+        
+        # الاعتماد على معايير زجاج الحماية الافتراضية المستوردة ديناميكياً من ملف config المحترف
         if not plan_inputs["size"]():
             plan_inputs["size"].set(config.DEFAULT_SCREEN_SIZE)
         if not plan_inputs["panel"]():
@@ -290,3 +279,4 @@ def server(input, output, session):
             
         database = database_data()
         return ui.HTML(run_system_workflows(phone_name, database))
+
