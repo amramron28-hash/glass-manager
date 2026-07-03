@@ -10,7 +10,7 @@ def server(input, output, session):
     suggestions_list = reactive.Value([])
     autocomplete_index = reactive.Value(svs.build_autocomplete_index(svs.load_models_index()))
 
-    # --- Drawer Logic ---
+    # --- Drawer Events ---
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _(): session.send_custom_message("toggle_drawer", "open")
@@ -36,21 +36,21 @@ def server(input, output, session):
         if not show_curtain() or not suggestions_list(): return None
         items = []
         for row in suggestions_list():
-            # إرسال قيمة الموديل المختار مباشرة
+            # استخدام JS للضغط لضمان إرسال القيمة للسيرفر مباشرة
             items.append(ui.tags.div(row, class_="suggestion-row", 
-                onclick=f"Shiny.setInputValue('search_query', '{row}', {{priority:'event'}}); Shiny.setInputValue('selected_model_trigger', '{row}', {{priority:'event'}});"))
+                onclick=f"Shiny.setInputValue('search_query', '{row}'); Shiny.setInputValue('selected_model_trigger', '{row}', {{priority:'event'}});"))
         return ui.div(*items, class_="suggestions-curtain")
 
     @reactive.effect
     @reactive.event(input.selected_model_trigger)
     def _():
         current_phone.set(input.selected_model_trigger())
-        show_curtain.set(False) # إخفاء الاقتراحات لتظهر النتائج
+        show_curtain.set(False) # إخفاء الستارة عند الاختيار
 
-    # --- Results Rendering ---
+    # --- Output Logic ---
     @render.ui
     def results_workflow_view():
         phone = current_phone()
         if not phone or show_curtain(): return None
-        # إرسال قاعدة البيانات الشجرية الأصلية للمحرك
+        # جلب البيانات مباشرة من السيرفس لضمان التحديث
         return ui.HTML(run_system_workflows(phone, get_database()))
