@@ -1,4 +1,4 @@
-# server.py (الجزء الأول من قطعتين - مرتبط بـ config.py المحترف الجديد)
+# server.py (الجزء الأول من قطعتين - الإعدادات مدمجة محلياً لمنع الأخطاء)
 
 import json
 import time
@@ -6,13 +6,21 @@ from shiny import ui, render, reactive
 
 # استدعاء الخدمات الموحدة والثوابت المستقرة
 import services as svs
-import config
 from core.logger import get_logger
 from silent_monitor import get_database, refresh, get_status, get_statistics
 from logic_engine import run_system_workflows
 from ui_components import draw_plan_2_modal, draw_plan_3_modal, draw_neon_section
 
 log = get_logger("server")
+
+# دمج إعدادات وثوابت زجاج الحماية محلياً لضمان الإقلاع الفوري ومنع كسر الكود
+DEFAULT_SCREEN_SIZE = "6.5"
+DEFAULT_PANEL_NAME = "Notch"
+DEFAULT_SENSOR_NAME = "Virtual"
+STATS_REFRESH_TTL = 3
+REFRESH_INTERVAL_SEC = 5
+STATUS_INTERVAL_SEC = 10
+MAX_SUGGESTIONS = 10
 
 
 def server(input, output, session):
@@ -72,7 +80,7 @@ def server(input, output, session):
     @reactive.calc
     def get_cached_stats_data():
         now = time.time()
-        if now - _stats_time() < config.STATS_REFRESH_TTL and _cached_stats() is not None:
+        if now - _stats_time() < STATS_REFRESH_TTL and _cached_stats() is not None:
             return _cached_stats()
         try:
             statistics = get_statistics()
@@ -85,7 +93,7 @@ def server(input, output, session):
     @reactive.calc
     def get_cached_status_data():
         now = time.time()
-        if now - _status_time() < config.STATS_REFRESH_TTL and _cached_status() is not None:
+        if now - _status_time() < STATS_REFRESH_TTL and _cached_status() is not None:
             return _cached_status()
         try:
             status = get_status()
@@ -95,10 +103,10 @@ def server(input, output, session):
         except (RuntimeError, KeyError, AttributeError, IndexError):
             return {}
 
-    # ===== Watchers (الربط الديناميكي مع ثوابت الـ config المحترفة) =====
+    # ===== Watchers =====
     @reactive.effect
     def watcher_refresh():
-        reactive.invalidate_later(config.REFRESH_INTERVAL_SEC)  # استدعاء من ملف التعديل الموحد
+        reactive.invalidate_later(REFRESH_INTERVAL_SEC)  # استدعاء محلي نقي وآمن
         db_trigger()
         svs.execute_refresh_logic(
             get_cached_stats_data, database_data, autocomplete_index, models_index,
@@ -107,7 +115,7 @@ def server(input, output, session):
 
     @reactive.effect
     def watcher_status():
-        reactive.invalidate_later(config.STATUS_INTERVAL_SEC)   # استدعاء من ملف التعديل الموحد
+        reactive.invalidate_later(STATUS_INTERVAL_SEC)   # استدعاء محلي نقي وآمن
         svs.execute_status_logic(get_cached_status_data, _last_monitor_status)
 
     # ===== Search & Autocomplete =====
@@ -126,7 +134,7 @@ def server(input, output, session):
             *[ui.div(
                 row, class_="suggestion-row",
                 onclick=f"Shiny.setInputValue('search_query', {json.dumps(row)}, {{priority:'event'}}); Shiny.setInputValue('selected_model_trigger', Math.random(), {{priority:'event'}});"
-            ) for row in suggestions_list()[:config.MAX_SUGGESTIONS]],  # تحديد عدد الاقتراحات من الـ config
+            ) for row in suggestions_list()[:MAX_SUGGESTIONS]],  # تحديد الاقتراحات محلياً
             class_="suggestions-curtain"
         )
 
@@ -170,13 +178,13 @@ def server(input, output, session):
         current_plan_type.set("plan_3")
         plan_results.set(None)
         
-        # الاعتماد على معايير زجاج الحماية الافتراضية المستوردة ديناميكياً من ملف config المحترف
+        # الاعتماد على معايير زجاج الحماية المعرفة محلياً في الجزء الأول بدقة كاملة
         if not plan_inputs["size"]():
-            plan_inputs["size"].set(config.DEFAULT_SCREEN_SIZE)
+            plan_inputs["size"].set(DEFAULT_SCREEN_SIZE)
         if not plan_inputs["panel"]():
-            plan_inputs["panel"].set(custom_panels() if custom_panels() else config.DEFAULT_PANEL_NAME)
+            plan_inputs["panel"].set(custom_panels() if custom_panels() else DEFAULT_PANEL_NAME)
         if not plan_inputs["sensor"]():
-            plan_inputs["sensor"].set(custom_sensors() if custom_sensors() else config.DEFAULT_SENSOR_NAME)
+            plan_inputs["sensor"].set(custom_sensors() if custom_sensors() else DEFAULT_SENSOR_NAME)
 
     @reactive.effect
     @reactive.event(input.p2_search)
@@ -279,4 +287,3 @@ def server(input, output, session):
             
         database = database_data()
         return ui.HTML(run_system_workflows(phone_name, database))
-
