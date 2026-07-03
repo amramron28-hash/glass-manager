@@ -1,36 +1,49 @@
-MODELS_INDEX_FILE = "models_index.txt"
+import json
+import os
+from core.logger import get_logger
 
+log = get_logger("database_service")
+
+# تأكد أن هذا المسار يشير إلى ملف models_db.json الذي أرسلته
+MODELS_DB_FILE = "models_db.json"
 
 def load_models_index():
+    """تحميل وقراءة ملف قاعدة البيانات المتداخل"""
+    if not os.path.exists(MODELS_DB_FILE):
+        log.error(f"File not found: {MODELS_DB_FILE}")
+        return []
+    
     try:
-        with open(MODELS_INDEX_FILE, "r", encoding="utf-8") as f:
-            return [line.strip() for line in f if line.strip()]
-    except OSError as e:
-        log.error(f"Index load error: {e}")
+        with open(MODELS_DB_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            # نقوم بتحويل البيانات المتداخلة إلى قائمة مسطحة يسهل على النظام التعامل معها
+            return convert_database_from_raw(data)
+    except Exception as e:
+        log.error(f"Error loading models index: {e}")
         return []
 
+def convert_database_from_raw(data):
+    """
+    تقوم بتحويل الهيكل المتداخل الموجود في models_db.json 
+    إلى قائمة مسطحة (Flat List) من الموديلات.
+    """
+    flattened_db = []
+    if not isinstance(data, dict):
+        return flattened_db
 
-def convert_database_from_raw(rows):
-    db = {}
-
-    if not isinstance(rows, list):
-        return db
-
-    for item in rows:
-        if not isinstance(item, dict):
-            continue
-
-        size = str(item.get("size") or "").strip()
-        panel = str(item.get("panel") or "Notch Screen").strip()
-        sensor = str(item.get("sensor") or "hardware_top_sensor").strip()
-        model = str(item.get("model_name") or "").strip()
-
-        if not size or not model:
-            continue
-
-        db.setdefault(size, {}).setdefault(panel, {}).setdefault(sensor, {"models": []})
-
-        if model not in db[size][panel][sensor]["models"]:
-            db[size][panel][sensor]["models"].append(model)
-
-    return db
+    try:
+        for size, screens in data.items():
+            for screen_type, sensors in screens.items():
+                for sensor_type, content in sensors.items():
+                    models = content.get("models", [])
+                    for model in models:
+                        flattened_db.append({
+                            "model": model,
+                            "size": size,
+                            "screen": screen_type,
+                            "sensor": sensor_type
+                        })
+    except Exception as e:
+        log.error(f"Conversion error: {e}")
+    
+    return flattened_db
