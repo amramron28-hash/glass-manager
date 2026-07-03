@@ -1,15 +1,9 @@
 # config.py
 
-# ===== القيم الافتراضية =====
-DEFAULT_SCREEN_SIZE = "6.5"
-DEFAULT_PANEL_NAME = "Notch"
-DEFAULT_SENSOR_NAME = "Virtual"
+# ===== المعايير الثلاثة الافتراضية لزجاج حماية الشاشة =====
+DEFAULT_SCREEN_SIZE = "6.5"       # المعيار 1: المقاس الرقمي الافتراضي لزجاج الحماية
+DEFAULT_PANEL_NAME = "Notch"      # المعيار 2: شكل الشاشة الفعلي (نوتش، ثقب، أو منحنية)
+DEFAULT_SENSOR_NAME = "Virtual"   # المعيار 3: مستشعر التقارب لضمان عدم الحجب
 
-# ===== إعدادات النظام =====
-STATS_REFRESH_TTL = 3
-
-# ===== إعدادات المراقبة =====
-REFRESH_INTERVAL_SEC = 5
-STATUS_INTERVAL_SEC = 10
-MAX_SUGGESTIONS = 10
-DEBOUNCE_MS = 250
+# ===== إعدادات النظام والتحديث =====
+STATS_REFRESH_TTL = 3             # وقت صلاحية الكاش المؤقت للإحصائيات بالثواني
