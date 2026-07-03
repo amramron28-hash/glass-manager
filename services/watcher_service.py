@@ -1,60 +1,97 @@
-from .cache_service import workflow_cache, coords_cache, index_cache, get_cache_stats
-from .database_service import load_models_index, convert_database_from_raw
-from .fuzzy_service import fuzzy_find
-from .index_service import build_fast_index, extract_panels_sensors
-from .search_service import build_autocomplete_index, find_model_coords
-from .plan_engine import (
-    compute_plan_matches,
-    is_empty_result,
-    validate_plan_inputs,
-    get_unique_models_from_results,
-)
-from .plan_controller import process_plan
-from .save_service import perform_save
-from .reset_service import reset_ui
-from .modal_service import build_add_panel_modal, build_add_sensor_modal
-from .modal_handlers import (
-    handle_show_add_panel,
-    handle_show_add_sensor,
-    confirm_add_panel,
-    confirm_add_sensor,
-    cancel_add,
-)
+from core.logger import get_logger
+from .database_service import load_models_index
+from .index_service import extract_panels_sensors
+from .search_service import build_autocomplete_index
 
-from .watcher_service import (
-    execute_refresh_logic,
-    execute_status_logic,
-)
+log = get_logger("service_watcher")
 
-from .search_controller import process_search_query
 
-__all__ = [
-    "workflow_cache",
-    "coords_cache",
-    "index_cache",
-    "get_cache_stats",
-    "load_models_index",
-    "convert_database_from_raw",
-    "fuzzy_find",
-    "build_fast_index",
-    "extract_panels_sensors",
-    "build_autocomplete_index",
-    "find_model_coords",
-    "compute_plan_matches",
-    "is_empty_result",
-    "validate_plan_inputs",
-    "get_unique_models_from_results",
-    "process_plan",
-    "perform_save",
-    "reset_ui",
-    "build_add_panel_modal",
-    "build_add_sensor_modal",
-    "handle_show_add_panel",
-    "handle_show_add_sensor",
-    "confirm_add_panel",
-    "confirm_add_sensor",
-    "cancel_add",
-    "execute_refresh_logic",
-    "execute_status_logic",
-    "process_search_query",
-]
+def execute_refresh_logic(
+    cached_stats,
+    database_data,
+    autocomplete_index,
+    models_index,
+    custom_panels,
+    custom_sensors,
+    last_db_size,
+    show_curtain,
+    current_phone,
+    suggestions_list,
+    refresh_fn,
+    invalidate_workflow_fn,
+):
+    """منطق تحديث قاعدة البيانات والفهارس."""
+
+    try:
+        stats = cached_stats()
+        db_size = stats.get("phones", 0) if isinstance(stats, dict) else 0
+
+        if db_size == 0:
+            autocomplete_index.set(None)
+            models_index.set([])
+            custom_panels.set([])
+            custom_sensors.set([])
+            suggestions_list.set([])
+            last_db_size.set(0)
+            return
+
+        if last_db_size() == db_size and autocomplete_index() is not None:
+            if show_curtain():
+                trie = autocomplete_index()
+                query = current_phone()
+                if trie and query:
+                    suggestions_list.set(trie.search_prefix(query, 10))
+            return
+
+        last_db_size.set(db_size)
+
+        refresh_fn()
+
+        new_models = load_models_index()
+
+        if autocomplete_index() is None or new_models != models_index():
+            models_index.set(new_models)
+            autocomplete_index.set(build_autocomplete_index(new_models))
+
+            invalidate_workflow_fn()
+
+            panels, sensors = extract_panels_sensors(database_data())
+            custom_panels.set(panels)
+            custom_sensors.set(sensors)
+
+        if show_curtain():
+            trie = autocomplete_index()
+            query = current_phone()
+
+            if trie and query:
+                suggestions_list.set(trie.search_prefix(query, 10))
+
+    except Exception as error:
+        log.error(f"Refresh Logic Error: {error}", exc_info=True)
+
+
+def execute_status_logic(
+    get_cached_status_data,
+    last_monitor_status,
+):
+    """منطق مراقبة حالة الاتصال."""
+
+    try:
+        status = get_cached_status_data()
+
+        current_status = (
+            status.get("status", "UNKNOWN")
+            if isinstance(status, dict)
+            else "UNKNOWN"
+        )
+
+        if current_status != last_monitor_status():
+            last_monitor_status.set(current_status)
+
+            if current_status == "ONLINE":
+                log.info("Monitor: ONLINE")
+            else:
+                log.warning(f"Monitor: {current_status}")
+
+    except Exception as error:
+        log.error(f"Status Logic Error: {error}", exc_info=True)
