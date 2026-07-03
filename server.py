@@ -106,7 +106,7 @@ def server(input, output, session):
     # ===== Watchers =====
     @reactive.effect
     def watcher_refresh():
-        reactive.invalidate_later(REFRESH_INTERVAL_SEC)  # استدعاء محلي نقي وآمن
+        reactive.invalidate_later(REFRESH_INTERVAL_SEC, session=session)
         db_trigger()
         svs.execute_refresh_logic(
             get_cached_stats_data, database_data, autocomplete_index, models_index,
@@ -115,7 +115,7 @@ def server(input, output, session):
 
     @reactive.effect
     def watcher_status():
-        reactive.invalidate_later(STATUS_INTERVAL_SEC)   # استدعاء محلي نقي وآمن
+        reactive.invalidate_later(STATUS_INTERVAL_SEC, session=session)
         svs.execute_status_logic(get_cached_status_data, _last_monitor_status)
 
     # ===== Search & Autocomplete =====
@@ -134,7 +134,7 @@ def server(input, output, session):
             *[ui.div(
                 row, class_="suggestion-row",
                 onclick=f"Shiny.setInputValue('search_query', {json.dumps(row)}, {{priority:'event'}}); Shiny.setInputValue('selected_model_trigger', Math.random(), {{priority:'event'}});"
-            ) for row in suggestions_list()[:MAX_SUGGESTIONS]],  # تحديد الاقتراحات محلياً
+            ) for row in suggestions_list()[:MAX_SUGGESTIONS]],
             class_="suggestions-curtain"
         )
 
@@ -178,13 +178,14 @@ def server(input, output, session):
         current_plan_type.set("plan_3")
         plan_results.set(None)
         
-        # الاعتماد على معايير زجاج الحماية المعرفة محلياً في الجزء الأول بدقة كاملة
         if not plan_inputs["size"]():
             plan_inputs["size"].set(DEFAULT_SCREEN_SIZE)
         if not plan_inputs["panel"]():
-            plan_inputs["panel"].set(custom_panels() if custom_panels() else DEFAULT_PANEL_NAME)
+            panels = custom_panels()
+            plan_inputs["panel"].set(panels[0] if panels else DEFAULT_PANEL_NAME)
         if not plan_inputs["sensor"]():
-            plan_inputs["sensor"].set(custom_sensors() if custom_sensors() else DEFAULT_SENSOR_NAME)
+            sensors = custom_sensors()
+            plan_inputs["sensor"].set(sensors[0] if sensors else DEFAULT_SENSOR_NAME)
 
     @reactive.effect
     @reactive.event(input.p2_search)
@@ -287,3 +288,4 @@ def server(input, output, session):
             
         database = database_data()
         return ui.HTML(run_system_workflows(phone_name, database))
+
