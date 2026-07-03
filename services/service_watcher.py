@@ -7,7 +7,6 @@ from .search_service import build_autocomplete_index
 
 log = get_logger("service_watcher")
 
-
 def execute_refresh_logic(
     cached_stats,
     database_data,
@@ -22,48 +21,34 @@ def execute_refresh_logic(
     refresh_fn,
     invalidate_workflow_fn,
 ):
-    """منطق تحديث قاعدة البيانات والفهارس الذكي لمنع التكرار اللانهائي لكاش زجاج الحماية."""
+    """منطق تحديث الفهارس المعتمد على models_db.json"""
     try:
-        stats = cached_stats()
-        db_size = stats.get("phones", 0) if isinstance(stats, dict) else 0
-
-        # حماية أولى: إذا كانت قاعدة البيانات فارغة تماماً
-        if db_size == 0:
+        # تحميل البيانات المحدثة مباشرة من ملف JSON عبر database_service
+        new_models_list = load_models_index() or []
+        
+        # إذا كانت القائمة فارغة، قم بتصفير الفهارس
+        if not new_models_list:
             autocomplete_index.set(None)
             models_index.set([])
-            custom_panels.set([])
-            custom_sensors.set([])
-            suggestions_list.set([])
-            last_db_size.set(0)
             return
 
-        # حماية ثانية وحاسمة: إذا لم يتغير حجم البيانات لا تقم بتصفير الكاش نهائياً (إيقاف الـ Infinite Loop)
-        if last_db_size() == db_size and autocomplete_index() is not None:
-            if show_curtain():
-                trie = autocomplete_index()
-                query = current_phone()
-                if trie and query:
-                    suggestions_list.set(trie.search_prefix(query, 10))
-            return
+        # تحقق مما إذا كانت البيانات قد تغيرت فعلياً قبل إعادة بناء الفهارس (لتحسين الأداء)
+        if autocomplete_index() is None or len(new_models_list) != len(models_index()):
+            models_index.set(new_models_list)
+            
+            # بناء الفهرس الذكي (AutoComplete) بناءً على القائمة المسطحة
+            autocomplete_index.set(build_autocomplete_index(new_models_list))
 
-        # تحديث الحجم المسجل فقط عند حدوث تغيير حقيقي في قاعدة البيانات
-        last_db_size.set(db_size)
-        refresh_fn()
-
-        new_models = load_models_index() or []
-
-        if autocomplete_index() is None or new_models != models_index():
-            models_index.set(new_models)
-            autocomplete_index.set(build_autocomplete_index(new_models))
-
-            # استدعاء الإلغاء فقط عند الحاجة الفعلية وتغير البيانات
-            invalidate_workflow_fn()
-
-            # استخراج أشكال الشاشات والمستشعرات المحدثة (نوتش، ثقب، منحنية...)
-            panels, sensors = extract_panels_sensors(database_data())
+            # استخراج الخيارات (Panels/Sensors) من البيانات الخام
+            raw_db = database_data()
+            panels, sensors = extract_panels_sensors(raw_db)
             custom_panels.set(panels)
             custom_sensors.set(sensors)
 
+            # إعادة تعيين سير العمل
+            invalidate_workflow_fn()
+
+        # تحديث الاقتراحات إذا كان مربع البحث مفتوحاً
         if show_curtain():
             trie = autocomplete_index()
             query = current_phone()
@@ -75,16 +60,15 @@ def execute_refresh_logic(
 
 
 def execute_status_logic(get_cached_status_data, last_monitor_status):
-    """منطق مراقبة حالة الاتصال واستقرار خادم زجاج الحماية."""
+    """التحقق من حالة النظام"""
     try:
-        status = get_cached_status_data()
-        current_status = status.get("status", "UNKNOWN") if isinstance(status, dict) else "UNKNOWN"
+        # هنا سنعتمد على أن الخدمة تعمل طالما أن الملفات متاحة
+        import os
+        is_online = os.path.exists("models_db.json")
+        current_status = "ONLINE" if is_online else "OFFLINE"
 
         if current_status != last_monitor_status():
             last_monitor_status.set(current_status)
-            if current_status == "ONLINE":
-                log.info("Monitor: ONLINE")
-            else:
-                log.warning(f"Monitor: {current_status}")
+            log.info(f"Monitor Status: {current_status}")
     except Exception as error:
         log.error(f"Status Logic Error: {error}", exc_info=True)
