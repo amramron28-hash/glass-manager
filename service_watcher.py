@@ -1,9 +1,7 @@
-# services/service_watcher.py
-
 from core.logger import get_logger
-from .database_service import load_models_index
-from .index_service import extract_panels_sensors
-from .search_service import build_autocomplete_index
+from services.database_service import load_models_index
+from services.index_service import extract_panels_sensors
+from services.search_service import build_autocomplete_index
 
 log = get_logger("service_watcher")
 
@@ -22,7 +20,7 @@ def execute_refresh_logic(
     refresh_fn,
     invalidate_workflow_fn,
 ):
-    """منطق تحديث قاعدة البيانات والفهارس."""
+    """تحديث البيانات والفهارس"""
 
     try:
         stats = cached_stats()
@@ -76,7 +74,7 @@ def execute_status_logic(
     get_cached_status_data,
     last_monitor_status,
 ):
-    """منطق مراقبة حالة الاتصال."""
+    """مراقبة الحالة"""
 
     try:
         status = get_cached_status_data()
