@@ -1,43 +1,110 @@
-import os
-import base64
-from html import escape
-from shiny import ui
+import json
+import time
+from shiny import ui, render, reactive
 
-def inject_pwa_and_styles():
-    return ui.HTML("""<style>
-    html, body, .container-fluid { background-color:#0a0e17 !important; color:white !important; direction:rtl !important; font-family:"Segoe UI",sans-serif !important; }
-    .header-bar { display:flex; justify-content:space-between; align-items:center; padding:15px 25px; background:rgba(13,17,23,.55); border-bottom:1px solid rgba(0,191,255,.25); }
-    .brand-neon-main { color:#00bfff; font-size:28px; font-weight:900; }
-    .brand-neon-sub { color:#87ceeb; font-size:16px; font-weight:700; }
-    .search-box { position:relative; width:90%; max-width:500px; margin:30px auto; }
-    input[type="text"] { width:100%; background:rgba(17,24,39,.90); color:white; border:1px solid #00bfff; border-radius:14px; padding:14px; }
-    .suggestions-curtain { position:absolute; top:60px; right:0; left:0; background:rgba(22,27,34,.96); border:1px solid #00bfff; border-radius:12px; z-index:9999; }
-    .suggestion-row { padding:12px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.08); }
-    .drawer { position:fixed; top:0; right:-310px; width:300px; height:100%; background:rgba(15,22,36,.98); z-index:200000; transition:.4s; padding:30px; }
-    .drawer.open { right:0 !important; }
-    .btn-dots-menu { background:transparent; border:none; color:#00bfff; font-size:28px; cursor:pointer; }
-    .drawer-close-btn { background:transparent; border:none; color:#ff5252; font-size:24px; cursor:pointer; }
-    </style>""")
+# الاستيرادات من مشروعك الأصلي (تأكد أن المسارات مطابقة لمجلداتك)
+from services.search_service import build_autocomplete_index
+from services.plan_engine import compute_plan_matches
+from services.index_service import extract_panels_sensors
+from services.cache_service import workflow_cache
+from core.logger import get_logger
 
-app_ui = ui.page_fluid(
-    inject_pwa_and_styles(),
-    ui.tags.head(ui.tags.script("""
-        Shiny.addCustomMessageHandler('toggle_drawer', function(msg){
-            let d = document.getElementById('settings_drawer');
-            if(d) { if(msg === 'open') d.classList.add('open'); else d.classList.remove('open'); }
-        });
-    """)),
-    ui.div(
-        ui.div(ui.div("ZEGAAR AMMAR", class_="brand-neon-main"), ui.div("GLASS MANAGER", class_="brand-neon-sub")),
-        ui.input_action_button("btn_settings", "⋮", class_="btn-dots-menu"),
-        class_="header-bar"
-    ),
-    ui.div(
-        ui.input_action_button("btn_close_drawer_trigger", "×", class_="drawer-close-btn"),
-        ui.h3("⚙️ الإعدادات العامة", style="color:#00bfff; text-align:center;"),
-        ui.output_ui("database_status_area"),
-        id="settings_drawer", class_="drawer"
-    ),
-    ui.div(ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."), ui.output_ui("suggestions_curtain"), class_="search-box"),
-    ui.output_ui("results_workflow_view")
+from database import add_model
+from silent_monitor import get_database, refresh, get_status, get_cached_status
+from logic_engine import run_system_workflows
+# استيراد الدوال كما هي موجودة في ملف ui_components.py الخاص بك
+from ui_components import (
+    draw_plan_2_modal, draw_plan_3_modal, draw_warning_card,
+    draw_technical_coords, draw_neon_section, draw_database_status,
+    draw_monitor_component, draw_notifications
 )
+
+log = get_logger("server")
+
+def server(input, output, session):
+    # 1. تعريف الحالة (State Management)
+    current_phone = reactive.Value("")
+    active_modal = reactive.Value(None)
+    suggestions_list = reactive.Value([])
+    show_curtain = reactive.Value(False)
+    
+    # تحميل الفهرس (مطابق للمرجع)
+    def load_index():
+        try:
+            with open("models_index.txt", "r", encoding="utf-8") as f:
+                return [line.strip() for line in f if line.strip()]
+        except: return []
+
+    autocomplete_index = reactive.Value(build_autocomplete_index(load_index()))
+
+    # 2. البحث (Search & Autocomplete)
+    @reactive.effect
+    @reactive.event(input.search_query)
+    def handle_search():
+        q = input.search_query().strip()
+        current_phone.set(q)
+        if not q:
+            suggestions_list.set([])
+            show_curtain.set(False)
+            return
+        t = autocomplete_index()
+        if t:
+            m = t.search_prefix(q, 10)
+            suggestions_list.set(m)
+            show_curtain.set(len(m) > 0)
+
+    @render.ui
+    def suggestions_curtain():
+        if not show_curtain() or not suggestions_list(): return None
+        return ui.div(*[ui.div(
+            i, class_="suggestion-row",
+            onclick=f"Shiny.setInputValue('search_query', {json.dumps(i)}, {{priority:'event'}});"
+        ) for i in suggestions_list()], class_="suggestions-curtain")
+
+    # 3. النافذة المنبثقة والخطط (Modals & Plans)
+    @render.ui
+    def modal_layer():
+        m = active_modal()
+        if not m: return None
+        db = get_database()
+        panels, sensors = extract_panels_sensors(db)
+        if m == "plan_2": return draw_plan_2_modal(current_phone(), panels, sensors)
+        if m == "plan_3": return draw_plan_3_modal(current_phone(), panels, sensors)
+        return None
+
+    @reactive.effect
+    @reactive.event(input.trigger_plan_2)
+    def _(): active_modal.set("plan_2")
+
+    @reactive.effect
+    @reactive.event(input.trigger_plan_3)
+    def _(): active_modal.set("plan_3")
+
+    # 4. النتائج والواجهة (UI Rendering)
+    @render.ui
+    def results_area():
+        # هنا يتم ربط المنطق الفعلي الذي يظهر البطاقات
+        return ui.HTML(run_system_workflows(current_phone(), get_database()))
+
+    @render.ui
+    def database_status_area():
+        db = get_database()
+        total = sum(len(d.get("models", [])) for p in db.values() for s in p.values() for d in s.values() if isinstance(d, dict))
+        return draw_database_status(total)
+
+    @render.ui
+    def monitor_area():
+        return draw_monitor_component(get_cached_status())
+
+    @render.ui
+    def notifications_area():
+        return draw_notifications(get_cached_status())
+
+    # 5. الإعدادات والدرج (Drawer)
+    @reactive.effect
+    @reactive.event(input.btn_settings)
+    async def _(): await session.send_custom_message("toggle_drawer", "open")
+
+    @reactive.effect
+    @reactive.event(input.btn_close_drawer_trigger)
+    async def _(): await session.send_custom_message("toggle_drawer", "close")
