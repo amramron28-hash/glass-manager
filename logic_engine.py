@@ -1,218 +1,88 @@
 import re
+from typing import Dict, List, Optional, Tuple, Any
+from core.logger import get_logger
 
-def find_model_coords(db_data, phone_name):
-    """
-    البحث في قاعدة البيانات عن قياسات وأبعاد الهاتف المستهدف.
-    تعتمد على مطابقة النصوص بغض النظر عن حالة الأحرف (Case-insensitive).
-    """
-    if not phone_name or not db_data:
+log = get_logger("logic_engine")
+TOLERANCE = 0.05 
+MIN_SEARCH_LEN = 3
+
+def extract_numeric_size(size_string: Any) -> Optional[float]:
+    if not isinstance(size_string, str): return None
+    match = re.search(r"[-+]?\d*\.\d+|\d+", size_string)
+    return float(match.group()) if match else None
+
+def normalize_text(text: Any) -> str:
+    return re.sub(r'[-\s]+', '', text.strip().lower()) if isinstance(text, str) else ""
+
+def find_model_coords(db_data: Dict, phone_name: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    if not isinstance(db_data, dict) or not phone_name or not phone_name.strip(): 
         return None, None, None, None
-        
-    phone_name_clean = phone_name.strip().lower()
     
-    # المرور على أبعاد الشاشات في قاعدة البيانات المسجلة
-    for size_str, panels in db_data.items():
-        if not isinstance(panels, dict):
-            continue
-        for panel, sensors in panels.items():
-            if not isinstance(sensors, dict):
-                continue
-            for sensor, s_data in sensors.items():
-                # استخراج قائمة الموديلات التابعة لهذا التصنيف
-                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
-                if not isinstance(models_list, list):
-                    continue
-                    
-                for model in models_list:
-                    if model.strip().lower() == phone_name_clean:
-                        # إرجاع: المقاس، نوع الشاشة، الحساس، والاسم الحقيقي المسجل
-                        return size_str, panel, sensor, model
-                        
-    # في حال لم يتم العثور على تطابق تام، يتم البحث عن تطابق جزئي كخيار احتياطي
-    for size_str, panels in db_data.items():
-        if not isinstance(panels, dict):
-            continue
-        for panel, sensors in panels.items():
-            if not isinstance(sensors, dict):
-                continue
-            for sensor, s_data in sensors.items():
-                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
-                if not isinstance(models_list, list):
-                    continue
-                for model in models_list:
-                    if phone_name_clean in model.strip().lower():
-                        return size_str, panel, sensor, model
-
-    return None, None, None, None
-
-
-def get_compatibles_strict(db_data, phone_name):
-    """
-    تحديد الهواتف البديلة والمتوافقة عبر 3 مستويات دقيقة:
-    1. exact: نفس المقاس ونفس خصائص الشاشة والحساس تماماً.
-    2. plus: الهواتف التي تزيد بمقدار تفاوت ضئيل جداً مسموح به.
-    3. minus: الهواتف التي تقل بمقدار تفاوت ضئيل جداً مسموح به.
-    """
-    compatibles = {"exact": [], "plus": [], "minus": []}
+    target = normalize_text(phone_name)
+    partial_match = None
     
-    # جلب أبعاد الهاتف الحالي أولاً
+    for size_str, panels in db_data.items():
+        if not isinstance(panels, dict): continue
+        for panel, sensors in panels.items():
+            if not isinstance(sensors, dict): continue
+            for sensor, s_data in sensors.items():
+                models = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+                if not isinstance(models, list): continue
+                
+                for model in models:
+                    if not isinstance(model, str): continue
+                    clean_model = normalize_text(model)
+                    if clean_model == target: return size_str, panel, sensor, model
+                    if len(target) >= MIN_SEARCH_LEN and target in clean_model and not partial_match:
+                        partial_match = (size_str, panel, sensor, model)
+    return partial_match or (None, None, None, None)
+
+def get_compatibles_strict(db_data: Dict, phone_name: str) -> Dict[str, List[str]]:
+    compatibles = {"exact": set(), "plus": set(), "minus": set()}
     size_str, panel, sensor, real_name = find_model_coords(db_data, phone_name)
     
-    if not size_str:
-        return compatibles
-
-    # استخراج القيمة الرقمية للمقاس بالإنش (مثال: "6.5" من "6.5 inches")
     current_size = extract_numeric_size(size_str)
-    if current_size is None:
-        return compatibles
-
-    # حد التفاوت المسموح به في قياسات زجاج الحماية (Tolerance Threshold)
-    TOLERANCE = 0.05 
+    if current_size is None: return {k: [] for k in compatibles}
 
     for size_key, panels in db_data.items():
-        if not isinstance(panels, dict):
-            continue
-            
         loop_size = extract_numeric_size(size_key)
-        if loop_size is None:
-            continue
-            
-        # فحص مستويات التطابق بناءً على المقاس الرياضي والتفاوت
-        size_diff = loop_size - current_size
+        if loop_size is None or not isinstance(panels, dict): continue
         
+        size_diff = loop_size - current_size
         for panel_key, sensors in panels.items():
-            # فلترة صارمة: يجب تطابق نوع الشاشة لضمان انحناءات الزجاج وحواف الحماية
-            if panel_key != panel:
-                continue
-                
+            if not isinstance(panel_key, str) or panel_key != panel or not isinstance(sensors, dict): continue
             for sensor_key, s_data in sensors.items():
-                models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
-                if not isinstance(models_list, list):
-                    continue
+                if not isinstance(sensor_key, str): continue
+                
+                models = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+                if not isinstance(models, list): continue
+                for model in models:
+                    if not isinstance(model, str): continue
+                    if real_name and model.lower() == real_name.lower(): continue
                     
-                for model in models_list:
-                    # استبعاد الهاتف المبحوث عنه من قائمة البدائل
-                    if model.lower() == real_name.lower():
-                        continue
+                    if abs(size_diff) < 0.001 and sensor_key == sensor: compatibles["exact"].add(model)
+                    elif 0 < size_diff <= TOLERANCE: compatibles["plus"].add(model)
+                    elif -TOLERANCE <= size_diff < 0: compatibles["minus"].add(model)
                         
-                    # 1. تطابق تام ومباشر
-                    if abs(size_diff) < 0.001 and sensor_key == sensor:
-                        if model not in compatibles["exact"]:
-                            compatibles["exact"].append(model)
-                    
-                    # 2. زيادة طفيفة ضمن حدود التفاوت المقبولة
-                    elif 0 < size_diff <= TOLERANCE:
-                        if model not in compatibles["plus"]:
-                            compatibles["plus"].append(model)
-                            
-                    # 3. نقصان طفيف ضمن حدود التفاوت المقبولة
-                    elif -TOLERANCE <= size_diff < 0:
-                        if model not in compatibles["minus"]:
-                            compatibles["minus"].append(model)
+    return {k: sorted(list(v)) for k, v in compatibles.items()}
 
-    return compatibles
+def run_system_workflows(phone: str, db_data: Dict) -> Dict:
+    """إرجاع بيانات ليعالجها server.py."""
+    if not isinstance(db_data, dict):
+        log.error("Invalid database format")
+        return {"status": "error", "message": "قاعدة بيانات تالفة"}
 
-
-def extract_numeric_size(size_string):
-    """دالة مساعدة لاستخراج الأرقام العشرية من النصوص البرمجية للمقاسات"""
     try:
-        match = re.search(r"[-+]?\d*\.\d+|\d+", size_string)
-        if match:
-            return float(match.group())
+        size, panel, sensor, real_name = find_model_coords(db_data, phone)
+        if not real_name:
+            return {"status": "not_found", "message": f"الموديل {phone} غير موجود"}
+        
+        log.info(f"Successfully processed phone: {real_name}")
+        return {
+            "status": "success",
+            "coords": {"size": size, "panel": panel, "sensor": sensor, "real_name": real_name},
+            "compatibles": get_compatibles_strict(db_data, phone)
+        }
     except Exception:
-        pass
-    return None
-def run_system_workflows(phone, db_data, suggestions=None):
-
-    from ui_components import (
-        draw_technical_coords,
-        draw_neon_section,
-        draw_warning_card
-    )
-
-    if not phone:
-        return ""
-
-
-    size, panel, sensor, real_name = find_model_coords(
-        db_data,
-        phone
-    )
-
-
-    output = []
-
-
-    if real_name:
-
-
-        output.append(
-            str(
-                draw_technical_coords(
-                    size,
-                    panel,
-                    sensor,
-                    real_name
-                )
-            )
-        )
-
-
-        compatible = get_compatibles_strict(
-            db_data,
-            phone
-        )
-
-
-        output.append(
-            str(
-                draw_neon_section(
-                    "مطابقة تماماً",
-                    compatible.get("exact", []),
-                    "#2ecc71",
-                    "🟢",
-                    "exact"
-                )
-            )
-        )
-
-
-        output.append(
-            str(
-                draw_neon_section(
-                    "أكبر بقليل",
-                    compatible.get("plus", []),
-                    "#3498db",
-                    "🔵",
-                    "plus"
-                )
-            )
-        )
-
-
-        output.append(
-            str(
-                draw_neon_section(
-                    "أصغر قليلاً",
-                    compatible.get("minus", []),
-                    "#e67e22",
-                    "🟠",
-                    "minus"
-                )
-            )
-        )
-
-
-    else:
-
-
-        output.append(
-            str(
-                draw_warning_card(
-                    f"الموديل {phone} غير موجود"
-                )
-            )
-        )
-
-
-    return "\n".join(output)
+        log.exception("Workflow execution failed")
+        return {"status": "error", "message": "حدث خطأ داخلي"}
