@@ -1,5 +1,9 @@
 from shiny import ui
 
+# =========================
+# PWA + STYLES
+# =========================
+
 def inject_pwa_and_styles():
     return ui.HTML("""
     <link rel="manifest" href="manifest.json">
@@ -59,40 +63,31 @@ def inject_pwa_and_styles():
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #333;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:10px;
+            border-bottom:1px solid #333;
         }
 
         .footer-stats {
-            display: flex;
-            gap: 10px;
-            padding: 10px;
-            background: #111;
+            display:flex;
+            gap:10px;
+            padding:10px;
+            background:#111;
         }
 
         .action-buttons {
-            padding: 10px;
-            display: flex;
-            gap: 5px;
-        }
-
-        .alert-warning {
-            color: #e74c3c;
-            padding: 15px;
-            background: #2a1111;
-            border-radius: 5px;
+            padding:10px;
+            display:flex;
+            gap:5px;
         }
     </style>
 
     <script>
         Shiny.addCustomMessageHandler('toggle_drawer', function(action) {
             const el = document.getElementById('settings-drawer');
-            if (el) {
-                el.style.display = (action === 'open') ? 'block' : 'none';
-            }
+            if(el) el.style.display = (action === 'open') ? 'block' : 'none';
         });
 
         if ('serviceWorker' in navigator) {
@@ -101,27 +96,19 @@ def inject_pwa_and_styles():
     </script>
     """)
 
-
 # =========================
-# Components
+# COMPONENTS
 # =========================
 
 def draw_technical_coords(size, panel, sensor, real_name):
     return ui.div(
-        ui.h4(f"📱 الموديل: {real_name or 'غير معروف'}"),
-        ui.p(
-            f"📏 المقاس: {size or 'غير محدد'} | "
-            f"🖥 الشاشة: {panel or 'غير محدد'} | "
-            f"🔍 الحساس: {sensor or 'غير محدد'}"
-        ),
+        ui.h4(f"📱 الموديل: {real_name}"),
+        ui.p(f"📏 {size or 'غير محدد'} | 🖥 {panel or 'غير محدد'} | 🔍 {sensor or 'غير محدد'}"),
         class_="tech-coords-card"
     )
 
-
 def draw_neon_section(title, models_list, color, emoji, section_id):
-    models_list = models_list or []
-
-    if len(models_list) == 0:
+    if not models_list:
         return ui.div(
             ui.p(f"{title}: لا توجد نتائج."),
             class_="neon-section",
@@ -135,75 +122,79 @@ def draw_neon_section(title, models_list, color, emoji, section_id):
         style=f"border-right: 4px solid {color};"
     )
 
-
 def draw_warning_card(message):
-    return ui.div(message, class_="alert-warning")
-
+    return ui.div(message, class_="alert alert-warning")
 
 # =========================
-# Modals
+# MODALS (FIXED SIGNATURES)
 # =========================
+
+def draw_settings_modal():
+    return ui.div(
+        ui.h3("إعدادات النظام"),
+        ui.input_action_button("btn_close_modal", "إغلاق"),
+        class_="modal-content"
+    )
 
 def draw_plan_2_modal(phone, panels, sensors):
-    p_count = len(panels) if isinstance(panels, (list, dict)) else 0
-    s_count = len(sensors) if isinstance(sensors, (list, dict)) else 0
+    p_count = len(panels) if isinstance(panels, (dict, list)) else 0
+    s_count = len(sensors) if isinstance(sensors, (dict, list)) else 0
 
     return ui.div(
-        ui.h3(f"خطة 2: {phone or 'غير محدد'}"),
+        ui.h3(f"خطة 2: {phone}"),
         ui.div(f"اللوحات: {p_count} | المستشعرات: {s_count}"),
         ui.input_action_button("btn_close_modal", "إغلاق"),
         class_="modal-content"
     )
 
-
-def draw_plan_3_modal(phone, panels, sensors):
+def draw_plan_3_modal(phone, res):
     return ui.div(
-        ui.h3(f"خطة 3: {phone or 'غير محدد'}"),
+        ui.h3(f"خطة 3: {phone}"),
         ui.div("بيانات الخطة 3 متاحة."),
         ui.input_action_button("btn_close_modal", "إغلاق"),
         class_="modal-content"
     )
 
+# =========================
+# ADD MODALS
+# =========================
 
 def build_add_panel_modal():
     return ui.div(
         ui.h4("إضافة لوحة"),
         ui.input_text("new_panel_name", "اسم اللوحة"),
         ui.input_action_button("btn_confirm_add_panel", "تأكيد"),
-        ui.input_action_button("btn_cancel_add", "إلغاء"),
+        ui.input_action_button("btn_close_modal", "إلغاء"),
         class_="modal-content"
     )
-
 
 def build_add_sensor_modal():
     return ui.div(
         ui.h4("إضافة مستشعر"),
         ui.input_text("new_sensor_name", "اسم المستشعر"),
         ui.input_action_button("btn_confirm_add_sensor", "تأكيد"),
-        ui.input_action_button("btn_cancel_add", "إلغاء"),
+        ui.input_action_button("btn_close_modal", "إلغاء"),
         class_="modal-content"
     )
 
-
 # =========================
-# Status components
+# STATUS COMPONENTS
 # =========================
 
 def draw_database_status(total):
     return ui.div(f"📊 القاعدة: {total} جهاز", class_="status-card")
 
-
 def draw_monitor_component(status):
-    value = status.get("status") if isinstance(status, dict) else status
-    return ui.div(f"المراقب: {value or 'OFFLINE'}", class_="monitor-card")
-
+    return ui.div(
+        f"المراقب: {status.get('status', 'OFFLINE') if isinstance(status, dict) else status}",
+        class_="monitor-card"
+    )
 
 def draw_notifications(status):
     return ui.div("🔔 الإشعارات نشطة", class_="notify-card")
 
-
 # =========================
-# UI Layout
+# APP UI
 # =========================
 
 app_ui = ui.page_fluid(
@@ -225,7 +216,6 @@ app_ui = ui.page_fluid(
         ui.input_text("search_query", "", placeholder="🔍 ابحث هنا..."),
 
         ui.output_ui("suggestions_curtain"),
-        ui.output_ui("results_workflow_view"),
         ui.output_ui("dynamic_modal_container"),
 
         ui.div(
