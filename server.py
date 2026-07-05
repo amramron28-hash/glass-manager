@@ -9,36 +9,37 @@ from ui_components import draw_plan_2_modal, draw_plan_3_modal, draw_settings_mo
 
 logger = logging.getLogger("ui_debug")
 
+# =========================
+# STATE MACHINE CORE
+# =========================
+
+STATE_IDLE = "idle"
+STATE_SEARCHING = "searching"
+STATE_RESULT = "result"
+STATE_SETTINGS = "settings"
+STATE_PLAN2 = "plan2"
+STATE_PLAN3 = "plan3"
+
 
 def server(input, output, session):
 
-    # ================= STATE MACHINE =================
-    class UIStateMachine:
-        IDLE = None
-        SETTINGS = "settings"
-        PLAN2 = "plan2"
-        PLAN3 = "plan3"
-
-    ui_state = {
-        "modal": reactive.Value(UIStateMachine.IDLE),
-        "suggestions": reactive.Value(False)
-    }
-
-    app_state = {
-        "workflow": reactive.Value({}),
-        "lock": reactive.Value(False),
-        "last_q": reactive.Value("")
-    }
+    # =========================
+    # GLOBAL STATE
+    # =========================
+    state = reactive.Value(STATE_IDLE)
+    workflow = reactive.Value({})
+    last_query = reactive.Value("")
+    initialized = reactive.Value(False)
 
     panels_cache = reactive.Value({})
     sensors_cache = reactive.Value({})
-
     autocomplete_index = {"index": None}
-    initialized = reactive.Value(False)
 
-    # ================= INIT =================
+    # =========================
+    # INIT
+    # =========================
     @reactive.effect
-    def _init():
+    def init():
         if initialized():
             return
 
@@ -60,116 +61,109 @@ def server(input, output, session):
 
         except Exception as e:
             logger.error(f"INIT ERROR: {e}")
-            reactive.invalidate_later(5)
 
-    # ================= SEARCH ENGINE =================
+    # =========================
+    # SEARCH STATE MACHINE
+    # =========================
     @reactive.effect
-    def _search():
+    def search_engine():
 
         q = input.search_query()
-        logger.info(f"SEARCH INPUT: {q}")
 
         if not q or len(q) < 2:
-            ui_state["suggestions"].set(False)
-            ui_state["modal"].set(UIStateMachine.IDLE)
             return
 
-        ui_state["suggestions"].set(True)
-
-        if app_state["lock"]():
+        if q == last_query():
             return
 
-        if q == app_state["last_q"]():
-            return
-
-        app_state["lock"].set(True)
+        state.set(STATE_SEARCHING)
 
         try:
             db = get_database()
             res = run_system_workflows(q, db) or {}
 
-            app_state["workflow"].set(res)
-            app_state["last_q"].set(q)
+            workflow.set(res)
+            last_query.set(q)
 
             status = res.get("status")
 
-            # ================= STATE MACHINE ROUTING =================
+            # STATE ROUTING
             if status == STATUS_PLAN_2:
-                ui_state["modal"].set(UIStateMachine.PLAN2)
+                state.set(STATE_PLAN2)
 
             elif status == STATUS_PLAN_3:
-                ui_state["modal"].set(UIStateMachine.PLAN3)
+                state.set(STATE_PLAN3)
 
             else:
-                ui_state["modal"].set(UIStateMachine.IDLE)
+                state.set(STATE_RESULT)
 
-            logger.info(f"STATUS: {status}")
+            logger.info(f"STATUS => {status}")
 
         except Exception as e:
             logger.error(f"SEARCH ERROR: {e}")
-            ui_state["modal"].set(UIStateMachine.IDLE)
+            state.set(STATE_IDLE)
 
-        finally:
-            app_state["lock"].set(False)
-
-    # ================= SETTINGS =================
+    # =========================
+    # SETTINGS BUTTON
+    # =========================
     @reactive.effect
     @reactive.event(input.btn_settings)
-    def _():
-        ui_state["modal"].set(UIStateMachine.SETTINGS)
+    def open_settings():
+        state.set(STATE_SETTINGS)
 
+    # =========================
+    # CLOSE MODAL (GLOBAL)
+    # =========================
     @reactive.effect
     @reactive.event(input.btn_close_modal)
-    def _():
-        ui_state["modal"].set(UIStateMachine.IDLE)
+    def close_modal():
+        state.set(STATE_IDLE)
 
-    # ================= MODAL ENGINE =================
+    # =========================
+    # MODAL ENGINE (PURE STATE ROUTER)
+    # =========================
     @render.ui
     def dynamic_modal_container():
 
-        state = ui_state["modal"]()
-        res = app_state["workflow"]() or {}
+        s = state()
+        res = workflow() or {}
 
-        if state == UIStateMachine.IDLE:
-            return None
-
-        if state == UIStateMachine.SETTINGS:
+        if s == STATE_SETTINGS:
             return draw_settings_modal()
 
-        phone = (res.get("input_data") or {}).get("phone", "")
+        phone = (res.get("input_data") or {}).get("phone", "غير محدد")
 
-        if state == UIStateMachine.PLAN2:
+        if s == STATE_PLAN2:
             return draw_plan_2_modal(phone, panels_cache(), sensors_cache())
 
-        if state == UIStateMachine.PLAN3:
+        if s == STATE_PLAN3:
             return draw_plan_3_modal(phone, res)
 
         return None
 
-    # ================= RESULTS =================
+    # =========================
+    # SEARCH RESULTS UI
+    # =========================
     @render.ui
     def results_workflow_view():
 
-        res = app_state["workflow"]() or {}
+        res = workflow() or {}
 
         if not res:
             return ui.div("لا توجد نتائج", class_="empty-state")
 
-        phone = (res.get("input_data") or {}).get("phone", "")
         status = res.get("status", "UNKNOWN")
 
         return ui.div(
-            ui.div(f"📱 الهاتف: {phone}", class_="result-card"),
             ui.div(f"📌 الحالة: {status}", class_="result-card"),
             class_="results-container"
         )
 
-    # ================= AUTOCOMPLETE =================
+    # =========================
+    # AUTOCOMPLETE (OPTIONAL SAFE)
+    # =========================
     @render.ui
     def suggestions_curtain():
-
-        if not ui_state["suggestions"]():
-            return None
 
         q = input.search_query()
         idx = autocomplete_index["index"]
@@ -190,9 +184,3 @@ def server(input, output, session):
             ],
             class_="suggestions-curtain"
         )
-
-    # ================= CLOSE SUGGESTIONS =================
-    @reactive.effect
-    @reactive.event(input.hide_suggestions)
-    def _():
-        ui_state["suggestions"].set(False)
