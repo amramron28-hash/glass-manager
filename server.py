@@ -8,15 +8,15 @@ from logic_engine import run_system_workflows, STATUS_PLAN_2, STATUS_PLAN_3
 from silent_monitor import get_database, refresh
 from ui_components import draw_plan_2_modal, draw_plan_3_modal, draw_settings_modal
 
-# -----------------------
-# LOGGER
-# -----------------------
 logger = logging.getLogger("ui_debug")
 workflow_logger = logging.getLogger("WorkflowEngine")
 
 
 def server(input, output, session):
 
+    # -----------------------
+    # STATE
+    # -----------------------
     ui_state = {
         "modal": reactive.Value(None),
         "suggestions": reactive.Value(False),
@@ -33,45 +33,43 @@ def server(input, output, session):
     autocomplete_index = {"index": None}
 
     # -----------------------
-    # INIT
+    # INIT (FIXED)
     # -----------------------
     @reactive.effect
     def _():
         if initialized():
             return
 
+        initialized.set(True)  # 🔥 مهم: قبل أي شيء لتجنب إعادة التشغيل
+
         try:
             refresh()
             db = get_database()
 
-            if isinstance(db, dict):
-                panels, sensors = svs.extract_panels_sensors(db)
+            panels, sensors = svs.extract_panels_sensors(db)
 
-                panels_cache.set(panels)
-                sensors_cache.set(sensors)
+            panels_cache.set(panels)
+            sensors_cache.set(sensors)
 
-                autocomplete_index["index"] = svs.build_autocomplete_index(
-                    svs.load_models_index()
-                )
+            autocomplete_index["index"] = svs.build_autocomplete_index(
+                svs.load_models_index()
+            )
 
-            initialized.set(True)
-            workflow_logger.info("System READY")
+            workflow_logger.info("INIT OK")
 
         except Exception as e:
             workflow_logger.error(f"INIT ERROR: {e}")
-            reactive.invalidate_later(5)
+            initialized.set(False)
 
     # -----------------------
-    # SEARCH ENGINE + LOGGER ADDED
+    # SEARCH ENGINE (FIXED)
     # -----------------------
     @reactive.effect
     def _():
 
         q = input.search_query()
 
-        # ✅ DEBUG LOG (مضاف كما طلبت)
-        if q != last_query():
-            logger.info(f"SEARCH INPUT: {q}")
+        logger.info(f"SEARCH INPUT: {q}")
 
         ui_state["suggestions"].set(bool(q and len(q) >= 2))
 
@@ -82,7 +80,7 @@ def server(input, output, session):
             return
 
         now = time.time()
-        if now - last_run_time() < 0.35:
+        if now - last_run_time() < 0.3:
             return
 
         last_run_time.set(now)
@@ -96,8 +94,11 @@ def server(input, output, session):
 
             status = res.get("status") if isinstance(res, dict) else None
 
-            if status in [STATUS_PLAN_2, STATUS_PLAN_3]:
-                ui_state["modal"].set(status)
+            # 🔥 FIX: ensure correct matching
+            if status == STATUS_PLAN_2:
+                ui_state["modal"].set("plan2")
+            elif status == STATUS_PLAN_3:
+                ui_state["modal"].set("plan3")
             else:
                 ui_state["modal"].set(None)
 
@@ -105,16 +106,13 @@ def server(input, output, session):
             workflow_logger.error(f"SEARCH ERROR: {e}")
 
     # -----------------------
-    # SETTINGS
+    # SETTINGS FIX (IMPORTANT)
     # -----------------------
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _():
         ui_state["modal"].set("settings")
 
-    # -----------------------
-    # CLOSE MODAL
-    # -----------------------
     @reactive.effect
     @reactive.event(input.btn_close_modal)
     def _():
@@ -125,6 +123,7 @@ def server(input, output, session):
     # -----------------------
     @render.ui
     def suggestions_curtain():
+
         if not ui_state["suggestions"]():
             return None
 
@@ -136,26 +135,20 @@ def server(input, output, session):
 
         results = idx.search_prefix(q, 5)
 
-        if not results:
-            return None
-
         return ui.div(
             *[
                 ui.div(
                     r,
                     class_="suggestion-row",
-                    onclick=f"""
-                        Shiny.setInputValue('search_query', {json.dumps(r)});
-                        Shiny.setInputValue('hide_suggestions', true);
-                    """
+                    onclick=f"Shiny.setInputValue('search_query', {json.dumps(r)});"
                 )
                 for r in results
             ],
-            class_="suggestions-curtain",
+            class_="suggestions-curtain"
         )
 
     # -----------------------
-    # MODAL
+    # MODAL (FIXED RENDER LOGIC)
     # -----------------------
     @render.ui
     def dynamic_modal_container():
@@ -166,28 +159,20 @@ def server(input, output, session):
         if not m:
             return None
 
+        # 🔥 FIX SETTINGS NOT WORKING
         if m == "settings":
             return draw_settings_modal()
 
         if not isinstance(res, dict):
             return None
 
-        phone = res.get("input_data", {}).get("phone")
-        if not phone:
-            return None
+        phone = res.get("input_data", {}).get("phone", "unknown")
 
-        if m == STATUS_PLAN_2:
+        # 🔥 FIX: correct routing
+        if m == "plan2":
             return draw_plan_2_modal(phone, panels_cache(), sensors_cache())
 
-        if m == STATUS_PLAN_3:
+        if m == "plan3":
             return draw_plan_3_modal(phone, res)
 
         return None
-
-    # -----------------------
-    # CLOSE SUGGESTIONS
-    # -----------------------
-    @reactive.effect
-    @reactive.event(input.hide_suggestions)
-    def _():
-        ui_state["suggestions"].set(False)
