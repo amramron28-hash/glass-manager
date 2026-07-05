@@ -1,7 +1,7 @@
-from shiny import render, reactive, ui
-import json
-import time
+from shiny import reactive, render, ui
 import logging
+import time
+import json
 
 import services as svs
 from logic_engine import run_system_workflows, STATUS_PLAN_2, STATUS_PLAN_3
@@ -9,22 +9,21 @@ from silent_monitor import get_database, refresh
 from ui_components import draw_plan_2_modal, draw_plan_3_modal, draw_settings_modal
 
 logger = logging.getLogger("ui_debug")
-workflow_logger = logging.getLogger("WorkflowEngine")
 
 
 def server(input, output, session):
 
-    # -----------------------
-    # STATE
-    # -----------------------
+    # ---------------- STATE ----------------
     ui_state = {
         "modal": reactive.Value(None),
-        "suggestions": reactive.Value(False),
+        "suggestions": reactive.Value(False)
     }
 
-    workflow_state = reactive.Value(None)
-    last_query = reactive.Value("")
-    last_run_time = reactive.Value(0.0)
+    app_state = {
+        "workflow": reactive.Value(None),
+        "lock": reactive.Value(False),
+        "last_query": reactive.Value("")
+    }
 
     panels_cache = reactive.Value({})
     sensors_cache = reactive.Value({})
@@ -32,82 +31,74 @@ def server(input, output, session):
 
     autocomplete_index = {"index": None}
 
-    # -----------------------
-    # INIT (FIXED)
-    # -----------------------
+    # ---------------- INIT ----------------
     @reactive.effect
-    def _():
+    def _init():
         if initialized():
             return
-
-        initialized.set(True)  # 🔥 مهم: قبل أي شيء لتجنب إعادة التشغيل
 
         try:
             refresh()
             db = get_database()
 
-            panels, sensors = svs.extract_panels_sensors(db)
+            if isinstance(db, dict):
+                p, s = svs.extract_panels_sensors(db)
+                panels_cache.set(p)
+                sensors_cache.set(s)
 
-            panels_cache.set(panels)
-            sensors_cache.set(sensors)
+                autocomplete_index["index"] = svs.build_autocomplete_index(
+                    svs.load_models_index()
+                )
 
-            autocomplete_index["index"] = svs.build_autocomplete_index(
-                svs.load_models_index()
-            )
-
-            workflow_logger.info("INIT OK")
+            initialized.set(True)
+            logger.info("SYSTEM INITIALIZED")
 
         except Exception as e:
-            workflow_logger.error(f"INIT ERROR: {e}")
-            initialized.set(False)
+            logger.error(f"INIT ERROR: {e}")
+            reactive.invalidate_later(5)
 
-    # -----------------------
-    # SEARCH ENGINE (FIXED)
-    # -----------------------
+    # ---------------- SEARCH ENGINE ----------------
     @reactive.effect
-    def _():
-
+    def _search():
         q = input.search_query()
 
+        # 🔥 LOGGING الذي طلبته
         logger.info(f"SEARCH INPUT: {q}")
 
-        ui_state["suggestions"].set(bool(q and len(q) >= 2))
-
         if not q or len(q) < 2:
+            ui_state["suggestions"].set(False)
             return
 
-        if q == last_query():
+        ui_state["suggestions"].set(True)
+
+        if app_state["lock"]():
             return
 
-        now = time.time()
-        if now - last_run_time() < 0.3:
-            return
-
-        last_run_time.set(now)
-        last_query.set(q)
+        app_state["lock"].set(True)
 
         try:
             db = get_database()
             res = run_system_workflows(q, db)
 
-            workflow_state.set(res)
+            app_state["workflow"].set(res)
+            app_state["last_query"].set(q)
 
-            status = res.get("status") if isinstance(res, dict) else None
+            status = res.get("status")
 
-            # 🔥 FIX: ensure correct matching
-            if status == STATUS_PLAN_2:
-                ui_state["modal"].set("plan2")
-            elif status == STATUS_PLAN_3:
-                ui_state["modal"].set("plan3")
+            if status in [STATUS_PLAN_2, STATUS_PLAN_3]:
+                ui_state["modal"].set(status)
             else:
                 ui_state["modal"].set(None)
 
-        except Exception as e:
-            workflow_logger.error(f"SEARCH ERROR: {e}")
+            logger.info(f"SEARCH RESULT STATUS: {status}")
 
-    # -----------------------
-    # SETTINGS FIX (IMPORTANT)
-    # -----------------------
+        except Exception as e:
+            logger.error(f"SEARCH ERROR: {e}")
+
+        finally:
+            app_state["lock"].set(False)
+
+    # ---------------- MODAL CONTROL ----------------
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _():
@@ -118,9 +109,54 @@ def server(input, output, session):
     def _():
         ui_state["modal"].set(None)
 
-    # -----------------------
-    # AUTOCOMPLETE
-    # -----------------------
+    # ---------------- MODAL RENDER ----------------
+    @render.ui
+    def dynamic_modal_container():
+
+        m = ui_state["modal"]()
+        res = app_state["workflow"]()
+
+        if not m:
+            return None
+
+        if m == "settings":
+            return draw_settings_modal()
+
+        if not res:
+            return None
+
+        phone = (res or {}).get("input_data", {}).get("phone", "غير محدد")
+
+        if m == STATUS_PLAN_2:
+            return draw_plan_2_modal(phone, panels_cache(), sensors_cache())
+
+        if m == STATUS_PLAN_3:
+            return draw_plan_3_modal(phone, res)
+
+        return None
+
+    # ---------------- RESULTS CARDS (FIX IMPORTANT) ----------------
+    @render.ui
+    def results_workflow_view():
+
+        res = app_state["workflow"]()
+        if not res:
+            return ui.div("لا توجد نتائج بعد", class_="empty-state")
+
+        status = res.get("status", "")
+        phone = (res.get("input_data", {}) or {}).get("phone", "غير محدد")
+
+        cards = [
+            ui.div(
+                ui.h4(f"📱 الهاتف: {phone}"),
+                ui.p(f"📌 الحالة: {status}"),
+                class_="result-card"
+            )
+        ]
+
+        return ui.div(*cards, class_="results-container")
+
+    # ---------------- AUTOCOMPLETE ----------------
     @render.ui
     def suggestions_curtain():
 
@@ -147,32 +183,8 @@ def server(input, output, session):
             class_="suggestions-curtain"
         )
 
-    # -----------------------
-    # MODAL (FIXED RENDER LOGIC)
-    # -----------------------
-    @render.ui
-    def dynamic_modal_container():
-
-        m = ui_state["modal"]()
-        res = workflow_state()
-
-        if not m:
-            return None
-
-        # 🔥 FIX SETTINGS NOT WORKING
-        if m == "settings":
-            return draw_settings_modal()
-
-        if not isinstance(res, dict):
-            return None
-
-        phone = res.get("input_data", {}).get("phone", "unknown")
-
-        # 🔥 FIX: correct routing
-        if m == "plan2":
-            return draw_plan_2_modal(phone, panels_cache(), sensors_cache())
-
-        if m == "plan3":
-            return draw_plan_3_modal(phone, res)
-
-        return None
+    # ---------------- CLOSE SUGGESTIONS ----------------
+    @reactive.effect
+    @reactive.event(input.hide_suggestions)
+    def _():
+        ui_state["suggestions"].set(False)
