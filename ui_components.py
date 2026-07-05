@@ -83,50 +83,21 @@ def inject_pwa_and_styles():
             gap:5px;
         }
     </style>
-
-    <script>
-        Shiny.addCustomMessageHandler('toggle_drawer', function(action) {
-            const el = document.getElementById('settings-drawer');
-            if(el) el.style.display = (action === 'open') ? 'block' : 'none';
-        });
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js');
-        }
-    </script>
     """)
 
 # =========================
-# COMPONENTS
+# CORE UI
 # =========================
 
 def draw_technical_coords(size, panel, sensor, real_name):
     return ui.div(
-        ui.h4(f"📱 الموديل: {real_name}"),
+        ui.h4(f"📱 {real_name}"),
         ui.p(f"📏 {size or 'غير محدد'} | 🖥 {panel or 'غير محدد'} | 🔍 {sensor or 'غير محدد'}"),
         class_="tech-coords-card"
     )
 
-def draw_neon_section(title, models_list, color, emoji, section_id):
-    if not models_list:
-        return ui.div(
-            ui.p(f"{title}: لا توجد نتائج."),
-            class_="neon-section",
-            style=f"border-right: 4px solid {color};"
-        )
-
-    return ui.div(
-        ui.h5(f"{emoji} {title}"),
-        ui.tags.ul(*[ui.tags.li(m) for m in models_list]),
-        class_="neon-section",
-        style=f"border-right: 4px solid {color};"
-    )
-
-def draw_warning_card(message):
-    return ui.div(message, class_="alert alert-warning")
-
 # =========================
-# MODALS (FIXED SIGNATURES)
+# MODALS (FIXED)
 # =========================
 
 def draw_settings_modal():
@@ -137,12 +108,9 @@ def draw_settings_modal():
     )
 
 def draw_plan_2_modal(phone, panels, sensors):
-    p_count = len(panels) if isinstance(panels, (dict, list)) else 0
-    s_count = len(sensors) if isinstance(sensors, (dict, list)) else 0
-
     return ui.div(
         ui.h3(f"خطة 2: {phone}"),
-        ui.div(f"اللوحات: {p_count} | المستشعرات: {s_count}"),
+        ui.div(f"اللوحات: {len(panels) if panels else 0} | المستشعرات: {len(sensors) if sensors else 0}"),
         ui.input_action_button("btn_close_modal", "إغلاق"),
         class_="modal-content"
     )
@@ -150,39 +118,17 @@ def draw_plan_2_modal(phone, panels, sensors):
 def draw_plan_3_modal(phone, res):
     return ui.div(
         ui.h3(f"خطة 3: {phone}"),
-        ui.div("بيانات الخطة 3 متاحة."),
+        ui.div("تم تحميل بيانات الخطة 3"),
         ui.input_action_button("btn_close_modal", "إغلاق"),
         class_="modal-content"
     )
 
 # =========================
-# ADD MODALS
-# =========================
-
-def build_add_panel_modal():
-    return ui.div(
-        ui.h4("إضافة لوحة"),
-        ui.input_text("new_panel_name", "اسم اللوحة"),
-        ui.input_action_button("btn_confirm_add_panel", "تأكيد"),
-        ui.input_action_button("btn_close_modal", "إلغاء"),
-        class_="modal-content"
-    )
-
-def build_add_sensor_modal():
-    return ui.div(
-        ui.h4("إضافة مستشعر"),
-        ui.input_text("new_sensor_name", "اسم المستشعر"),
-        ui.input_action_button("btn_confirm_add_sensor", "تأكيد"),
-        ui.input_action_button("btn_close_modal", "إلغاء"),
-        class_="modal-content"
-    )
-
-# =========================
-# STATUS COMPONENTS
+# STATUS UI
 # =========================
 
 def draw_database_status(total):
-    return ui.div(f"📊 القاعدة: {total} جهاز", class_="status-card")
+    return ui.div(f"📊 قاعدة البيانات: {total}", class_="status-card")
 
 def draw_monitor_component(status):
     return ui.div(
@@ -191,21 +137,23 @@ def draw_monitor_component(status):
     )
 
 def draw_notifications(status):
-    return ui.div("🔔 الإشعارات نشطة", class_="notify-card")
+    return ui.div("🔔 النظام نشط", class_="notify-card")
 
 # =========================
-# APP UI
+# APP UI (IMPORTANT FIXES)
 # =========================
 
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
 
+    # Drawer (settings)
     ui.div(
         ui.h2("🛠 الإعدادات"),
         ui.input_action_button("btn_close_drawer_trigger", "إغلاق"),
         id="settings-drawer"
     ),
 
+    # Header
     ui.div(
         ui.div(
             ui.h1("📱 النظام الذكي"),
@@ -216,6 +164,10 @@ app_ui = ui.page_fluid(
         ui.input_text("search_query", "", placeholder="🔍 ابحث هنا..."),
 
         ui.output_ui("suggestions_curtain"),
+
+        # 🔥 FIX 1: لازم يكون موجود للنتائج
+        ui.output_ui("results_workflow_view"),
+
         ui.output_ui("dynamic_modal_container"),
 
         ui.div(
