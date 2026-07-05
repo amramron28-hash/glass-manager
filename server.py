@@ -13,7 +13,7 @@ logger = logging.getLogger("ui_debug")
 def server(input, output, session):
 
     # =========================
-    # STATE
+    # STATE MACHINE CORE
     # =========================
     ui_state = {
         "modal": reactive.Value(None),
@@ -32,11 +32,14 @@ def server(input, output, session):
     autocomplete_index = {"index": None}
     initialized = reactive.Value(False)
 
+    search_tick = reactive.Value(0)  # 🔥 FIX: force reactivity
+
     # =========================
-    # INIT
+    # INIT SYSTEM
     # =========================
     @reactive.effect
     def _init():
+
         if initialized():
             return
 
@@ -54,23 +57,27 @@ def server(input, output, session):
                 )
 
             initialized.set(True)
-            logger.info("INIT DONE")
+            logger.info("SYSTEM READY")
 
         except Exception as e:
             logger.error(f"INIT ERROR: {e}")
 
     # =========================
-    # SEARCH ENGINE (FIXED)
+    # SEARCH ENGINE (FIXED STATE MACHINE)
     # =========================
     @reactive.effect
     def _search():
 
         q = input.search_query()
 
+        tick = search_tick()
+        search_tick.set(tick + 1)
+
         logger.info(f"SEARCH INPUT: {q}")
 
         if not q or len(q) < 2:
             ui_state["suggestions"].set(False)
+            ui_state["modal"].set(None)
             return
 
         ui_state["suggestions"].set(True)
@@ -93,7 +100,7 @@ def server(input, output, session):
             status = res.get("status")
 
             # =========================
-            # MODAL ROUTING FIX
+            # STATE ROUTING FIXED
             # =========================
             if status == STATUS_PLAN_2:
                 ui_state["modal"].set("plan2")
@@ -113,20 +120,24 @@ def server(input, output, session):
             app_state["lock"].set(False)
 
     # =========================
-    # SETTINGS FIX (IMPORTANT)
+    # SETTINGS BUTTON FIX
     # =========================
     @reactive.effect
-    @reactive.event(input.btn_settings)
+    @reactive.event(input.btn_settings, ignore_none=True)
     def _():
+        logger.info("SETTINGS OPENED")
         ui_state["modal"].set("settings")
 
+    # =========================
+    # CLOSE MODAL FIX
+    # =========================
     @reactive.effect
     @reactive.event(input.btn_close_modal)
     def _():
         ui_state["modal"].set(None)
 
     # =========================
-    # MODAL RENDER (STABLE)
+    # MODAL RENDER ENGINE
     # =========================
     @render.ui
     def dynamic_modal_container():
@@ -134,7 +145,7 @@ def server(input, output, session):
         m = ui_state["modal"]()
         res = app_state["workflow"]() or {}
 
-        if not m:
+        if m is None:
             return None
 
         if m == "settings":
@@ -151,19 +162,21 @@ def server(input, output, session):
         return None
 
     # =========================
-    # RESULTS (FIXED)
+    # RESULTS VIEW (FIXED ALWAYS RENDER)
     # =========================
     @render.ui
     def results_workflow_view():
 
         res = app_state["workflow"]() or {}
 
-        if not res:
-            return ui.div("جاهز للبحث", class_="empty-state")
+        if not isinstance(res, dict) or not res:
+            return ui.div("لا توجد نتائج", class_="empty-state")
 
+        phone = (res.get("input_data") or {}).get("phone", "غير محدد")
         status = res.get("status", "UNKNOWN")
 
         return ui.div(
+            ui.div(f"📱 الهاتف: {phone}", class_="result-card"),
             ui.div(f"📌 الحالة: {status}", class_="result-card"),
             class_="results-container"
         )
@@ -174,16 +187,16 @@ def server(input, output, session):
     @render.ui
     def suggestions_curtain():
 
-        idx = autocomplete_index["index"]
+        if not ui_state["suggestions"]():
+            return None
+
         q = input.search_query()
+        idx = autocomplete_index["index"]
 
         if not q or not idx:
             return None
 
         results = idx.search_prefix(q, 5) or []
-
-        if not results:
-            return None
 
         return ui.div(
             *[
@@ -198,7 +211,7 @@ def server(input, output, session):
         )
 
     # =========================
-    # CLOSE SUGGESTIONS HOOK
+    # CLOSE SUGGESTIONS
     # =========================
     @reactive.effect
     @reactive.event(input.hide_suggestions)
