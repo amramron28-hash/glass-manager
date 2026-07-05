@@ -1,7 +1,6 @@
 from shiny import reactive, render, ui
 import logging
 import json
-import time
 
 import services as svs
 from logic_engine import run_system_workflows, STATUS_PLAN_2, STATUS_PLAN_3
@@ -13,9 +12,15 @@ logger = logging.getLogger("ui_debug")
 
 def server(input, output, session):
 
-    # ---------------- CORE STATE ----------------
+    # ================= STATE MACHINE =================
+    class UIStateMachine:
+        IDLE = None
+        SETTINGS = "settings"
+        PLAN2 = "plan2"
+        PLAN3 = "plan3"
+
     ui_state = {
-        "modal": reactive.Value(None),
+        "modal": reactive.Value(UIStateMachine.IDLE),
         "suggestions": reactive.Value(False)
     }
 
@@ -31,7 +36,7 @@ def server(input, output, session):
     autocomplete_index = {"index": None}
     initialized = reactive.Value(False)
 
-    # ---------------- INIT (SAFE GUARDED) ----------------
+    # ================= INIT =================
     @reactive.effect
     def _init():
         if initialized():
@@ -57,16 +62,16 @@ def server(input, output, session):
             logger.error(f"INIT ERROR: {e}")
             reactive.invalidate_later(5)
 
-    # ---------------- SEARCH ENGINE (ULTRA STABLE) ----------------
+    # ================= SEARCH ENGINE =================
     @reactive.effect
     def _search():
 
         q = input.search_query()
-
         logger.info(f"SEARCH INPUT: {q}")
 
         if not q or len(q) < 2:
             ui_state["suggestions"].set(False)
+            ui_state["modal"].set(UIStateMachine.IDLE)
             return
 
         ui_state["suggestions"].set(True)
@@ -74,7 +79,6 @@ def server(input, output, session):
         if app_state["lock"]():
             return
 
-        # debounce manual safety
         if q == app_state["last_q"]():
             return
 
@@ -89,66 +93,69 @@ def server(input, output, session):
 
             status = res.get("status")
 
-            # ---------------- NORMALIZE MODAL STATE ----------------
+            # ================= STATE MACHINE ROUTING =================
             if status == STATUS_PLAN_2:
-                ui_state["modal"].set("plan2")
+                ui_state["modal"].set(UIStateMachine.PLAN2)
+
             elif status == STATUS_PLAN_3:
-                ui_state["modal"].set("plan3")
+                ui_state["modal"].set(UIStateMachine.PLAN3)
+
             else:
-                ui_state["modal"].set(None)
+                ui_state["modal"].set(UIStateMachine.IDLE)
 
             logger.info(f"STATUS: {status}")
 
         except Exception as e:
             logger.error(f"SEARCH ERROR: {e}")
+            ui_state["modal"].set(UIStateMachine.IDLE)
 
         finally:
             app_state["lock"].set(False)
 
-    # ---------------- SETTINGS ----------------
+    # ================= SETTINGS =================
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _():
-        ui_state["modal"].set("settings")
+        ui_state["modal"].set(UIStateMachine.SETTINGS)
 
     @reactive.effect
     @reactive.event(input.btn_close_modal)
     def _():
-        ui_state["modal"].set(None)
+        ui_state["modal"].set(UIStateMachine.IDLE)
 
-    # ---------------- MODAL ENGINE (HARD SAFE) ----------------
+    # ================= MODAL ENGINE =================
     @render.ui
     def dynamic_modal_container():
 
-        m = ui_state["modal"]()
+        state = ui_state["modal"]()
         res = app_state["workflow"]() or {}
 
-        if not m:
+        if state == UIStateMachine.IDLE:
             return None
 
-        if m == "settings":
+        if state == UIStateMachine.SETTINGS:
             return draw_settings_modal()
 
-        phone = (res.get("input_data") or {}).get("phone", "غير محدد")
+        phone = (res.get("input_data") or {}).get("phone", "")
 
-        if m == "plan2":
+        if state == UIStateMachine.PLAN2:
             return draw_plan_2_modal(phone, panels_cache(), sensors_cache())
 
-        if m == "plan3":
+        if state == UIStateMachine.PLAN3:
             return draw_plan_3_modal(phone, res)
 
         return None
 
-    # ---------------- RESULTS (FIXED + ALWAYS RENDER) ----------------
+    # ================= RESULTS =================
     @render.ui
     def results_workflow_view():
 
         res = app_state["workflow"]() or {}
 
-        if not isinstance(res, dict) or not res:
+        if not res:
             return ui.div("لا توجد نتائج", class_="empty-state")
 
-        phone = (res.get("input_data") or {}).get("phone", "غير محدد")
+        phone = (res.get("input_data") or {}).get("phone", "")
         status = res.get("status", "UNKNOWN")
 
         return ui.div(
@@ -157,7 +164,7 @@ def server(input, output, session):
             class_="results-container"
         )
 
-    # ---------------- AUTOCOMPLETE (SAFE) ----------------
+    # ================= AUTOCOMPLETE =================
     @render.ui
     def suggestions_curtain():
 
@@ -184,7 +191,7 @@ def server(input, output, session):
             class_="suggestions-curtain"
         )
 
-    # ---------------- CLOSE SUGGESTIONS ----------------
+    # ================= CLOSE SUGGESTIONS =================
     @reactive.effect
     @reactive.event(input.hide_suggestions)
     def _():
