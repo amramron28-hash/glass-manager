@@ -28,10 +28,7 @@ from server import server
 print("APP SIGNATURE:", inspect.signature(App))
 print("BEFORE APP CREATE")
 
-app = App(
-    app_ui,
-    server,
-    static_assets=WWW_DIR
-)
+# ✅ FIX: لا تستخدم static_assets
+app = App(app_ui, server)
 
 print("APP CREATED")
