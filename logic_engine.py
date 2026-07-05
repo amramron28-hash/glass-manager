@@ -1,168 +1,251 @@
 import re
-from html import escape
-from functools import lru_cache
-from shiny import ui
+import time
+from typing import Dict, Optional, Tuple, Any
+from core.logger import get_logger
+
+# =========================
+# STATUS
+# =========================
+STATUS_SUCCESS = "success"
+STATUS_PLAN_2 = "plan_2"
+STATUS_PLAN2_SUCCESS = "plan2_success"
+STATUS_PLAN_3 = "plan_3"
+STATUS_ERROR = "error"
+STATUS_NOT_FOUND = "not_found"
+
+TOLERANCE = 0.05
+EXACT_TOLERANCE = 0.001
+
+log = get_logger("logic_engine")
 
 
-def extract_numeric_size(size_string):
-    try:
-        match = re.search(r"[-+]?\d*\.\d+|\d+", str(size_string))
-        return float(match.group()) if match else None
-    except:
+# =========================
+# FAST NORMALIZER (OPTIMIZED)
+# =========================
+_norm_cache = {}
+
+def normalize_text(text: Any) -> str:
+    if text in _norm_cache:
+        return _norm_cache[text]
+
+    cleaned = re.sub(r'[^a-z0-9\u0621-\u064a]+', '', str(text).lower())
+    _norm_cache[text] = cleaned
+    return cleaned
+
+
+# =========================
+# SIZE EXTRACTOR
+# =========================
+def extract_numeric_size(size_string: Any) -> Optional[float]:
+    if not size_string:
+        return None
+    match = re.search(r"[-+]?\d*\.\d+|\d+", str(size_string))
+    return float(match.group()) if match else None
+
+
+# =========================
+# MODEL FINDER (STABLE)
+# =========================
+def find_model_coords(db_data: Dict, phone: str) -> Tuple[Optional[str], ...]:
+
+    search_norm = normalize_text(phone)
+    best_match = None
+
+    for size, panels in db_data.items():
+
+        if not isinstance(panels, dict):
+            continue
+
+        for panel, sensors in panels.items():
+
+            if not isinstance(sensors, dict):
+                continue
+
+            for sensor, data in sensors.items():
+
+                models = data.get("models")
+                if not isinstance(models, list):
+                    continue
+
+                for model in models:
+
+                    m_norm = normalize_text(model)
+
+                    # exact match = exit immediately
+                    if m_norm == search_norm:
+                        return size, panel, sensor, model
+
+                    # partial match fallback (only first best)
+                    if best_match is None and (
+                        m_norm.startswith(search_norm) or search_norm in m_norm
+                    ):
+                        best_match = (size, panel, sensor, model)
+
+    return best_match if best_match else (None, None, None, None)
+
+
+# =========================
+# COMPATIBILITY ENGINE (FAST PATH)
+# =========================
+def get_compatibles_strict(db_data: Dict, size: str, panel: str, sensor: str, real_name: str) -> dict:
+
+    curr_n = extract_numeric_size(size)
+    if curr_n is None:
+        return {"exact": [], "plus": [], "minus": []}
+
+    res = {"exact": [], "plus": [], "minus": []}
+
+    real_norm = normalize_text(real_name)
+
+    for s_k, panels in db_data.items():
+
+        if not isinstance(panels, dict):
+            continue
+
+        other_n = extract_numeric_size(s_k)
+        if other_n is None:
+            continue
+
+        diff = other_n - curr_n
+
+        panel_data = panels.get(panel)
+        if not isinstance(panel_data, dict):
+            continue
+
+        sensor_data = panel_data.get(sensor)
+        if not isinstance(sensor_data, dict):
+            continue
+
+        models = sensor_data.get("models")
+        if not isinstance(models, list):
+            continue
+
+        if abs(diff) < EXACT_TOLERANCE:
+            bucket = "exact"
+        elif 0 < diff <= TOLERANCE:
+            bucket = "plus"
+        elif -TOLERANCE <= diff < 0:
+            bucket = "minus"
+        else:
+            continue
+
+        for m in models:
+            if normalize_text(m) != real_norm:
+                res[bucket].append(m)
+
+    # remove duplicates
+    for k in res:
+        res[k] = sorted(list(dict.fromkeys(res[k])))
+
+    return res
+
+
+# =========================
+# GROUP FINDER (SAFE)
+# =========================
+def find_group_by_specs(db_data: Dict, specs: dict, tol: float = TOLERANCE) -> Optional[dict]:
+
+    req_n = extract_numeric_size(specs.get("size"))
+    if req_n is None:
         return None
 
+    p_norm = normalize_text(specs.get("panel"))
+    s_norm = normalize_text(specs.get("sensor"))
 
-# =========================
-# FAST INDEX LOOKUP (OPTIMIZED)
-# =========================
-def find_model_coords(db_data, phone_name):
+    for s_key, panels in db_data.items():
 
-    if not phone_name or not db_data:
-        return None, None, None, None
-
-    search = str(phone_name).strip().lower()
-
-    for size, panels in db_data.items():
+        s_n = extract_numeric_size(s_key)
+        if s_n is None or abs(s_n - req_n) > tol:
+            continue
 
         if not isinstance(panels, dict):
             continue
 
-        for panel, sensors in panels.items():
+        for p_key, sensors in panels.items():
 
-            if not isinstance(sensors, dict):
-                continue
-
-            for sensor, data in sensors.items():
-
-                models = data.get("models") if isinstance(data, dict) else None
-                if not models:
-                    continue
-
-                for model in models:
-                    m = str(model).strip().lower()
-                    if m == search:
-                        return size, panel, sensor, model
-
-    # fallback partial match
-    for size, panels in db_data.items():
-
-        if not isinstance(panels, dict):
-            continue
-
-        for panel, sensors in panels.items():
-
-            if not isinstance(sensors, dict):
-                continue
-
-            for sensor, data in sensors.items():
-
-                models = data.get("models") if isinstance(data, dict) else None
-                if not models:
-                    continue
-
-                for model in models:
-                    if search in str(model).lower():
-                        return size, panel, sensor, model
-
-    return None, None, None, None
-
-
-# =========================
-# COMPATIBILITY ENGINE (SAFE)
-# =========================
-def get_compatibles_strict(db_data, current_size, current_panel, current_sensor, real_name):
-
-    result = {"exact": [], "plus": [], "minus": []}
-
-    current = extract_numeric_size(current_size)
-    if current is None:
-        return result
-
-    tolerance = 0.03
-
-    for size_key, panels in db_data.items():
-
-        other = extract_numeric_size(size_key)
-        if other is None or not isinstance(panels, dict):
-            continue
-
-        diff = other - current
-
-        for panel_key, sensors in panels.items():
-
-            if panel_key != current_panel:
+            if normalize_text(p_key) != p_norm:
                 continue
 
             if not isinstance(sensors, dict):
                 continue
 
-            for sensor_key, data in sensors.items():
+            for s_k_in, data in sensors.items():
 
-                if sensor_key != current_sensor:
+                if normalize_text(s_k_in) != s_norm:
                     continue
 
-                models = data.get("models") if isinstance(data, dict) else None
-                if not models:
-                    continue
+                models = data.get("models", [])
 
-                for model in models:
+                return {
+                    "group_id": f"{p_key}-{s_k_in}",
+                    "models": sorted(list(dict.fromkeys(models))),
+                    "size": s_key,
+                    "panel": p_key,
+                    "sensor": s_k_in
+                }
 
-                    if str(model).lower() == str(real_name).lower():
-                        continue
-
-                    if abs(diff) < 0.001:
-                        result["exact"].append(model)
-
-                    elif 0 < diff <= tolerance:
-                        result["plus"].append(model)
-
-                    elif -tolerance <= diff < 0:
-                        result["minus"].append(model)
-
-    return result
+    return None
 
 
 # =========================
-# MAIN WORKFLOW (FIXED RENDER FLOW)
+# MAIN WORKFLOW (STATE MACHINE READY)
 # =========================
-def run_system_workflows(phone, db_data, suggestions=None):
+def run_system_workflows(phone: str, db_data: Dict[str, Any], plan2_input: Optional[dict] = None) -> dict:
 
-    if not phone:
-        return ui.div()
+    start_time = time.time()
 
-    size, panel, sensor, real_name = find_model_coords(db_data, phone)
+    phone = (phone or "").strip()
 
-    output = []
+    if not isinstance(db_data, dict):
+        return {"status": STATUS_ERROR, "message": "DB_INVALID"}
 
-    if not real_name:
+    try:
+        # =========================
+        # PLAN 1
+        # =========================
+        size, panel, sensor, real_name = find_model_coords(db_data, phone)
 
-        return ui.div(
-            ui.HTML(f"""
-            <div class="flat-warning-card">
-                ⚠️ الموديل ({escape(phone)}) غير موجود
-            </div>
+        if real_name:
+            return {
+                "status": STATUS_SUCCESS,
+                "coords": {
+                    "size": size,
+                    "panel": panel,
+                    "sensor": sensor,
+                    "real_name": real_name
+                },
+                "compatibles": get_compatibles_strict(
+                    db_data, size, panel, sensor, real_name
+                )
+            }
 
-            <div style="margin-top:15px;text-align:center;">
-                <button onclick="Shiny.setInputValue('trigger_plan_2','{escape(phone)}',{{priority:'event'}})"
-                        style="padding:12px;background:#3498db;color:white;border:none;border-radius:8px;width:100%;">
-                    تشغيل الخطة 2
-                </button>
-            </div>
-            """)
-        )
+        # =========================
+        # PLAN 2
+        # =========================
+        if isinstance(plan2_input, dict):
+            matched = find_group_by_specs(db_data, plan2_input)
 
-    # =========================
-    # VALID MODEL FOUND
-    # =========================
+            if matched:
+                return {
+                    "status": STATUS_PLAN2_SUCCESS,
+                    **matched
+                }
 
-    from ui_components import draw_technical_coords, draw_neon_section
+        # =========================
+        # PLAN 3
+        # =========================
+        return {
+            "status": STATUS_PLAN_3,
+            "input_data": plan2_input or {
+                "size": None,
+                "panel": None,
+                "sensor": None
+            }
+        }
 
-    output.append(draw_technical_coords(size, panel, sensor, real_name))
+    except Exception as e:
+        log.exception(f"Workflow error: {e}")
+        return {"status": STATUS_ERROR, "message": "INTERNAL_ERROR"}
 
-    compatible = get_compatibles_strict(db_data, size, panel, sensor, real_name)
-
-    output.append(draw_neon_section("مطابقة تماماً", compatible["exact"], "#2ecc71", "🟢", "exact"))
-    output.append(draw_neon_section("أكبر قليلاً", compatible["plus"], "#3498db", "🔵", "plus"))
-    output.append(draw_neon_section("أصغر قليلاً", compatible["minus"], "#e67e22", "🟠", "minus"))
-
-    return ui.div(*output)
+    finally:
+        log.info(f"Execution time: {time.time() - start_time:.4f}s")
