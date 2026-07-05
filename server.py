@@ -1,7 +1,7 @@
 from shiny import reactive, render, ui
 import logging
-import time
 import json
+import time
 
 import services as svs
 from logic_engine import run_system_workflows, STATUS_PLAN_2, STATUS_PLAN_3
@@ -13,25 +13,25 @@ logger = logging.getLogger("ui_debug")
 
 def server(input, output, session):
 
-    # ---------------- STATE ----------------
+    # ---------------- CORE STATE ----------------
     ui_state = {
         "modal": reactive.Value(None),
         "suggestions": reactive.Value(False)
     }
 
     app_state = {
-        "workflow": reactive.Value(None),
+        "workflow": reactive.Value({}),
         "lock": reactive.Value(False),
-        "last_query": reactive.Value("")
+        "last_q": reactive.Value("")
     }
 
     panels_cache = reactive.Value({})
     sensors_cache = reactive.Value({})
-    initialized = reactive.Value(False)
 
     autocomplete_index = {"index": None}
+    initialized = reactive.Value(False)
 
-    # ---------------- INIT ----------------
+    # ---------------- INIT (SAFE GUARDED) ----------------
     @reactive.effect
     def _init():
         if initialized():
@@ -43,26 +43,26 @@ def server(input, output, session):
 
             if isinstance(db, dict):
                 p, s = svs.extract_panels_sensors(db)
-                panels_cache.set(p)
-                sensors_cache.set(s)
+                panels_cache.set(p or {})
+                sensors_cache.set(s or {})
 
                 autocomplete_index["index"] = svs.build_autocomplete_index(
                     svs.load_models_index()
                 )
 
             initialized.set(True)
-            logger.info("SYSTEM INITIALIZED")
+            logger.info("SYSTEM READY")
 
         except Exception as e:
             logger.error(f"INIT ERROR: {e}")
             reactive.invalidate_later(5)
 
-    # ---------------- SEARCH ENGINE ----------------
+    # ---------------- SEARCH ENGINE (ULTRA STABLE) ----------------
     @reactive.effect
     def _search():
+
         q = input.search_query()
 
-        # 🔥 LOGGING الذي طلبته
         logger.info(f"SEARCH INPUT: {q}")
 
         if not q or len(q) < 2:
@@ -74,23 +74,30 @@ def server(input, output, session):
         if app_state["lock"]():
             return
 
+        # debounce manual safety
+        if q == app_state["last_q"]():
+            return
+
         app_state["lock"].set(True)
 
         try:
             db = get_database()
-            res = run_system_workflows(q, db)
+            res = run_system_workflows(q, db) or {}
 
             app_state["workflow"].set(res)
-            app_state["last_query"].set(q)
+            app_state["last_q"].set(q)
 
             status = res.get("status")
 
-            if status in [STATUS_PLAN_2, STATUS_PLAN_3]:
-                ui_state["modal"].set(status)
+            # ---------------- NORMALIZE MODAL STATE ----------------
+            if status == STATUS_PLAN_2:
+                ui_state["modal"].set("plan2")
+            elif status == STATUS_PLAN_3:
+                ui_state["modal"].set("plan3")
             else:
                 ui_state["modal"].set(None)
 
-            logger.info(f"SEARCH RESULT STATUS: {status}")
+            logger.info(f"STATUS: {status}")
 
         except Exception as e:
             logger.error(f"SEARCH ERROR: {e}")
@@ -98,7 +105,7 @@ def server(input, output, session):
         finally:
             app_state["lock"].set(False)
 
-    # ---------------- MODAL CONTROL ----------------
+    # ---------------- SETTINGS ----------------
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _():
@@ -109,12 +116,12 @@ def server(input, output, session):
     def _():
         ui_state["modal"].set(None)
 
-    # ---------------- MODAL RENDER ----------------
+    # ---------------- MODAL ENGINE (HARD SAFE) ----------------
     @render.ui
     def dynamic_modal_container():
 
         m = ui_state["modal"]()
-        res = app_state["workflow"]()
+        res = app_state["workflow"]() or {}
 
         if not m:
             return None
@@ -122,41 +129,35 @@ def server(input, output, session):
         if m == "settings":
             return draw_settings_modal()
 
-        if not res:
-            return None
+        phone = (res.get("input_data") or {}).get("phone", "غير محدد")
 
-        phone = (res or {}).get("input_data", {}).get("phone", "غير محدد")
-
-        if m == STATUS_PLAN_2:
+        if m == "plan2":
             return draw_plan_2_modal(phone, panels_cache(), sensors_cache())
 
-        if m == STATUS_PLAN_3:
+        if m == "plan3":
             return draw_plan_3_modal(phone, res)
 
         return None
 
-    # ---------------- RESULTS CARDS (FIX IMPORTANT) ----------------
+    # ---------------- RESULTS (FIXED + ALWAYS RENDER) ----------------
     @render.ui
     def results_workflow_view():
 
-        res = app_state["workflow"]()
-        if not res:
-            return ui.div("لا توجد نتائج بعد", class_="empty-state")
+        res = app_state["workflow"]() or {}
 
-        status = res.get("status", "")
-        phone = (res.get("input_data", {}) or {}).get("phone", "غير محدد")
+        if not isinstance(res, dict) or not res:
+            return ui.div("لا توجد نتائج", class_="empty-state")
 
-        cards = [
-            ui.div(
-                ui.h4(f"📱 الهاتف: {phone}"),
-                ui.p(f"📌 الحالة: {status}"),
-                class_="result-card"
-            )
-        ]
+        phone = (res.get("input_data") or {}).get("phone", "غير محدد")
+        status = res.get("status", "UNKNOWN")
 
-        return ui.div(*cards, class_="results-container")
+        return ui.div(
+            ui.div(f"📱 الهاتف: {phone}", class_="result-card"),
+            ui.div(f"📌 الحالة: {status}", class_="result-card"),
+            class_="results-container"
+        )
 
-    # ---------------- AUTOCOMPLETE ----------------
+    # ---------------- AUTOCOMPLETE (SAFE) ----------------
     @render.ui
     def suggestions_curtain():
 
@@ -169,7 +170,7 @@ def server(input, output, session):
         if not q or not idx:
             return None
 
-        results = idx.search_prefix(q, 5)
+        results = idx.search_prefix(q, 5) or []
 
         return ui.div(
             *[
