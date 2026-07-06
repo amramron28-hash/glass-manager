@@ -5,8 +5,8 @@ from shiny import ui
 # ==========================================================
 def inject_pwa_and_styles():
     return ui.HTML("""
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/style.css">
     """)
 
 
@@ -19,7 +19,7 @@ def draw_welcome_section():
     """
     return ui.div(
         ui.tags.img(
-            src="phone_image.webp",
+            src="/phone_image.webp",
             alt="Phone",
             class_="welcome-phone-image",
             style="""
@@ -53,7 +53,7 @@ def draw_technical_coords(size, panel, sensor, real_name):
         ),
 
         ui.div(
-            f"🖥 نوع الشاشة : {panel if panel else '-'}",
+            f" نوع الشاشة : {panel if panel else '-'}",
             class_="coord-line"
         ),
 
@@ -64,6 +64,8 @@ def draw_technical_coords(size, panel, sensor, real_name):
 
         class_="glass-card tech-card"
     )
+
+
 # ==========================================================
 # COMPATIBLE RESULTS (Neon Glass Cards)
 # ==========================================================
@@ -158,7 +160,7 @@ def draw_plan_2_modal(phone, panels, sensors):
 
         ui.input_action_button(
             "exec_plan2",
-            "🔍 بحث",
+            " بحث",
             class_="btn-neon"
         ),
 
@@ -189,7 +191,9 @@ def draw_plan_3_modal(phone, result=None):
         ),
 
         class_="glass-card modal-content"
-)
+    )
+
+
 # ==========================================================
 # STATUS COMPONENTS (داخل نافذة الإعدادات فقط)
 # ==========================================================
@@ -264,6 +268,8 @@ def draw_notifications(status):
 
         class_="metric-box glass-card"
     )
+
+
 # ==========================================================
 # MAIN APP UI
 # ==========================================================
@@ -284,7 +290,7 @@ app_ui = ui.page_fluid(
             class_="drawer-close-btn"
         ),
 
-        ui.h3("⚙️ الإعدادات"),
+        ui.h3("️ الإعدادات"),
 
         ui.output_ui("database_status_area"),
         ui.output_ui("monitor_area"),
@@ -320,7 +326,7 @@ app_ui = ui.page_fluid(
             ),
 
             ui.tags.button(
-                "⚙",
+                "",
                 id="btn_settings",
                 class_="btn-settings"
             ),
@@ -362,4 +368,4 @@ app_ui = ui.page_fluid(
     # ======================================================
     ui.output_ui("drawer_js_handler")
 
-)
+        )
