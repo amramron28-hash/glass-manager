@@ -264,3 +264,102 @@ def draw_notifications(status):
 
         class_="metric-box glass-card"
     )
+# ==========================================================
+# MAIN APP UI
+# ==========================================================
+
+app_ui = ui.page_fluid(
+
+    # تحميل ملفات PWA و CSS
+    inject_pwa_and_styles(),
+
+    # ======================================================
+    # نافذة الإعدادات الجانبية
+    # ======================================================
+    ui.div(
+
+        ui.tags.button(
+            "✕",
+            id="btn_close_drawer_trigger",
+            class_="drawer-close-btn"
+        ),
+
+        ui.h3("⚙️ الإعدادات"),
+
+        ui.output_ui("database_status_area"),
+        ui.output_ui("monitor_area"),
+        ui.output_ui("notifications_area"),
+
+        id="settings-drawer",
+        class_="drawer"
+
+    ),
+
+    # ======================================================
+    # الصفحة الرئيسية
+    # ======================================================
+    ui.div(
+
+        # ---------- Header ----------
+        ui.div(
+
+            ui.div(
+
+                ui.tags.span(
+                    "ZEGAAR",
+                    class_="brand-neon-main"
+                ),
+
+                ui.tags.span(
+                    "GLASS MANAGER",
+                    class_="brand-neon-sub"
+                ),
+
+                class_="brand-neon-title"
+
+            ),
+
+            ui.tags.button(
+                "⚙",
+                id="btn_settings",
+                class_="btn-settings"
+            ),
+
+            class_="header-bar"
+
+        ),
+
+        # ---------- Search ----------
+        ui.div(
+
+            ui.input_text(
+                "search_query",
+                "",
+                placeholder="🔍 ابحث عن موديل الهاتف..."
+            ),
+
+            ui.output_ui("suggestions_curtain"),
+
+            class_="search-box"
+
+        ),
+
+        # ---------- Welcome ----------
+        ui.output_ui("welcome_area"),
+
+        # ---------- Results ----------
+        ui.output_ui("results_workflow_view"),
+
+        # ---------- Dynamic Modal ----------
+        ui.output_ui("dynamic_modal_container"),
+
+        class_="main-container"
+
+    ),
+
+    # ======================================================
+    # Javascript Handler
+    # ======================================================
+    ui.output_ui("drawer_js_handler")
+
+)
