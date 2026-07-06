@@ -11,14 +11,23 @@ def inject_pwa_and_styles():
 
 
 # ==========================================================
-# WELCOME SECTION (صورة فقط بدون نصوص)
+# WELCOME SECTION (صورة فقط - بدون نصوص)
 # ==========================================================
 def draw_welcome_section():
+    """تظهر صورة الهاتف فقط عند عدم وجود نتائج بحث"""
     return ui.div(
         ui.tags.img(
             src="/phone_image.webp",
             alt="Phone Interface",
-            style="width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto; border-radius: var(--radius-lg);"
+            style="""
+                display: block;
+                margin: 0 auto;
+                width: 100%;
+                max-width: 300px;
+                height: auto;
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-md);
+            """
         ),
         class_="glass-card welcome-image-card"
     )
@@ -44,7 +53,7 @@ def draw_neon_section(title, models, color, icon="", type_class="default"):
     if not models:
         return None
     return ui.div(
-        ui.h4(f"{icon} {title}", style=f"color:{color}; margin-bottom:12px;"),
+        ui.h4(f"{icon} {title}", style=f"color:{color}; margin-bottom:12px; font-weight:700;"),
         *[ui.div(model, class_=f"ammar-flat-card flat-{type_class}") for model in models],
         class_="glass-card neon-section",
         style=f"border-right:4px solid {color}; margin-top:15px;"
@@ -86,7 +95,7 @@ def draw_notifications(status):
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
     
-    # 1. DRAWER (يحتوي على البطاقات فقط)
+    # 1. DRAWER (البطاقات هنا فقط)
     ui.div(
         ui.tags.button("✕", id="btn_close_drawer_trigger", class_="drawer-close-btn"),
         ui.h3("⚙️ الإعدادات"),
@@ -117,7 +126,7 @@ app_ui = ui.page_fluid(
             class_="search-box"
         ),
         
-        # Welcome Area
+        # Welcome Area (الصورة فقط)
         ui.output_ui("welcome_area"),
         
         # Results
@@ -126,11 +135,11 @@ app_ui = ui.page_fluid(
         # Dynamic Modal
         ui.output_ui("dynamic_modal_container"),
         
-        # ⚠️ تم حذف Action Buttons بالكامل
+        # ⚠️ تم حذف Action Buttons نهائياً
         
         class_="main-container"
     ),
     
-    # 3. Drawer JS
+    # 3. Drawer JS Handler
     ui.output_ui("drawer_js_handler")
 )
