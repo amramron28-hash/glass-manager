@@ -3,55 +3,48 @@ from shiny import ui
 # ==========================================================
 # PWA + GLOBAL STYLES
 # ==========================================================
-
 def inject_pwa_and_styles():
     return ui.HTML("""
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
-""")
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    """)
 
 
 # ==========================================================
 # WELCOME SECTION
 # ==========================================================
-
 def draw_welcome_section():
+    """
+    تظهر صورة البداية فقط عند عدم وجود نتائج بحث.
+    """
     return ui.div(
-        ui.div(
-            ui.h2(
-                "👋 مرحباً بك",
-                style="""
-                text-align:center;
-                color:var(--primary-color);
-                margin-bottom:10px;
-                """
-            ),
-
-            ui.p(
-                "ابدأ بكتابة موديل الهاتف للحصول على القياسات والموديلات المتوافقة.",
-                style="""
-                text-align:center;
-                opacity:.8;
-                margin-bottom:20px;
-                """
-            ),
-
-            class_="glass-card"
+        ui.tags.img(
+            src="phone_image.webp",
+            alt="Phone",
+            class_="welcome-phone-image",
+            style="""
+                display:block;
+                margin:auto;
+                width:100%;
+                max-width:320px;
+                height:auto;
+                user-select:none;
+                pointer-events:none;
+            """
         ),
-        style="margin-top:20px;"
+        class_="glass-card welcome-card"
     )
 
 
 # ==========================================================
 # TECHNICAL CARD
 # ==========================================================
-
 def draw_technical_coords(size, panel, sensor, real_name):
     return ui.div(
 
         ui.h3(
-            f"📱 {real_name}",
-            style="margin-bottom:10px;"
+            real_name or "-",
+            class_="tech-title"
         ),
 
         ui.div(
@@ -60,7 +53,7 @@ def draw_technical_coords(size, panel, sensor, real_name):
         ),
 
         ui.div(
-            f"🖥 الشاشة : {panel if panel else '-'}",
+            f"🖥 نوع الشاشة : {panel if panel else '-'}",
             class_="coord-line"
         ),
 
@@ -71,66 +64,78 @@ def draw_technical_coords(size, panel, sensor, real_name):
 
         class_="glass-card tech-card"
     )
-
-
 # ==========================================================
-# COMPATIBLE SECTION
+# COMPATIBLE RESULTS (Neon Glass Cards)
 # ==========================================================
-
 def draw_neon_section(title, models, color, icon="", type_class="default"):
-
+    """
+    بطاقات النتائج الزجاجية الشفافة.
+    """
     if not models:
         return None
-
-    cards = []
-
-    for model in models:
-        cards.append(
-            ui.div(
-                model,
-                class_=f"ammar-flat-card flat-{type_class}"
-            )
-        )
 
     return ui.div(
 
         ui.h4(
             f"{icon} {title}",
             style=f"""
-            color:{color};
-            margin-bottom:12px;
+                color:{color};
+                font-weight:700;
+                margin-bottom:12px;
             """
         ),
 
-        *cards,
+        *[
+            ui.div(
+                model,
+                class_=f"ammar-flat-card flat-{type_class}"
+            )
+            for model in models
+        ],
 
         class_="glass-card neon-section",
-        style=f"border-right:4px solid {color};margin-top:15px;"
+        style=f"""
+            border-right:4px solid {color};
+            margin-top:18px;
+        """
     )
-# ==========================================================
-# SETTINGS / PLAN MODALS
-# ==========================================================
 
+
+# ==========================================================
+# SETTINGS MODAL
+# ==========================================================
 def draw_settings_modal():
     return ui.div(
+
         ui.h3("⚙️ إعدادات النظام"),
-        ui.p("يمكن إدارة إعدادات التطبيق من هذه النافذة."),
+
+        ui.hr(),
+
+        ui.p(
+            "يمكن إدارة خصائص النظام من هذه النافذة.",
+            style="opacity:.85;"
+        ),
+
         ui.input_action_button(
             "btn_close_modal",
             "إغلاق",
             class_="btn-neon"
         ),
+
         class_="glass-card modal-content"
     )
 
 
+# ==========================================================
+# PLAN 2 MODAL
+# ==========================================================
 def draw_plan_2_modal(phone, panels, sensors):
     return ui.div(
 
         ui.h3("📋 خطة 2"),
 
         ui.p(
-            f"الموديل: {phone}",
+            f"الموديل : {phone}",
             style="font-weight:bold;"
         ),
 
@@ -142,13 +147,13 @@ def draw_plan_2_modal(phone, panels, sensors):
         ui.input_selectize(
             "p2_panel",
             "نوع الشاشة",
-            choices=panels if panels else []
+            choices=panels or []
         ),
 
         ui.input_selectize(
             "p2_sensor",
             "المستشعر",
-            choices=sensors if sensors else []
+            choices=sensors or []
         ),
 
         ui.input_action_button(
@@ -161,13 +166,16 @@ def draw_plan_2_modal(phone, panels, sensors):
     )
 
 
+# ==========================================================
+# PLAN 3 MODAL
+# ==========================================================
 def draw_plan_3_modal(phone, result=None):
     return ui.div(
 
         ui.h3("🚨 خطة 3"),
 
         ui.p(
-            f"الموديل: {phone}"
+            f"الموديل : {phone}"
         ),
 
         ui.p(
@@ -181,19 +189,16 @@ def draw_plan_3_modal(phone, result=None):
         ),
 
         class_="glass-card modal-content"
-    )
-
-
+)
 # ==========================================================
-# STATUS COMPONENTS
+# STATUS COMPONENTS (داخل نافذة الإعدادات فقط)
 # ==========================================================
 
 def draw_database_status(total):
-
     return ui.div(
 
         ui.div(
-            "📊 عدد الموديلات",
+            "📊 عدد الهواتف",
             class_="metric-title"
         ),
 
@@ -202,39 +207,48 @@ def draw_database_status(total):
             class_="metric-value"
         ),
 
-        class_="metric-box"
+        class_="metric-box glass-card"
     )
 
 
 def draw_monitor_component(status):
 
     if isinstance(status, dict):
-        st = status.get("status", "OFFLINE")
+        monitor_status = status.get("status", "OFFLINE")
     else:
-        st = str(status)
+        monitor_status = str(status)
+
+    color = (
+        "#2ecc71"
+        if monitor_status == "ONLINE"
+        else "#e67e22"
+        if monitor_status == "FALLBACK"
+        else "#ff5252"
+    )
 
     return ui.div(
 
         ui.div(
-            "🛰️ حالة المراقب",
+            "🛰️ المراقب الصامت",
             class_="metric-title"
         ),
 
         ui.div(
-            st,
-            class_="metric-value"
+            monitor_status,
+            class_="metric-value",
+            style=f"color:{color};"
         ),
 
-        class_="metric-box"
+        class_="metric-box glass-card"
     )
 
 
 def draw_notifications(status):
 
     if isinstance(status, dict):
-        src = status.get("source", "N/A")
+        source = status.get("source", "N/A")
     else:
-        src = "N/A"
+        source = "N/A"
 
     return ui.div(
 
@@ -244,136 +258,9 @@ def draw_notifications(status):
         ),
 
         ui.div(
-            src,
+            source,
             class_="metric-value"
         ),
 
-        class_="metric-box"
-        )
-# ==========================================================
-# MAIN APP UI
-# ==========================================================
-
-app_ui = ui.page_fluid(
-
-    inject_pwa_and_styles(),
-
-    # ======================================================
-    # SETTINGS DRAWER
-    # ======================================================
-    ui.div(
-
-        ui.tags.button(
-            "✕",
-            id="btn_close_drawer_trigger",
-            class_="drawer-close-btn"
-        ),
-
-        ui.h3("🛠 الإعدادات"),
-
-        ui.output_ui("database_status_area"),
-        ui.output_ui("monitor_area"),
-        ui.output_ui("notifications_area"),
-
-        id="settings-drawer",
-        class_="drawer"
-    ),
-
-    # ======================================================
-    # HEADER
-    # ======================================================
-    ui.div(
-
-        ui.div(
-
-            ui.div(
-
-                ui.tags.span(
-                    "ZEGAAR",
-                    class_="brand-neon-main"
-                ),
-
-                ui.tags.span(
-                    "GLASS MANAGER",
-                    class_="brand-neon-sub"
-                ),
-
-                class_="brand-neon-title"
-            ),
-
-            ui.tags.button(
-                "⋮",
-                id="btn_settings",
-                class_="btn-dots-menu"
-            ),
-
-            class_="header-bar"
-        ),
-
-        # ==================================================
-        # SEARCH
-        # ==================================================
-        ui.div(
-
-            ui.input_text(
-                "search_query",
-                "",
-                placeholder="🔍 ابحث عن موديل الهاتف..."
-            ),
-
-            ui.output_ui("suggestions_curtain"),
-
-            class_="search-box"
-        ),
-
-        # ==================================================
-        # WELCOME
-        # ==================================================
-        ui.output_ui("welcome_area"),
-
-        # ==================================================
-        # RESULTS
-        # ==================================================
-        ui.output_ui("results_workflow_view"),
-
-        # ==================================================
-        # DYNAMIC MODAL
-        # ==================================================
-        ui.output_ui("dynamic_modal_container"),
-
-        # ==================================================
-        # ACTION BUTTONS
-        # ==================================================
-        ui.div(
-
-            ui.input_action_button(
-                "show_add_panel",
-                "➕ لوحة"
-            ),
-
-            ui.input_action_button(
-                "show_add_sensor",
-                "➕ مستشعر"
-            ),
-
-            ui.input_action_button(
-                "trigger_plan_2",
-                "📋 خ2"
-            ),
-
-            ui.input_action_button(
-                "trigger_plan_3",
-                "📋 خ3"
-            ),
-
-            class_="action-buttons"
-        ),
-
-        class_="container-fluid"
-    ),
-
-    # ======================================================
-    # EMPTY CONTAINERS REQUIRED BY server.py
-    # ======================================================
-    ui.output_ui("drawer_js_handler")
-)
+        class_="metric-box glass-card"
+    )
