@@ -1,8 +1,7 @@
 """
-ZEGAAR GLASS MANAGER - Production Ready v6.0 (Ultimate)
+ZEGAAR GLASS MANAGER - Production Ready v6.0 (Final)
 100% Comprehensive Bug-Free Architecture.
 Optimized for Shiny 1.6.x & Stable Hugging Face Operations.
-All 12 review notes addressed.
 """
 
 from __future__ import annotations
@@ -21,17 +20,8 @@ from services import (
     execute_refresh_logic,
 )
 from silent_monitor import get_database, get_status, refresh as monitor_refresh
-from logic_engine import find_model_coords, get_compatibles_strict, safe_float
-from ui_components import (
-    draw_welcome_section,
-    draw_technical_coords,
-    draw_neon_section,
-    render_success_view,
-    render_plan2_view,
-    render_plan2_match_view,
-    render_plan3_view,
-    render_error_view,
-)
+from logic_engine import find_model_coords, get_compatibles_strict
+from ui_components import draw_neon_section, draw_technical_coords, draw_welcome_section
 from core.logger import get_logger
 
 log = get_logger("server")
@@ -103,8 +93,8 @@ def server(input, output, session):
     last_monitor_status = reactive.value("OFFLINE")
     last_db_hash = reactive.value("")
     last_sync_timestamp = reactive.value("لم تتم المزامنة بعد")
-    last_db_size = reactive.value(0)  # ✅ ملاحظة 1: Reactive Value بدلاً من int
-    cached_status = reactive.value({})  # ✅ ملاحظة 5: تخزين الحالة لتقليل الاستدعاءات
+    last_db_size = reactive.value(0)
+    cached_status = reactive.value({})
 
     workflow_cache = LRUCache(150)
 
@@ -135,25 +125,26 @@ def server(input, output, session):
         text = re.sub(r"[^\w\s\u0621-\u064a+\-.]", "", text)
         return re.sub(r"\s+", " ", text).strip()
 
-    # ✅ ملاحظة 3: safe_float() تم نقلها إلى logic_engine.py
+    # ✅ FIX: تعريف safe_float محلياً لتجنب خطأ الاستيراد
+    def safe_float(value):
+        try:
+            return float(str(value).replace(",", ".").strip())
+        except (ValueError, TypeError):
+            return None
 
     def compute_db_hash(db: dict) -> str:
         """يحتسب الـ Hash الفعلي لقاعدة البيانات"""
         try:
-            # ✅ ملاحظة 6: الاعتماد على last_sync أولاً لتقليل التكلفة
             status = cached_status() or {}
             last_sync = status.get("last_sync")
             if last_sync:
                 return hashlib.sha256(str(last_sync).encode()).hexdigest()
 
-            # Fallback: حساب hash للموديلات فقط (أسرع من JSON)
             models = []
             for panels in db.values():
-                if not isinstance(panels, dict):
-                    continue
+                if not isinstance(panels, dict): continue
                 for sensors in panels.values():
-                    if not isinstance(sensors, dict):
-                        continue
+                    if not isinstance(sensors, dict): continue
                     for group in sensors.values():
                         if isinstance(group, dict):
                             models.extend(group.get("models", []))
@@ -164,13 +155,11 @@ def server(input, output, session):
             return ""
 
     def invalidate_all_workflows():
-        """تصفير الذاكرة المؤقتة عند التحديث"""
         workflow_cache.clear()
         last_processed_phone.set("")
         log.info("[Cache System] Workflows completely invalidated.")
 
     def _send_message(name: str, data: dict):
-        """إرسال رسائل JS مع تسجيل الأخطاء"""
         try:
             loop = asyncio.get_running_loop()
             loop.create_task(session.send_custom_message(name, data))
@@ -179,14 +168,9 @@ def server(input, output, session):
         except Exception as e:
             log.warning(f"Failed to send message '{name}': {e}")
 
-    def toggle_loading(show: bool):
-        _send_message("toggle_loading", {"show": bool(show)})
-
-    def open_drawer():
-        _send_message("toggle_drawer", {"action": "open"})
-
-    def close_drawer():
-        _send_message("toggle_drawer", {"action": "close"})
+    def toggle_loading(show: bool): _send_message("toggle_loading", {"show": bool(show)})
+    def open_drawer(): _send_message("toggle_drawer", {"action": "open"})
+    def close_drawer(): _send_message("toggle_drawer", {"action": "close"})
 
     # ==========================================================
     # Unified Workflow Execution
@@ -205,18 +189,10 @@ def server(input, output, session):
 
             size, panel, sensor, real_name = find_model_coords(db, norm_phone)
             if real_name:
-                # ✅ منطق التسامح ±0.03 موجود داخل get_compatibles_strict
-                compatibles = get_compatibles_strict(
-                    db, size, panel, sensor, real_name
-                ) or {}
+                compatibles = get_compatibles_strict(db, size, panel, sensor, real_name) or {}
                 result = {
                     "status": ResultStatus.SUCCESS,
-                    "coords": {
-                        "size": size,
-                        "panel": panel,
-                        "sensor": sensor,
-                        "real_name": real_name,
-                    },
+                    "coords": {"size": size, "panel": panel, "sensor": sensor, "real_name": real_name},
                     "compatibles": compatibles,
                 }
             else:
@@ -228,9 +204,7 @@ def server(input, output, session):
 
             workflow_cache.put(cache_key, result)
             elapsed = time.time() - start
-            log.info(
-                f"Workflow computed in {elapsed:.3f}s for: {norm_phone} → {result['status']}"
-            )
+            log.info(f"Workflow computed in {elapsed:.3f}s for: {norm_phone} → {result['status']}")
             return result
         except Exception as e:
             log.exception(e)
@@ -252,7 +226,6 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.search_query)
     async def _handle_live_search():
-        """الـ Effect الموحد لتشغيل البحث والـ Workflow"""
         raw_query = str(input.search_query()).strip()
         norm_query = normalize_text(raw_query)
         current_phone.set(norm_query)
@@ -264,15 +237,12 @@ def server(input, output, session):
             last_processed_phone.set("")
             return
 
-        # Debounce فعال
         await asyncio.sleep(SEARCH_DELAY)
         if norm_query != current_phone():
             return
 
-        # ✅ ملاحظة 8: مسح last_processed_phone لضمان إعادة التنفيذ
         last_processed_phone.set("")
 
-        # بناء الـ Autocomplete إذا لزم الأمر
         trie = autocomplete_index()
         if trie is None and models_index():
             try:
@@ -290,7 +260,6 @@ def server(input, output, session):
                 suggestions_list.set([])
                 show_curtain.set(False)
 
-        # تنفيذ Workflow
         if norm_query != last_processed_phone():
             db = database_data()
             if db:
@@ -301,9 +270,7 @@ def server(input, output, session):
                     last_processed_phone.set(norm_query)
                 except Exception as e:
                     log.error(f"Search error: {e}")
-                    plan_results.set(
-                        {"status": ResultStatus.ERROR, "message": str(e)}
-                    )
+                    plan_results.set({"status": ResultStatus.ERROR, "message": str(e)})
                 finally:
                     toggle_loading(False)
 
@@ -311,7 +278,7 @@ def server(input, output, session):
     @reactive.event(input._hide_curtain_trigger)
     def _hide_curtain_on_select():
         show_curtain.set(False)
-        suggestions_list.set([])  # ✅ ملاحظة 7: تحرير الذاكرة مباشرة
+        suggestions_list.set([])
 
     @reactive.effect
     @reactive.event(input.exec_plan2)
@@ -323,16 +290,10 @@ def server(input, output, session):
             sensor = input.p2_sensor()
 
             if size_val is None or not panel or not sensor:
-                plan_results.set(
-                    {
-                        "status": ResultStatus.ERROR,
-                        "message": "يرجى ملء جميع الحقول",
-                    }
-                )
+                plan_results.set({"status": ResultStatus.ERROR, "message": "يرجى ملء جميع الحقول"})
                 return
 
             from services import build_fast_index, process_plan
-
             idx = None
             try:
                 idx = build_fast_index(database_data())
@@ -340,37 +301,23 @@ def server(input, output, session):
                 log.error(f"Failed to build fast index: {e}")
 
             if idx is None:
-                plan_results.set(
-                    {
-                        "status": ResultStatus.ERROR,
-                        "message": "فشل بناء الفهرس",
-                    }
-                )
+                plan_results.set({"status": ResultStatus.ERROR, "message": "فشل بناء الفهرس"})
                 return
 
             res = process_plan(size_val, panel, sensor, database_data(), idx)
             if res:
-                plan_results.set(
-                    {
-                        "status": ResultStatus.PLAN_2_MATCH,
-                        "message": f"المقاس: {res['size']} | الشاشة: {res['panel']} | المستشعر: {res['sensor']}",
-                        "data": res,
-                        "models": res.get("models", []),
-                    }
-                )
+                plan_results.set({
+                    "status": ResultStatus.PLAN_2_MATCH,
+                    "message": f"المقاس: {res['size']} | الشاشة: {res['panel']} | المستشعر: {res['sensor']}",
+                    "data": res,
+                    "models": res.get("models", [])
+                })
                 log.info(f"Plan 2 match found: {res}")
             else:
-                plan_results.set(
-                    {
-                        "status": ResultStatus.PLAN_3_REQUIRED,
-                        "message": "لا يوجد تطابق",
-                    }
-                )
+                plan_results.set({"status": ResultStatus.PLAN_3_REQUIRED, "message": "لا يوجد تطابق"})
         except Exception as e:
             log.error(f"Plan 2 error: {e}")
-            plan_results.set(
-                {"status": ResultStatus.ERROR, "message": str(e)}
-            )
+            plan_results.set({"status": ResultStatus.ERROR, "message": str(e)})
         finally:
             toggle_loading(False)
 
@@ -384,34 +331,18 @@ def server(input, output, session):
             sensor = input.p3_sensor()
 
             if not all([size, panel, sensor]):
-                plan_results.set(
-                    {
-                        "status": ResultStatus.ERROR,
-                        "message": "يرجى ملء جميع الحقول",
-                    }
-                )
+                plan_results.set({"status": ResultStatus.ERROR, "message": "يرجى ملء جميع الحقول"})
                 return
 
-            log.info(
-                f"Plan 3: Creating new group - Size: {size}, Panel: {panel}, Sensor: {sensor}"
-            )
-            plan_results.set(
-                {
-                    "status": ResultStatus.SUCCESS,
-                    "message": f"تم إنشاء المجموعة الجديدة: {size} | {panel} | {sensor}",
-                    "coords": {
-                        "size": size,
-                        "panel": panel,
-                        "sensor": sensor,
-                        "real_name": "مجموعة جديدة",
-                    },
-                }
-            )
+            log.info(f"Plan 3: Creating new group - Size: {size}, Panel: {panel}, Sensor: {sensor}")
+            plan_results.set({
+                "status": ResultStatus.SUCCESS,
+                "message": f"تم إنشاء المجموعة الجديدة: {size} | {panel} | {sensor}",
+                "coords": {"size": size, "panel": panel, "sensor": sensor, "real_name": "مجموعة جديدة"}
+            })
         except Exception as e:
             log.error(f"Plan 3 error: {e}")
-            plan_results.set(
-                {"status": ResultStatus.ERROR, "message": str(e)}
-            )
+            plan_results.set({"status": ResultStatus.ERROR, "message": str(e)})
         finally:
             toggle_loading(False)
 
@@ -425,7 +356,6 @@ def server(input, output, session):
         def get_cached_stats():
             return {"phones": last_db_size()}
 
-        # ✅ ملاحظة 1: تمرير last_db_size كـ Reactive Value
         execute_refresh_logic(
             cached_stats=get_cached_stats,
             database_data=database_data,
@@ -441,7 +371,6 @@ def server(input, output, session):
             invalidate_workflow_fn=invalidate_all_workflows,
         )
 
-        # ✅ ملاحظة 5: قراءة الحالة مرة واحدة وتخزينها
         try:
             status = get_status() or {}
             cached_status.set(status)
@@ -462,7 +391,6 @@ def server(input, output, session):
     @output
     @render.ui
     def drawer_js_handler():
-        # ✅ ملاحظة 10: يمكن نقل هذا إلى www/script.js لاحقاً
         return ui.tags.script("""
             Shiny.addCustomMessageHandler('toggle_drawer', function(msg) {
                 const d = document.getElementById('settings-drawer');
@@ -489,20 +417,17 @@ def server(input, output, session):
         items = suggestions_list()
         if not items:
             return None
-        safe_items = [
-            json.dumps(m, ensure_ascii=False).replace("</", "<\\/")
-            for m in items
-        ]
+        safe_items = [json.dumps(m, ensure_ascii=False).replace("</", "<\\/") for m in items]
         return ui.div(
             *[
                 ui.div(
                     m,
                     class_="suggestion-row",
-                    onclick=f"Shiny.setInputValue('search_query', {safe}); Shiny.setInputValue('_hide_curtain_trigger', true, {{priority: 'event'}});",
+                    onclick=f"Shiny.setInputValue('search_query', {safe}); Shiny.setInputValue('_hide_curtain_trigger', true, {{priority: 'event'}});"
                 )
                 for m, safe in zip(items, safe_items)
             ],
-            class_="suggestions-curtain",
+            class_="suggestions-curtain"
         )
 
     @output
@@ -510,30 +435,72 @@ def server(input, output, session):
     def welcome_area():
         if normalize_text(input.search_query()) != "":
             return None
-        return draw_welcome_section("/phone_image.webp")
+        return draw_welcome_section()
 
     @output
     @render.ui
     def results_workflow_view():
-        """✅ ملاحظة 4 و 12: تفويض العرض إلى دوال منفصلة في ui_components"""
         res = plan_results()
         if not res:
             return None
-
+        children = []
         status = res.get("status")
 
         if status == ResultStatus.SUCCESS:
-            return render_success_view(res)
-        elif status == ResultStatus.PLAN_2_PENDING:
-            return render_plan2_view(res, custom_panels(), custom_sensors())
-        elif status == ResultStatus.PLAN_2_MATCH:
-            return render_plan2_match_view(res)
-        elif status == ResultStatus.PLAN_3_REQUIRED:
-            return render_plan3_view()
-        elif status == ResultStatus.ERROR:
-            return render_error_view(res.get("message", ""))
+            coords = res.get("coords", {})
+            compatibles = res.get("compatibles", {})
+            children.append(draw_technical_coords(
+                coords.get("size"),
+                coords.get("panel"),
+                coords.get("sensor"),
+                coords.get("real_name")
+            ))
+            for title, key, color, icon, tc in [
+                ("مطابقة تماماً", "exact", "#2ecc71", "", "exact"),
+                ("أكبر بقليل ±0.03", "plus", "#3498db", "", "plus"),
+                ("أصغر قليلاً ±0.03", "minus", "#e67e22", "🟠", "minus")
+            ]:
+                sec = draw_neon_section(title, compatibles.get(key) or [], color, icon, tc)
+                if sec: children.append(sec)
 
-        return None
+        elif status == ResultStatus.PLAN_2_PENDING:
+            children.append(ui.div(
+                ui.h3(" خطة 2: إدخال المواصفات يدوياً", style="text-align:center; color: var(--primary-color);"),
+                ui.p(res.get("message", ""), style="text-align:center; opacity: 0.8; margin-bottom: 15px;"),
+                ui.input_text("p2_size", "المقاس:", placeholder="مثال: 6.67 أو 6,67"),
+                ui.input_selectize("p2_panel", "نوع الشاشة:", choices=custom_panels()),
+                ui.input_selectize("p2_sensor", "المستشعر:", choices=custom_sensors()),
+                ui.tags.button("بحث في المجموعات", class_="btn-neon", style="width:100%; background: var(--primary-color); margin-top:10px;", onclick="Shiny.setInputValue('exec_plan2', true, {priority:'event'});"),
+                class_="glass-card"
+            ))
+
+        elif status == ResultStatus.PLAN_2_MATCH:
+            children.append(ui.div(
+                ui.h3("✅ تم العثور على تطابق!", style="color: var(--success-color); text-align: center;"),
+                ui.div(res.get("message", ""), style="text-align: center; margin-bottom: 15px;"),
+                *[ui.div(model, class_="ammar-flat-card flat-exact") for model in (res.get("models") or [])],
+                class_="glass-card"
+            ))
+
+        elif status == ResultStatus.PLAN_3_REQUIRED:
+            children.append(ui.div(
+                ui.h3(" خطة الطوارئ 3", style="color: var(--danger-color); text-align: center;"),
+                ui.p("لم يُوجد تطابق. يرجى إنشاء مجموعة جديدة.", style="text-align: center;"),
+                ui.input_text("p3_size", "المقاس الجديد:", placeholder="6.67"),
+                ui.input_text("p3_panel", "نوع الشاشة:", placeholder="Notch"),
+                ui.input_text("p3_sensor", "المستشعر:", placeholder="Virtual"),
+                ui.tags.button("➕ إنشاء مجموعة جديدة", class_="btn-neon", style="width:100%; background: var(--danger-color); margin-top:10px;", onclick="Shiny.setInputValue('exec_plan3', true, {priority:'event'});"),
+                class_="glass-card"
+            ))
+
+        elif status == ResultStatus.ERROR:
+            children.append(ui.div(
+                ui.h3("️ خطأ", style="color: var(--danger-color); text-align: center;"),
+                ui.p(res.get("message", ""), style="text-align: center;"),
+                class_="glass-card"
+            ))
+
+        return ui.div(*children, class_="fade-in")
 
     @output
     @render.ui
@@ -542,31 +509,20 @@ def server(input, output, session):
         sync_time = last_sync_timestamp()
         return ui.div(
             ui.div("📊 عدد الموديلات", class_="metric-title"),
-            ui.div(
-                str(total),
-                class_="metric-value",
-                style="color: var(--primary-color);",
-            ),
-            ui.div(
-                f"آخر تحديث: {sync_time}",
-                style="font-size: 10px; opacity: 0.5; margin-top: 4px;",
-            ),
-            class_="metric-box",
+            ui.div(str(total), class_="metric-value", style="color: var(--primary-color);"),
+            ui.div(f"آخر تحديث: {sync_time}", style="font-size: 10px; opacity: 0.5; margin-top: 4px;"),
+            class_="metric-box"
         )
 
     @output
     @render.ui
     def monitor_area():
         st = last_monitor_status()
-        col = (
-            "#2ecc71"
-            if st == "ONLINE"
-            else ("#e67e22" if st == "FALLBACK" else "#ff5252")
-        )
+        col = "#2ecc71" if st == "ONLINE" else ("#e67e22" if st == "FALLBACK" else "#ff5252")
         return ui.div(
             ui.div("🛰️ حالة المراقب", class_="metric-title"),
             ui.div(st, class_="metric-value", style=f"color: {col};"),
-            class_="metric-box",
+            class_="metric-box"
         )
 
     @output
@@ -575,10 +531,6 @@ def server(input, output, session):
         src = (cached_status() or {}).get("source", "N/A")
         return ui.div(
             ui.div("🔔 مصدر البيانات", class_="metric-title"),
-            ui.div(
-                src,
-                class_="metric-value",
-                style="color: var(--foundation-color);",
-            ),
-            class_="metric-box",
-    )
+            ui.div(src, class_="metric-value", style="color: var(--foundation-color);"),
+            class_="metric-box"
+        )
