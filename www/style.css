@@ -1,6 +1,7 @@
 /* =====================================================
    ZEGAAR AMMAR - GLASS MANAGER
    Modern CSS with Variables & Clean Architecture
+   Production Ready v5.0 (Ultimate)
 ===================================================== */
 
 /* =====================================================
@@ -54,9 +55,19 @@
 /* =====================================================
    2. Global Reset & Base Styles
 ===================================================== */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { 
+    box-sizing: border-box; margin: 0; padding: 0; 
+    /* ✅ ملاحظة 5: تحسين وضوح الخطوط */
+    -webkit-font-smoothing: antialiased; 
+    -moz-osx-font-smoothing: grayscale; 
+}
 
-html, body, .container-fluid {
+html { 
+    scroll-behavior: smooth; 
+    overscroll-behavior: none; 
+}
+
+body {
     background-color: var(--bg-dark);
     color: white;
     font-family: var(--font-family);
@@ -64,25 +75,45 @@ html, body, .container-fluid {
     font-size: var(--font-size-base);
     line-height: 1.6;
     min-height: 100vh;
+    background-image: none;
 }
 
-body {
-    background-image: linear-gradient(rgba(10,14,23,0.25),rgba(10,14,23,0.25)), url('/phone_image.webp');
-    background-size: 92% auto;
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-}
-
-body.no-bg-image {
-    background-image: linear-gradient(135deg, #0a0e17 0%, #1a2332 50%, #0a0e17 100%);
-}
+img { max-width: 100%; height: auto; display: block; }
 
 /* =====================================================
-   3. Shiny Overrides
+   3. Shiny Overrides & Selectize Styling
 ===================================================== */
 .shiny-bound-output, main, .page-content { background: transparent; }
 .shiny-input-container { margin-bottom: var(--spacing-md); }
+
+/* ✅ ملاحظة 4: تنسيق أزرار Shiny */
+.action-button, .shiny-input-actionbutton {
+    background: var(--primary-color) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--radius-md) !important;
+    padding: var(--spacing-sm) var(--spacing-lg) !important;
+    font-weight: bold !important;
+    transition: all var(--transition-fast) !important;
+    cursor: pointer !important;
+}
+.action-button:hover, .shiny-input-actionbutton:hover {
+    background: var(--primary-hover) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.selectize-control, .selectize-input, .selectize-dropdown {
+    background: var(--bg-input) !important;
+    color: white !important;
+    border: 1px solid var(--primary-color) !important;
+    border-radius: var(--radius-md) !important;
+    font-size: var(--font-size-base) !important;
+}
+.selectize-input.items.not-full.has-options { border-color: var(--primary-color); }
+.selectize-dropdown .option:hover { background: rgba(0,191,255,0.18) !important; }
+.selectize-dropdown-content { max-height: 200px !important; overflow-y: auto; }
+.selectize-dropdown { z-index: 1000000 !important; }
 
 /* =====================================================
    4. Header Bar
@@ -98,34 +129,48 @@ body.no-bg-image {
 .brand-neon-title { display: flex; flex-direction: column; gap: 4px; text-align: right; flex-grow: 1; }
 .brand-neon-main { color: var(--primary-color); font-size: var(--font-size-xl); font-weight: 900; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(0,191,255,0.5); }
 .brand-neon-sub { color: var(--secondary-color); font-size: var(--font-size-base); font-weight: 700; opacity: 0.9; }
-.btn-dots-menu { background: transparent; border: none; color: var(--primary-color); font-size: 28px; font-weight: bold; cursor: pointer; padding: 0 var(--spacing-sm); line-height: 1; transition: color var(--transition-normal); }
-.btn-dots-menu:hover { color: var(--primary-hover); transform: scale(1.1); }
+.btn-dots-menu, .btn-settings { 
+    background: transparent; border: none; color: var(--primary-color); 
+    font-size: 28px; font-weight: bold; cursor: pointer; 
+    padding: 0 var(--spacing-sm); line-height: 1; 
+    transition: color var(--transition-normal);
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.btn-dots-menu:hover, .btn-settings:hover { color: var(--primary-hover); transform: scale(1.1); }
+
+.logo-image {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 10px rgba(0,191,255,0.5);
+    object-fit: cover;
+}
 
 /* =====================================================
-   5. Search Box
+   5. Search Box & Suggestions Curtain
 ===================================================== */
 .search-box { position: relative; max-width: 500px; margin: 35px auto; padding: 0 var(--spacing-md); }
-input[type="text"], input[type="number"], select {
+input[type="text"], input[type="number"] {
     width: 100%; background: var(--bg-input); color: white;
     border: 1px solid var(--primary-color); border-radius: var(--radius-md);
     padding: var(--spacing-sm); direction: ltr; text-align: left;
     font-size: var(--font-size-base);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
-input[type="text"]:focus, input[type="number"]:focus, select:focus {
-    outline: none; border-color: var(--primary-hover); box-shadow: 0 0 0 3px rgba(0,191,255,0.2);
-}
+input:focus { outline: none; border-color: var(--primary-hover); box-shadow: 0 0 0 3px rgba(0,191,255,0.2); }
 input::placeholder { color: rgba(255,255,255,0.5); }
 
-/* =====================================================
-   6. Suggestions Curtain
-===================================================== */
 .suggestions-curtain {
-    position: absolute; top: 58px; right: var(--spacing-md); left: var(--spacing-md);
+    position: absolute; top: 100%; left: 0; width: 100%;
     background: var(--bg-suggestions); border: 1px solid var(--primary-color);
     border-radius: var(--radius-md); max-height: 240px; overflow-y: auto;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md); z-index: 999999 !important;
     backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    opacity: 1; transform: translateY(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+/* ✅ ملاحظة 2: Transition لحالة الإخفاء */
+.suggestions-curtain.hidden {
+    opacity: 0; transform: translateY(-8px); pointer-events: none;
 }
 .suggestion-row {
     padding: var(--spacing-sm); color: white; cursor: pointer; text-align: left;
@@ -135,7 +180,7 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 .suggestion-row:hover { background: rgba(0,191,255,0.18); }
 
 /* =====================================================
-   7. Glass Cards
+   6. Glass Cards & Welcome Section
 ===================================================== */
 .glass-card {
     background: var(--bg-card); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
@@ -145,24 +190,45 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 }
 .glass-card h3 { color: var(--primary-color); text-align: center; margin-bottom: var(--spacing-md); }
 
+.welcome-image-card { padding: var(--spacing-lg); text-align: center; }
+.welcome-phone-image {
+    display: block; margin: 0 auto; width: 100%; max-width: 300px; height: auto;
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+    user-select: none; pointer-events: none;
+    -webkit-user-drag: none;
+}
+
 /* =====================================================
-   8. Result Cards
+   7. Technical Card & Neon Sections
 ===================================================== */
-.ammar-flat-card, .flat-warning-card {
+.tech-card { border: 1px solid var(--border-light); }
+.tech-title { color: var(--primary-color); font-size: var(--font-size-lg); font-weight: 800; margin-bottom: 10px; text-shadow: 0 0 8px rgba(0,191,255,0.3); }
+.coord-line { padding: 6px 0; font-size: 15px; opacity: 0.9; border-bottom: 1px solid var(--border-subtle); }
+.coord-line:last-child { border-bottom: none; }
+
+.neon-section-title { font-weight: 700; margin-bottom: 12px; text-shadow: 0 0 8px currentColor; }
+
+/* ✅ ملاحظة 7: استخدام متغيرات CSS فقط */
+.neon-exact { border-right: 4px solid var(--success-color) !important; }
+.neon-plus { border-right: 4px solid var(--info-color) !important; }
+.neon-minus { border-right: 4px solid var(--warning-color) !important; }
+
+.ammar-flat-card {
     padding: 14px 18px; margin-bottom: var(--spacing-sm); border-radius: var(--radius-md);
     display: flex; align-items: center; justify-content: space-between;
     direction: ltr; width: 100%; box-sizing: border-box;
     box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
+    color: white; font-size: var(--font-size-base); font-weight: 600;
+    /* ✅ ملاحظة 6: تحسين الأداء للبطاقات الكثيرة */
+    content-visibility: auto; contain-intrinsic-size: 0 50px;
 }
 .ammar-flat-card:hover { transform: translateY(-2px); }
 .flat-exact { background: var(--success-bg); border: 2px solid var(--success-color); }
 .flat-plus { background: var(--info-bg); border: 2px solid var(--info-color); }
 .flat-minus { background: var(--warning-bg); border: 2px solid var(--warning-color); }
-.flat-warning-card { background: var(--danger-bg); border: 2px solid var(--danger-color); justify-content: center; text-align: center; direction: rtl; }
-.flat-phone-text { color: white; font-size: var(--font-size-lg); font-weight: 800; text-align: left; }
 
 /* =====================================================
-   9. Drawer
+   8. Drawer & Metrics
 ===================================================== */
 .drawer {
     position: fixed; top: 0; right: -320px; width: 290px; height: 100%;
@@ -170,15 +236,17 @@ input::placeholder { color: rgba(255,255,255,0.5); }
     border-left: 2px solid var(--primary-color); transition: right var(--transition-slow);
     z-index: var(--z-drawer); padding: var(--spacing-lg);
     box-shadow: var(--shadow-lg); overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--primary-color) var(--bg-drawer);
 }
+.drawer::-webkit-scrollbar { width: 6px; }
+.drawer::-webkit-scrollbar-track { background: var(--bg-drawer); }
+.drawer::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 3px; }
+
 .drawer.open { right: 0; }
 .drawer-close-btn { background: transparent; border: none; color: var(--danger-color); font-size: 24px; cursor: pointer; float: left; font-weight: bold; transition: transform var(--transition-fast); }
 .drawer-close-btn:hover { transform: rotate(90deg); }
 .drawer h3 { color: var(--primary-color); text-align: center; margin-bottom: var(--spacing-lg); font-weight: 800; clear: both; }
 
-/* =====================================================
-   10. Metric Boxes
-===================================================== */
 .metric-box {
     background: var(--bg-metric); padding: var(--spacing-sm); border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-sm); text-align: center;
@@ -186,99 +254,61 @@ input::placeholder { color: rgba(255,255,255,0.5); }
     transition: background var(--transition-fast);
 }
 .metric-box:hover { background: rgba(255,255,255,0.08); }
+.metric-title { font-size: 12px; opacity: 0.7; margin-bottom: 4px; }
+.metric-value { font-size: 18px; font-weight: bold; }
 
 /* =====================================================
-   11. Modal Backdrop
+   9. Loading Indicator & Main Container
 ===================================================== */
-.custom-modal-backdrop {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center;
-    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+.main-container { max-width: 600px; margin: 0 auto; padding: 0 var(--spacing-md); }
+
+/* ✅ ملاحظة 1: تعريف loading-indicator بالـ ID */
+#loading-indicator {
+    text-align: center; padding: 40px; display: none;
 }
-
-/* =====================================================
-   12. Add Button (+)
-===================================================== */
-.input-with-add { display: flex; gap: var(--spacing-xs); align-items: center; margin-bottom: var(--spacing-md); position: relative; z-index: 1; }
-.input-with-add select, .input-with-add input { flex: 1; margin-bottom: 0 !important; }
-.btn-add-option {
-    background: var(--primary-color); color: white; border: none; border-radius: var(--radius-md);
-    width: 48px; height: 48px; font-size: 24px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    position: relative; z-index: 2; transition: all var(--transition-fast);
+.spinner {
+    border: 4px solid var(--border-subtle); border-top: 4px solid var(--primary-color);
+    border-radius: 50%; width: 50px; height: 50px;
+    animation: spin 1s linear infinite; margin: 0 auto 15px;
 }
-.btn-add-option:hover { background: var(--primary-hover); transform: scale(1.1); box-shadow: 0 0 10px rgba(0,191,255,0.5); }
-.btn-add-option:active { transform: scale(0.95); }
+.loading-text { color: var(--primary-color); font-size: 16px; }
 
 /* =====================================================
-   13. Buttons
+   10. Buttons & Accessibility
 ===================================================== */
-button, .btn-neon, input[type="button"] {
+/* ✅ ملاحظة 3: دمج تعريفات الأزرار في مكان واحد */
+button, .btn-neon, input[type="button"], .action-button, .shiny-input-actionbutton {
     cursor: pointer; border: none; border-radius: var(--radius-md);
     padding: var(--spacing-sm) var(--spacing-lg); font-weight: bold;
+    color: white; font-size: var(--font-size-base);
     transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
 }
-button:hover, .btn-neon:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-button:active { transform: translateY(0); }
-
-/* =====================================================
-   14. Responsive
-===================================================== */
-@media (max-width: 768px) {
-    :root { --font-size-xl: 22px; --font-size-lg: 18px; }
-    .header-bar { padding: var(--spacing-sm); }
-    .brand-neon-main { font-size: var(--font-size-xl); }
-    .search-box { margin: 20px auto; padding: 0 var(--spacing-sm); }
-    .glass-card { margin: var(--spacing-md) auto; padding: var(--spacing-md); }
-    .drawer { width: 260px; right: -280px; }
-    .ammar-flat-card, .flat-warning-card { padding: var(--spacing-sm); }
-    .flat-phone-text { font-size: var(--font-size-base); }
+button:hover, .btn-neon:hover, .action-button:hover, .shiny-input-actionbutton:hover { 
+    transform: translateY(-2px); box-shadow: var(--shadow-md); 
 }
-@media (max-width: 480px) {
-    .brand-neon-main { font-size: 18px; }
-    .brand-neon-sub { font-size: 12px; }
-    .drawer { width: 100%; right: -100%; }
+button:active, .btn-neon:active, .action-button:active, .shiny-input-actionbutton:active { 
+    transform: translateY(0); 
 }
 
-/* =====================================================
-   15. Animations
-===================================================== */
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+button:focus-visible, .btn-neon:focus-visible, .action-button:focus-visible, .shiny-input-actionbutton:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .fade-in { animation: fadeIn var(--transition-normal); }
-.slide-in-right { animation: slideInRight var(--transition-slow); }
-.pulse { animation: pulse 2s infinite; }
 
 /* =====================================================
-   16. Utility Classes
+   11. Utility Classes
 ===================================================== */
 .text-center { text-align: center; }
-.text-right { text-align: right; }
-.text-left { text-align: left; }
-.mt-1 { margin-top: var(--spacing-xs); }
-.mt-2 { margin-top: var(--spacing-sm); }
-.mt-3 { margin-top: var(--spacing-md); }
-.mt-4 { margin-top: var(--spacing-lg); }
-.mb-1 { margin-bottom: var(--spacing-xs); }
-.mb-2 { margin-bottom: var(--spacing-sm); }
-.mb-3 { margin-bottom: var(--spacing-md); }
-.mb-4 { margin-bottom: var(--spacing-lg); }
 .hidden { display: none; }
 .visible { display: block; }
 
-/* =====================================================
-   17. FIX: Z-INDEX Layer Priority
-===================================================== */
-.suggestions-curtain {
-    z-index: 1000 !important;
-}
-.modal,
-.modal-dialog,
-.modal-content,
-.custom-modal-backdrop {
-    z-index: 300000 !important;
-}
-.modal-backdrop {
-    z-index: 299999 !important;
-   }
+/* شريط تمرير عام موحد */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
