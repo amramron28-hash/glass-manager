@@ -1,132 +1,379 @@
 from shiny import ui
 
-# =========================
-# PWA + STYLES
-# =========================
+# ==========================================================
+# PWA + GLOBAL STYLES
+# ==========================================================
 
 def inject_pwa_and_styles():
     return ui.HTML("""
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css">
-    """)
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+""")
 
-# =========================
-# CORE UI COMPONENTS
-# =========================
+
+# ==========================================================
+# WELCOME SECTION
+# ==========================================================
+
+def draw_welcome_section():
+    return ui.div(
+        ui.div(
+            ui.h2(
+                "👋 مرحباً بك",
+                style="""
+                text-align:center;
+                color:var(--primary-color);
+                margin-bottom:10px;
+                """
+            ),
+
+            ui.p(
+                "ابدأ بكتابة موديل الهاتف للحصول على القياسات والموديلات المتوافقة.",
+                style="""
+                text-align:center;
+                opacity:.8;
+                margin-bottom:20px;
+                """
+            ),
+
+            class_="glass-card"
+        ),
+        style="margin-top:20px;"
+    )
+
+
+# ==========================================================
+# TECHNICAL CARD
+# ==========================================================
 
 def draw_technical_coords(size, panel, sensor, real_name):
     return ui.div(
-        ui.h4(f"📱 {real_name}", style="margin-bottom: 5px;"),
-        ui.p(f"📏 {size or 'غير محدد'} | 🖥 {panel or 'غير محدد'} | 🔍 {sensor or 'غير محدد'}", style="opacity: 0.8;"),
-        class_="tech-coords-card"
+
+        ui.h3(
+            f"📱 {real_name}",
+            style="margin-bottom:10px;"
+        ),
+
+        ui.div(
+            f"📏 المقاس : {size if size else '-'}",
+            class_="coord-line"
+        ),
+
+        ui.div(
+            f"🖥 الشاشة : {panel if panel else '-'}",
+            class_="coord-line"
+        ),
+
+        ui.div(
+            f"🔍 المستشعر : {sensor if sensor else '-'}",
+            class_="coord-line"
+        ),
+
+        class_="glass-card tech-card"
     )
 
-def draw_neon_section(title, models, color, icon, type_class):
+
+# ==========================================================
+# COMPATIBLE SECTION
+# ==========================================================
+
+def draw_neon_section(title, models, color, icon="", type_class="default"):
+
     if not models:
         return None
-    return ui.div(
-        ui.h4(f"{icon} {title}", style=f"color: {color}; margin-bottom: 10px; font-weight: bold;"),
-        *[
-            ui.div(m, class_=f"ammar-flat-card flat-{type_class}")
-            for m in models
-        ],
-        class_="neon-section",
-        style=f"border-right: 4px solid {color};"
-    )
 
-# =========================
-# MODALS
-# =========================
+    cards = []
+
+    for model in models:
+        cards.append(
+            ui.div(
+                model,
+                class_=f"ammar-flat-card flat-{type_class}"
+            )
+        )
+
+    return ui.div(
+
+        ui.h4(
+            f"{icon} {title}",
+            style=f"""
+            color:{color};
+            margin-bottom:12px;
+            """
+        ),
+
+        *cards,
+
+        class_="glass-card neon-section",
+        style=f"border-right:4px solid {color};margin-top:15px;"
+    )
+# ==========================================================
+# SETTINGS / PLAN MODALS
+# ==========================================================
 
 def draw_settings_modal():
     return ui.div(
-        ui.h3("إعدادات النظام"),
-        ui.input_action_button("btn_close_modal", "إغلاق"),
-        class_="modal-content"
+        ui.h3("⚙️ إعدادات النظام"),
+        ui.p("يمكن إدارة إعدادات التطبيق من هذه النافذة."),
+        ui.input_action_button(
+            "btn_close_modal",
+            "إغلاق",
+            class_="btn-neon"
+        ),
+        class_="glass-card modal-content"
     )
+
 
 def draw_plan_2_modal(phone, panels, sensors):
     return ui.div(
-        ui.h3(f"خطة 2: {phone}"),
-        ui.div(f"اللوحات: {len(panels) if panels else 0} | المستشعرات: {len(sensors) if sensors else 0}"),
-        ui.input_action_button("btn_close_modal", "إغلاق"),
-        class_="modal-content"
+
+        ui.h3("📋 خطة 2"),
+
+        ui.p(
+            f"الموديل: {phone}",
+            style="font-weight:bold;"
+        ),
+
+        ui.input_text(
+            "p2_size",
+            "المقاس"
+        ),
+
+        ui.input_selectize(
+            "p2_panel",
+            "نوع الشاشة",
+            choices=panels if panels else []
+        ),
+
+        ui.input_selectize(
+            "p2_sensor",
+            "المستشعر",
+            choices=sensors if sensors else []
+        ),
+
+        ui.input_action_button(
+            "exec_plan2",
+            "🔍 بحث",
+            class_="btn-neon"
+        ),
+
+        class_="glass-card modal-content"
     )
 
-def draw_plan_3_modal(phone, res):
+
+def draw_plan_3_modal(phone, result=None):
     return ui.div(
-        ui.h3(f"خطة 3: {phone}"),
-        ui.div("تم تحميل بيانات الخطة 3"),
-        ui.input_action_button("btn_close_modal", "إغلاق"),
-        class_="modal-content"
+
+        ui.h3("🚨 خطة 3"),
+
+        ui.p(
+            f"الموديل: {phone}"
+        ),
+
+        ui.p(
+            "لم يتم العثور على مجموعة مطابقة."
+        ),
+
+        ui.input_action_button(
+            "btn_close_modal",
+            "إغلاق",
+            class_="btn-neon"
+        ),
+
+        class_="glass-card modal-content"
     )
 
-# =========================
-# STATUS UI (Used inside Drawer now)
-# =========================
+
+# ==========================================================
+# STATUS COMPONENTS
+# ==========================================================
 
 def draw_database_status(total):
-    return ui.div(f"📊 قاعدة البيانات: {total}", class_="status-card metric-box")
+
+    return ui.div(
+
+        ui.div(
+            "📊 عدد الموديلات",
+            class_="metric-title"
+        ),
+
+        ui.div(
+            str(total),
+            class_="metric-value"
+        ),
+
+        class_="metric-box"
+    )
+
 
 def draw_monitor_component(status):
-    st = status.get('status', 'OFFLINE') if isinstance(status, dict) else status
-    return ui.div(f"🛰️ المراقب: {st}", class_="monitor-card metric-box")
+
+    if isinstance(status, dict):
+        st = status.get("status", "OFFLINE")
+    else:
+        st = str(status)
+
+    return ui.div(
+
+        ui.div(
+            "🛰️ حالة المراقب",
+            class_="metric-title"
+        ),
+
+        ui.div(
+            st,
+            class_="metric-value"
+        ),
+
+        class_="metric-box"
+    )
+
 
 def draw_notifications(status):
-    src = status.get('source', 'N/A') if isinstance(status, dict) else 'N/A'
-    return ui.div(f"🔔 المصدر: {src}", class_="notify-card metric-box")
 
-# =========================
-# APP UI (THIS IS THE CRITICAL VARIABLE)
-# =========================
+    if isinstance(status, dict):
+        src = status.get("source", "N/A")
+    else:
+        src = "N/A"
+
+    return ui.div(
+
+        ui.div(
+            "🔔 مصدر البيانات",
+            class_="metric-title"
+        ),
+
+        ui.div(
+            src,
+            class_="metric-value"
+        ),
+
+        class_="metric-box"
+        )
+# ==========================================================
+# MAIN APP UI
+# ==========================================================
 
 app_ui = ui.page_fluid(
+
     inject_pwa_and_styles(),
 
-    # 1. Drawer (Settings) - Matched with CSS `.drawer` and `.drawer.open`
+    # ======================================================
+    # SETTINGS DRAWER
+    # ======================================================
     ui.div(
-        ui.tags.button("✕", class_="drawer-close-btn", id="btn_close_drawer_trigger"),
-        ui.h3("🛠 الإعدادات ومراقبة النظام"),
+
+        ui.tags.button(
+            "✕",
+            id="btn_close_drawer_trigger",
+            class_="drawer-close-btn"
+        ),
+
+        ui.h3("🛠 الإعدادات"),
+
         ui.output_ui("database_status_area"),
         ui.output_ui("monitor_area"),
         ui.output_ui("notifications_area"),
+
         id="settings-drawer",
         class_="drawer"
     ),
 
-    # 2. Header Bar
+    # ======================================================
+    # HEADER
+    # ======================================================
     ui.div(
+
         ui.div(
+
             ui.div(
-                ui.tags.span("ZEGAAR", class_="brand-neon-main"),
-                ui.tags.span("GLASS MANAGER", class_="brand-neon-sub"),
+
+                ui.tags.span(
+                    "ZEGAAR",
+                    class_="brand-neon-main"
+                ),
+
+                ui.tags.span(
+                    "GLASS MANAGER",
+                    class_="brand-neon-sub"
+                ),
+
                 class_="brand-neon-title"
             ),
-            ui.tags.button("⋮", class_="btn-dots-menu", id="btn_settings"),
+
+            ui.tags.button(
+                "⋮",
+                id="btn_settings",
+                class_="btn-dots-menu"
+            ),
+
             class_="header-bar"
         ),
 
-        # 3. Search Box
+        # ==================================================
+        # SEARCH
+        # ==================================================
         ui.div(
-            ui.input_text("search_query", "", placeholder="🔍 ابحث عن موديل الهاتف..."),
+
+            ui.input_text(
+                "search_query",
+                "",
+                placeholder="🔍 ابحث عن موديل الهاتف..."
+            ),
+
             ui.output_ui("suggestions_curtain"),
+
             class_="search-box"
         ),
 
-        # 4. Main Results Area
+        # ==================================================
+        # WELCOME
+        # ==================================================
+        ui.output_ui("welcome_area"),
+
+        # ==================================================
+        # RESULTS
+        # ==================================================
         ui.output_ui("results_workflow_view"),
+
+        # ==================================================
+        # DYNAMIC MODAL
+        # ==================================================
         ui.output_ui("dynamic_modal_container"),
 
-        # 5. Action Buttons
+        # ==================================================
+        # ACTION BUTTONS
+        # ==================================================
         ui.div(
-            ui.input_action_button("show_add_panel", "➕ لوحة"),
-            ui.input_action_button("show_add_sensor", "➕ مستشعر"),
-            ui.input_action_button("trigger_plan_2", "📋 خ2"),
-            ui.input_action_button("trigger_plan_3", "📋 خ3"),
+
+            ui.input_action_button(
+                "show_add_panel",
+                "➕ لوحة"
+            ),
+
+            ui.input_action_button(
+                "show_add_sensor",
+                "➕ مستشعر"
+            ),
+
+            ui.input_action_button(
+                "trigger_plan_2",
+                "📋 خ2"
+            ),
+
+            ui.input_action_button(
+                "trigger_plan_3",
+                "📋 خ3"
+            ),
+
             class_="action-buttons"
         ),
-        
-        # 6. JS Handler for Drawer toggle
-        ui.output_ui("drawer_js_handler")
-    )
+
+        class_="container-fluid"
+    ),
+
+    # ======================================================
+    # EMPTY CONTAINERS REQUIRED BY server.py
+    # ======================================================
+    ui.output_ui("drawer_js_handler")
 )
