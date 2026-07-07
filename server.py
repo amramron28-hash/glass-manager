@@ -7,20 +7,21 @@ import hashlib
 from enum import Enum
 import services as svs
 from logic_engine import run_system_workflows
-# تأكد أن silent_monitor.py يحتوي على الدوال المذكورة
-from silent_monitor import get_database, refresh as monitor_refresh, get_db_hash, get_status
+from silent_monitor import get_database, refresh as monitor_refresh, get_db_hash
 from ui_components import (
     draw_plan_2_modal, draw_plan_3_modal, 
     draw_settings_modal, draw_technical_coords, draw_neon_section, draw_welcome_section
 )
 from collections import OrderedDict
 
+# تعريف الحالات
 class Status(str, Enum):
     SUCCESS = "success"
     PLAN_2 = "plan_2"
     PLAN_3 = "plan_3"
     ERROR = "error"
 
+# كلاس الـ Cache للأداء العالي
 class LRUCache:
     def __init__(self, size=150): self.cache = OrderedDict(); self.size = size
     def get(self, key):
@@ -34,6 +35,7 @@ class LRUCache:
 logger = logging.getLogger("ui_debug")
 
 def server(input, output, session):
+    # الحالة (State)
     modal_state = reactive.value(None)
     suggestions_state = reactive.value(False)
     workflow_state = reactive.value(None)
@@ -46,6 +48,7 @@ def server(input, output, session):
         workflow_state.set(None)
         modal_state.set(None)
 
+    # تشغيل الإعدادات
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _open_settings(): modal_state.set("settings")
@@ -54,12 +57,12 @@ def server(input, output, session):
     @reactive.event(input._hide_curtain_trigger)
     def _hide(): suggestions_state.set(False)
 
+    # تحديث المراقب التلقائي
     @reactive.effect
     def _auto_refresh():
         reactive.invalidate_later(60)
         try:
             status_report = monitor_refresh()
-            # التحقق من أن المراقب يعمل وليس Offline
             if status_report.get("status") != "OFFLINE":
                 autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
         except Exception: pass
@@ -68,6 +71,7 @@ def server(input, output, session):
     def _init():
         autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
 
+    # منطق البحث
     @reactive.effect
     @reactive.event(input.search_query)
     async def _run_search():
@@ -96,13 +100,14 @@ def server(input, output, session):
             elif st == Status.PLAN_3.value: modal_state.set("plan3")
             else: modal_state.set(None)
             
-            suggestions_state.set(False)
+            suggestions_state.set(True) # تفعيل الاقتراحات
         except Exception as e:
             logger.exception("Search Error")
             workflow_state.set({"status": Status.ERROR.value, "message": str(e)})
         finally:
             await session.send_custom_message("toggle_loading", {"show": False})
 
+    # الواجهة الديناميكية
     @output
     @render.ui
     def results_workflow_view():
@@ -136,9 +141,9 @@ def server(input, output, session):
     def suggestions_curtain():
         idx = autocomplete_index()
         q = svs.normalize_text(str(input.search_query()))
-        if not suggestions_state() or not idx or len(q) < 2: return None
+        if not idx or len(q) < 2: return None
         results = idx.search_prefix(q, 5)
-        if not results: suggestions_state.set(False); return None
+        if not results: return None
         
         return ui.div(
             *[ui.div(r, class_="suggestion-row", onclick=f"Shiny.setInputValue('search_query', {json.dumps(r)}, {{priority:'event'}}); Shiny.setInputValue('_hide_curtain_trigger', true, {{priority:'event'}});") 
