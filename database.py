@@ -1,98 +1,78 @@
+import os
 import json
-import urllib.request
-import urllib.error
+from supabase import create_client, Client
 from core.logger import get_logger
 
 log = get_logger("database")
 
-# Supabase
-URL = "https://mgmphimlcdchtbiyhhbt.supabase.co/rest/v1/phones"
-KEY = "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
+# =========================
+# SUPABASE CONFIGURATION
+# =========================
+# يفضل استخدام متغيرات البيئة للأمان
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://mgmphimlcdchtbiyhhbt.supabase.co")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX")
 
+# إنشاء عميل Supabase الرسمي
+try:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as e:
+    log.error(f"Failed to initialize Supabase client: {e}")
+    supabase = None
 
-def _fetch_raw_rows():
-    try:
-        req = urllib.request.Request(f"{URL}?select=*", method="GET")
-        req.add_header("apikey", KEY)
-        req.add_header("Authorization", f"Bearer {KEY}")
-        req.add_header("Content-Type", "application/json")
-
-        with urllib.request.urlopen(req, timeout=15) as response:
-            if response.status != 200:
-                log.warning(f"HTTP Error: {response.status}")
-                return []
-
-            data = json.loads(response.read().decode("utf-8"))
-
-            if not isinstance(data, list):
-                log.warning("Supabase returned invalid data.")
-                return []
-
-            return data
-
-    except urllib.error.HTTPError as e:
-        log.error(f"DATABASE_HTTP_ERROR: {e.code} - {e.reason}")
-        return []
-
-    except urllib.error.URLError as e:
-        log.error(f"DATABASE_CONNECTION_ERROR: {e.reason}")
-        return []
-
-    except Exception as e:
-        log.error(f"DATABASE_FETCH_ERROR: {e}")
-        return []
-
-
+# =========================
+# DATA LOADING (STRUCTURED)
+# =========================
 def load_db():
     """
-    تحميل قاعدة البيانات وتحويلها إلى:
-    size -> panel -> sensor -> {"models":[...]}
+    تحميل قاعدة البيانات من Supabase وتحويلها لهيكلية متداخلة:
+    size -> panel -> sensor -> {"models": [...]}
+    هذه الهيكلية ضرورية لسرعة البحث في logic_engine
     """
-
-    rows = _fetch_raw_rows()
-
-    db = {}
-
-    for row in rows:
-
-        if not isinstance(row, dict):
-            continue
-
-        size = str(row.get("size") or "").strip()
-        model = str(row.get("model_name") or "").strip()
-        panel = str(row.get("panel") or "Notch Screen").strip()
-        sensor = str(row.get("sensor") or "hardware_top_sensor").strip()
-
-        if not size or not model:
-            continue
-
-        db.setdefault(size, {})
-        db[size].setdefault(panel, {})
-        db[size][panel].setdefault(
-            sensor,
-            {"models": []}
-        )
-
-        if model not in db[size][panel][sensor]["models"]:
-            db[size][panel][sensor]["models"].append(model)
-
-    total_models = sum(
-        len(sensor_data.get("models", []))
-        for panels in db.values()
-        for sensors in panels.values()
-        for sensor_data in sensors.values()
-    )
-
-    log.info(f"Loaded database with {total_models} models")
-
-    return db
-
-
-def add_model(size, panel, sensor, model):
-    """إضافة موديل جديد إلى Supabase"""
+    if not supabase:
+        return {}
 
     try:
+        # جلب كل البيانات من جدول phones
+        res = supabase.table("phones").select("*").execute()
+        rows = res.data or []
+        
+        db_structure = {}
+        total_models = 0
 
+        for row in rows:
+            size = str(row.get("size", "")).strip()
+            panel = str(row.get("panel", "Notch Screen")).strip()
+            sensor = str(row.get("sensor", "hardware_top_sensor")).strip()
+            model = str(row.get("model_name") or row.get("model", "")).strip()
+
+            if not size or not model:
+                continue
+
+            # بناء الهيكل المتداخل
+            db_structure.setdefault(size, {})
+            db_structure[size].setdefault(panel, {})
+            db_structure[size][panel].setdefault(sensor, {"models": []})
+
+            if model not in db_structure[size][panel][sensor]["models"]:
+                db_structure[size][panel][sensor]["models"].append(model)
+                total_models += 1
+
+        log.info(f"Loaded database with {total_models} models from Supabase")
+        return db_structure
+
+    except Exception as e:
+        log.error(f"Error loading database structure: {e}")
+        return {}
+
+# =========================
+# DATA SAVING & ADDING
+# =========================
+def add_model(size, panel, sensor, model):
+    """إضافة موديل جديد إلى جدول phones في Supabase"""
+    if not supabase:
+        return False
+
+    try:
         payload = {
             "size": str(size).strip(),
             "panel": str(panel).strip(),
@@ -103,45 +83,28 @@ def add_model(size, panel, sensor, model):
         if not all(payload.values()):
             return False
 
-        req = urllib.request.Request(
-            URL,
-            data=json.dumps(payload).encode("utf-8"),
-            method="POST"
-        )
-
-        req.add_header("apikey", KEY)
-        req.add_header("Authorization", f"Bearer {KEY}")
-        req.add_header("Content-Type", "application/json")
-        req.add_header("Prefer", "return=minimal")
-
-        with urllib.request.urlopen(req, timeout=15) as response:
-
-            success = response.status in (200, 201, 204)
-
-            if success:
-                log.info(f"Model added: {payload['model_name']}")
-
-            return success
-
-    except urllib.error.HTTPError as e:
-        log.error(f"ADD_MODEL_HTTP_ERROR: {e.code} - {e.reason}")
-        return False
-
-    except urllib.error.URLError as e:
-        log.error(f"ADD_MODEL_CONNECTION_ERROR: {e.reason}")
+        res = supabase.table("phones").insert(payload).execute()
+        
+        if res.data:
+            log.info(f"Model added successfully: {payload['model_name']}")
+            return True
         return False
 
     except Exception as e:
-        log.error(f"ADD_MODEL_ERROR: {e}")
+        log.error(f"Error adding model: {e}")
         return False
-
 
 def save_db(data=None, new_phone_name=None, size=None, panel=None, sensor=None):
     """
-    للتوافق مع الإصدارات القديمة.
+    دالة متوافقة مع الإصدارات القديمة والمنطق السابق.
+    إذا تم تمرير بيانات جديدة، تقوم بإضافتها.
     """
-
     if new_phone_name and size and panel and sensor:
         return add_model(size, panel, sensor, new_phone_name)
-
+    
+    # في حالة Supabase، لا نحتاج لحفظ هيكل كامل لأن كل تعديل يتم عبر insert/delete مباشر
     return True
+
+def add_notification(message, level="info"):
+    """دالة وهمية للتوافق مع الكود القديم، يمكن ربطها لاحقاً بجدول notifications"""
+    pass
