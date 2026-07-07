@@ -14,14 +14,16 @@ from ui_components import (
 )
 from collections import OrderedDict
 
-# تعريف الحالات
+# دالة محلية لتنظيف النصوص لضمان عدم الاعتماد على ملفات خارجية
+def local_normalize(text: str) -> str:
+    return str(text).lower().strip()
+
 class Status(str, Enum):
     SUCCESS = "success"
     PLAN_2 = "plan_2"
     PLAN_3 = "plan_3"
     ERROR = "error"
 
-# كلاس الـ Cache للأداء العالي
 class LRUCache:
     def __init__(self, size=150): self.cache = OrderedDict(); self.size = size
     def get(self, key):
@@ -35,7 +37,6 @@ class LRUCache:
 logger = logging.getLogger("ui_debug")
 
 def server(input, output, session):
-    # الحالة (State)
     modal_state = reactive.value(None)
     suggestions_state = reactive.value(False)
     workflow_state = reactive.value(None)
@@ -48,7 +49,6 @@ def server(input, output, session):
         workflow_state.set(None)
         modal_state.set(None)
 
-    # تشغيل الإعدادات
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _open_settings(): modal_state.set("settings")
@@ -57,7 +57,6 @@ def server(input, output, session):
     @reactive.event(input._hide_curtain_trigger)
     def _hide(): suggestions_state.set(False)
 
-    # تحديث المراقب التلقائي
     @reactive.effect
     def _auto_refresh():
         reactive.invalidate_later(60)
@@ -71,15 +70,14 @@ def server(input, output, session):
     def _init():
         autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
 
-    # منطق البحث
     @reactive.effect
     @reactive.event(input.search_query)
     async def _run_search():
-        q = svs.normalize_text(str(input.search_query()).strip())
+        q = local_normalize(str(input.search_query() or ""))
         if not q or len(q) < 2: suggestions_state.set(False); return
         
         await asyncio.sleep(0.30)
-        if q != svs.normalize_text(str(input.search_query()).strip()): return
+        if q != local_normalize(str(input.search_query() or "")): return
 
         cache_key = f"{q}_{get_db_hash()}"
         cached = search_cache.get(cache_key)
@@ -100,23 +98,20 @@ def server(input, output, session):
             elif st == Status.PLAN_3.value: modal_state.set("plan3")
             else: modal_state.set(None)
             
-            suggestions_state.set(True) # تفعيل الاقتراحات
+            suggestions_state.set(True)
         except Exception as e:
             logger.exception("Search Error")
             workflow_state.set({"status": Status.ERROR.value, "message": str(e)})
         finally:
             await session.send_custom_message("toggle_loading", {"show": False})
 
-    # الواجهة الديناميكية
     @output
     @render.ui
     def results_workflow_view():
         res = workflow_state()
         if not res or res.get("status") != Status.SUCCESS.value: return None
-        
         c = res.get("coords", {})
         comp = res.get("compatibles", {})
-        
         return ui.TagList(
             draw_technical_coords(c.get("size"), c.get("panel"), c.get("sensor"), c.get("real_name")),
             draw_neon_section("مطابقة تماماً", comp.get("exact"), "#2ecc71", "✅", "exact"),
@@ -140,11 +135,10 @@ def server(input, output, session):
     @render.ui
     def suggestions_curtain():
         idx = autocomplete_index()
-        q = svs.normalize_text(str(input.search_query()))
+        q = local_normalize(str(input.search_query() or ""))
         if not idx or len(q) < 2: return None
         results = idx.search_prefix(q, 5)
         if not results: return None
-        
         return ui.div(
             *[ui.div(r, class_="suggestion-row", onclick=f"Shiny.setInputValue('search_query', {json.dumps(r)}, {{priority:'event'}}); Shiny.setInputValue('_hide_curtain_trigger', true, {{priority:'event'}});") 
               for r in results],
