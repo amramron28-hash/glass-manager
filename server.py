@@ -9,16 +9,18 @@ from logic_engine import run_system_workflows
 from silent_monitor import get_database, refresh as monitor_refresh, get_db_hash
 from ui_components import (
     draw_plan_2_modal, draw_plan_3_modal, 
-    draw_settings_modal, draw_technical_coords, draw_neon_section
+    draw_settings_modal, draw_technical_coords, draw_neon_section, draw_welcome_section
 )
 from collections import OrderedDict
 
+# 19. تعريف Status ثابت
 class Status(str, Enum):
     SUCCESS = "success"
     PLAN_2 = "plan_2"
     PLAN_3 = "plan_3"
     ERROR = "error"
 
+# 10. LRU Cache المصحح
 class LRUCache:
     def __init__(self, size=150): self.cache = OrderedDict(); self.size = size
     def get(self, key):
@@ -27,24 +29,26 @@ class LRUCache:
     def put(self, key, value):
         self.cache[key] = value; self.cache.move_to_end(key)
         if len(self.cache) > self.size: self.cache.popitem(last=False)
-    def clear(self): self.cache.clear() # 10. دالة clear نظيفة
+    def clear(self): self.cache.clear()
 
 logger = logging.getLogger("ui_debug")
 
 def server(input, output, session):
+    # الحالات
     modal_state = reactive.value(None)
     suggestions_state = reactive.value(False)
     workflow_state = reactive.value(None)
     autocomplete_index = reactive.value(None)
     search_cache = LRUCache()
 
+    # 4. تنظيف الجلسة
     @session.on_ended
     def _cleanup():
         search_cache.clear()
         workflow_state.set(None)
         modal_state.set(None)
-        autocomplete_index.set(None)
 
+    # 3. أحداث الإعدادات
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _open_settings(): modal_state.set("settings")
@@ -53,7 +57,7 @@ def server(input, output, session):
     @reactive.event(input._hide_curtain_trigger)
     def _hide(): suggestions_state.set(False)
 
-    # 8. & 11. تحديث تلقائي مع إعادة بناء الـ Index
+    # 8. التحديث التلقائي
     @reactive.effect
     def _auto_refresh():
         reactive.invalidate_later(60)
@@ -66,11 +70,13 @@ def server(input, output, session):
     def _init():
         autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
 
+    # 7. محرك البحث (Debounce + Hash Cache)
     @reactive.effect
     @reactive.event(input.search_query)
     async def _run_search():
         q = svs.normalize_text(str(input.search_query()).strip())
         if not q or len(q) < 2: suggestions_state.set(False); return
+        
         await asyncio.sleep(0.30)
         if q != svs.normalize_text(str(input.search_query()).strip()): return
 
@@ -87,7 +93,7 @@ def server(input, output, session):
             workflow_state.set(res)
             search_cache.put(cache_key, res)
             
-            # 9. إدارة الحالة
+            # إدارة المودال
             st = res.get("status")
             if st == Status.SUCCESS.value: modal_state.set(None)
             elif st == Status.PLAN_2.value: modal_state.set("plan2")
@@ -101,6 +107,7 @@ def server(input, output, session):
         finally:
             await session.send_custom_message("toggle_loading", {"show": False})
 
+    # 1. النتائج
     @output
     @render.ui
     def results_workflow_view():
@@ -108,7 +115,7 @@ def server(input, output, session):
         if not res or res.get("status") != Status.SUCCESS.value: return None
         
         c = res.get("coords", {})
-        comp = res.get("compatibles", {}) # 7. بنية البيانات الصحيحة
+        comp = res.get("compatibles", {})
         
         return ui.TagList(
             draw_technical_coords(c.get("size"), c.get("panel"), c.get("sensor"), c.get("real_name")),
@@ -117,30 +124,39 @@ def server(input, output, session):
             draw_neon_section("نواقص", comp.get("minus"), "#e67e22", "➖", "minus")
         )
 
+    # 2. المودال الديناميكي
     @output
     @render.ui
     def dynamic_modal_container():
         m = modal_state()
         res = workflow_state() or {}
-        phone = res.get("phone", "")
         if not m: return None
-        # 5. & 6. التواقيع الصحيحة للدوال
+        
+        phone = res.get("phone", "")
         if m == "plan2": return draw_plan_2_modal(phone, res.get("panels"), res.get("sensors"))
         if m == "plan3": return draw_plan_3_modal(phone)
         if m == "settings": return draw_settings_modal()
         return None
 
+    # 3. الاقتراحات
     @output
     @render.ui
     def suggestions_curtain():
         idx = autocomplete_index()
-        q = svs.normalize_text(str(input.search_query())) # 8. التطبيع
+        q = svs.normalize_text(str(input.search_query()))
         if not suggestions_state() or not idx or len(q) < 2: return None
         results = idx.search_prefix(q, 5)
-        if not results: suggestions_state.set(False); return None
+        if not results: return None
         
         return ui.div(
             *[ui.div(r, class_="suggestion-row", onclick=f"Shiny.setInputValue('search_query', {json.dumps(r)}, {{priority:'event'}}); Shiny.setInputValue('_hide_curtain_trigger', true, {{priority:'event'}});") 
               for r in results],
             class_="suggestions-curtain"
         )
+    
+    # 4. الـ Welcome Area
+    @output
+    @render.ui
+    def welcome_area():
+        if workflow_state() is None: return draw_welcome_section()
+        return None
