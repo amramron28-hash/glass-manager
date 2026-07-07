@@ -1,44 +1,25 @@
-/* 1. الإعدادات العامة */
 html, body { background-color: #0a0e17 !important; color: #ffffff !important; margin: 0; font-family: sans-serif; }
-
-/* 2. الهيدر والشعار */
-.header-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #0d111a; border-bottom: 2px solid #00bfff; }
-.brand-neon-main { color: #00bfff !important; font-size: 22px !important; font-weight: 900 !important; text-shadow: 0 0 10px #00bfff; }
-.brand-neon-sub { color: #ffffff !important; font-size: 14px !important; }
-
-/* 3. البحث والاقتراحات */
+.header-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px; }
+.brand-neon-title { display: flex; flex-direction: column; align-items: center; padding: 20px; }
+.brand-neon-main { color: #00bfff !important; font-size: 24px !important; font-weight: 900 !important; }
+.brand-neon-sub { color: #ffffff !important; font-size: 12px !important; opacity: 0.8; }
+.btn-dots-menu { background: transparent; border: 1px solid #00bfff; color: #00bfff; padding: 10px; border-radius: 10px; }
 .search-box { padding: 15px; position: relative; }
 input { background: #161b22 !important; color: white !important; border: 1px solid #00bfff !important; padding: 12px !important; border-radius: 10px !important; width: 100% !important; }
-.suggestions-curtain { position: absolute; top: 100%; left: 15px; width: calc(100% - 30px); background: #0d111a !important; border: 1px solid #00bfff !important; z-index: 9999; border-radius: 0 0 10px 10px; }
+.suggestions-curtain { position: absolute; left: 15px; width: calc(100% - 30px); background: #0d111a !important; border: 1px solid #00bfff !important; z-index: 9999; border-radius: 0 0 10px 10px; }
 .suggestion-row { padding: 12px; border-bottom: 1px solid #21263d; cursor: pointer; }
 
-/* 4. البطاقات الزجاجية (Glass Cards) */
-.glass-card {
-    background: rgba(13, 17, 23, 0.7) !important;
-    backdrop-filter: blur(15px) !important;
-    border: 1px solid #30363d !important;
-    padding: 20px;
-    margin: 15px;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}
+/* زجاج شفاف */
+.glass-card-container { background: rgba(255, 255, 255, 0.03) !important; backdrop-filter: blur(15px) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; padding: 20px; margin: 15px; border-radius: 20px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3); }
+.ammar-flat-card { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 12px; margin: 8px 0; border-radius: 12px; text-align: center; }
 
-/* 5. بطاقات الموديلات (النيون الملون) */
-.ammar-flat-card {
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 12px;
-    font-weight: bold;
-    text-align: center;
-    transition: 0.3s;
-}
+/* ألوان النيون */
+.flat-exact { border-right: 4px solid #2ecc71; box-shadow: 2px 0 10px rgba(46, 204, 113, 0.3); }
+.flat-plus { border-right: 4px solid #3498db; box-shadow: 2px 0 10px rgba(52, 152, 219, 0.3); }
+.flat-minus { border-right: 4px solid #e67e22; box-shadow: 2px 0 10px rgba(230, 126, 34, 0.3); }
+.flat-warn { border-right: 4px solid #e74c3c; box-shadow: 2px 0 10px rgba(231, 76, 60, 0.3); }
 
-/* الألوان مع الظل المتوهج كما في صورتك */
-.flat-exact { background: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; box-shadow: 0 0 15px #2ecc71; }
-.flat-plus { background: rgba(52, 152, 219, 0.2); border: 1px solid #3498db; box-shadow: 0 0 15px #3498db; }
-.flat-minus { background: rgba(230, 126, 34, 0.2); border: 1px solid #e67e22; box-shadow: 0 0 15px #e67e22; }
-.flat-warn { background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; box-shadow: 0 0 15px #e74c3c; }
-
-/* 6. القائمة الجانبية (Drawer) */
 .drawer { position: fixed; top: 0; right: -300px; width: 280px; height: 100%; background: #0d111a; z-index: 9999; padding: 20px; transition: 0.3s; border-left: 2px solid #00bfff; overflow-y: auto; }
 .drawer.open { right: 0; }
+.drawer-close-btn { background: none; border: none; color: #00bfff; font-size: 24px; cursor: pointer; }
+.metric-box { background: #161b22; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #30363d; }
