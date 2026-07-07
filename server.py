@@ -3,24 +3,24 @@ from shiny import reactive, render, ui
 import logging
 import asyncio
 import json
+import hashlib
 from enum import Enum
 import services as svs
 from logic_engine import run_system_workflows
-from silent_monitor import get_database, refresh as monitor_refresh, get_db_hash
+# تأكد أن silent_monitor.py يحتوي على الدوال المذكورة
+from silent_monitor import get_database, refresh as monitor_refresh, get_db_hash, get_status
 from ui_components import (
     draw_plan_2_modal, draw_plan_3_modal, 
     draw_settings_modal, draw_technical_coords, draw_neon_section, draw_welcome_section
 )
 from collections import OrderedDict
 
-# 19. تعريف Status ثابت
 class Status(str, Enum):
     SUCCESS = "success"
     PLAN_2 = "plan_2"
     PLAN_3 = "plan_3"
     ERROR = "error"
 
-# 10. LRU Cache المصحح
 class LRUCache:
     def __init__(self, size=150): self.cache = OrderedDict(); self.size = size
     def get(self, key):
@@ -34,21 +34,18 @@ class LRUCache:
 logger = logging.getLogger("ui_debug")
 
 def server(input, output, session):
-    # الحالات
     modal_state = reactive.value(None)
     suggestions_state = reactive.value(False)
     workflow_state = reactive.value(None)
     autocomplete_index = reactive.value(None)
     search_cache = LRUCache()
 
-    # 4. تنظيف الجلسة
     @session.on_ended
     def _cleanup():
         search_cache.clear()
         workflow_state.set(None)
         modal_state.set(None)
 
-    # 3. أحداث الإعدادات
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _open_settings(): modal_state.set("settings")
@@ -57,12 +54,13 @@ def server(input, output, session):
     @reactive.event(input._hide_curtain_trigger)
     def _hide(): suggestions_state.set(False)
 
-    # 8. التحديث التلقائي
     @reactive.effect
     def _auto_refresh():
         reactive.invalidate_later(60)
         try:
-            if monitor_refresh():
+            status_report = monitor_refresh()
+            # التحقق من أن المراقب يعمل وليس Offline
+            if status_report.get("status") != "OFFLINE":
                 autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
         except Exception: pass
 
@@ -70,7 +68,6 @@ def server(input, output, session):
     def _init():
         autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
 
-    # 7. محرك البحث (Debounce + Hash Cache)
     @reactive.effect
     @reactive.event(input.search_query)
     async def _run_search():
@@ -93,7 +90,6 @@ def server(input, output, session):
             workflow_state.set(res)
             search_cache.put(cache_key, res)
             
-            # إدارة المودال
             st = res.get("status")
             if st == Status.SUCCESS.value: modal_state.set(None)
             elif st == Status.PLAN_2.value: modal_state.set("plan2")
@@ -107,7 +103,6 @@ def server(input, output, session):
         finally:
             await session.send_custom_message("toggle_loading", {"show": False})
 
-    # 1. النتائج
     @output
     @render.ui
     def results_workflow_view():
@@ -124,21 +119,18 @@ def server(input, output, session):
             draw_neon_section("نواقص", comp.get("minus"), "#e67e22", "➖", "minus")
         )
 
-    # 2. المودال الديناميكي
     @output
     @render.ui
     def dynamic_modal_container():
         m = modal_state()
         res = workflow_state() or {}
         if not m: return None
-        
         phone = res.get("phone", "")
         if m == "plan2": return draw_plan_2_modal(phone, res.get("panels"), res.get("sensors"))
         if m == "plan3": return draw_plan_3_modal(phone)
         if m == "settings": return draw_settings_modal()
         return None
 
-    # 3. الاقتراحات
     @output
     @render.ui
     def suggestions_curtain():
@@ -146,7 +138,7 @@ def server(input, output, session):
         q = svs.normalize_text(str(input.search_query()))
         if not suggestions_state() or not idx or len(q) < 2: return None
         results = idx.search_prefix(q, 5)
-        if not results: return None
+        if not results: suggestions_state.set(False); return None
         
         return ui.div(
             *[ui.div(r, class_="suggestion-row", onclick=f"Shiny.setInputValue('search_query', {json.dumps(r)}, {{priority:'event'}}); Shiny.setInputValue('_hide_curtain_trigger', true, {{priority:'event'}});") 
@@ -154,7 +146,6 @@ def server(input, output, session):
             class_="suggestions-curtain"
         )
     
-    # 4. الـ Welcome Area
     @output
     @render.ui
     def welcome_area():
