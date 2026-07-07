@@ -1,536 +1,146 @@
-"""
-ZEGAAR GLASS MANAGER - Production Ready v6.0 (Final)
-100% Comprehensive Bug-Free Architecture.
-Optimized for Shiny 1.6.x & Stable Hugging Face Operations.
-"""
-
 from __future__ import annotations
-import asyncio
-import hashlib
-import json
-import re
-import time
-from collections import OrderedDict
-from enum import Enum
-from typing import Any, Dict
-
 from shiny import reactive, render, ui
-from services import (
-    build_autocomplete_index,
-    execute_refresh_logic,
+import logging
+import asyncio
+import json
+from enum import Enum
+import services as svs
+from logic_engine import run_system_workflows
+from silent_monitor import get_database, refresh as monitor_refresh, get_db_hash
+from ui_components import (
+    draw_plan_2_modal, draw_plan_3_modal, 
+    draw_settings_modal, draw_technical_coords, draw_neon_section
 )
-from silent_monitor import get_database, get_status, refresh as monitor_refresh
-from logic_engine import find_model_coords, get_compatibles_strict
-from ui_components import draw_neon_section, draw_technical_coords, draw_welcome_section
-from core.logger import get_logger
+from collections import OrderedDict
 
-log = get_logger("server")
-
-
-# ==========================================================
-# Result Status Enums
-# ==========================================================
-class ResultStatus(str, Enum):
+class Status(str, Enum):
     SUCCESS = "success"
-    PLAN_2_PENDING = "plan_2_pending"
-    PLAN_2_MATCH = "plan_2_match"
-    PLAN_3_REQUIRED = "plan_3_required"
+    PLAN_2 = "plan_2"
+    PLAN_3 = "plan_3"
     ERROR = "error"
-    EMPTY = "empty"
 
-
-# ==========================================================
-# LRU Cache Engine (Memory Leak Protection)
-# ==========================================================
 class LRUCache:
-    def __init__(self, max_size: int = 150):
-        self.cache = OrderedDict()
-        self.max_size = max_size
-
+    def __init__(self, size=150): self.cache = OrderedDict(); self.size = size
     def get(self, key):
-        if key in self.cache:
-            self.cache.move_to_end(key)
-            return self.cache[key]
+        if key in self.cache: self.cache.move_to_end(key); return self.cache[key]
         return None
-
     def put(self, key, value):
-        if key in self.cache:
-            self.cache.move_to_end(key)
-        self.cache[key] = value
-        if len(self.cache) > self.max_size:
-            self.cache.popitem(last=False)
+        self.cache[key] = value; self.cache.move_to_end(key)
+        if len(self.cache) > self.size: self.cache.popitem(last=False)
+    def clear(self): self.cache.clear() # 10. دالة clear نظيفة
 
-    def clear(self):
-        self.cache.clear()
+logger = logging.getLogger("ui_debug")
 
-    def __contains__(self, key):
-        return key in self.cache
-
-    def __len__(self):
-        return len(self.cache)
-
-
-# ==========================================================
-# Server Entry Point
-# ==========================================================
 def server(input, output, session):
-
-    # ---------------------------
-    # Core Reactive States
-    # ---------------------------
-    database_data = reactive.value({})
-    models_index = reactive.value([])
+    modal_state = reactive.value(None)
+    suggestions_state = reactive.value(False)
+    workflow_state = reactive.value(None)
     autocomplete_index = reactive.value(None)
-    custom_panels = reactive.value([])
-    custom_sensors = reactive.value([])
+    search_cache = LRUCache()
 
-    current_phone = reactive.value("")
-    last_processed_phone = reactive.value("")
-    suggestions_list = reactive.value([])
-    show_curtain = reactive.value(False)
-    plan_results = reactive.value(None)
-
-    last_monitor_status = reactive.value("OFFLINE")
-    last_db_hash = reactive.value("")
-    last_sync_timestamp = reactive.value("لم تتم المزامنة بعد")
-    last_db_size = reactive.value(0)
-    cached_status = reactive.value({})
-
-    workflow_cache = LRUCache(150)
-
-    SEARCH_DELAY = 0.30
-    SYNC_INTERVAL = 5.0
-
-    # ---------------------------
-    # Session Cleanup Handler
-    # ---------------------------
     @session.on_ended
-    def _on_session_ended():
-        workflow_cache.clear()
-        suggestions_list.set([])
-        show_curtain.set(False)
-        plan_results.set(None)
-        current_phone.set("")
-        last_processed_phone.set("")
-        log.info("Session ended. All resources cleaned.")
+    def _cleanup():
+        search_cache.clear()
+        workflow_state.set(None)
+        modal_state.set(None)
+        autocomplete_index.set(None)
 
-    # ==========================================================
-    # System Helpers
-    # ==========================================================
-    def normalize_text(text: str) -> str:
-        """توحيد النص للبحث"""
-        if not text:
-            return ""
-        text = str(text).casefold()
-        text = re.sub(r"[^\w\s\u0621-\u064a+\-.]", "", text)
-        return re.sub(r"\s+", " ", text).strip()
-
-    # ✅ FIX: تعريف safe_float محلياً لتجنب خطأ الاستيراد
-    def safe_float(value):
-        try:
-            return float(str(value).replace(",", ".").strip())
-        except (ValueError, TypeError):
-            return None
-
-    def compute_db_hash(db: dict) -> str:
-        """يحتسب الـ Hash الفعلي لقاعدة البيانات"""
-        try:
-            status = cached_status() or {}
-            last_sync = status.get("last_sync")
-            if last_sync:
-                return hashlib.sha256(str(last_sync).encode()).hexdigest()
-
-            models = []
-            for panels in db.values():
-                if not isinstance(panels, dict): continue
-                for sensors in panels.values():
-                    if not isinstance(sensors, dict): continue
-                    for group in sensors.values():
-                        if isinstance(group, dict):
-                            models.extend(group.get("models", []))
-            models.sort()
-            return hashlib.sha256(str(models).encode()).hexdigest()
-        except Exception as e:
-            log.error(f"Hash Compute Error: {e}")
-            return ""
-
-    def invalidate_all_workflows():
-        workflow_cache.clear()
-        last_processed_phone.set("")
-        log.info("[Cache System] Workflows completely invalidated.")
-
-    def _send_message(name: str, data: dict):
-        try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(session.send_custom_message(name, data))
-        except RuntimeError:
-            pass
-        except Exception as e:
-            log.warning(f"Failed to send message '{name}': {e}")
-
-    def toggle_loading(show: bool): _send_message("toggle_loading", {"show": bool(show)})
-    def open_drawer(): _send_message("toggle_drawer", {"action": "open"})
-    def close_drawer(): _send_message("toggle_drawer", {"action": "close"})
-
-    # ==========================================================
-    # Unified Workflow Execution
-    # ==========================================================
-    def run_workflow_structured(phone: str, db: dict) -> Dict[str, Any]:
-        start = time.time()
-        try:
-            norm_phone = normalize_text(phone)
-            current_hash = last_db_hash() or compute_db_hash(db)
-            cache_key = f"{norm_phone}:{current_hash[:12]}"
-
-            cached = workflow_cache.get(cache_key)
-            if cached is not None:
-                log.debug(f"Cache hit for: {norm_phone}")
-                return cached
-
-            size, panel, sensor, real_name = find_model_coords(db, norm_phone)
-            if real_name:
-                compatibles = get_compatibles_strict(db, size, panel, sensor, real_name) or {}
-                result = {
-                    "status": ResultStatus.SUCCESS,
-                    "coords": {"size": size, "panel": panel, "sensor": sensor, "real_name": real_name},
-                    "compatibles": compatibles,
-                }
-            else:
-                result = {
-                    "status": ResultStatus.PLAN_2_PENDING,
-                    "phone": norm_phone,
-                    "message": f"الموديل ({norm_phone}) غير موجود.",
-                }
-
-            workflow_cache.put(cache_key, result)
-            elapsed = time.time() - start
-            log.info(f"Workflow computed in {elapsed:.3f}s for: {norm_phone} → {result['status']}")
-            return result
-        except Exception as e:
-            log.exception(e)
-            return {"status": ResultStatus.ERROR, "message": str(e)}
-
-    # ==========================================================
-    # UI Observers & Event Handlers
-    # ==========================================================
     @reactive.effect
     @reactive.event(input.btn_settings)
-    def _handle_settings_click():
-        open_drawer()
-
-    @reactive.effect
-    @reactive.event(input.btn_close_drawer_trigger)
-    def _handle_close_drawer():
-        close_drawer()
-
-    @reactive.effect
-    @reactive.event(input.search_query)
-    async def _handle_live_search():
-        raw_query = str(input.search_query()).strip()
-        norm_query = normalize_text(raw_query)
-        current_phone.set(norm_query)
-
-        if not norm_query:
-            suggestions_list.set([])
-            show_curtain.set(False)
-            plan_results.set(None)
-            last_processed_phone.set("")
-            return
-
-        await asyncio.sleep(SEARCH_DELAY)
-        if norm_query != current_phone():
-            return
-
-        last_processed_phone.set("")
-
-        trie = autocomplete_index()
-        if trie is None and models_index():
-            try:
-                trie = build_autocomplete_index(models_index())
-                autocomplete_index.set(trie)
-            except Exception as e:
-                log.error(f"Failed to build autocomplete: {e}")
-
-        if trie is not None:
-            matches = trie.search_prefix(norm_query, 10)
-            if matches:
-                suggestions_list.set(matches)
-                show_curtain.set(True)
-            else:
-                suggestions_list.set([])
-                show_curtain.set(False)
-
-        if norm_query != last_processed_phone():
-            db = database_data()
-            if db:
-                try:
-                    toggle_loading(True)
-                    res = run_workflow_structured(norm_query, db)
-                    plan_results.set(res)
-                    last_processed_phone.set(norm_query)
-                except Exception as e:
-                    log.error(f"Search error: {e}")
-                    plan_results.set({"status": ResultStatus.ERROR, "message": str(e)})
-                finally:
-                    toggle_loading(False)
+    def _open_settings(): modal_state.set("settings")
 
     @reactive.effect
     @reactive.event(input._hide_curtain_trigger)
-    def _hide_curtain_on_select():
-        show_curtain.set(False)
-        suggestions_list.set([])
+    def _hide(): suggestions_state.set(False)
+
+    # 8. & 11. تحديث تلقائي مع إعادة بناء الـ Index
+    @reactive.effect
+    def _auto_refresh():
+        reactive.invalidate_later(60)
+        try:
+            if monitor_refresh():
+                autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
+        except Exception: pass
 
     @reactive.effect
-    @reactive.event(input.exec_plan2)
-    def _exec_plan2():
-        toggle_loading(True)
+    def _init():
+        autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
+
+    @reactive.effect
+    @reactive.event(input.search_query)
+    async def _run_search():
+        q = svs.normalize_text(str(input.search_query()).strip())
+        if not q or len(q) < 2: suggestions_state.set(False); return
+        await asyncio.sleep(0.30)
+        if q != svs.normalize_text(str(input.search_query()).strip()): return
+
+        cache_key = f"{q}_{get_db_hash()}"
+        cached = search_cache.get(cache_key)
+        if cached: workflow_state.set(cached); return
+
+        await session.send_custom_message("toggle_loading", {"show": True})
         try:
-            size_val = safe_float(input.p2_size())
-            panel = input.p2_panel()
-            sensor = input.p2_sensor()
-
-            if size_val is None or not panel or not sensor:
-                plan_results.set({"status": ResultStatus.ERROR, "message": "يرجى ملء جميع الحقول"})
-                return
-
-            from services import build_fast_index, process_plan
-            idx = None
-            try:
-                idx = build_fast_index(database_data())
-            except Exception as e:
-                log.error(f"Failed to build fast index: {e}")
-
-            if idx is None:
-                plan_results.set({"status": ResultStatus.ERROR, "message": "فشل بناء الفهرس"})
-                return
-
-            res = process_plan(size_val, panel, sensor, database_data(), idx)
-            if res:
-                plan_results.set({
-                    "status": ResultStatus.PLAN_2_MATCH,
-                    "message": f"المقاس: {res['size']} | الشاشة: {res['panel']} | المستشعر: {res['sensor']}",
-                    "data": res,
-                    "models": res.get("models", [])
-                })
-                log.info(f"Plan 2 match found: {res}")
-            else:
-                plan_results.set({"status": ResultStatus.PLAN_3_REQUIRED, "message": "لا يوجد تطابق"})
+            db = get_database() or {}
+            if not db: workflow_state.set({"status": Status.ERROR.value, "message": "Database not loaded"}); return
+            
+            res = run_system_workflows(q, db)
+            workflow_state.set(res)
+            search_cache.put(cache_key, res)
+            
+            # 9. إدارة الحالة
+            st = res.get("status")
+            if st == Status.SUCCESS.value: modal_state.set(None)
+            elif st == Status.PLAN_2.value: modal_state.set("plan2")
+            elif st == Status.PLAN_3.value: modal_state.set("plan3")
+            else: modal_state.set(None)
+            
+            suggestions_state.set(False)
         except Exception as e:
-            log.error(f"Plan 2 error: {e}")
-            plan_results.set({"status": ResultStatus.ERROR, "message": str(e)})
+            logger.exception("Search Error")
+            workflow_state.set({"status": Status.ERROR.value, "message": str(e)})
         finally:
-            toggle_loading(False)
-
-    @reactive.effect
-    @reactive.event(input.exec_plan3)
-    def _exec_plan3():
-        toggle_loading(True)
-        try:
-            size = input.p3_size()
-            panel = input.p3_panel()
-            sensor = input.p3_sensor()
-
-            if not all([size, panel, sensor]):
-                plan_results.set({"status": ResultStatus.ERROR, "message": "يرجى ملء جميع الحقول"})
-                return
-
-            log.info(f"Plan 3: Creating new group - Size: {size}, Panel: {panel}, Sensor: {sensor}")
-            plan_results.set({
-                "status": ResultStatus.SUCCESS,
-                "message": f"تم إنشاء المجموعة الجديدة: {size} | {panel} | {sensor}",
-                "coords": {"size": size, "panel": panel, "sensor": sensor, "real_name": "مجموعة جديدة"}
-            })
-        except Exception as e:
-            log.error(f"Plan 3 error: {e}")
-            plan_results.set({"status": ResultStatus.ERROR, "message": str(e)})
-        finally:
-            toggle_loading(False)
-
-    # ==========================================================
-    # Database Background Sync Task
-    # ==========================================================
-    @reactive.effect
-    def _auto_sync_database_watcher():
-        reactive.invalidate_later(SYNC_INTERVAL)
-
-        def get_cached_stats():
-            return {"phones": last_db_size()}
-
-        execute_refresh_logic(
-            cached_stats=get_cached_stats,
-            database_data=database_data,
-            autocomplete_index=autocomplete_index,
-            models_index=models_index,
-            custom_panels=custom_panels,
-            custom_sensors=custom_sensors,
-            last_db_size=last_db_size,
-            show_curtain=show_curtain,
-            current_phone=current_phone,
-            suggestions_list=suggestions_list,
-            refresh_fn=monitor_refresh,
-            invalidate_workflow_fn=invalidate_all_workflows,
-        )
-
-        try:
-            status = get_status() or {}
-            cached_status.set(status)
-            current_status = status.get("status", "UNKNOWN")
-            if current_status != last_monitor_status():
-                last_monitor_status.set(current_status)
-                last_sync_timestamp.set(time.strftime("%H:%M:%S"))
-                if current_status == "ONLINE":
-                    log.info("Monitor: ONLINE")
-                else:
-                    log.warning(f"Monitor: {current_status}")
-        except Exception as e:
-            log.error(f"Status Logic Error: {e}")
-
-    # ==========================================================
-    # UI Outputs
-    # ==========================================================
-    @output
-    @render.ui
-    def drawer_js_handler():
-        return ui.tags.script("""
-            Shiny.addCustomMessageHandler('toggle_drawer', function(msg) {
-                const d = document.getElementById('settings-drawer');
-                if(d) msg.action === 'open' ? d.classList.add('open') : d.classList.remove('open');
-            });
-            Shiny.addCustomMessageHandler('toggle_loading', function(msg) {
-                const loading = document.getElementById('loading-indicator');
-                if(loading) loading.style.display = msg.show ? 'block' : 'none';
-            });
-            document.addEventListener('click', function(e) {
-                const d = document.getElementById('settings-drawer');
-                const b = document.getElementById('btn_settings');
-                if(d && d.classList.contains('open') && !d.contains(e.target) && (!b || !b.contains(e.target))) {
-                    d.classList.remove('open');
-                }
-            });
-        """)
-
-    @output
-    @render.ui
-    def suggestions_curtain():
-        if not show_curtain():
-            return None
-        items = suggestions_list()
-        if not items:
-            return None
-        safe_items = [json.dumps(m, ensure_ascii=False).replace("</", "<\\/") for m in items]
-        return ui.div(
-            *[
-                ui.div(
-                    m,
-                    class_="suggestion-row",
-                    onclick=f"Shiny.setInputValue('search_query', {safe}); Shiny.setInputValue('_hide_curtain_trigger', true, {{priority: 'event'}});"
-                )
-                for m, safe in zip(items, safe_items)
-            ],
-            class_="suggestions-curtain"
-        )
-
-    @output
-    @render.ui
-    def welcome_area():
-        if normalize_text(input.search_query()) != "":
-            return None
-        return draw_welcome_section()
+            await session.send_custom_message("toggle_loading", {"show": False})
 
     @output
     @render.ui
     def results_workflow_view():
-        res = plan_results()
-        if not res:
-            return None
-        children = []
-        status = res.get("status")
-
-        if status == ResultStatus.SUCCESS:
-            coords = res.get("coords", {})
-            compatibles = res.get("compatibles", {})
-            children.append(draw_technical_coords(
-                coords.get("size"),
-                coords.get("panel"),
-                coords.get("sensor"),
-                coords.get("real_name")
-            ))
-            for title, key, color, icon, tc in [
-                ("مطابقة تماماً", "exact", "#2ecc71", "", "exact"),
-                ("أكبر بقليل ±0.03", "plus", "#3498db", "", "plus"),
-                ("أصغر قليلاً ±0.03", "minus", "#e67e22", "🟠", "minus")
-            ]:
-                sec = draw_neon_section(title, compatibles.get(key) or [], color, icon, tc)
-                if sec: children.append(sec)
-
-        elif status == ResultStatus.PLAN_2_PENDING:
-            children.append(ui.div(
-                ui.h3(" خطة 2: إدخال المواصفات يدوياً", style="text-align:center; color: var(--primary-color);"),
-                ui.p(res.get("message", ""), style="text-align:center; opacity: 0.8; margin-bottom: 15px;"),
-                ui.input_text("p2_size", "المقاس:", placeholder="مثال: 6.67 أو 6,67"),
-                ui.input_selectize("p2_panel", "نوع الشاشة:", choices=custom_panels()),
-                ui.input_selectize("p2_sensor", "المستشعر:", choices=custom_sensors()),
-                ui.tags.button("بحث في المجموعات", class_="btn-neon", style="width:100%; background: var(--primary-color); margin-top:10px;", onclick="Shiny.setInputValue('exec_plan2', true, {priority:'event'});"),
-                class_="glass-card"
-            ))
-
-        elif status == ResultStatus.PLAN_2_MATCH:
-            children.append(ui.div(
-                ui.h3("✅ تم العثور على تطابق!", style="color: var(--success-color); text-align: center;"),
-                ui.div(res.get("message", ""), style="text-align: center; margin-bottom: 15px;"),
-                *[ui.div(model, class_="ammar-flat-card flat-exact") for model in (res.get("models") or [])],
-                class_="glass-card"
-            ))
-
-        elif status == ResultStatus.PLAN_3_REQUIRED:
-            children.append(ui.div(
-                ui.h3(" خطة الطوارئ 3", style="color: var(--danger-color); text-align: center;"),
-                ui.p("لم يُوجد تطابق. يرجى إنشاء مجموعة جديدة.", style="text-align: center;"),
-                ui.input_text("p3_size", "المقاس الجديد:", placeholder="6.67"),
-                ui.input_text("p3_panel", "نوع الشاشة:", placeholder="Notch"),
-                ui.input_text("p3_sensor", "المستشعر:", placeholder="Virtual"),
-                ui.tags.button("➕ إنشاء مجموعة جديدة", class_="btn-neon", style="width:100%; background: var(--danger-color); margin-top:10px;", onclick="Shiny.setInputValue('exec_plan3', true, {priority:'event'});"),
-                class_="glass-card"
-            ))
-
-        elif status == ResultStatus.ERROR:
-            children.append(ui.div(
-                ui.h3("️ خطأ", style="color: var(--danger-color); text-align: center;"),
-                ui.p(res.get("message", ""), style="text-align: center;"),
-                class_="glass-card"
-            ))
-
-        return ui.div(*children, class_="fade-in")
-
-    @output
-    @render.ui
-    def database_status_area():
-        total = len(models_index())
-        sync_time = last_sync_timestamp()
-        return ui.div(
-            ui.div("📊 عدد الموديلات", class_="metric-title"),
-            ui.div(str(total), class_="metric-value", style="color: var(--primary-color);"),
-            ui.div(f"آخر تحديث: {sync_time}", style="font-size: 10px; opacity: 0.5; margin-top: 4px;"),
-            class_="metric-box"
+        res = workflow_state()
+        if not res or res.get("status") != Status.SUCCESS.value: return None
+        
+        c = res.get("coords", {})
+        comp = res.get("compatibles", {}) # 7. بنية البيانات الصحيحة
+        
+        return ui.TagList(
+            draw_technical_coords(c.get("size"), c.get("panel"), c.get("sensor"), c.get("real_name")),
+            draw_neon_section("مطابقة تماماً", comp.get("exact"), "#2ecc71", "✅", "exact"),
+            draw_neon_section("إضافات", comp.get("plus"), "#3498db", "➕", "plus"),
+            draw_neon_section("نواقص", comp.get("minus"), "#e67e22", "➖", "minus")
         )
 
     @output
     @render.ui
-    def monitor_area():
-        st = last_monitor_status()
-        col = "#2ecc71" if st == "ONLINE" else ("#e67e22" if st == "FALLBACK" else "#ff5252")
-        return ui.div(
-            ui.div("🛰️ حالة المراقب", class_="metric-title"),
-            ui.div(st, class_="metric-value", style=f"color: {col};"),
-            class_="metric-box"
-        )
+    def dynamic_modal_container():
+        m = modal_state()
+        res = workflow_state() or {}
+        phone = res.get("phone", "")
+        if not m: return None
+        # 5. & 6. التواقيع الصحيحة للدوال
+        if m == "plan2": return draw_plan_2_modal(phone, res.get("panels"), res.get("sensors"))
+        if m == "plan3": return draw_plan_3_modal(phone)
+        if m == "settings": return draw_settings_modal()
+        return None
 
     @output
     @render.ui
-    def notifications_area():
-        src = (cached_status() or {}).get("source", "N/A")
+    def suggestions_curtain():
+        idx = autocomplete_index()
+        q = svs.normalize_text(str(input.search_query())) # 8. التطبيع
+        if not suggestions_state() or not idx or len(q) < 2: return None
+        results = idx.search_prefix(q, 5)
+        if not results: suggestions_state.set(False); return None
+        
         return ui.div(
-            ui.div("🔔 مصدر البيانات", class_="metric-title"),
-            ui.div(src, class_="metric-value", style="color: var(--foundation-color);"),
-            class_="metric-box"
+            *[ui.div(r, class_="suggestion-row", onclick=f"Shiny.setInputValue('search_query', {json.dumps(r)}, {{priority:'event'}}); Shiny.setInputValue('_hide_curtain_trigger', true, {{priority:'event'}});") 
+              for r in results],
+            class_="suggestions-curtain"
         )
