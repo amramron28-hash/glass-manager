@@ -1,10 +1,10 @@
-const CACHE_NAME = "glass-manager-cache-v3";
+const CACHE_NAME = "glass-manager-cache-v3"; // تم تحديث الإصدار لإجبار المتصفح على التحديث
 
 const STATIC_ASSETS = [
     "/",
     "/manifest.json",
     "/models_db.json",
-    "/style.css"
+    "/style_v2.css" // تم ربطه بالملف الصحيح الجديد
 ];
 
 // =========================
@@ -47,10 +47,12 @@ self.addEventListener("fetch", (event) => {
 
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
+            // إذا وجد الملف في الكاش، نستخدمه
             if (cachedResponse) {
                 return cachedResponse;
             }
 
+            // إذا لم يوجد، نطلبه من الشبكة
             return fetch(event.request).then((networkResponse) => {
                 if (
                     !networkResponse ||
@@ -70,13 +72,4 @@ self.addEventListener("fetch", (event) => {
             });
         })
     );
-});
-
-// =========================
-// MANUAL CONTROL (optional)
-// =========================
-self.addEventListener("message", (event) => {
-    if (event.data === "SKIP_WAITING") {
-        self.skipWaiting();
-    }
 });
