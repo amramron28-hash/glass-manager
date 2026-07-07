@@ -1,7 +1,7 @@
-/* =====================================================
+here/* =====================================================
    ZEGAAR AMMAR - GLASS MANAGER
    Modern CSS with Variables & Clean Architecture
-   Production Ready v5.0 (Ultimate)
+   Production Ready v5.1 (Fixed Welcome Image)
 ===================================================== */
 
 /* =====================================================
@@ -57,7 +57,6 @@
 ===================================================== */
 * { 
     box-sizing: border-box; margin: 0; padding: 0; 
-    /* ✅ ملاحظة 5: تحسين وضوح الخطوط */
     -webkit-font-smoothing: antialiased; 
     -moz-osx-font-smoothing: grayscale; 
 }
@@ -86,7 +85,14 @@ img { max-width: 100%; height: auto; display: block; }
 .shiny-bound-output, main, .page-content { background: transparent; }
 .shiny-input-container { margin-bottom: var(--spacing-md); }
 
-/* ✅ ملاحظة 4: تنسيق أزرار Shiny */
+/* ✅ FIX: إجبار حاويات المخرجات الديناميكية على الظهور */
+#shiny-welcome_area, #welcome_area {
+    min-height: 20px !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
 .action-button, .shiny-input-actionbutton {
     background: var(--primary-color) !important;
     color: white !important;
@@ -168,7 +174,6 @@ input::placeholder { color: rgba(255,255,255,0.5); }
     opacity: 1; transform: translateY(0);
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
-/* ✅ ملاحظة 2: Transition لحالة الإخفاء */
 .suggestions-curtain.hidden {
     opacity: 0; transform: translateY(-8px); pointer-events: none;
 }
@@ -190,12 +195,30 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 }
 .glass-card h3 { color: var(--primary-color); text-align: center; margin-bottom: var(--spacing-md); }
 
-.welcome-image-card { padding: var(--spacing-lg); text-align: center; }
+.welcome-image-card { 
+    padding: var(--spacing-lg); 
+    text-align: center; 
+    /* ✅ FIX: ضمان ظهور الكارت الزجاجي */
+    min-height: 100px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
 .welcome-phone-image {
-    display: block; margin: 0 auto; width: 100%; max-width: 300px; height: auto;
-    border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
-    user-select: none; pointer-events: none;
+    display: block !important; 
+    margin: 0 auto !important; 
+    width: 100% !important; 
+    max-width: 300px !important; 
+    height: auto !important;
+    border-radius: var(--radius-lg); 
+    box-shadow: var(--shadow-md);
+    user-select: none; 
+    pointer-events: none;
     -webkit-user-drag: none;
+    /* ✅ FIX: منع أي إخفاء افتراضي */
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 /* =====================================================
@@ -208,7 +231,6 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 
 .neon-section-title { font-weight: 700; margin-bottom: 12px; text-shadow: 0 0 8px currentColor; }
 
-/* ✅ ملاحظة 7: استخدام متغيرات CSS فقط */
 .neon-exact { border-right: 4px solid var(--success-color) !important; }
 .neon-plus { border-right: 4px solid var(--info-color) !important; }
 .neon-minus { border-right: 4px solid var(--warning-color) !important; }
@@ -219,7 +241,6 @@ input::placeholder { color: rgba(255,255,255,0.5); }
     direction: ltr; width: 100%; box-sizing: border-box;
     box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
     color: white; font-size: var(--font-size-base); font-weight: 600;
-    /* ✅ ملاحظة 6: تحسين الأداء للبطاقات الكثيرة */
     content-visibility: auto; contain-intrinsic-size: 0 50px;
 }
 .ammar-flat-card:hover { transform: translateY(-2px); }
@@ -262,7 +283,6 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 ===================================================== */
 .main-container { max-width: 600px; margin: 0 auto; padding: 0 var(--spacing-md); }
 
-/* ✅ ملاحظة 1: تعريف loading-indicator بالـ ID */
 #loading-indicator {
     text-align: center; padding: 40px; display: none;
 }
@@ -276,7 +296,6 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 /* =====================================================
    10. Buttons & Accessibility
 ===================================================== */
-/* ✅ ملاحظة 3: دمج تعريفات الأزرار في مكان واحد */
 button, .btn-neon, input[type="button"], .action-button, .shiny-input-actionbutton {
     cursor: pointer; border: none; border-radius: var(--radius-md);
     padding: var(--spacing-sm) var(--spacing-lg); font-weight: bold;
