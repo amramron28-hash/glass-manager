@@ -5,19 +5,34 @@ import datetime
 # PWA + GLOBAL STYLES
 # ==========================================================
 def inject_pwa_and_styles():
+    """حقن روابط الملفات الثابتة وملف الـ CSS"""
     return ui.HTML("""
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/style.css">
     """)
 
+
 # ==========================================================
-# WELCOME SECTION (صورة الهاتف فقط)
+# WELCOME SECTION (صورة الهاتف - مصححة نهائياً)
 # ==========================================================
 def draw_welcome_section(image_src: str = "/phone_image.webp"):
+    """
+    تظهر صورة الهاتف فقط عند عدم وجود نتائج بحث.
+    ✅ تم إضافة تنسيقات inline احتياطية لضمان الظهور حتى لو تأخر تحميل CSS.
+    """
     return ui.div(
-        ui.tags.img(src=image_src, alt="Phone Interface", class_="welcome-phone-image"),
-        class_="glass-card welcome-image-card"
+        ui.tags.img(
+            src=image_src,
+            alt="Phone Interface",
+            class_="welcome-phone-image",
+            # تنسيق احتياطي مباشر لضمان الظهور
+            style="max-width: 300px; width: 100%; height: auto; display: block; margin: 0 auto; opacity: 1; visibility: visible;"
+        ),
+        class_="glass-card welcome-image-card",
+        # تنسيق احتياطي للحاوية
+        style="text-align: center; padding: 30px 20px; display: flex; justify-content: center; align-items: center; min-height: 150px;"
     )
+
 
 # ==========================================================
 # TECHNICAL CARD
@@ -25,11 +40,12 @@ def draw_welcome_section(image_src: str = "/phone_image.webp"):
 def draw_technical_coords(size: str, panel: str, sensor: str, real_name: str):
     return ui.div(
         ui.h3(f"📱 {real_name}", class_="tech-title"),
-        ui.div(f"📏 المقاس : {size if size else '-'}", class_="coord-line"),
+        ui.div(f" المقاس : {size if size else '-'}", class_="coord-line"),
         ui.div(f" الشاشة : {panel if panel else '-'}", class_="coord-line"),
         ui.div(f" المستشعر : {sensor if sensor else '-'}", class_="coord-line"),
         class_="glass-card tech-card"
     )
+
 
 # ==========================================================
 # COMPATIBLE SECTION
@@ -43,6 +59,7 @@ def draw_neon_section(title: str, models: list = None, color: str = "#3498db", i
         class_="glass-card neon-section",
         style=f"border-right:4px solid {color};"
     )
+
 
 # ==========================================================
 # PLAN MODALS (خطة 2 وخطة 3)
@@ -61,6 +78,7 @@ def draw_plan_2_modal(phone: str, panels: list = None, sensors: list = None):
         class_="glass-card modal-content"
     )
 
+
 def draw_plan_3_modal(phone: str):
     return ui.div(
         ui.h3("🚨 خطة 3"),
@@ -70,8 +88,9 @@ def draw_plan_3_modal(phone: str):
         class_="glass-card modal-content"
     )
 
+
 # ==========================================================
-# STATUS & INSPECTOR COMPONENTS (دمج ميزات Streamlit)
+# STATUS & INSPECTOR COMPONENTS (مدمجة من Streamlit القديم)
 # ==========================================================
 def draw_database_status(total: int):
     return ui.div(
@@ -79,6 +98,7 @@ def draw_database_status(total: int):
         ui.div(str(total), class_="metric-value"),
         class_="metric-box"
     )
+
 
 def draw_monitor_component(status):
     st = status.get("status", "OFFLINE") if isinstance(status, dict) else str(status)
@@ -88,6 +108,7 @@ def draw_monitor_component(status):
         class_="metric-box"
     )
 
+
 def draw_notifications(status):
     src = status.get("source", "N/A") if isinstance(status, dict) else "N/A"
     return ui.div(
@@ -96,28 +117,27 @@ def draw_notifications(status):
         class_="metric-box"
     )
 
-# ✅ جديد: مكون المراقب الصامت (مأخوذ من ملف Streamlit)
+
 def draw_silent_inspector():
-    """
-    واجهة تشغيل المراقب الصامت لتنظيف البيانات وإزالة التكرار.
-    """
+    """واجهة تشغيل المراقب الصامت لتنظيف البيانات وإزالة التكرار."""
     return ui.div(
-        ui.h4("🧹 المراقب الصامت", class_="metric-title"),
-        ui.p("يقوم بفحص شجرة البيانات في Supabase وإزالة التكرارات تلقائياً.", style="font-size: 0.85em; color: #aaa; margin-bottom: 10px;"),
-        ui.input_action_button("btn_run_inspector", "🚀 تشغيل المراقب الآن", class_="btn-neon", style="width: 100%;"),
+        ui.h4(" المراقب الصامت", class_="metric-title"),
+        ui.p("يقوم بفحص شجرة البيانات في Supabase وإزالة التكرارات تلقائياً.", 
+             style="font-size: 0.85em; color: #aaa; margin-bottom: 10px;"),
+        ui.input_action_button("btn_run_inspector", "🚀 تشغيل المراقب الآن", 
+                               class_="btn-neon", style="width: 100%;"),
         class_="glass-card metric-box"
     )
 
-# ✅ جديد: معلومات النظام (مأخوذ من ملف Streamlit)
+
 def draw_system_info():
-    """
-    عرض معلومات النظام الأساسية مثل التاريخ وحالة الاتصال.
-    """
+    """عرض معلومات النظام الأساسية مثل التاريخ وحالة الاتصال."""
     return ui.div(
-        ui.div(f"📅 تاريخ اليوم: {datetime.date.today().strftime('%Y-%m-%d')}", class_="coord-line"),
+        ui.div(f" تاريخ اليوم: {datetime.date.today().strftime('%Y-%m-%d')}", class_="coord-line"),
         ui.div("📊 حالة الاتصال: متصل وسحابي (Supabase)", class_="coord-line"),
         class_="glass-card metric-box"
     )
+
 
 # ==========================================================
 # MAIN APP UI (الواجهة الرئيسية المدمجة)
@@ -125,20 +145,20 @@ def draw_system_info():
 app_ui = ui.page_fluid(
     inject_pwa_and_styles(),
     
-    # 1. DRAWER (القائمة الجانبية - تم دمج إعدادات Streamlit بداخلها)
+    # 1. DRAWER (القائمة الجانبية المنزلقة)
     ui.div(
         ui.tags.button("✕", id="btn_close_drawer_trigger", class_="drawer-close-btn"),
         ui.h3("⚙️ إعدادات النظام والمراقبة"),
         
-        # معلومات النظام (التاريخ والاتصال)
+        # معلومات النظام والتاريخ
         ui.output_ui("system_info_area"),
         
-        # حالات النظام (قاعدة البيانات، المراقب، الإشعارات)
+        # حالات النظام والعدادات
         ui.output_ui("database_status_area"),
         ui.output_ui("monitor_area"),
         ui.output_ui("notifications_area"),
         
-        # المراقب الصامت (زر التنظيف)
+        # زر المراقب الصامت
         ui.output_ui("silent_inspector_area"),
         
         id="settings-drawer",
@@ -147,7 +167,7 @@ app_ui = ui.page_fluid(
     
     # 2. MAIN PAGE (الصفحة الرئيسية)
     ui.div(
-        # Header
+        # Header Bar
         ui.div(
             ui.div(
                 ui.tags.span("ZEGAAR", class_="brand-neon-main"),
@@ -158,25 +178,25 @@ app_ui = ui.page_fluid(
             class_="header-bar"
         ),
         
-        # Search
+        # Search Box
         ui.div(
             ui.input_text("search_query", "", placeholder=" ابحث عن موديل الهاتف..."),
             ui.output_ui("suggestions_curtain"),
             class_="search-box"
         ),
         
-        # Welcome Area
+        # Welcome Area (صورة الواجهة)
         ui.output_ui("welcome_area"),
         
-        # Results
+        # Results Workflow View
         ui.output_ui("results_workflow_view"),
         
-        # Dynamic Modal
+        # Dynamic Modal Container
         ui.output_ui("dynamic_modal_container"),
         
         class_="container-fluid"
     ),
     
-    # 3. Drawer JS Handler
+    # 3. Drawer JS Handler (لتفعيل القائمة الجانبية)
     ui.output_ui("drawer_js_handler")
-)
+    )
