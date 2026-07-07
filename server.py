@@ -3,7 +3,6 @@ from shiny import reactive, render, ui
 import logging
 import asyncio
 import json
-import hashlib
 from enum import Enum
 import services as svs
 from logic_engine import run_system_workflows
@@ -14,9 +13,9 @@ from ui_components import (
 )
 from collections import OrderedDict
 
-# دالة محلية لتنظيف النصوص لضمان عدم الاعتماد على ملفات خارجية
+# دالة محلية لتنظيف النصوص (تجاوز أي نقص في services.py)
 def local_normalize(text: str) -> str:
-    return str(text).lower().strip()
+    return str(text or "").lower().strip()
 
 class Status(str, Enum):
     SUCCESS = "success"
@@ -49,62 +48,73 @@ def server(input, output, session):
         workflow_state.set(None)
         modal_state.set(None)
 
+    # --- معالجات التفاعل ---
     @reactive.effect
     @reactive.event(input.btn_settings)
     def _open_settings(): modal_state.set("settings")
 
     @reactive.effect
+    @reactive.event(input.btn_close_modal)
+    def _close_modal(): modal_state.set(None)
+
+    @reactive.effect
     @reactive.event(input._hide_curtain_trigger)
     def _hide(): suggestions_state.set(False)
 
+    # --- التحديث التلقائي ---
     @reactive.effect
     def _auto_refresh():
         reactive.invalidate_later(60)
         try:
-            status_report = monitor_refresh()
-            if status_report.get("status") != "OFFLINE":
-                autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
+            monitor_refresh()
+            autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
         except Exception: pass
 
     @reactive.effect
     def _init():
         autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
 
+    # --- منطق البحث الرئيسي ---
     @reactive.effect
     @reactive.event(input.search_query)
     async def _run_search():
-        q = local_normalize(str(input.search_query() or ""))
-        if not q or len(q) < 2: suggestions_state.set(False); return
+        modal_state.set(None) 
+        q = local_normalize(input.search_query())
         
-        await asyncio.sleep(0.30)
-        if q != local_normalize(str(input.search_query() or "")): return
+        if len(q) >= 2:
+            suggestions_state.set(True)
+        else:
+            suggestions_state.set(False); return
+        
+        await asyncio.sleep(0.3)
+        if q != local_normalize(input.search_query()): return
 
-        cache_key = f"{q}_{get_db_hash()}"
+        try: cache_key = f"{q}_{get_db_hash()}"
+        except: cache_key = f"{q}_default"
+        
         cached = search_cache.get(cache_key)
         if cached: workflow_state.set(cached); return
 
-        await session.send_custom_message("toggle_loading", {"show": True})
+        session.send_custom_message("toggle_loading", {"show": True})
         try:
             db = get_database() or {}
-            if not db: workflow_state.set({"status": Status.ERROR.value, "message": "Database not loaded"}); return
+            if not db: workflow_state.set({"status": Status.ERROR.value, "message": "DB Error"}); return
             
             res = run_system_workflows(q, db)
             workflow_state.set(res)
             search_cache.put(cache_key, res)
             
             st = res.get("status")
-            if st == Status.SUCCESS.value: modal_state.set(None)
-            elif st == Status.PLAN_2.value: modal_state.set("plan2")
+            if st == Status.PLAN_2.value: modal_state.set("plan2")
             elif st == Status.PLAN_3.value: modal_state.set("plan3")
-            else: modal_state.set(None)
             
-            suggestions_state.set(True)
+            suggestions_state.set(False)
         except Exception as e:
             logger.exception("Search Error")
-            workflow_state.set({"status": Status.ERROR.value, "message": str(e)})
         finally:
-            await session.send_custom_message("toggle_loading", {"show": False})
+            session.send_custom_message("toggle_loading", {"show": False})
 
+    # --- المخرجات الديناميكية للواجهة ---
     @output
     @render.ui
     def results_workflow_view():
@@ -123,20 +133,20 @@ def server(input, output, session):
     @render.ui
     def dynamic_modal_container():
         m = modal_state()
-        res = workflow_state() or {}
+        res = workflow_state()
         if not m: return None
-        phone = res.get("phone", "")
-        if m == "plan2": return draw_plan_2_modal(phone, res.get("panels"), res.get("sensors"))
-        if m == "plan3": return draw_plan_3_modal(phone)
         if m == "settings": return draw_settings_modal()
+        if res:
+            if m == "plan2": return draw_plan_2_modal(res.get("phone"), res.get("panels"), res.get("sensors"))
+            if m == "plan3": return draw_plan_3_modal(res.get("phone"))
         return None
 
     @output
     @render.ui
     def suggestions_curtain():
         idx = autocomplete_index()
-        q = local_normalize(str(input.search_query() or ""))
-        if not idx or len(q) < 2: return None
+        q = local_normalize(input.search_query())
+        if not suggestions_state() or not idx or len(q) < 2: return None
         results = idx.search_prefix(q, 5)
         if not results: return None
         return ui.div(
