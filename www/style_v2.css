@@ -1,17 +1,43 @@
-/* الخلفية ثابتة للكل */
-html, body { background-color: #0a0e17 !important; color: #ffffff !important; margin: 0; }
+/* --- الإعدادات العامة --- */
+html, body { background-color: #0a0e17 !important; color: #ffffff !important; margin: 0; font-family: sans-serif; }
 
-/* الشعار */
+/* --- الهيدر والشعار --- */
 .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #0d111a; border-bottom: 2px solid #00bfff; }
 .brand-neon-title { display: flex; flex-direction: column; text-align: right; }
-.brand-neon-main { color: #00bfff !important; font-size: 22px !important; font-weight: 900 !important; }
-.brand-neon-sub { color: #ffffff !important; font-size: 14px !important; }
+.brand-neon-main { color: #00bfff !important; font-size: 22px !important; font-weight: 900 !important; text-shadow: 0 0 8px rgba(0, 191, 255, 0.5); }
+.brand-neon-sub { color: #ffffff !important; font-size: 14px !important; letter-spacing: 2px; }
 
-/* عناصر التحكم */
-.btn-dots-menu { background: transparent; border: 1px solid #00bfff; color: #00bfff; padding: 8px 12px; border-radius: 8px; }
-.search-box { padding: 15px; }
-input { background: #161b22 !important; color: white !important; border: 1px solid #00bfff !important; }
+/* --- البحث والأزرار --- */
+.btn-dots-menu { background: transparent; border: 1px solid #00bfff; color: #00bfff; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+.search-box { padding: 15px; position: relative; }
+input { background: #161b22 !important; color: white !important; border: 1px solid #00bfff !important; padding: 10px !important; border-radius: 8px !important; width: 100% !important; }
 
-/* القائمة الجانبية (Drawer) */
-.drawer { position: fixed; top: 0; right: -300px; width: 280px; height: 100%; background: #0d111a; transition: 0.3s; z-index: 9999; padding: 20px; border-left: 2px solid #00bfff; }
+/* --- البطاقات الزجاجية (التي طلبتها) --- */
+.glass-card {
+    background: rgba(13, 17, 23, 0.7) !important;
+    backdrop-filter: blur(15px) !important;
+    border: 1px solid #30363d !important;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.ammar-flat-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border-right: 4px solid #00bfff;
+}
+
+/* --- القائمة الجانبية (Drawer) --- */
+.drawer { position: fixed; top: 0; right: -300px; width: 280px; height: 100%; background: #0d111a; z-index: 9999; padding: 20px; transition: 0.3s; border-left: 2px solid #00bfff; overflow-y: auto; }
 .drawer.open { right: 0; }
+.drawer-close-btn { background: none; border: none; color: #00bfff; font-size: 24px; cursor: pointer; }
+
+/* --- المكونات داخل الإعدادات --- */
+.metric-box { background: #161b22; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #30363d; }
+.metric-title { color: #8b949e; font-size: 12px; margin-bottom: 5px; }
+.metric-value { color: #ffffff; font-weight: bold; font-size: 16px; }
+.btn-neon { background: #00bfff; color: #0a0e17; border: none; padding: 10px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
