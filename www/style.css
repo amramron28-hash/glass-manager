@@ -1,333 +1,89 @@
-here/* =====================================================
-   ZEGAAR AMMAR - GLASS MANAGER
-   Modern CSS with Variables & Clean Architecture
-   Production Ready v5.1 (Fixed Welcome Image)
+/* =====================================================
+   ZEGAAR AMMAR - GLASS MANAGER (CORRECTED v6.0)
+   تم إصلاح مشكلة الخلفية والشعار
 ===================================================== */
 
-/* =====================================================
-   1. CSS Variables (Design System)
-===================================================== */
 :root {
     --primary-color: #00bfff;
-    --primary-hover: #87ceeb;
-    --secondary-color: #87ceeb;
-    --success-color: #2ecc71;
-    --success-bg: linear-gradient(135deg, #0d1f13, #07120b);
-    --warning-color: #e67e22;
-    --warning-bg: linear-gradient(135deg, #2b1807, #140b03);
-    --danger-color: #ff5252;
-    --danger-bg: linear-gradient(135deg, #26090b, #120405);
-    --info-color: #3498db;
-    --info-bg: linear-gradient(135deg, #0b1a33, #060e1c);
-    --foundation-color: #9b59b6;
     --bg-dark: #0a0e17;
-    --bg-card: rgba(255, 255, 255, 0.06);
-    --bg-input: rgba(17, 24, 39, 0.90);
-    --bg-drawer: rgba(22, 27, 34, 0.95);
-    --bg-suggestions: rgba(22, 27, 34, 0.96);
-    --bg-header: rgba(13, 17, 23, 0.55);
-    --bg-metric: rgba(255, 255, 255, 0.05);
-    --border-primary: rgba(0, 191, 255, 0.35);
-    --border-light: rgba(0, 191, 255, 0.2);
-    --border-subtle: rgba(255, 255, 255, 0.08);
     --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    --font-size-base: 16px;
-    --font-size-lg: 20px;
-    --font-size-xl: 28px;
-    --spacing-xs: 8px;
-    --spacing-sm: 12px;
-    --spacing-md: 16px;
-    --spacing-lg: 24px;
-    --spacing-xl: 32px;
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 20px;
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
-    --transition-fast: 0.2s ease;
-    --transition-normal: 0.3s ease;
-    --transition-slow: 0.4s ease-in-out;
-    --z-sticky: 1020;
-    --z-drawer: 200000;
 }
 
-/* =====================================================
-   2. Global Reset & Base Styles
-===================================================== */
-* { 
-    box-sizing: border-box; margin: 0; padding: 0; 
-    -webkit-font-smoothing: antialiased; 
-    -moz-osx-font-smoothing: grayscale; 
-}
-
-html { 
-    scroll-behavior: smooth; 
-    overscroll-behavior: none; 
-}
-
-body {
-    background-color: var(--bg-dark);
-    color: white;
-    font-family: var(--font-family);
-    direction: rtl;
-    font-size: var(--font-size-base);
-    line-height: 1.6;
+/* 1. إصلاح الخلفية العامة (إجبار الخلفية الداكنة) */
+html, body {
+    background-color: var(--bg-dark) !important;
+    color: #ffffff !important;
+    margin: 0;
+    padding: 0;
     min-height: 100vh;
-    background-image: none;
 }
 
-img { max-width: 100%; height: auto; display: block; }
-
-/* =====================================================
-   3. Shiny Overrides & Selectize Styling
-===================================================== */
-.shiny-bound-output, main, .page-content { background: transparent; }
-.shiny-input-container { margin-bottom: var(--spacing-md); }
-
-/* ✅ FIX: إجبار حاويات المخرجات الديناميكية على الظهور */
-#shiny-welcome_area, #welcome_area {
-    min-height: 20px !important;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+/* 2. حاوية التطبيق الأساسية */
+.container-fluid {
+    background-color: var(--bg-dark) !important;
+    min-height: 100vh;
+    padding: 0;
 }
 
-.action-button, .shiny-input-actionbutton {
-    background: var(--primary-color) !important;
+/* 3. الهيدر والشعار (ZEGAAR على سطرين) */
+.header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: rgba(13, 17, 23, 0.9);
+    border-bottom: 1px solid rgba(0, 191, 255, 0.3);
+}
+
+.brand-neon-title {
+    display: flex;
+    flex-direction: column; /* جعل العناصر تترتب عمودياً */
+    text-align: right;
+    line-height: 1.2;
+}
+
+.brand-neon-main {
+    color: var(--primary-color);
+    font-size: 26px;
+    font-weight: 900;
+    text-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+}
+
+.brand-neon-sub {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: bold;
+    opacity: 0.9;
+}
+
+/* 4. كروت المحتوى (زجاجية) */
+.glass-card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(0, 191, 255, 0.2);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 10px;
     color: white !important;
-    border: none !important;
-    border-radius: var(--radius-md) !important;
-    padding: var(--spacing-sm) var(--spacing-lg) !important;
-    font-weight: bold !important;
-    transition: all var(--transition-fast) !important;
-    cursor: pointer !important;
-}
-.action-button:hover, .shiny-input-actionbutton:hover {
-    background: var(--primary-hover) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-md) !important;
 }
 
-.selectize-control, .selectize-input, .selectize-dropdown {
-    background: var(--bg-input) !important;
+/* 5. إصلاح صورة الهاتف */
+.welcome-phone-image {
+    max-width: 300px;
+    width: 100%;
+    display: block;
+    margin: 0 auto;
+}
+
+/* 6. المدخلات (خانة البحث) */
+.search-box {
+    padding: 20px;
+}
+
+input {
+    background: #161b22 !important;
     color: white !important;
     border: 1px solid var(--primary-color) !important;
-    border-radius: var(--radius-md) !important;
-    font-size: var(--font-size-base) !important;
+    border-radius: 8px;
+    padding: 12px !important;
+    width: 100%;
 }
-.selectize-input.items.not-full.has-options { border-color: var(--primary-color); }
-.selectize-dropdown .option:hover { background: rgba(0,191,255,0.18) !important; }
-.selectize-dropdown-content { max-height: 200px !important; overflow-y: auto; }
-.selectize-dropdown { z-index: 1000000 !important; }
-
-/* =====================================================
-   4. Header Bar
-===================================================== */
-.header-bar {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--bg-header);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-primary);
-    width: 100%; position: sticky; top: 0; z-index: var(--z-sticky);
-}
-.brand-neon-title { display: flex; flex-direction: column; gap: 4px; text-align: right; flex-grow: 1; }
-.brand-neon-main { color: var(--primary-color); font-size: var(--font-size-xl); font-weight: 900; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(0,191,255,0.5); }
-.brand-neon-sub { color: var(--secondary-color); font-size: var(--font-size-base); font-weight: 700; opacity: 0.9; }
-.btn-dots-menu, .btn-settings { 
-    background: transparent; border: none; color: var(--primary-color); 
-    font-size: 28px; font-weight: bold; cursor: pointer; 
-    padding: 0 var(--spacing-sm); line-height: 1; 
-    transition: color var(--transition-normal);
-    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-}
-.btn-dots-menu:hover, .btn-settings:hover { color: var(--primary-hover); transform: scale(1.1); }
-
-.logo-image {
-    width: 40px; height: 40px; border-radius: 50%;
-    border: 2px solid var(--primary-color);
-    box-shadow: 0 0 10px rgba(0,191,255,0.5);
-    object-fit: cover;
-}
-
-/* =====================================================
-   5. Search Box & Suggestions Curtain
-===================================================== */
-.search-box { position: relative; max-width: 500px; margin: 35px auto; padding: 0 var(--spacing-md); }
-input[type="text"], input[type="number"] {
-    width: 100%; background: var(--bg-input); color: white;
-    border: 1px solid var(--primary-color); border-radius: var(--radius-md);
-    padding: var(--spacing-sm); direction: ltr; text-align: left;
-    font-size: var(--font-size-base);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-input:focus { outline: none; border-color: var(--primary-hover); box-shadow: 0 0 0 3px rgba(0,191,255,0.2); }
-input::placeholder { color: rgba(255,255,255,0.5); }
-
-.suggestions-curtain {
-    position: absolute; top: 100%; left: 0; width: 100%;
-    background: var(--bg-suggestions); border: 1px solid var(--primary-color);
-    border-radius: var(--radius-md); max-height: 240px; overflow-y: auto;
-    box-shadow: var(--shadow-md); z-index: 999999 !important;
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    opacity: 1; transform: translateY(0);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.suggestions-curtain.hidden {
-    opacity: 0; transform: translateY(-8px); pointer-events: none;
-}
-.suggestion-row {
-    padding: var(--spacing-sm); color: white; cursor: pointer; text-align: left;
-    border-bottom: 1px solid var(--border-subtle); transition: background var(--transition-fast);
-}
-.suggestion-row:last-child { border-bottom: none; }
-.suggestion-row:hover { background: rgba(0,191,255,0.18); }
-
-/* =====================================================
-   6. Glass Cards & Welcome Section
-===================================================== */
-.glass-card {
-    background: var(--bg-card); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    border: 1px solid var(--border-primary); border-radius: var(--radius-lg);
-    padding: var(--spacing-lg); margin: var(--spacing-lg) auto; max-width: 500px;
-    box-shadow: var(--shadow-md);
-}
-.glass-card h3 { color: var(--primary-color); text-align: center; margin-bottom: var(--spacing-md); }
-
-.welcome-image-card { 
-    padding: var(--spacing-lg); 
-    text-align: center; 
-    /* ✅ FIX: ضمان ظهور الكارت الزجاجي */
-    min-height: 100px !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-}
-
-.welcome-phone-image {
-    display: block !important; 
-    margin: 0 auto !important; 
-    width: 100% !important; 
-    max-width: 300px !important; 
-    height: auto !important;
-    border-radius: var(--radius-lg); 
-    box-shadow: var(--shadow-md);
-    user-select: none; 
-    pointer-events: none;
-    -webkit-user-drag: none;
-    /* ✅ FIX: منع أي إخفاء افتراضي */
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-/* =====================================================
-   7. Technical Card & Neon Sections
-===================================================== */
-.tech-card { border: 1px solid var(--border-light); }
-.tech-title { color: var(--primary-color); font-size: var(--font-size-lg); font-weight: 800; margin-bottom: 10px; text-shadow: 0 0 8px rgba(0,191,255,0.3); }
-.coord-line { padding: 6px 0; font-size: 15px; opacity: 0.9; border-bottom: 1px solid var(--border-subtle); }
-.coord-line:last-child { border-bottom: none; }
-
-.neon-section-title { font-weight: 700; margin-bottom: 12px; text-shadow: 0 0 8px currentColor; }
-
-.neon-exact { border-right: 4px solid var(--success-color) !important; }
-.neon-plus { border-right: 4px solid var(--info-color) !important; }
-.neon-minus { border-right: 4px solid var(--warning-color) !important; }
-
-.ammar-flat-card {
-    padding: 14px 18px; margin-bottom: var(--spacing-sm); border-radius: var(--radius-md);
-    display: flex; align-items: center; justify-content: space-between;
-    direction: ltr; width: 100%; box-sizing: border-box;
-    box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
-    color: white; font-size: var(--font-size-base); font-weight: 600;
-    content-visibility: auto; contain-intrinsic-size: 0 50px;
-}
-.ammar-flat-card:hover { transform: translateY(-2px); }
-.flat-exact { background: var(--success-bg); border: 2px solid var(--success-color); }
-.flat-plus { background: var(--info-bg); border: 2px solid var(--info-color); }
-.flat-minus { background: var(--warning-bg); border: 2px solid var(--warning-color); }
-
-/* =====================================================
-   8. Drawer & Metrics
-===================================================== */
-.drawer {
-    position: fixed; top: 0; right: -320px; width: 290px; height: 100%;
-    background: var(--bg-drawer); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-left: 2px solid var(--primary-color); transition: right var(--transition-slow);
-    z-index: var(--z-drawer); padding: var(--spacing-lg);
-    box-shadow: var(--shadow-lg); overflow-y: auto;
-    scrollbar-width: thin; scrollbar-color: var(--primary-color) var(--bg-drawer);
-}
-.drawer::-webkit-scrollbar { width: 6px; }
-.drawer::-webkit-scrollbar-track { background: var(--bg-drawer); }
-.drawer::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 3px; }
-
-.drawer.open { right: 0; }
-.drawer-close-btn { background: transparent; border: none; color: var(--danger-color); font-size: 24px; cursor: pointer; float: left; font-weight: bold; transition: transform var(--transition-fast); }
-.drawer-close-btn:hover { transform: rotate(90deg); }
-.drawer h3 { color: var(--primary-color); text-align: center; margin-bottom: var(--spacing-lg); font-weight: 800; clear: both; }
-
-.metric-box {
-    background: var(--bg-metric); padding: var(--spacing-sm); border-radius: var(--radius-sm);
-    margin-bottom: var(--spacing-sm); text-align: center;
-    border: 1px solid var(--border-light); font-weight: bold;
-    transition: background var(--transition-fast);
-}
-.metric-box:hover { background: rgba(255,255,255,0.08); }
-.metric-title { font-size: 12px; opacity: 0.7; margin-bottom: 4px; }
-.metric-value { font-size: 18px; font-weight: bold; }
-
-/* =====================================================
-   9. Loading Indicator & Main Container
-===================================================== */
-.main-container { max-width: 600px; margin: 0 auto; padding: 0 var(--spacing-md); }
-
-#loading-indicator {
-    text-align: center; padding: 40px; display: none;
-}
-.spinner {
-    border: 4px solid var(--border-subtle); border-top: 4px solid var(--primary-color);
-    border-radius: 50%; width: 50px; height: 50px;
-    animation: spin 1s linear infinite; margin: 0 auto 15px;
-}
-.loading-text { color: var(--primary-color); font-size: 16px; }
-
-/* =====================================================
-   10. Buttons & Accessibility
-===================================================== */
-button, .btn-neon, input[type="button"], .action-button, .shiny-input-actionbutton {
-    cursor: pointer; border: none; border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-lg); font-weight: bold;
-    color: white; font-size: var(--font-size-base);
-    transition: all var(--transition-fast);
-    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-}
-button:hover, .btn-neon:hover, .action-button:hover, .shiny-input-actionbutton:hover { 
-    transform: translateY(-2px); box-shadow: var(--shadow-md); 
-}
-button:active, .btn-neon:active, .action-button:active, .shiny-input-actionbutton:active { 
-    transform: translateY(0); 
-}
-
-button:focus-visible, .btn-neon:focus-visible, .action-button:focus-visible, .shiny-input-actionbutton:focus-visible {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.fade-in { animation: fadeIn var(--transition-normal); }
-
-/* =====================================================
-   11. Utility Classes
-===================================================== */
-.text-center { text-align: center; }
-.hidden { display: none; }
-.visible { display: block; }
-
-/* شريط تمرير عام موحد */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--bg-dark); }
-::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
