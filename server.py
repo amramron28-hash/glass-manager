@@ -1,4 +1,4 @@
-from __future__ import annotations
+Enterfrom __future__ import annotations
 from shiny import reactive, render, ui
 import logging
 import asyncio
@@ -17,7 +17,8 @@ from ui_components import (
     draw_monitor_component,
     draw_notifications,
     draw_silent_inspector,
-    draw_system_info
+    draw_system_info,
+    draw_drawer_js_handler
 )
 from collections import OrderedDict
 
@@ -192,7 +193,7 @@ def server(input, output, session):
             search_cache.put(cache_key, res)
             
             st = res.get("status")
-            # ✅ إظهار الـ modal فقط عند فشل الخطة 1
+            # إظهار الـ modal فقط عند فشل الخطة 1
             if st == Status.PLAN_2.value: 
                 modal_state.set("plan2")
             elif st == Status.PLAN_3.value: 
@@ -205,7 +206,7 @@ def server(input, output, session):
             session.send_custom_message("toggle_loading", {"show": False})
 
     # ============================================
-    # ✅ Outputs للـ Drawer (الإعدادات)
+    # Outputs للـ Drawer (الإعدادات)
     # ============================================
     
     @output
@@ -238,6 +239,14 @@ def server(input, output, session):
         return draw_silent_inspector()
 
     # ============================================
+    # Drawer JS Handler ✅
+    # ============================================
+    @output
+    @render.ui
+    def drawer_js_handler():
+        return draw_drawer_js_handler()
+
+    # ============================================
     # المخرجات الديناميكية للواجهة
     # ============================================
     
@@ -245,7 +254,7 @@ def server(input, output, session):
     @render.ui
     def results_workflow_view():
         """
-        ✅ تُظهر نتائج البحث فقط إذا نجحت الخطة 1
+        تُظهر نتائج البحث فقط إذا نجحت الخطة 1
         لا تُظهر شيئاً إذا كانت الخطة 2 أو 3
         """
         res = workflow_state()
@@ -279,7 +288,7 @@ def server(input, output, session):
     @render.ui
     def dynamic_modal_container():
         """
-        ✅ تُظهر الـ modal فقط عند الحاجة (Plan 2 أو Plan 3)
+        تُظهر الـ modal فقط عند الحاجة (Plan 2 أو Plan 3)
         """
         m = modal_state()
         res = workflow_state()
@@ -331,7 +340,7 @@ def server(input, output, session):
     @render.ui
     def welcome_area():
         """
-        ✅ تُظهر صورة الواجهة فقط عند بدء التطبيق (قبل أي بحث)
+        تُظهر صورة الواجهة فقط عند بدء التطبيق (قبل أي بحث)
         """
         res = workflow_state()
         if res is None:
