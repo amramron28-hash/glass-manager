@@ -47,7 +47,6 @@ def server(input, output, session):
     workflow_state = reactive.value(None)
     autocomplete_index = reactive.value(None)
     search_cache = LRUCache()
-    inspector_status = reactive.value({"status": "جاهز", "message": ""})
     db_total_models = reactive.value(0)
 
     @session.on_ended
@@ -63,17 +62,9 @@ def server(input, output, session):
         if not input.btn_run_inspector(): return
         try:
             def run_sync(): return run_intelligent_inspector()
-            cleaned_data, changes_made = await asyncio.to_thread(run_sync)
+            await asyncio.to_thread(run_sync)
             search_cache.clear()
         except Exception as e: logger.exception("Inspector Error")
-
-    @reactive.effect
-    def _auto_refresh():
-        reactive.invalidate_later(60)
-        try:
-            monitor_refresh()
-            autocomplete_index.set(svs.build_autocomplete_index(svs.load_models_index()))
-        except Exception: pass
 
     @reactive.effect
     def _init():
@@ -95,44 +86,35 @@ def server(input, output, session):
         suggestions_state.set(True)
         await asyncio.sleep(0.3)
         if q != local_normalize(input.search_query()): return
-
-        try: cache_key = f"{q}_{get_db_hash()}"
-        except: cache_key = f"{q}_default"
-        
-        cached = search_cache.get(cache_key)
-        if cached: 
-            workflow_state.set(cached)
-            return
-
-        try:
+        try: 
             db = get_database() or {}
             res = run_system_workflows(q, db)
             workflow_state.set(res)
-            search_cache.put(cache_key, res)
             if res.get("status") == Status.PLAN_2.value: modal_state.set("plan2")
             elif res.get("status") == Status.PLAN_3.value: modal_state.set("plan3")
             suggestions_state.set(False)
         except Exception as e: logger.exception("Search Error")
 
-    @output @render.ui
+    # المخرجات (ملاحظة: نستخدم @render.ui فقط بدون @output)
+    @render.ui
     def system_info_area(): return draw_system_info()
 
-    @output @render.ui
+    @render.ui
     def database_status_area(): return draw_database_status(db_total_models())
 
-    @output @render.ui
+    @render.ui
     def monitor_area(): return draw_monitor_component({"status": "ONLINE" if get_database() else "OFFLINE"})
 
-    @output @render.ui
+    @render.ui
     def notifications_area(): return draw_notifications({"source": "Supabase"})
 
-    @output @render.ui
+    @render.ui
     def silent_inspector_area(): return draw_silent_inspector()
 
-    @output @render.ui
+    @render.ui
     def drawer_js_handler(): return draw_drawer_js_handler()
 
-    @output @render.ui
+    @render.ui
     def results_workflow_view():
         res = workflow_state()
         if not res or res.get("status") != Status.SUCCESS.value: return None
@@ -141,11 +123,10 @@ def server(input, output, session):
             draw_technical_coords(c.get("size"), c.get("panel"), c.get("sensor"), c.get("real_name")),
             draw_neon_section("مطابقة تماماً", comp.get("exact"), "#2ecc71", "✅", "exact"),
             draw_neon_section("إضافات", comp.get("plus"), "#3498db", "➕", "plus"),
-            draw_neon_section("نواقص", comp.get("minus"), "#e67e22", "➖", "minus"),
-            draw_neon_section("تحذيرات", comp.get("warn"), "#e74c3c", "⚠️", "warn") if comp.get("warn") else None
+            draw_neon_section("نواقص", comp.get("minus"), "#e67e22", "➖", "minus")
         )
 
-    @output @render.ui
+    @render.ui
     def dynamic_modal_container():
         m, res = modal_state(), workflow_state()
         if not m or not res: return None
@@ -153,14 +134,13 @@ def server(input, output, session):
         if m == "plan3": return draw_plan_3_modal(res.get("phone", ""))
         return None
 
-    @output @render.ui
+    @render.ui
     def suggestions_curtain():
         idx, q = autocomplete_index(), local_normalize(input.search_query())
         if not suggestions_state() or not idx or len(q) < 2: return None
         results = idx.search_prefix(q, 5)
         return ui.div(*[ui.div(r, class_="suggestion-row", onclick=f"Shiny.setInputValue('search_query', {json.dumps(r)}, {{priority:'event'}});") for r in results], class_="suggestions-curtain")
 
-    @output @render.ui
+    @render.ui
     def welcome_area():
         return draw_welcome_section() if workflow_state() is None else None
-
