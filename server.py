@@ -5,7 +5,7 @@ import asyncio
 import json
 from enum import Enum
 import services as svs
-from logic_engine import run_system_workflows, run_intelligent_inspector, fetch_db_structure
+from logic_engine import run_system_workflows, run_intelligent_inspector
 from silent_monitor import get_database, refresh as monitor_refresh, get_db_hash
 from ui_components import (
     draw_plan_2_modal, 
@@ -61,7 +61,7 @@ def server(input, output, session):
     autocomplete_index = reactive.value(None)
     search_cache = LRUCache()
     
-    # ✅ جديد: حالة المراقب الصامت
+    # حالة المراقب الصامت
     inspector_status = reactive.value({"status": "جاهز", "message": ""})
     db_total_models = reactive.value(0)
 
@@ -85,14 +85,13 @@ def server(input, output, session):
     def _hide(): 
         suggestions_state.set(False)
 
-    # ✅ جديد: معالج زر المراقب الصامت
+    # معالج زر المراقب الصامت
     @reactive.effect
     @reactive.event(input.btn_run_inspector)
     async def _run_inspector():
         try:
             inspector_status.set({"status": "جاري التشغيل...", "message": ""})
             
-            # تشغيل المراقب الصامت في thread منفصل لتجنب حجب الواجهة
             def run_sync():
                 return run_intelligent_inspector()
             
@@ -111,8 +110,6 @@ def server(input, output, session):
                     for s2 in (s.values() if isinstance(s, dict) else [])
                 )
                 db_total_models.set(total)
-                
-                # مسح الكاش لأن البيانات تغيرت
                 search_cache.clear()
             else:
                 inspector_status.set({
@@ -190,13 +187,12 @@ def server(input, output, session):
                 workflow_state.set({"status": Status.ERROR.value, "message": "DB Error"})
                 return
             
-            # ✅ ملاحظة: run_system_workflows في النسخة الجديدة لا تحتاج db كمعامل
-            # لكنها تقبله للتوافق مع الإصدارات القديمة
             res = run_system_workflows(q, db)
             workflow_state.set(res)
             search_cache.put(cache_key, res)
             
             st = res.get("status")
+            # ✅ إظهار الـ modal فقط عند فشل الخطة 1
             if st == Status.PLAN_2.value: 
                 modal_state.set("plan2")
             elif st == Status.PLAN_3.value: 
@@ -209,7 +205,7 @@ def server(input, output, session):
             session.send_custom_message("toggle_loading", {"show": False})
 
     # ============================================
-    # ✅ Outputs جديدة للـ Drawer (الإعدادات)
+    # ✅ Outputs للـ Drawer (الإعدادات)
     # ============================================
     
     @output
@@ -248,47 +244,63 @@ def server(input, output, session):
     @output
     @render.ui
     def results_workflow_view():
+        """
+        ✅ تُظهر نتائج البحث فقط إذا نجحت الخطة 1
+        لا تُظهر شيئاً إذا كانت الخطة 2 أو 3
+        """
         res = workflow_state()
-        if not res or res.get("status") not in [Status.SUCCESS.value, Status.PLAN2_SUCCESS.value]: 
+        if not res:
             return None
         
-        c = res.get("coords", {})
-        comp = res.get("compatibles", {})
+        status = res.get("status")
         
-        return ui.TagList(
-            draw_technical_coords(
-                c.get("size"), 
-                c.get("panel"), 
-                c.get("sensor"), 
-                c.get("real_name")
-            ),
-            draw_neon_section("مطابقة تماماً", comp.get("exact"), "#2ecc71", "✅", "exact"),
-            draw_neon_section("إضافات", comp.get("plus"), "#3498db", "➕", "plus"),
-            draw_neon_section("نواقص", comp.get("minus"), "#e67e22", "➖", "minus"),
-            # ✅ جديد: إضافة قسم التحذيرات إذا وجد
-            draw_neon_section("تحذيرات", comp.get("warn"), "#f39c12", "⚠️", "warn") if comp.get("warn") else None
-        )
+        # عرض النتائج فقط إذا كانت الخطة 1 ناجحة
+        if status == Status.SUCCESS.value:
+            c = res.get("coords", {})
+            comp = res.get("compatibles", {})
+            return ui.TagList(
+                draw_technical_coords(
+                    c.get("size"), 
+                    c.get("panel"), 
+                    c.get("sensor"), 
+                    c.get("real_name")
+                ),
+                draw_neon_section("مطابقة تماماً", comp.get("exact"), "#2ecc71", "✅", "exact"),
+                draw_neon_section("إضافات", comp.get("plus"), "#3498db", "➕", "plus"),
+                draw_neon_section("نواقص", comp.get("minus"), "#e67e22", "➖", "minus"),
+                # إضافة قسم التحذيرات إذا وجد
+                draw_neon_section("تحذيرات", comp.get("warn"), "#f39c12", "⚠️", "warn") if comp.get("warn") else None
+            )
+        
+        # لا تُظهر شيئاً للخطة 2 أو 3 (سيظهر الـ modal بدلاً من ذلك)
+        return None
 
     @output
     @render.ui
     def dynamic_modal_container():
+        """
+        ✅ تُظهر الـ modal فقط عند الحاجة (Plan 2 أو Plan 3)
+        """
         m = modal_state()
         res = workflow_state()
-        if not m: 
+        
+        if not m or not res:
             return None
         
-        # ✅ حذفنا draw_settings_modal لأن الإعدادات الآن في الـ Drawer
-        if res:
-            if m == "plan2": 
-                return draw_plan_2_modal(
-                    res.get("phone") or res.get("input_data", {}).get("phone", ""), 
-                    res.get("panels"), 
-                    res.get("sensors")
-                )
-            if m == "plan3": 
-                return draw_plan_3_modal(
-                    res.get("phone") or res.get("input_data", {}).get("phone", "")
-                )
+        # أظهر Plan 2 فقط إذا كانت النتيجة plan_2
+        if m == "plan2" and res.get("status") == Status.PLAN_2.value:
+            return draw_plan_2_modal(
+                res.get("input_data", {}).get("phone", "") or res.get("phone", ""), 
+                res.get("panels"), 
+                res.get("sensors")
+            )
+        
+        # أظهر Plan 3 فقط إذا كانت النتيجة plan_3
+        if m == "plan3" and res.get("status") == Status.PLAN_3.value:
+            return draw_plan_3_modal(
+                res.get("input_data", {}).get("phone", "") or res.get("phone", "")
+            )
+        
         return None
 
     @output
@@ -318,6 +330,10 @@ def server(input, output, session):
     @output
     @render.ui
     def welcome_area():
-        if workflow_state() is None: 
-            return draw_welcome_section()
+        """
+        ✅ تُظهر صورة الواجهة فقط عند بدء التطبيق (قبل أي بحث)
+        """
+        res = workflow_state()
+        if res is None:
+            return draw_welcome_section("/phone_image.webp")
         return None
