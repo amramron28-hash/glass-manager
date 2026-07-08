@@ -233,13 +233,15 @@ def run_intelligent_inspector(db_data=None):
 # =========================
 # MAIN WORKFLOW
 # =========================
-def run_system_workflows(phone: str, plan2_input: Optional[dict] = None) -> dict:
+def run_system_workflows(phone: str, db_data: Optional[dict] = None, plan2_input: Optional[dict] = None) -> dict:
     start_time = time.time()
     phone = (phone or "").strip()
 
-    # جلب أحدث هيكلية للبيانات من السحابة
-    db_data = fetch_db_structure()
-    
+    # إذا تم تمرير قاعدة بيانات جاهزة (من silent_monitor مع دعم النسخة الاحتياطية
+    # عند تعطل Supabase)، نستخدمها مباشرة بدل تكرار الاتصال بالسحابة في كل بحث
+    if not db_data:
+        db_data = fetch_db_structure()
+
     if not db_data:
         return {"status": STATUS_ERROR, "message": "DB_EMPTY_OR_ERROR"}
 
