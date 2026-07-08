@@ -1,24 +1,319 @@
-here/* فرض الشفافية الزجاجية */
-.glass-card-container, .metric-box, .search-box {
-    background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(15px) !important;
-    -webkit-backdrop-filter: blur(15px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 20px !important;
+/* ==========================================================
+   ZEGAAR AMMAR GLASS MANAGER
+   style_v2.css
+========================================================== */
+
+/* ===========================
+   BODY
+=========================== */
+
+body{
+    margin:0;
+    padding:0;
+    background:#050508;
+    color:#ffffff;
+    font-family:Segoe UI,Tahoma,sans-serif;
 }
 
-/* حل مشكلة القائمة الجانبية */
-#settings-drawer {
-    background: rgba(10, 10, 20, 0.95) !important;
-    backdrop-filter: blur(20px) !important;
-    border-right: 1px solid #3498db;
+
+/* ===========================
+   MAIN CONTAINER
+=========================== */
+
+.container-fluid{
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
 }
 
-/* التأكد من ظهور ستارة البحث */
-.suggestions-curtain {
-    background: rgba(15, 15, 25, 0.98) !important;
-    border: 1px solid #3498db !important;
-    color: white !important;
-    z-index: 9999 !important;
-    position: relative !important;
+
+/* ===========================
+   TITLE
+=========================== */
+
+.brand-neon-main{
+
+    text-align:center;
+
+    font-size:32px;
+
+    font-weight:bold;
+
+    color:#36b8ff;
+
+    margin:15px 0;
+
+    text-shadow:
+        0 0 8px #36b8ff,
+        0 0 18px #36b8ff;
+
+}
+
+
+/* ===========================
+   GLASS CARD
+=========================== */
+
+.glass-card-container{
+
+    background:rgba(255,255,255,.07);
+
+    backdrop-filter:blur(18px);
+
+    -webkit-backdrop-filter:blur(18px);
+
+    border-radius:20px;
+
+    border:1px solid rgba(255,255,255,.10);
+
+    padding:18px;
+
+    margin:15px 0;
+
+}
+
+
+/* ===========================
+   SEARCH
+=========================== */
+
+.search-box{
+
+    position:relative;
+
+    margin:25px 0;
+
+}
+
+
+/* ===========================
+   INPUT
+=========================== */
+
+input{
+
+    width:100%;
+
+    border-radius:14px;
+
+    padding:12px;
+
+}
+
+
+/* ===========================
+   AUTOCOMPLETE
+=========================== */
+
+.suggestions-curtain{
+
+    position:absolute;
+
+    width:100%;
+
+    margin-top:5px;
+
+    background:#151923;
+
+    border-radius:14px;
+
+    border:1px solid #3498db;
+
+    overflow:hidden;
+
+    z-index:9999;
+
+}
+
+
+.suggestion-row{
+
+    padding:12px;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+
+.suggestion-row:hover{
+
+    background:#3498db;
+
+}
+
+
+/* ===========================
+   RESULT CARD
+=========================== */
+
+.ammar-flat-card{
+
+    padding:10px;
+
+    border-radius:10px;
+
+    margin:8px 0;
+
+    color:white;
+
+}
+
+
+/* Exact */
+
+.exact{
+
+    border-left:5px solid #2ecc71;
+
+    background:#14381d;
+
+}
+
+
+/* Plus */
+
+.plus{
+
+    border-left:5px solid #3498db;
+
+    background:#10273f;
+
+}
+
+
+/* Minus */
+
+.minus{
+
+    border-left:5px solid #f39c12;
+
+    background:#40270e;
+
+}
+
+
+/* ===========================
+   METRIC
+=========================== */
+
+.metric-box{
+
+    padding:14px;
+
+    border-radius:15px;
+
+    margin:10px 0;
+
+    background:#10151d;
+
+    border:1px solid #1f7cc4;
+
+}
+
+
+/* ===========================
+   DRAWER
+=========================== */
+
+.drawer{
+
+    position:fixed;
+
+    top:0;
+
+    left:-100%;
+
+    width:320px;
+
+    max-width:90%;
+
+    height:100%;
+
+    background:#0b1018;
+
+    transition:.35s;
+
+    z-index:9999;
+
+    padding:20px;
+
+    overflow:auto;
+
+    box-shadow:0 0 20px rgba(0,0,0,.4);
+
+}
+
+
+.drawer.open{
+
+    left:0;
+
+}
+
+
+/* ===========================
+   CLOSE BUTTON
+=========================== */
+
+.drawer-close-btn{
+
+    border:none;
+
+    background:none;
+
+    color:white;
+
+    font-size:28px;
+
+    cursor:pointer;
+
+}
+
+
+/* ===========================
+   SETTINGS BUTTON
+=========================== */
+
+.btn-settings-open{
+
+    border:none;
+
+    background:none;
+
+    color:#36b8ff;
+
+    font-size:28px;
+
+    cursor:pointer;
+
+}
+
+
+/* ===========================
+   SMALL TEXT
+=========================== */
+
+.coord-line{
+
+    color:#cfd8dc;
+
+    margin-top:6px;
+
+    font-size:14px;
+
+}
+
+
+/* ===========================
+   IMAGE
+=========================== */
+
+img{
+
+    max-width:100%;
+
+    display:block;
+
 }
