@@ -56,4 +56,13 @@ def initialize_system_data():
     unique_models = sorted(list(set(all_flat_models)))
 
     # 🎯 التعديل الفوري: إرجاع الـ 8 متغيرات كاملة لتطابق محرك واجهة app.py وطرد الصفر
-    return db_data, unique_models, total_models, empty_groups_count, brand_counts, all_available_sizes, all_available_panels, all_available_sensors
+    return (
+        db_data,
+        unique_models,
+        total_models,
+        empty_groups_count,
+        brand_counts,
+        all_available_sizes,
+        all_available_panels,
+        all_available_sensors,
+    )
