@@ -302,3 +302,291 @@ button.btn:hover {
         right: -100%;
     }
     }
+/* ==========================================================
+   ZEGAAR GLASS MANAGER PRO PATCH
+   ========================================================== */
+
+/* منع تحرك الصفحة */
+html,
+body{
+    overflow:hidden !important;
+    height:100%;
+}
+
+/* خلفية ثابتة */
+.fixed-background{
+
+    position:fixed;
+
+    inset:0;
+
+    background:url("phone_image.webp") center center no-repeat;
+
+    background-size:cover;
+
+    background-attachment:fixed;
+
+    z-index:-10;
+
+}
+
+.fixed-background::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:rgba(8,12,18,.72);
+
+    backdrop-filter:blur(2px);
+
+}
+
+/* الواجهة الرئيسية */
+
+.main-layout{
+
+    position:relative;
+
+    height:100vh;
+
+    overflow:hidden;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:flex-start;
+
+    align-items:center;
+
+    padding-top:20px;
+
+}
+
+/* شعار نيون */
+
+.brand-wrapper{
+
+    margin-top:10px;
+
+    margin-bottom:18px;
+
+    text-align:center;
+
+}
+
+.brand-neon-main{
+
+    font-size:34px;
+
+    font-weight:900;
+
+    color:#00e5ff;
+
+    text-shadow:
+    0 0 8px #00e5ff,
+    0 0 20px #00e5ff,
+    0 0 35px #00e5ff;
+
+}
+
+.brand-neon-sub{
+
+    color:white;
+
+    font-size:16px;
+
+    letter-spacing:4px;
+
+    margin-top:6px;
+
+}
+
+/* صورة البداية */
+
+.main-phone-image{
+
+    width:220px;
+
+    display:block;
+
+    margin:auto;
+
+    animation:floating 3s ease-in-out infinite;
+
+}
+
+@keyframes floating{
+
+0%{transform:translateY(0px);}
+
+50%{transform:translateY(-8px);}
+
+100%{transform:translateY(0px);}
+
+}
+
+/* بطاقات زجاجية */
+
+.glass-card{
+
+background:rgba(255,255,255,.08);
+
+backdrop-filter:blur(20px);
+
+border:1px solid rgba(255,255,255,.18);
+
+border-radius:22px;
+
+box-shadow:
+
+0 0 25px rgba(0,191,255,.25),
+
+0 10px 35px rgba(0,0,0,.35);
+
+}
+
+/* بطاقات النتائج */
+
+.neon-container{
+
+margin-top:18px;
+
+}
+
+.ammar-flat-card{
+
+background:rgba(255,255,255,.06);
+
+margin:8px 0;
+
+padding:12px;
+
+border-radius:14px;
+
+transition:.25s;
+
+}
+
+.ammar-flat-card:hover{
+
+transform:scale(1.02);
+
+}
+
+.ammar-flat-card.exact{
+
+box-shadow:0 0 18px #2ecc71;
+
+}
+
+.ammar-flat-card.plus{
+
+box-shadow:0 0 18px #3498db;
+
+}
+
+.ammar-flat-card.minus{
+
+box-shadow:0 0 18px #e67e22;
+
+}
+
+/* الاقتراحات */
+
+.suggestions-curtain{
+
+max-height:260px;
+
+overflow:auto;
+
+backdrop-filter:blur(18px);
+
+}
+
+.suggestion-row:hover{
+
+transform:translateX(-5px);
+
+}
+
+/* درج الإعدادات */
+
+.drawer{
+
+backdrop-filter:blur(25px);
+
+}
+
+.drawer-open{
+
+right:0 !important;
+
+}
+
+/* زر الإعدادات */
+
+.btn-settings-open{
+
+box-shadow:
+
+0 0 18px #00e5ff;
+
+}
+
+/* زر الإغلاق */
+
+.drawer-close-btn{
+
+font-size:28px;
+
+}
+
+/* أزرار */
+
+.btn-neon{
+
+box-shadow:
+
+0 0 20px #00bfff;
+
+}
+
+.btn-close{
+
+background:#e74c3c;
+
+color:white;
+
+border:none;
+
+padding:10px 18px;
+
+border-radius:12px;
+
+}
+
+/* نافذة المودال */
+
+.modal-card{
+
+max-width:500px;
+
+width:100%;
+
+}
+
+/* عداد */
+
+.metric-value{
+
+font-size:24px;
+
+font-weight:bold;
+
+color:#00e5ff;
+
+}
