@@ -1,40 +1,45 @@
-html, body { background-color: #0a0e17 !important; color: #ffffff !important; margin: 0; font-family: sans-serif; }
-
-/* الشعار بسطرين */
-.brand-neon-title { display: flex; flex-direction: column; align-items: center; padding: 20px; }
-.brand-neon-main { color: #00bfff !important; font-size: 24px !important; font-weight: 900 !important; text-shadow: 0 0 10px #00bfff; }
-.brand-neon-sub { color: #ffffff !important; font-size: 12px !important; opacity: 0.8; letter-spacing: 2px; }
-
-/* البحث */
-.search-box { padding: 15px; position: relative; }
-input { background: rgba(22, 27, 34, 0.8) !important; color: white !important; border: 1px solid #00bfff !important; padding: 12px !important; border-radius: 10px !important; width: 100% !important; }
-
-/* الزجاج الشفاف */
+/* البطاقات الزجاجية (Glassmorphism) */
 .glass-card-container {
-    background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(15px) !important;
-    -webkit-backdrop-filter: blur(15px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    padding: 20px;
-    margin: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-}
-
-/* بطاقات الموديلات */
-.ammar-flat-card {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    margin: 10px 0;
     color: white;
-    padding: 12px;
-    margin: 8px 0;
-    border-radius: 12px;
-    text-align: center;
-    transition: 0.3s;
 }
 
-/* ألوان النيون الملونة */
-.flat-exact { border-right: 4px solid #2ecc71; box-shadow: 2px 0 10px rgba(46, 204, 113, 0.3); }
-.flat-plus { border-right: 4px solid #3498db; box-shadow: 2px 0 10px rgba(52, 152, 219, 0.3); }
-.flat-minus { border-right: 4px solid #e67e22; box-shadow: 2px 0 10px rgba(230, 126, 34, 0.3); }
-.flat-warn { border-right: 4px solid #e74c3c; box-shadow: 2px 0 10px rgba(231, 76, 60, 0.3); }
+/* إصلاح الستارة (Autocomplete) */
+.suggestions-curtain {
+    position: absolute;
+    width: 90%;
+    background: #1a1a2e;
+    border: 1px solid #3498db;
+    border-radius: 10px;
+    z-index: 1000;
+    margin-top: 5px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.suggestion-row {
+    padding: 12px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+}
+
+/* القائمة الجانبية (Drawer) */
+.drawer {
+    position: fixed;
+    top: 0;
+    left: -100%; /* مخفية في البداية */
+    width: 80%;
+    height: 100%;
+    background: #0f0f1a;
+    transition: 0.3s;
+    z-index: 2000;
+    padding: 20px;
+}
+
+.drawer.open {
+    left: 0;
+}
