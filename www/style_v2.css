@@ -1,89 +1,50 @@
-/* 1. ضبط الجسم لمنع التمرير العام وتثبيت الخلفية */
-body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden; 
-    background-color: #050508 !important;
-    color: white;
-    font-family: sans-serif;
-}
+from shiny import ui
 
-/* 2. الحاوية الرئيسية للتصفح المحدود */
-.container-fluid {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto; 
-    padding: 20px;
-}
+# 1. المكونات التقنية للواجهة
+def draw_technical_coords(c):
+    if not c: return None
+    return ui.div(
+        ui.h3(c.get("real_name", "غير معروف")),
+        ui.div(f"المقاس: {c.get('size', '-')}", class_="coord-line"),
+        ui.div(f"الشاشة: {c.get('panel', '-')}", class_="coord-line"),
+        ui.div(f"المستشعر: {c.get('sensor', '-')}", class_="coord-line"),
+        class_="glass-card-container"
+    )
 
-/* 3. الشعار والبحث */
-.brand-neon-main {
-    text-align: center;
-    color: #00d4ff;
-    font-size: 24px;
-    font-weight: bold;
-    margin: 20px 0;
-    text-shadow: 0 0 10px #00d4ff;
-}
+def draw_neon_section(title, models, cls):
+    if not models: return None
+    return ui.div(
+        ui.h3(title),
+        *[ui.div(m, class_=f"ammar-flat-card {cls}") for m in models],
+        class_="glass-card-container"
+    )
 
-.search-box {
-    margin-bottom: 20px;
-}
+def draw_welcome_section():
+    return ui.div(
+        ui.h2("ZEGAAR AMMAR GLASS MANAGER"),
+        ui.p("النظام الذكي لمطابقة حماية الشاشات"),
+        class_="glass-card-container"
+    )
 
-input[type="text"] {
-    width: 100%;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #34495e;
-    background: #1a1a2e;
-    color: white;
-    text-align: center;
-}
-
-/* 4. البطاقات الزجاجية (Glass Cards) */
-.glass-card-container {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 15px;
-}
-
-/* 5. بطاقات النيون الملونة */
-.ammar-flat-card {
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 8px;
-    font-weight: bold;
-}
-
-.exact { border-right: 5px solid #2ecc71; background: rgba(46, 204, 113, 0.1); }
-.plus { border-right: 5px solid #3498db; background: rgba(52, 152, 219, 0.1); }
-.minus { border-right: 5px solid #e67e22; background: rgba(230, 126, 34, 0.1); }
-
-/* 6. تنسيق الخطوط */
-.coord-line {
-    font-size: 16px;
-    margin: 5px 0;
-    color: #bdc3c7;
-}
-
-/* 7. القائمة الجانبية (Drawer) */
-.drawer {
-    position: fixed;
-    top: 0;
-    right: -300px;
-    width: 250px;
-    height: 100%;
-    background: #1a1a2e;
-    transition: 0.3s;
-    z-index: 2000;
-    padding: 20px;
-}
-
-.drawer.open { right: 0; }
-.btn-settings-open { position: fixed; top: 10px; left: 10px; z-index: 1000; }
-
+# 2. الواجهة الرئيسية (Main UI)
+app_ui = ui.page_fluid(
+    # ربط ملف الـ CSS
+    ui.tags.head(ui.tags.link(rel="stylesheet", href="style_v2.css")),
+    
+    ui.div(
+        # الشعار
+        ui.div("ZEGAAR AMMAR GLASS MANAGER", class_="brand-neon-main"),
+        
+        # صندوق البحث
+        ui.div(
+            ui.input_text("search_query", "", placeholder="ابحث عن موديل..."),
+            class_="search-box"
+        ),
+        
+        # مساحات العرض الديناميكية
+        ui.output_ui("welcome_area"),
+        ui.output_ui("results_workflow_view"),
+        
+        class_="container-fluid"
+    )
+)
