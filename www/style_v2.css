@@ -1,50 +1,304 @@
-from shiny import ui
+/* ==========================================================
+   ZEGAAR AMMAR GLASS MANAGER — Theme Stylesheet
+   ========================================================== */
 
-# 1. المكونات التقنية للواجهة
-def draw_technical_coords(c):
-    if not c: return None
-    return ui.div(
-        ui.h3(c.get("real_name", "غير معروف")),
-        ui.div(f"المقاس: {c.get('size', '-')}", class_="coord-line"),
-        ui.div(f"الشاشة: {c.get('panel', '-')}", class_="coord-line"),
-        ui.div(f"المستشعر: {c.get('sensor', '-')}", class_="coord-line"),
-        class_="glass-card-container"
-    )
+:root {
+    --bg-main: #0d1117;
+    --bg-card: rgba(255, 255, 255, 0.04);
+    --border-glass: rgba(0, 191, 255, 0.25);
+    --neon-blue: #00bfff;
+    --exact: #2ecc71;
+    --plus: #3498db;
+    --minus: #e67e22;
+    --foundation: #9b59b6;
+    --text-main: #e6f1ff;
+    --text-muted: #8a97a8;
+}
 
-def draw_neon_section(title, models, cls):
-    if not models: return None
-    return ui.div(
-        ui.h3(title),
-        *[ui.div(m, class_=f"ammar-flat-card {cls}") for m in models],
-        class_="glass-card-container"
-    )
+* {
+    box-sizing: border-box;
+}
 
-def draw_welcome_section():
-    return ui.div(
-        ui.h2("ZEGAAR AMMAR GLASS MANAGER"),
-        ui.p("النظام الذكي لمطابقة حماية الشاشات"),
-        class_="glass-card-container"
-    )
+html, body {
+    background: var(--bg-main);
+    color: var(--text-main);
+    font-family: "Segoe UI", "Cairo", Tahoma, sans-serif;
+    direction: rtl;
+    min-height: 100vh;
+    margin: 0;
+}
 
-# 2. الواجهة الرئيسية (Main UI)
-app_ui = ui.page_fluid(
-    # ربط ملف الـ CSS
-    ui.tags.head(ui.tags.link(rel="stylesheet", href="style_v2.css")),
-    
-    ui.div(
-        # الشعار
-        ui.div("ZEGAAR AMMAR GLASS MANAGER", class_="brand-neon-main"),
-        
-        # صندوق البحث
-        ui.div(
-            ui.input_text("search_query", "", placeholder="ابحث عن موديل..."),
-            class_="search-box"
-        ),
-        
-        # مساحات العرض الديناميكية
-        ui.output_ui("welcome_area"),
-        ui.output_ui("results_workflow_view"),
-        
-        class_="container-fluid"
-    )
-)
+.container-fluid {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+}
+
+/* ==========================================================
+   Brand / Header
+   ========================================================== */
+
+.brand-neon-main {
+    text-align: center;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+    color: var(--neon-blue);
+    text-shadow: 0 0 10px rgba(0, 191, 255, 0.6), 0 0 20px rgba(0, 191, 255, 0.3);
+    margin: 10px 0 20px;
+}
+
+.coord-line {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 4px 0;
+}
+
+/* ==========================================================
+   Glass Card Containers
+   ========================================================== */
+
+.glass-card-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 18px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    text-align: center;
+    animation: fadeIn 0.25s ease-in-out;
+}
+
+.glass-card-container h2,
+.glass-card-container h3,
+.glass-card-container h4 {
+    margin-top: 0;
+    color: var(--text-main);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================
+   Compatibility Result Cards
+   ========================================================== */
+
+.ammar-flat-card {
+    padding: 10px 14px;
+    margin: 6px 0;
+    border-radius: 10px;
+    font-weight: 600;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.03);
+    border-right: 4px solid var(--text-muted);
+}
+
+.ammar-flat-card.exact {
+    border-right-color: var(--exact);
+    color: var(--exact);
+}
+
+.ammar-flat-card.plus {
+    border-right-color: var(--plus);
+    color: var(--plus);
+}
+
+.ammar-flat-card.minus {
+    border-right-color: var(--minus);
+    color: var(--minus);
+}
+
+.ammar-flat-card.foundation {
+    border-right-color: var(--foundation);
+    color: var(--foundation);
+}
+
+.flat-warning-card {
+    background: rgba(230, 126, 34, 0.12);
+    border: 1px solid var(--minus);
+    color: var(--minus);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* ==========================================================
+   Search Box + Suggestions
+   ========================================================== */
+
+.search-box {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.search-box input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-glass);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-box input[type="text"]:focus {
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 8px rgba(0, 191, 255, 0.5);
+}
+
+.search-box input[type="text"]::placeholder {
+    color: var(--text-muted);
+}
+
+.suggestions-curtain {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    z-index: 40;
+    background: #10161f;
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.suggestion-row {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.92rem;
+    color: var(--text-main);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: right;
+    transition: background 0.15s;
+}
+
+.suggestion-row:last-child {
+    border-bottom: none;
+}
+
+.suggestion-row:hover {
+    background: rgba(0, 191, 255, 0.15);
+}
+
+/* ==========================================================
+   Settings Button + Drawer
+   ========================================================== */
+
+.btn-settings-open {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 60;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--border-glass);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-main);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: -320px;
+    width: 300px;
+    height: 100%;
+    background: #0f1520;
+    border-left: 1px solid var(--border-glass);
+    box-shadow: -6px 0 24px rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    z-index: 100;
+    overflow-y: auto;
+    transition: right 0.3s ease-in-out;
+}
+
+.drawer.open {
+    right: 0;
+}
+
+.drawer-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 1.2rem;
+    float: left;
+    cursor: pointer;
+}
+
+.metric-box {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 10px 0;
+}
+
+.metric-box h4 {
+    margin: 0 0 6px;
+    font-size: 0.9rem;
+    color: var(--neon-blue);
+}
+
+/* ==========================================================
+   Buttons
+   ========================================================== */
+
+.btn-neon,
+.shiny-input-container button,
+button.btn {
+    background: var(--neon-blue);
+    color: #041420;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+.btn-neon:hover,
+.shiny-input-container button:hover,
+button.btn:hover {
+    filter: brightness(1.1);
+}
+
+/* ==========================================================
+   Modal Container
+   ========================================================== */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+}
+
+.modal-overlay .glass-card-container {
+    max-width: 380px;
+    width: 100%;
+}
+
+/* ==========================================================
+   Responsive
+   ========================================================== */
+
+@media (max-width: 480px) {
+    .drawer {
+        width: 85%;
+        right: -100%;
+    }
+    }
