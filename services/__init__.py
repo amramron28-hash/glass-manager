@@ -5,7 +5,12 @@ from .database_service import load_models_index, convert_database_from_raw
 from .fuzzy_service import fuzzy_find
 from .index_service import build_fast_index, extract_panels_sensors
 from .search_service import build_autocomplete_index, find_model_coords
-from .plan_engine import compute_plan_matches, is_empty_result, validate_plan_inputs, get_unique_models_from_results
+from .plan_engine import (
+    compute_plan_matches,
+    is_empty_result,
+    validate_plan_inputs,
+    get_unique_models_from_results,
+)
 from .plan_controller import process_plan
 from .save_service import perform_save
 from .reset_service import reset_ui
@@ -15,7 +20,7 @@ from .modal_handlers import (
     handle_show_add_sensor,
     confirm_add_panel,
     confirm_add_sensor,
-    cancel_add
+    cancel_add,
 )
 
 # تصحيح مسارات استدعاء الخدمات المضافة حديثاً لتطابق أسماء الملفات الفعلية بدقة
