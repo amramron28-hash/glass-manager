@@ -96,5 +96,4 @@ def process_plan(
         "results": results,
         "size": matched_size,
         "panel": matched_panel,
-        "sensor": matched_sensor,
-  }
+        "sensor": matched_sensor
