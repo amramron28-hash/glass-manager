@@ -1,319 +1,89 @@
-/* ==========================================================
-   ZEGAAR AMMAR GLASS MANAGER
-   style_v2.css
-========================================================== */
-
-/* ===========================
-   BODY
-=========================== */
-
-body{
-    margin:0;
-    padding:0;
-    background:#050508;
-    color:#ffffff;
-    font-family:Segoe UI,Tahoma,sans-serif;
+/* 1. ضبط الجسم لمنع التمرير العام وتثبيت الخلفية */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; 
+    background-color: #050508 !important;
+    color: white;
+    font-family: sans-serif;
 }
 
-
-/* ===========================
-   MAIN CONTAINER
-=========================== */
-
-.container-fluid{
-    max-width:1200px;
-    margin:auto;
-    padding:20px;
+/* 2. الحاوية الرئيسية للتصفح المحدود */
+.container-fluid {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; 
+    padding: 20px;
 }
 
-
-/* ===========================
-   TITLE
-=========================== */
-
-.brand-neon-main{
-
-    text-align:center;
-
-    font-size:32px;
-
-    font-weight:bold;
-
-    color:#36b8ff;
-
-    margin:15px 0;
-
-    text-shadow:
-        0 0 8px #36b8ff,
-        0 0 18px #36b8ff;
-
+/* 3. الشعار والبحث */
+.brand-neon-main {
+    text-align: center;
+    color: #00d4ff;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 20px 0;
+    text-shadow: 0 0 10px #00d4ff;
 }
 
-
-/* ===========================
-   GLASS CARD
-=========================== */
-
-.glass-card-container{
-
-    background:rgba(255,255,255,.07);
-
-    backdrop-filter:blur(18px);
-
-    -webkit-backdrop-filter:blur(18px);
-
-    border-radius:20px;
-
-    border:1px solid rgba(255,255,255,.10);
-
-    padding:18px;
-
-    margin:15px 0;
-
+.search-box {
+    margin-bottom: 20px;
 }
 
-
-/* ===========================
-   SEARCH
-=========================== */
-
-.search-box{
-
-    position:relative;
-
-    margin:25px 0;
-
+input[type="text"] {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #34495e;
+    background: #1a1a2e;
+    color: white;
+    text-align: center;
 }
 
-
-/* ===========================
-   INPUT
-=========================== */
-
-input{
-
-    width:100%;
-
-    border-radius:14px;
-
-    padding:12px;
-
+/* 4. البطاقات الزجاجية (Glass Cards) */
+.glass-card-container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 15px;
 }
 
-
-/* ===========================
-   AUTOCOMPLETE
-=========================== */
-
-.suggestions-curtain{
-
-    position:absolute;
-
-    width:100%;
-
-    margin-top:5px;
-
-    background:#151923;
-
-    border-radius:14px;
-
-    border:1px solid #3498db;
-
-    overflow:hidden;
-
-    z-index:9999;
-
+/* 5. بطاقات النيون الملونة */
+.ammar-flat-card {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    font-weight: bold;
 }
 
+.exact { border-right: 5px solid #2ecc71; background: rgba(46, 204, 113, 0.1); }
+.plus { border-right: 5px solid #3498db; background: rgba(52, 152, 219, 0.1); }
+.minus { border-right: 5px solid #e67e22; background: rgba(230, 126, 34, 0.1); }
 
-.suggestion-row{
-
-    padding:12px;
-
-    cursor:pointer;
-
-    transition:.2s;
-
+/* 6. تنسيق الخطوط */
+.coord-line {
+    font-size: 16px;
+    margin: 5px 0;
+    color: #bdc3c7;
 }
 
-
-.suggestion-row:hover{
-
-    background:#3498db;
-
+/* 7. القائمة الجانبية (Drawer) */
+.drawer {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 250px;
+    height: 100%;
+    background: #1a1a2e;
+    transition: 0.3s;
+    z-index: 2000;
+    padding: 20px;
 }
 
+.drawer.open { right: 0; }
+.btn-settings-open { position: fixed; top: 10px; left: 10px; z-index: 1000; }
 
-/* ===========================
-   RESULT CARD
-=========================== */
-
-.ammar-flat-card{
-
-    padding:10px;
-
-    border-radius:10px;
-
-    margin:8px 0;
-
-    color:white;
-
-}
-
-
-/* Exact */
-
-.exact{
-
-    border-left:5px solid #2ecc71;
-
-    background:#14381d;
-
-}
-
-
-/* Plus */
-
-.plus{
-
-    border-left:5px solid #3498db;
-
-    background:#10273f;
-
-}
-
-
-/* Minus */
-
-.minus{
-
-    border-left:5px solid #f39c12;
-
-    background:#40270e;
-
-}
-
-
-/* ===========================
-   METRIC
-=========================== */
-
-.metric-box{
-
-    padding:14px;
-
-    border-radius:15px;
-
-    margin:10px 0;
-
-    background:#10151d;
-
-    border:1px solid #1f7cc4;
-
-}
-
-
-/* ===========================
-   DRAWER
-=========================== */
-
-.drawer{
-
-    position:fixed;
-
-    top:0;
-
-    left:-100%;
-
-    width:320px;
-
-    max-width:90%;
-
-    height:100%;
-
-    background:#0b1018;
-
-    transition:.35s;
-
-    z-index:9999;
-
-    padding:20px;
-
-    overflow:auto;
-
-    box-shadow:0 0 20px rgba(0,0,0,.4);
-
-}
-
-
-.drawer.open{
-
-    left:0;
-
-}
-
-
-/* ===========================
-   CLOSE BUTTON
-=========================== */
-
-.drawer-close-btn{
-
-    border:none;
-
-    background:none;
-
-    color:white;
-
-    font-size:28px;
-
-    cursor:pointer;
-
-}
-
-
-/* ===========================
-   SETTINGS BUTTON
-=========================== */
-
-.btn-settings-open{
-
-    border:none;
-
-    background:none;
-
-    color:#36b8ff;
-
-    font-size:28px;
-
-    cursor:pointer;
-
-}
-
-
-/* ===========================
-   SMALL TEXT
-=========================== */
-
-.coord-line{
-
-    color:#cfd8dc;
-
-    margin-top:6px;
-
-    font-size:14px;
-
-}
-
-
-/* ===========================
-   IMAGE
-=========================== */
-
-img{
-
-    max-width:100%;
-
-    display:block;
-
-}
