@@ -152,6 +152,7 @@ watcher = SilentMonitor()
 def get_database(): return watcher.synchronize()
 def get_status(): return watcher.health_report()
 def refresh(): return watcher.monitor()
+def monitor(): return watcher.monitor()
 def get_statistics(): return watcher.count_statistics()
 
 # دالة get_db_hash الجديدة والمطلوبة لـ server.py
@@ -160,4 +161,3 @@ def get_db_hash():
     db = get_database() or {}
     db_str = json.dumps(db, sort_keys=True)
     return hashlib.md5(db_str.encode()).hexdigest()
-
