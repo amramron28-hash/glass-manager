@@ -6,8 +6,22 @@ from shiny import ui
 
 def inject_styles():
     return ui.tags.head(
+        ui.tags.meta(charset="utf-8"),
+        ui.tags.meta(name="viewport", content="width=device-width, initial-scale=1"),
         ui.tags.link(rel="stylesheet", href="style_v2.css"),
-        ui.tags.script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+        ui.tags.link(rel="manifest", href="manifest.json"),
+        ui.tags.script(src="https://code.jquery.com/jquery-3.6.0.min.js"),
+        ui.HTML("""
+        <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('service-worker.js').catch(function(err){
+                    console.warn('Service worker registration failed:', err);
+                });
+            });
+        }
+        </script>
+        """)
     )
 
 
@@ -181,6 +195,26 @@ def draw_silent_inspector():
 
 
 # ==========================================================
+# Suggestions Curtain
+# ==========================================================
+
+def draw_suggestions_curtain(suggestions):
+
+    if not suggestions:
+        return None
+
+    return ui.div(
+
+        *[
+            ui.div(model, class_="suggestion-row")
+            for model in suggestions
+        ],
+
+        class_="suggestions-curtain"
+    )
+
+
+# ==========================================================
 # PLAN 2
 # ==========================================================
 
@@ -219,6 +253,17 @@ def draw_plan_3_modal():
         ),
 
         class_="glass-card-container"
+    )
+
+
+def draw_modal_overlay(inner):
+
+    if not inner:
+        return None
+
+    return ui.div(
+        inner,
+        class_="modal-overlay"
     )
 
 
