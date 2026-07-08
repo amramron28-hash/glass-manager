@@ -1,58 +1,101 @@
 from shiny import ui
 
 # ==========================================================
-# CSS + JavaScript
+# HEAD
 # ==========================================================
 
 def inject_styles():
+
     return ui.tags.head(
+
         ui.tags.meta(charset="utf-8"),
-        ui.tags.meta(name="viewport", content="width=device-width, initial-scale=1"),
-        ui.tags.link(rel="stylesheet", href="style_v2.css"),
-        ui.tags.link(rel="manifest", href="manifest.json"),
-        ui.tags.script(src="https://code.jquery.com/jquery-3.6.0.min.js"),
+
+        ui.tags.meta(
+            name="viewport",
+            content="width=device-width, initial-scale=1"
+        ),
+
+        ui.tags.link(
+            rel="stylesheet",
+            href="style_v2.css"
+        ),
+
+        ui.tags.link(
+            rel="manifest",
+            href="manifest.json"
+        ),
+
+        ui.tags.script(
+            src="https://code.jquery.com/jquery-3.7.1.min.js"
+        ),
+
+        ui.tags.script(src="service-worker.js"),
+
         ui.HTML("""
-        <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function () {
-                navigator.serviceWorker.register('service-worker.js').catch(function(err){
-                    console.warn('Service worker registration failed:', err);
-                });
-            });
-        }
-        </script>
-        """)
+
+<script>
+
+if("serviceWorker" in navigator){
+
+window.addEventListener("load",()=>{
+
+navigator.serviceWorker.register("/service-worker.js")
+
+.catch(console.error);
+
+});
+
+}
+
+</script>
+
+""")
     )
 
 
-def draw_drawer_js_handler():
-    return ui.HTML("""
-    <script>
-    $(document).ready(function(){
-
-        $(document).on("click","#btn_settings",function(){
-            $("#settings-drawer").addClass("open");
-        });
-
-        $(document).on("click","#btn_close_drawer_trigger",function(){
-            $("#settings-drawer").removeClass("open");
-        });
-
-        $(document).on("click",".suggestion-row",function(){
-            Shiny.setInputValue(
-                "search_query",
-                $(this).text(),
-                {priority:"event"}
-            );
-        });
-
-    });
-    </script>
-    """)
-
-
 # ==========================================================
-# Welcome
+# DRAWER EVENTS
+# ==========================================================
+
+def draw_drawer_js_handler():
+
+    return ui.HTML("""
+
+<script>
+
+$(document).ready(function(){
+
+$(document).on("click","#btn_settings",function(){
+
+$("#settings-drawer").addClass("drawer-open");
+
+});
+
+$(document).on("click","#btn_close_drawer_trigger",function(){
+
+$("#settings-drawer").removeClass("drawer-open");
+
+});
+
+$(document).on("click",".suggestion-row",function(){
+
+let value=$(this).text();
+
+Shiny.setInputValue(
+"search_query",
+value,
+{priority:"event"}
+);
+
+});
+
+});
+
+</script>
+
+""")
+# ==========================================================
+# WELCOME
 # ==========================================================
 
 def draw_welcome_section():
@@ -61,31 +104,32 @@ def draw_welcome_section():
 
         ui.tags.img(
             src="phone_image.webp",
-            style="""
-            width:220px;
-            max-width:90%;
-            display:block;
-            margin:auto;
-            border-radius:18px;
-            """
+            class_="main-phone-image"
         ),
 
-        ui.h2(
-            "ZEGAAR AMMAR GLASS MANAGER",
+        ui.div(
+
+            "ZEGAAR AMMAR",
+
             class_="brand-neon-main"
+
         ),
 
-        ui.p(
-            "النظام الذكي لمطابقة حماية الشاشات",
-            class_="coord-line"
+        ui.div(
+
+            "GLASS MANAGER",
+
+            class_="brand-neon-sub"
+
         ),
 
-        class_="glass-card-container"
+        class_="welcome-screen"
+
     )
 
 
 # ==========================================================
-# Technical Card
+# TECHNICAL CARD
 # ==========================================================
 
 def draw_technical_coords(coords):
@@ -95,7 +139,10 @@ def draw_technical_coords(coords):
 
     return ui.div(
 
-        ui.h3(coords.get("real_name","")),
+        ui.h3(
+            coords.get("real_name",""),
+            class_="phone-title"
+        ),
 
         ui.div(
             f"المقاس : {coords.get('size','-')}",
@@ -103,7 +150,7 @@ def draw_technical_coords(coords):
         ),
 
         ui.div(
-            f"الشاشة : {coords.get('panel','-')}",
+            f"نوع الشاشة : {coords.get('panel','-')}",
             class_="coord-line"
         ),
 
@@ -112,12 +159,12 @@ def draw_technical_coords(coords):
             class_="coord-line"
         ),
 
-        class_="glass-card-container"
+        class_="glass-card neon-card"
     )
 
 
 # ==========================================================
-# Compatibility Cards
+# NEON RESULT CARD
 # ==========================================================
 
 def draw_neon_section(title, models, cls):
@@ -125,24 +172,63 @@ def draw_neon_section(title, models, cls):
     if not models:
         return None
 
+    color_map = {
+
+        "exact": "#2ecc71",
+
+        "plus": "#3498db",
+
+        "minus": "#e67e22"
+
+    }
+
+    glow = color_map.get(cls, "#00e5ff")
+
     return ui.div(
 
-        ui.h3(title),
+        ui.div(
+
+            title,
+
+            class_="result-title",
+
+            style=f"""
+
+            border-left:4px solid {glow};
+
+            color:{glow};
+
+            """
+
+        ),
 
         *[
+
             ui.div(
+
                 model,
-                class_=f"ammar-flat-card {cls}"
+
+                class_="ammar-flat-card",
+
+                style=f"""
+
+                border:1px solid {glow};
+
+                box-shadow:0 0 15px {glow};
+
+                """
+
             )
+
             for model in models
+
         ],
 
-        class_="glass-card-container"
+        class_="glass-card neon-container"
+
     )
-
-
 # ==========================================================
-# Drawer Components
+# SETTINGS DRAWER
 # ==========================================================
 
 def draw_system_info():
@@ -151,9 +237,12 @@ def draw_system_info():
 
         ui.h4("معلومات النظام"),
 
-        ui.div("الإصدار : 2026.07"),
+        ui.div("ZEGAAR AMMAR GLASS MANAGER"),
 
-        class_="metric-box"
+        ui.div("Version 2026.07"),
+
+        class_="metric-box glass-card"
+
     )
 
 
@@ -161,23 +250,58 @@ def draw_database_status(total):
 
     return ui.div(
 
-        ui.h4("قاعدة البيانات"),
+        ui.h4("عدد الهواتف"),
 
-        ui.div(str(total)),
+        ui.div(
 
-        class_="metric-box"
+            str(total),
+
+            class_="metric-value"
+
+        ),
+
+        class_="metric-box glass-card"
+
     )
 
 
 def draw_monitor_component(status):
 
+    online = str(status).upper() == "ONLINE"
+
     return ui.div(
 
         ui.h4("المراقب الصامت"),
 
-        ui.div(str(status)),
+        ui.div(
 
-        class_="metric-box"
+            "🟢 ONLINE" if online else "🔴 OFFLINE",
+
+            class_="metric-value"
+
+        ),
+
+        class_="metric-box glass-card"
+
+    )
+
+
+def draw_notification_component(count=0):
+
+    return ui.div(
+
+        ui.h4("جرس الإشعارات"),
+
+        ui.div(
+
+            f"🔔 {count}",
+
+            class_="metric-value"
+
+        ),
+
+        class_="metric-box glass-card"
+
     )
 
 
@@ -186,16 +310,65 @@ def draw_silent_inspector():
     return ui.div(
 
         ui.input_action_button(
+
             "btn_run_inspector",
-            "🚀 تشغيل التنظيف"
+
+            "🛠 تشغيل الفحص الذكي",
+
+            class_="btn-neon"
+
         ),
 
-        class_="glass-card-container"
+        class_="glass-card"
+
     )
 
 
+def draw_settings_modal():
+
+    return ui.div(
+
+        ui.div(
+
+            ui.h2("⚙️ الإعدادات"),
+
+            ui.tags.button(
+
+                "✖",
+
+                id="btn_close_drawer_trigger",
+
+                class_="drawer-close-btn"
+
+            ),
+
+            class_="drawer-header"
+
+        ),
+
+        ui.div(
+
+            ui.output_ui("system_info_area"),
+
+            ui.output_ui("database_status_area"),
+
+            ui.output_ui("monitor_area"),
+
+            draw_notification_component(),
+
+            ui.output_ui("silent_inspector_area"),
+
+            class_="drawer-body"
+
+        ),
+
+        id="settings-drawer",
+
+        class_="drawer"
+
+    )
 # ==========================================================
-# Suggestions Curtain
+# AUTO COMPLETE
 # ==========================================================
 
 def draw_suggestions_curtain(suggestions):
@@ -206,11 +379,21 @@ def draw_suggestions_curtain(suggestions):
     return ui.div(
 
         *[
-            ui.div(model, class_="suggestion-row")
+            ui.div(
+
+                ui.span("📱", class_="suggestion-icon"),
+
+                ui.span(model, class_="suggestion-text"),
+
+                class_="suggestion-row"
+
+            )
+
             for model in suggestions
         ],
 
-        class_="suggestions-curtain"
+        class_="suggestions-curtain glass-card"
+
     )
 
 
@@ -218,20 +401,69 @@ def draw_suggestions_curtain(suggestions):
 # PLAN 2
 # ==========================================================
 
-def draw_plan_2_modal():
+def draw_plan_2_modal(phone="", panels=None, sensors=None):
 
-    return ui.div(
+    panels = panels or []
+    sensors = sensors or []
 
-        ui.h3("الخطة الثانية"),
+    return draw_modal_overlay(
 
-        ui.p("يرجى استكمال البيانات"),
+        ui.div(
 
-        ui.input_action_button(
-            "btn_close_modal",
-            "إغلاق"
-        ),
+            ui.h2("الخطة الثانية"),
 
-        class_="glass-card-container"
+            ui.p(f"الهاتف: {phone}"),
+
+            ui.input_select(
+
+                "p2_panel",
+
+                "نوع الشاشة",
+
+                choices=panels
+
+            ),
+
+            ui.input_select(
+
+                "p2_sensor",
+
+                "المستشعر",
+
+                choices=sensors
+
+            ),
+
+            ui.div(
+
+                ui.input_action_button(
+
+                    "btn_plan2_save",
+
+                    "💾 حفظ",
+
+                    class_="btn-neon"
+
+                ),
+
+                ui.input_action_button(
+
+                    "btn_close_modal",
+
+                    "إغلاق",
+
+                    class_="btn-close"
+
+                ),
+
+                class_="modal-buttons"
+
+            ),
+
+            class_="glass-card modal-card"
+
+        )
+
     )
 
 
@@ -239,34 +471,93 @@ def draw_plan_2_modal():
 # PLAN 3
 # ==========================================================
 
-def draw_plan_3_modal():
+def draw_plan_3_modal(phone="", result=None):
 
-    return ui.div(
+    return draw_modal_overlay(
 
-        ui.h3("الخطة الثالثة"),
+        ui.div(
 
-        ui.p("لا توجد نتائج مطابقة"),
+            ui.h2("الخطة الثالثة"),
 
-        ui.input_action_button(
-            "btn_close_modal",
-            "إغلاق"
-        ),
+            ui.p(
 
-        class_="glass-card-container"
+                f"لم يتم العثور على نتائج للهاتف: {phone}"
+
+            ),
+
+            ui.input_text(
+
+                "p3_size",
+
+                "المقاس"
+
+            ),
+
+            ui.input_text(
+
+                "p3_panel",
+
+                "نوع الشاشة"
+
+            ),
+
+            ui.input_text(
+
+                "p3_sensor",
+
+                "المستشعر"
+
+            ),
+
+            ui.div(
+
+                ui.input_action_button(
+
+                    "btn_plan3_save",
+
+                    "💾 إضافة",
+
+                    class_="btn-neon"
+
+                ),
+
+                ui.input_action_button(
+
+                    "btn_close_modal",
+
+                    "إغلاق",
+
+                    class_="btn-close"
+
+                ),
+
+                class_="modal-buttons"
+
+            ),
+
+            class_="glass-card modal-card"
+
+        )
+
     )
 
+
+# ==========================================================
+# MODAL OVERLAY
+# ==========================================================
 
 def draw_modal_overlay(inner):
 
-    if not inner:
+    if inner is None:
         return None
 
     return ui.div(
+
         inner,
+
         class_="modal-overlay"
+
     )
-
-
 # ==========================================================
 # MAIN UI
 # ==========================================================
@@ -277,48 +568,54 @@ app_ui = ui.page_fluid(
 
     draw_drawer_js_handler(),
 
+    # ----------------------------
+    # خلفية ثابتة
+    # ----------------------------
     ui.div(
-
-        ui.tags.button(
-            "✕",
-            id="btn_close_drawer_trigger",
-            class_="drawer-close-btn"
-        ),
-
-        ui.h3("⚙️ الإعدادات"),
-
-        ui.output_ui("system_info_area"),
-
-        ui.output_ui("database_status_area"),
-
-        ui.output_ui("monitor_area"),
-
-        ui.output_ui("silent_inspector_area"),
-
-        id="settings-drawer",
-        class_="drawer"
-
+        class_="fixed-background"
     ),
 
+    # ----------------------------
+    # درج الإعدادات
+    # ----------------------------
+    draw_settings_modal(),
+
+    # ----------------------------
+    # الواجهة الرئيسية
+    # ----------------------------
     ui.div(
 
+        # ترس الإعدادات
         ui.tags.button(
-            "⚙️",
+            "⚙",
             id="btn_settings",
             class_="btn-settings-open"
         ),
 
+        # شعار التطبيق
         ui.div(
-            "ZEGAAR AMMAR GLASS MANAGER",
-            class_="brand-neon-main"
+
+            ui.div(
+                "ZEGAAR AMMAR",
+                class_="brand-neon-main"
+            ),
+
+            ui.div(
+                "GLASS MANAGER",
+                class_="brand-neon-sub"
+            ),
+
+            class_="brand-wrapper"
+
         ),
 
+        # مربع البحث
         ui.div(
 
             ui.input_text(
                 "search_query",
                 "",
-                placeholder="ابحث عن موديل..."
+                placeholder="ابحث عن موديل الهاتف..."
             ),
 
             ui.output_ui("suggestions_curtain"),
@@ -327,13 +624,16 @@ app_ui = ui.page_fluid(
 
         ),
 
+        # شاشة الترحيب
         ui.output_ui("welcome_area"),
 
+        # النتائج
         ui.output_ui("results_workflow_view"),
 
+        # المودالات
         ui.output_ui("dynamic_modal_container"),
 
-        class_="container-fluid"
+        class_="main-layout"
 
     )
 
