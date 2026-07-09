@@ -1,21 +1,8 @@
 from shiny import ui
 
-from ui_header import (
-    draw_header,
-    draw_welcome_header,
-)
-
-from ui_search import (
-    draw_search_box,
-)
-
-from ui_settings import (
-    draw_settings_drawer,
-)
-
-from ui_theme import (
-    THEME,
-)
+from ui_header import draw_header
+from ui_search import draw_search_box
+from ui_settings import draw_settings_drawer
 
 
 # ==========================================================
@@ -35,29 +22,48 @@ def inject_styles():
             content="width=device-width, initial-scale=1"
         ),
 
-
         ui.tags.link(
             rel="stylesheet",
             href="style_v2.css"
         ),
-
 
         ui.tags.link(
             rel="manifest",
             href="manifest.json"
         ),
 
+        ui.tags.script(
+            src="https://code.jquery.com/jquery-3.7.1.min.js"
+        ),
 
         ui.tags.script(
             src="service-worker.js"
         ),
 
+        ui.HTML("""
+
+<script>
+
+if("serviceWorker" in navigator){
+
+window.addEventListener("load",()=>{
+
+navigator.serviceWorker.register("/service-worker.js")
+.catch(console.error);
+
+});
+
+}
+
+</script>
+
+""")
+
     )
 
 
-
 # ==========================================================
-# JAVASCRIPT EVENTS
+# EVENTS
 # ==========================================================
 
 def draw_ui_scripts():
@@ -67,6 +73,7 @@ def draw_ui_scripts():
 <script>
 
 $(document).ready(function(){
+
 
 $(document).on(
 "click",
@@ -113,36 +120,25 @@ value,
 """)
 
 
-
 # ==========================================================
-# MAIN APP UI
+# MAIN UI
 # ==========================================================
 
 app_ui = ui.page_fluid(
 
-
     inject_styles(),
-
 
     draw_ui_scripts(),
 
-
     ui.div(
-
         class_="fixed-background"
-
     ),
 
-
-    # درج الإعدادات
 
     draw_settings_drawer(),
 
 
-    # المحتوى الرئيسي
-
     ui.div(
-
 
         draw_header(),
 
