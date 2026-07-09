@@ -11,14 +11,9 @@ def draw_brand():
     )
 
 def draw_header():
-    return ui.div(
-        draw_settings_button(),
-        draw_brand(),
-        class_="main-header"
-    )
+    return ui.div(draw_settings_button(), draw_brand(), class_="main-header")
 
 def draw_welcome_header():
-    # لاحظ: لا نستدعي draw_header هنا لتجنب التكرار
     return ui.div(
         ui.tags.img(src="phone_image.webp", alt="Phone", class_="main-phone-image"),
         class_="welcome-screen"
