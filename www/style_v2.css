@@ -1,54 +1,65 @@
-/* --- 0. تثبيت خلفية التطبيق ملء الشاشة --- */
+/* ==========================================================================
+   تطبيق زجاج عمار - ملف التنسيق المحدث والشامل لحل مشكلة الخلفية والنيون
+   ========================================================================== */
+
+/* --- 0. تهيئة وتثبيت خلفية التطبيق ملء الشاشة --- */
 body {
-    background-image: url('/www/phone_image.webp') !important; /* مسار الصورة داخل مجلد الويب */
+    background-image: url('phone_image.webp') !important; /* مسار مباشر متوافق مع نظام ملفات Shiny */
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
-    background-attachment: fixed !important; /* هذا السطر يثبت الصورة تماماً أثناء التمرير */
+    background-attachment: fixed !important; /* السطر السحري لتثبيت الصورة أثناء حركة النتائج فوقها */
     margin: 0 !important;
     padding: 0 !important;
     min-height: 100vh !important;
     background-color: #0d1117 !important; /* لون احتياطي داكن في حال تأخر تحميل الصورة */
 }
 
-/* لضمان أن حاويات التطبيق الرئيسية شفافة وتمر فوق الخلفية بسلاسة */
-.main-panel, .container-fluid, .content {
+/* جعل جميع الحاويات الأساسية في إطار Shiny شفافة لتظهر الخلفية من ورائها */
+.main-panel, .container-fluid, .content, .container, .page-container, .app-container {
     background: transparent !important;
+    background-color: transparent !important;
 }
 
 /* --- 1. تأثير الزجاج الشفاف (Glassmorphism) --- */
 .glass-card {
     background: rgba(255, 255, 255, 0.05) !important;
     backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important; /* لدعم متصفحات آيفون وسفاري */
+    -webkit-backdrop-filter: blur(10px) !important; /* لدعم الشفافية في متصفحات آيفون وسفاري */
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 15px !important;
     padding: 15px !important;
     margin: 10px !important;
 }
 
-/* --- 2. شريط البحث (إعادة النيون) --- */
+/* --- 2. شريط البحث (تأثير النيون الأزرق) --- */
 .shiny-input-container {
     padding: 10px !important;
 }
 input[type="search"], input[type="text"] {
     background: #0d1117 !important;
-    border: 2px solid #00bfff !important; /* لون النيون الأزرق */
+    border: 2px solid #00bfff !important; /* لون النيون الأزرق السماوي العريض */
     color: white !important;
     border-radius: 8px !important;
     padding: 12px !important;
-    box-shadow: 0 0 10px rgba(0, 191, 255, 0.3) !important; /* تأثير النيون */
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.4) !important; /* تعريض تأثير النيون وتوضيحه */
 }
 
-/* --- 3. بطاقات النتائج (تأثير النيون الأخضر) --- */
+/* --- 3. بطاقات النتائج الشفافة (تأثير النيون الأخضر والألوان الأخرى) --- */
 .neon-result-card {
-    background: rgba(46, 204, 113, 0.1) !important;
-    border-left: 4px solid #2ecc71 !important;
-    box-shadow: 0 0 15px rgba(46, 204, 113, 0.2) !important;
-    margin: 5px 0 !important;
-    padding: 10px !important;
+    background: rgba(46, 204, 113, 0.08) !important; /* بطاقة زجاجية شفافة */
+    backdrop-filter: blur(5px) !important;
+    border-left: 4px solid #2ecc71 !important; /* حافة نيون ملوّنة */
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.25) !important;
+    margin: 8px 0 !important;
+    padding: 12px !important;
     color: #fff !important;
-    border-radius: 0 5px 5px 0 !important;
+    border-radius: 0 8px 8px 0 !important;
+    transition: transform 0.2s ease !important;
+}
+
+.neon-result-card:hover {
+    transform: scale(1.01) !important; /* تأثير حركة خفيف عند اللمس */
 }
 
 /* --- 4. معالجة "الستارة" (قائمة الـ Auto-complete) --- */
@@ -58,6 +69,7 @@ input[type="search"], input[type="text"] {
     border-radius: 8px !important;
     z-index: 1000 !important;
     margin-top: 5px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 .shiny-autocomplete-menu .item {
     color: white !important;
