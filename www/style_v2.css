@@ -1,81 +1,164 @@
 /* ==========================================================================
-   تطبيق زجاج عمار - ملف التنسيق المحدث والشامل لحل مشكلة الخلفية والنيون
+   تطبيق زجاج عمار - النسخة النهائية الشاملة والمصححة بالكامل (2026)
    ========================================================================== */
 
-/* --- 0. تهيئة وتثبيت خلفية التطبيق ملء الشاشة --- */
+/* --- 0. تثبيت الخلفية الموحدة وملء الشاشة ومنع التكرار نهائياً --- */
+html {
+    background-color: #0d1117 !important;
+    overflow: hidden !important; /* يمنع اهتزاز أو تحرك الشاشة كاملة */
+}
+
 body {
-    background-image: url('phone_image.webp') !important; /* مسار مباشر متوافق مع نظام ملفات Shiny */
+    background-image: url('phone_image.webp') !important; /* مسار الصورة المباشر في مجلد www */
     background-size: cover !important;
-    background-position: center !important;
+    background-position: center top !important;
     background-repeat: no-repeat !important;
-    background-attachment: fixed !important; /* السطر السحري لتثبيت الصورة أثناء حركة النتائج فوقها */
+    background-attachment: fixed !important; /* تثبيت صورة الواجهة تماماً ومنع حركتها */
     margin: 0 !important;
     padding: 0 !important;
-    min-height: 100vh !important;
-    background-color: #0d1117 !important; /* لون احتياطي داكن في حال تأخر تحميل الصورة */
+    height: 100vh !important;
+    width: 100vw !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
-/* جعل جميع الحاويات الأساسية في إطار Shiny شفافة لتظهر الخلفية من ورائها */
-.main-panel, .container-fluid, .content, .container, .page-container, .app-container {
+/* إلغاء وتصفير خلفيات حاويات Shiny الداخلية لبروز تأثير الزجاج الشفاف */
+.main-panel, .container-fluid, .content, .container, .page-container, .app-container,
+.row, [class*="col-"] {
     background: transparent !important;
     background-color: transparent !important;
+    box-shadow: none !important;
 }
 
-/* --- 1. تأثير الزجاج الشفاف (Glassmorphism) --- */
+/* --- 1. الشعار الرئيسي (نيون أزرق سماوي عريض على سطرين ثابت في الأعلى) --- */
+.app-title, .logo-title, h1, h2, .title-container {
+    color: #00f0ff !important; /* نيون أزرق سماوي نقي */
+    font-size: 26px !important; /* حجم خط عريض وجذاب */
+    font-weight: 900 !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    white-space: pre-line !important; /* يضمن انقسام اسم الشعار تلقائياً على سطرين */
+    margin-bottom: 12px !important;
+    margin-top: 15px !important;
+    letter-spacing: 1.5px !important;
+    
+    /* تأثير توهج نيون عريض وقوي جداً محيط بالحروف */
+    text-shadow: 0 0 7px #00f0ff,
+                 0 0 15px #00f0ff,
+                 0 0 25px #00bfff,
+                 0 0 40px #00bfff !important;
+}
+
+/* --- 2. شريط البحث والترس والبطاقة العلوية (ثابتة تماماً ولا تتحرك) --- */
+.shiny-input-container, .glass-card, .settings-icon, .gear-button {
+    position: relative !important;
+    z-index: 100 !important; /* لتبقى دائماً فوق البطاقات المتحركة وبشكل ثابت */
+}
+
 .glass-card {
-    background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important; /* لدعم الشفافية في متصفحات آيفون وسفاري */
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 15px !important;
+    border-radius: 16px !important;
     padding: 15px !important;
-    margin: 10px !important;
+    margin: 10px auto !important;
+    max-width: 92% !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
 }
 
-/* --- 2. شريط البحث (تأثير النيون الأزرق) --- */
-.shiny-input-container {
-    padding: 10px !important;
-}
 input[type="search"], input[type="text"] {
-    background: #0d1117 !important;
-    border: 2px solid #00bfff !important; /* لون النيون الأزرق السماوي العريض */
-    color: white !important;
-    border-radius: 8px !important;
-    padding: 12px !important;
-    box-shadow: 0 0 15px rgba(0, 191, 255, 0.4) !important; /* تعريض تأثير النيون وتوضيحه */
+    background: rgba(13, 17, 23, 0.85) !important;
+    border: 2px solid #00bfff !important; /* حافة نيون زرقاء لشريط البحث */
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    width: 100% !important;
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.4) !important;
 }
 
-/* --- 3. بطاقات النتائج الشفافة (تأثير النيون الأخضر والألوان الأخرى) --- */
-.neon-result-card {
-    background: rgba(46, 204, 113, 0.08) !important; /* بطاقة زجاجية شفافة */
-    backdrop-filter: blur(5px) !important;
-    border-left: 4px solid #2ecc71 !important; /* حافة نيون ملوّنة */
-    box-shadow: 0 0 15px rgba(46, 204, 113, 0.25) !important;
-    margin: 8px 0 !important;
-    padding: 12px !important;
-    color: #fff !important;
-    border-radius: 0 8px 8px 0 !important;
-    transition: transform 0.2s ease !important;
+/* --- 3. حاوية تمرير بطاقات النتائج (تتحرك وتتلاشى وتختفي عند شريط البحث) --- */
+.shiny-html-output, #results, .output-container, #results-container {
+    display: block !important;
+    overflow-y: auto !important; /* السماح بالتمرير بداخل هذه الحاوية حصرياً */
+    max-height: calc(100vh - 290px) !important; /* تقتطع مساحة شريط البحث والشعار لتبقى النتائج بالأسفل */
+    padding-top: 10px !important;
+    padding-bottom: 40px !important;
+    
+    /* قناع التلاشي السينمائي: تختفي البطاقات تدريجياً بنسبة 100% بمجرد ملامستها لشريط البحث */
+    -webkit-mask-image: linear-gradient(to bottom, 
+        rgba(0,0,0,0) 0%, 
+        rgba(0,0,0,1) 10%, 
+        rgba(0,0,0,1) 90%, 
+        rgba(0,0,0,0) 100%) !important;
+    mask-image: linear-gradient(to bottom, 
+        rgba(0,0,0,0) 0%, 
+        rgba(0,0,0,1) 10%, 
+        rgba(0,0,0,1) 90%, 
+        rgba(0,0,0,0) 100%) !important;
 }
 
-.neon-result-card:hover {
-    transform: scale(1.01) !important; /* تأثير حركة خفيف عند اللمس */
+/* إخفاء شريط التمرير الجانبي المزعج للحفاظ على المظهر الزجاجي النقي */
+.output-container::-webkit-scrollbar, #results::-webkit-scrollbar, .shiny-html-output::-webkit-scrollbar {
+    width: 0px !important;
+    background: transparent !important;
 }
 
-/* --- 4. معالجة "الستارة" (قائمة الـ Auto-complete) --- */
+/* --- 4. بطاقات التصنيفات المتباعدة بالتنسيق الأصلي (النيون الأزرق السماوي والزجاج الشفاف) --- */
+.neon-result-card, .exact, .plus, .minus, .warn, 
+[class*="exact"], [class*="plus"], [class*="minus"], [class*="warn"],
+.result-item, .card-item {
+    display: block !important;
+    clear: both !important;
+    
+    /* تأثير الزجاج الشفاف النقي (Glassmorphism) */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01)) !important;
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
+    
+    /* حدود نيون زرقاء سماوية عريضة ومضيئة تعطي طابع النيون النقي */
+    border: 1px solid rgba(0, 255, 255, 0.1) !important;
+    border-left: 6px solid #00f0ff !important; 
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.25) !important;
+    
+    /* تباعد البطاقات عن بعضها عمودياً كما في الصورة المرجعية ومنع الالتصاق */
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 20px 18px !important; /* مساحة مريحة لأسماء الهواتف بالداخل */
+    
+    width: 92% !important;
+    border-radius: 8px 18px 18px 8px !important; 
+    box-sizing: border-box !important;
+    
+    /* تنسيق نصوص الموديلات بشكل واضح وبارز فوق الزجاج */
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* فرض مسافة 20 بكسل بين أي عناصر متتالية بداخل قائمة النتائج */
+.neon-result-card + .neon-result-card, 
+div + .neon-result-card, 
+.neon-result-card + div {
+    margin-top: 20px !important;
+}
+
+/* --- 5. قائمة الـ Auto-complete الزجاجية الداكنة لشريط البحث --- */
 .shiny-autocomplete-menu {
-    background: #161b22 !important;
+    background: rgba(22, 27, 34, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
     border: 1px solid #30363d !important;
-    border-radius: 8px !important;
+    border-radius: 10px !important;
     z-index: 1000 !important;
-    margin-top: 5px !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 .shiny-autocomplete-menu .item {
-    color: white !important;
-    padding: 10px !important;
+    color: #ffffff !important;
+    padding: 12px !important;
 }
 .shiny-autocomplete-menu .item:hover {
     background: #00bfff !important;
-    color: white !important;
+    color: #ffffff !important;
 }
