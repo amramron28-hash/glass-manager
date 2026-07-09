@@ -1,29 +1,37 @@
 from shiny import render, reactive, ui
+
 from config import REFRESH_INTERVAL_SEC
+
 from logic_engine import (
     run_system_workflows,
     run_intelligent_inspector,
 )
+
 from silent_monitor import (
     get_database,
     monitor,
 )
+
 from ui_cards import (
     draw_technical_coords,
     draw_neon_section,
 )
+
 from ui_header import (
     draw_welcome_header,
 )
+
 from ui_settings import (
     draw_system_info,
     draw_database_status,
     draw_monitor_component,
     draw_silent_inspector,
 )
+
 from ui_search import (
     draw_suggestions_curtain,
 )
+
 from ui_plans import (
     draw_plan_3_modal,
     draw_modal_overlay,
@@ -31,124 +39,485 @@ from ui_plans import (
 
 MAX_SUGGESTIONS = 10
 
+
+# ==========================================================
+# DATABASE HELPERS
+# ==========================================================
+
 def _extract_unique_models(db_data):
+
     models = set()
-    for panels in (db_data or {}).values():
-        if not isinstance(panels, dict): continue
+
+    if not isinstance(db_data, dict):
+        return []
+
+    for panels in db_data.values():
+
+        if not isinstance(panels, dict):
+            continue
+
         for sensors in panels.values():
-            if not isinstance(sensors, dict): continue
-            for data in sensors.values():
-                model_list = data.get("models", []) if isinstance(data, dict) else data
-                if not isinstance(model_list, list): continue
-                for model in model_list:
-                    if isinstance(model, str) and model.strip():
-                        models.add(model.strip())
+
+            if not isinstance(sensors, dict):
+                continue
+
+            for value in sensors.values():
+
+                if isinstance(value, dict):
+                    items = value.get("models", [])
+                else:
+                    items = value
+
+                if not isinstance(items, list):
+                    continue
+
+                for model in items:
+
+                    if isinstance(model, str):
+
+                        model = model.strip()
+
+                        if model:
+                            models.add(model)
+
     return sorted(models)
 
-# ======================================================
-# SERVER LOGIC
-# ======================================================
+
+# ==========================================================
+# SERVER
+# ==========================================================
 
 def server(input, output, session):
+
     workflow_state = reactive.value(None)
+
     show_curtain = reactive.value(False)
+
     show_not_found_modal = reactive.value(False)
+
+    show_settings_drawer = reactive.value(False)
+    # ======================================================
+    # HEALTH SNAPSHOT
+    # ======================================================
 
     @reactive.calc
     def health_snapshot():
+
         reactive.invalidate_later(REFRESH_INTERVAL_SEC)
+
         return monitor() or {}
+
+
+    # ======================================================
+    # SEARCH WORKFLOW
+    # ======================================================
 
     @reactive.effect
     @reactive.event(input.search_query, ignore_none=False)
     async def _run_search():
+
         query = str(input.search_query() or "").strip()
-        show_curtain.set(len(query) >= 1)
-        
+
         if not query:
+
             workflow_state.set(None)
+
+            show_curtain.set(False)
+
             show_not_found_modal.set(False)
+
             return
 
-        db = get_database() or {}
-        res = run_system_workflows(query, db_data=db)
-        workflow_state.set(res)
+        show_curtain.set(True)
 
-        # المنطق الخاص بالمطابقة التامة
-        matched_exact = (bool(res) and res.get("status") == "success" and 
-                         res.get("coords", {}).get("real_name", "").strip().lower() == query.lower())
-        
-        if matched_exact:
+        db = get_database() or {}
+
+        result = run_system_workflows(
+
+            query,
+
+            db_data=db,
+
+        )
+
+        workflow_state.set(result)
+
+        if not result:
+
+            return
+
+        coords = result.get("coords", {})
+
+        real_name = str(
+
+            coords.get("real_name", "")
+
+        ).strip().lower()
+
+        if (
+
+            result.get("status") == "success"
+
+            and
+
+            real_name == query.lower()
+
+        ):
+
             show_curtain.set(False)
-        show_not_found_modal.set(bool(res) and res.get("status") == "plan_3")
+
+        show_not_found_modal.set(
+
+            result.get("status") == "plan_3"
+
+        )
+
+
+    # ======================================================
+    # CLOSE MODAL
+    # ======================================================
 
     @reactive.effect
     @reactive.event(input.btn_close_modal, ignore_none=True)
     async def _close_modal():
+
         show_not_found_modal.set(False)
+
+
+    # ======================================================
+    # RUN INSPECTOR
+    # ======================================================
 
     @reactive.effect
     @reactive.event(input.btn_run_inspector, ignore_none=True)
     async def _run_inspector():
+
         run_intelligent_inspector()
-        get_database() 
+
+        get_database()
+
 
     # ======================================================
-    # RENDER UI OUTPUTS
+    # SETTINGS DRAWER
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.btn_open_drawer, ignore_none=True)
+    async def _open_drawer():
+
+        show_settings_drawer.set(True)
+
+
+    @reactive.effect
+    @reactive.event(
+        input.btn_close_drawer_trigger,
+        ignore_none=True,
+    )
+    async def _close_drawer():
+
+        show_settings_drawer.set(False)
+    # ======================================================
+    # WELCOME AREA
     # ======================================================
 
     @render.ui
     def welcome_area():
-        # يعرض الترحيب فقط عند عدم وجود نتيجة
-        return draw_welcome_header() if workflow_state() is None else None
+
+        if workflow_state() is None:
+
+            return draw_welcome_header()
+
+        return None
+
+
+    # ======================================================
+    # RESULTS AREA
+    # ======================================================
 
     @render.ui
     def results_workflow_view():
-        res = workflow_state()
-        if not res or res.get("status") != "success": return None
-        
-        coords = res.get("coords", {})
-        results = res.get("compatibles", {})
-        output_cards = [draw_technical_coords(coords)]
 
-        # إضافة النتائج مع تمرير section_type لضمان ألوان النيون
-        if results.get("exact"): 
-            output_cards.append(draw_neon_section("مطابقة تماماً", results["exact"], "#2ecc71", "🟢", section_type="exact"))
-        if results.get("plus"): 
-            output_cards.append(draw_neon_section("أكبر بقليل", results["plus"], "#3498db", "🔵", section_type="plus"))
-        if results.get("minus"): 
-            output_cards.append(draw_neon_section("أصغر بقليل", results["minus"], "#e67e22", "🟤", section_type="minus"))
-        if results.get("warn"): 
-            output_cards.append(draw_neon_section("تنبيه: مستشعر مختلف", results["warn"], "#ef4444", "⚠️", section_type="warn"))
+        result = workflow_state()
 
-        return ui.TagList(*output_cards)
+        if result is None:
+
+            return None
+
+        if result.get("status") != "success":
+
+            return None
+
+        coords = result.get("coords") or {}
+
+        compatibles = result.get("compatibles") or {}
+
+        cards = []
+
+        technical_card = draw_technical_coords(coords)
+
+        if technical_card is not None:
+
+            cards.append(technical_card)
+
+        sections = [
+
+            (
+                "exact",
+                "مطابقة تماماً",
+                "#2ecc71",
+                "🟢",
+            ),
+
+            (
+                "plus",
+                "أكبر بقليل",
+                "#3498db",
+                "🔵",
+            ),
+
+            (
+                "minus",
+                "أصغر بقليل",
+                "#e67e22",
+                "🟠",
+            ),
+
+            (
+                "warn",
+                "تنبيه: مستشعر مختلف",
+                "#ef4444",
+                "⚠️",
+            ),
+
+        ]
+
+        for key, title, color, icon in sections:
+
+            models = compatibles.get(key, [])
+
+            if not models:
+
+                continue
+
+            section = draw_neon_section(
+
+                title=title,
+
+                models=models,
+
+                color=color,
+
+                icon=icon,
+
+                section_type=key,
+
+            )
+
+            if section is not None:
+
+                cards.append(section)
+
+        return ui.TagList(*cards)
+
+
+    # ======================================================
+    # AUTOCOMPLETE
+    # ======================================================
 
     @render.ui
     def suggestions_curtain():
-        if not show_curtain(): return None
-        query = str(input.search_query() or "").strip().lower()
-        if len(query) < 1: return None
-        db = get_database() or {}
-        matches = [m for m in _extract_unique_models(db) if query in m.lower()][:MAX_SUGGESTIONS]
-        return draw_suggestions_curtain(list(dict.fromkeys(matches)))
+
+        if not show_curtain():
+
+            return None
+
+        query = str(
+
+            input.search_query() or ""
+
+        ).strip().lower()
+
+        if len(query) < 1:
+
+            return None
+
+        database = get_database() or {}
+
+        all_models = _extract_unique_models(database)
+
+        matches = [
+
+            model
+
+            for model in all_models
+
+            if query in model.lower()
+
+        ][:MAX_SUGGESTIONS]
+
+        if not matches:
+
+            return None
+
+        return draw_suggestions_curtain(matches)
+
+
+    # ======================================================
+    # SETTINGS
+    # ======================================================
 
     @render.ui
-    def system_info_area(): return draw_system_info()
+    def system_info_area():
+
+        return draw_system_info()
+
 
     @render.ui
     def database_status_area():
+
         health = health_snapshot()
-        stats = health.get("statistics", {}) if isinstance(health, dict) else {}
-        return draw_database_status(stats.get("phones", 0))
+
+        statistics = health.get(
+
+            "statistics",
+
+            {},
+
+        )
+
+        return draw_database_status(
+
+            statistics.get(
+
+                "phones",
+
+                0,
+
+            )
+
+        )
+
 
     @render.ui
     def monitor_area():
+
         health = health_snapshot()
-        return draw_monitor_component(health.get("status", "UNKNOWN") if isinstance(health, dict) else "UNKNOWN")
+
+        status = "UNKNOWN"
+
+        if isinstance(health, dict):
+
+            status = health.get(
+
+                "status",
+
+                "UNKNOWN",
+
+            )
+
+        return draw_monitor_component(status)
+
 
     @render.ui
-    def silent_inspector_area(): return draw_silent_inspector()
+    def silent_inspector_area():
+
+        return draw_silent_inspector()
+
+
+    # ======================================================
+    # PLAN 3 MODAL
+    # ======================================================
 
     @render.ui
     def dynamic_modal_container():
-        return draw_modal_overlay(draw_plan_3_modal()) if show_not_found_modal() else None
+
+        if not show_not_found_modal():
+
+            return None
+
+        return draw_modal_overlay(
+
+            draw_plan_3_modal()
+
+        )
+    # ======================================================
+    # SETTINGS DRAWER SCRIPT
+    # ======================================================
+
+    @render.ui
+    def settings_drawer_script():
+
+        if show_settings_drawer():
+
+            return ui.tags.script("""
+(function(){
+
+const drawer=document.getElementById("settings-drawer");
+
+if(drawer){
+
+drawer.classList.add("drawer-open");
+
+}
+
+})();
+""")
+
+        return ui.tags.script("""
+(function(){
+
+const drawer=document.getElementById("settings-drawer");
+
+if(drawer){
+
+drawer.classList.remove("drawer-open");
+
+}
+
+})();
+""")
+
+
+    # ======================================================
+    # KEEP HEALTH MONITOR ALIVE
+    # ======================================================
+
+    @reactive.effect
+    def _keep_monitor_alive():
+
+        health_snapshot()
+
+
+    # ======================================================
+    # KEEP DATABASE LOADED
+    # ======================================================
+
+    @reactive.effect
+    def _keep_database_alive():
+
+        get_database()
+
+
+    # ======================================================
+    # KEEP WORKFLOW STATE SAFE
+    # ======================================================
+
+    @reactive.effect
+    def _cleanup_empty_query():
+
+        query = str(input.search_query() or "").strip()
+
+        if query:
+
+            return
+
+        workflow_state.set(None)
+
+        show_curtain.set(False)
+
+        show_not_found_modal.set(False)
+
+
+    # ======================================================
+    # END SERVER
+    # ======================================================
