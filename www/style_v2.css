@@ -1,50 +1,50 @@
-/* --- 1. الهيكل الأساسي --- */
-* { box-sizing: border-box; }
-body { margin: 0; padding: 0; background-color: #0d1117; color: white; font-family: sans-serif; }
-
-/* --- 2. القائمة الجانبية (الإعدادات) - مخفية دائماً ومثبتة --- */
-.drawer {
-    position: fixed !important;
-    top: 0 !important;
-    right: -100% !important; /* إخفاء تام خارج الشاشة */
-    width: 300px !important;
-    height: 100vh !important;
-    background-color: #161b22 !important;
-    z-index: 9999 !important;
-    transition: right 0.3s ease-in-out !important;
-    padding: 20px;
-    border-left: 1px solid #30363d;
-}
-.drawer.drawer-open {
-    right: 0 !important; /* تظهر فقط عند الضغط */
-}
-
-/* --- 3. الهيدر (الشعار والترس) --- */
-.main-header {
-    display: flex;
-    align-items: center;
+/* --- 1. تأثير الزجاج الشفاف (Glassmorphism) --- */
+.glass-card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
     padding: 15px;
-    background: #0d1117;
-}
-.btn-settings-open { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
-.brand-wrapper { margin-left: 15px; }
-.brand-neon-main { font-size: 20px; font-weight: bold; color: #00bfff; }
-.brand-neon-sub { font-size: 12px; color: #8b949e; }
-
-/* --- 4. الصورة (تثبيت نهائي لمنع الاهتزاز) --- */
-.welcome-screen {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    padding: 20px 0;
-}
-.main-phone-image {
-    width: 250px !important;
-    height: 250px !important;
-    object-fit: contain !important;
-    display: block !important;
-    animation: none !important; /* إيقاف الاهتزاز */
+    margin: 10px;
 }
 
-/* --- 5. تحسينات إضافية --- */
-.main-layout { width: 100%; overflow: hidden; }
+/* --- 2. شريط البحث (إعادة النيون) --- */
+.shiny-input-container {
+    padding: 10px;
+}
+input[type="search"], input[type="text"] {
+    background: #0d1117 !important;
+    border: 2px solid #00bfff !important; /* لون النيون الأزرق */
+    color: white !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.3) !important; /* تأثير النيون */
+}
+
+/* --- 3. بطاقات النتائج (تأثير النيون الأخضر) --- */
+.neon-result-card {
+    background: rgba(46, 204, 113, 0.1) !important;
+    border-left: 4px solid #2ecc71 !important;
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.2) !important;
+    margin: 5px 0;
+    padding: 10px;
+    color: #fff;
+    border-radius: 0 5px 5px 0;
+}
+
+/* --- 4. معالجة "الستارة" (قائمة الـ Auto-complete) --- */
+.shiny-autocomplete-menu {
+    background: #161b22 !important;
+    border: 1px solid #30363d !important;
+    border-radius: 8px !important;
+    z-index: 1000 !important;
+    margin-top: 5px !important;
+}
+.shiny-autocomplete-menu .item {
+    color: white !important;
+    padding: 10px !important;
+}
+.shiny-autocomplete-menu .item:hover {
+    background: #00bfff !important;
+    color: white !important;
+}
