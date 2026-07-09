@@ -18,17 +18,17 @@ def draw_technical_coords(coords):
         ),
 
         ui.div(
-            f"المقاس : {coords.get('size','-')}",
+            f"📐 المقاس : {coords.get('size','-')}",
             class_="coord-line"
         ),
 
         ui.div(
-            f"نوع الشاشة : {coords.get('panel','-')}",
+            f"🖥 نوع الشاشة : {coords.get('panel','-')}",
             class_="coord-line"
         ),
 
         ui.div(
-            f"المستشعر : {coords.get('sensor','-')}",
+            f"📡 المستشعر : {coords.get('sensor','-')}",
             class_="coord-line"
         ),
 
@@ -37,9 +37,8 @@ def draw_technical_coords(coords):
     )
 
 
-
 # ==========================================================
-# NEON RESULTS SECTION
+# RESULT SECTION
 # ==========================================================
 
 def draw_neon_section(
@@ -48,12 +47,40 @@ def draw_neon_section(
     color="#00e5ff",
     icon="📱",
     phone="",
-    section_type=""
+    section_type="exact"
 ):
 
     if not models:
         return None
 
+    cards = []
+
+    for model in models:
+
+        cards.append(
+
+            ui.div(
+
+                ui.div(
+                    class_="result-orb",
+                    style=f"background:{color};"
+                ),
+
+                ui.div(
+                    model,
+                    class_="model-name"
+                ),
+
+                ui.div(
+                    f"متوافق مع: {phone}",
+                    class_="model-source"
+                ) if phone else None,
+
+                class_=f"glass-result-card {section_type}"
+
+            )
+
+        )
 
     return ui.div(
 
@@ -69,53 +96,15 @@ def draw_neon_section(
                 class_="result-title-text"
             ),
 
-            class_="result-title",
-
-            style=f"""
-            color:{color};
-            border-right:5px solid {color};
-            box-shadow:0 0 15px {color};
-            """
+            class_=f"result-title {section_type}"
 
         ),
 
+        *cards,
 
-        *[
-
-            ui.div(
-
-                ui.div(
-                    model,
-                    class_="model-name"
-                ),
-
-
-                ui.div(
-                    f"متوافق مع: {phone}",
-                    class_="model-source"
-                )
-                if phone
-                else None,
-
-
-                class_=f"ammar-flat-card {section_type}",
-
-                style=f"""
-                border:1px solid {color};
-                box-shadow:0 0 18px {color};
-                """
-
-            )
-
-            for model in models
-
-        ],
-
-
-        class_="glass-card neon-container"
+        class_="neon-container"
 
     )
-
 
 
 # ==========================================================
@@ -136,6 +125,6 @@ def draw_warning_card(message):
             class_="result-title-text"
         ),
 
-        class_="flat-warning-card"
+        class_="glass-result-card warn"
 
     )
