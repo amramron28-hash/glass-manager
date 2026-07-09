@@ -1,48 +1,27 @@
-/* ==========================================================
-   ZEGAAR AMMAR GLASS MANAGER - FINAL POLISH
-   ========================================================== */
-
-:root {
-    --bg-main: #080d14;
-    --glass-bg: rgba(255,255,255,0.08);
-    --glass-border: rgba(255,255,255,0.18);
-    --neon-blue: #00e5ff;
-    --exact: #2ecc71;
-    --plus: #3498db;
-    --minus: #e67e22;
-    --warning: #ef4444;
-    --text-main: #eaf6ff;
-    --text-muted: #9aa8b8;
-}
-
-/* اصلاح الخط العريض للعنوان الفرعي */
+/* إصلاح التنسيق لمنع الاهتزاز والعرض العريض */
 .brand-neon-sub {
-    margin-top: 5px;
     font-size: 16px;
     letter-spacing: 5px;
     color: white;
-    font-weight: bold !important; /* تم تفعيل العرض */
+    font-weight: bold !important; 
     text-shadow: 0 0 12px rgba(255,255,255,.5);
 }
 
-/* اصلاح اهتزاز الصورة وتكبيرها */
 .main-phone-image {
-    width: 280px !important;    /* حجم ثابت لضمان عدم الصغر */
-    height: 280px !important;   /* حجم ثابت لضمان عدم الاهتزاز */
+    width: 250px !important; 
+    height: 250px !important;
     object-fit: contain;
     display: block;
-    margin: 10px auto;
-    flex-shrink: 0;             /* منع الانكماش */
+    margin: 20px auto;
     animation: floating 3s ease-in-out infinite;
 }
 
-/* التأكد من ثبات منطقة الترحيب */
 .welcome-screen {
     width: 100%;
+    min-height: 280px; 
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 300px; /* حجز مساحة ثابتة للصورة */
 }
 
 @keyframes floating {
@@ -50,22 +29,3 @@
     50% { transform: translateY(-10px); }
     100% { transform: translateY(0); }
 }
-
-/* باقي التنسيقات ثابتة كما هي */
-* { box-sizing: border-box; }
-html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; direction: rtl; background: var(--bg-main); color: var(--text-main); font-family: "Segoe UI", "Cairo", Tahoma, sans-serif; }
-
-.main-layout { position: relative; width: 100%; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding: 18px 14px; }
-
-.brand-neon-main { font-size: clamp(26px,7vw,38px); font-weight: 900; letter-spacing: 2px; line-height: 1.1; color: var(--neon-blue); text-shadow: 0 0 8px var(--neon-blue), 0 0 20px var(--neon-blue); }
-
-.search-box { position: relative; width: 100%; max-width: 520px; margin: 8px auto 15px; z-index: 50; }
-.search-box input[type="text"] { width: 100%; height: 48px; padding: 0 18px; border-radius: 16px; border: 1px solid var(--glass-border); background: rgba(255,255,255,.07); color: var(--text-main); font-size: 16px; outline: none; }
-
-.results-workflow-view { width: 100%; max-width: 520px; overflow-y: auto; padding: 5px 8px 30px; flex: 1; }
-
-/* موبايل */
-@media(max-width:600px){
-    .main-phone-image { width: 220px !important; height: 220px !important; }
-}
-
