@@ -8,9 +8,7 @@ def inject_styles():
 
     return ui.tags.head(
 
-        ui.tags.meta(
-            charset="utf-8"
-        ),
+        ui.tags.meta(charset="utf-8"),
 
         ui.tags.meta(
             name="viewport",
@@ -19,7 +17,7 @@ def inject_styles():
 
         ui.tags.link(
             rel="stylesheet",
-            href="style_v2.css"
+            href="style_v2.css?v=3"
         ),
 
         ui.tags.link(
@@ -37,11 +35,7 @@ if ("serviceWorker" in navigator) {
 
         navigator.serviceWorker
             .register("/service-worker.js")
-            .catch(function (err) {
-
-                console.log(err);
-
-            });
+            .catch(console.error);
 
     });
 
@@ -64,14 +58,11 @@ def draw_drawer_js_handler():
 
 <script>
 
-document.addEventListener("DOMContentLoaded", function(){
+document.addEventListener("DOMContentLoaded",function(){
 
-    // ==========================
-    // SETTINGS DRAWER
-    // ==========================
+    document.addEventListener("click",function(e){
 
-    document.addEventListener("click", function(e){
-
+        // فتح درج الإعدادات
         if(e.target.id==="btn_settings"){
 
             document
@@ -80,6 +71,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
         }
 
+        // إغلاق درج الإعدادات
         if(e.target.id==="btn_close_drawer_trigger"){
 
             document
@@ -88,41 +80,28 @@ document.addEventListener("DOMContentLoaded", function(){
 
         }
 
-    });
-
-
-    // ==========================
-    // AUTOCOMPLETE
-    // ==========================
-
-    document.addEventListener("click", function(e){
-
+        // اختيار اقتراح
         const row=e.target.closest(".suggestion-row");
 
-        if(!row) return;
+        if(row){
 
-        const value=row.dataset.value;
+            const value=row.dataset.value;
 
-        const input=document.getElementById("search_query");
+            const input=document.getElementById("search_query");
 
-        if(!input) return;
+            if(input){
 
-        input.value=value;
+                input.value=value;
 
-        input.dispatchEvent(
-            new Event(
-                "input",
-                {
-                    bubbles:true
-                }
-            )
-        );
+                input.dispatchEvent(
+                    new Event("input",{bubbles:true})
+                );
 
-        const curtain=document.querySelector(".suggestions-curtain");
+            }
 
-        if(curtain){
-
-            curtain.style.display="none";
+            document
+                .querySelector(".suggestions-curtain")
+                ?.classList.add("hidden");
 
         }
 
@@ -133,8 +112,6 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 
 """)
-
-
 # ==========================================================
 # SETTINGS BUTTON
 # ==========================================================
@@ -152,6 +129,8 @@ def draw_settings_button():
         title="الإعدادات"
 
     )
+
+
 # ==========================================================
 # BRAND
 # ==========================================================
@@ -191,9 +170,11 @@ def draw_main_image():
 
         src="phone_image.webp",
 
-        class_="main-phone-image",
+        alt="Phone",
 
-        loading="lazy"
+        loading="lazy",
+
+        class_="main-phone-image"
 
     )
 
@@ -216,7 +197,7 @@ def draw_header():
 
 
 # ==========================================================
-# WELCOME SCREEN
+# WELCOME HEADER
 # ==========================================================
 
 def draw_welcome_section():
@@ -230,10 +211,8 @@ def draw_welcome_section():
     )
 
 
-# للتوافق مع server.py
+# توافق مع server.py
 draw_welcome_header = draw_welcome_section
-
-
 # ==========================================================
 # SEARCH BOX
 # ==========================================================
@@ -243,19 +222,13 @@ def draw_search_box():
     return ui.div(
 
         ui.input_text(
-
             "search_query",
-
             "",
-
             placeholder="ابحث عن موديل الهاتف..."
-
         ),
 
         ui.output_ui(
-
             "suggestions_curtain"
-
         ),
 
         class_="search-box"
@@ -270,7 +243,6 @@ def draw_search_box():
 def draw_suggestions_curtain(suggestions):
 
     if not suggestions:
-
         return None
 
     rows = []
@@ -281,28 +253,20 @@ def draw_suggestions_curtain(suggestions):
 
             ui.div(
 
-                ui.div(
-
+                ui.span(
                     "📱",
-
                     class_="suggestion-icon"
-
                 ),
 
-                ui.div(
-
+                ui.span(
                     model,
-
                     class_="suggestion-text"
-
                 ),
 
                 class_="suggestion-row",
 
                 **{
-
                     "data-value": model
-
                 }
 
             )
@@ -313,11 +277,11 @@ def draw_suggestions_curtain(suggestions):
 
         *rows,
 
-        class_="suggestions-curtain"
+        class_="suggestions-curtain glass-card"
 
     )
 # ==========================================================
-# TECHNICAL PHONE CARD
+# PHONE TECHNICAL CARD
 # ==========================================================
 
 def draw_technical_coords(coords):
@@ -328,64 +292,44 @@ def draw_technical_coords(coords):
     return ui.div(
 
         ui.h3(
-
             coords.get("real_name", ""),
-
             class_="phone-title"
-
         ),
 
         ui.div(
-
-            f"المقاس : {coords.get('size','-')}",
-
+            f"📐 المقاس : {coords.get('size', '-')}",
             class_="coord-line"
-
         ),
 
         ui.div(
-
-            f"نوع الشاشة : {coords.get('panel','-')}",
-
+            f"🖥 نوع الشاشة : {coords.get('panel', '-')}",
             class_="coord-line"
-
         ),
 
         ui.div(
-
-            f"المستشعر : {coords.get('sensor','-')}",
-
+            f"📡 المستشعر : {coords.get('sensor', '-')}",
             class_="coord-line"
-
         ),
 
-        class_="glass-card neon-card"
+        class_="glass-card phone-card"
 
     )
 
 
 # ==========================================================
-# RESULT SECTION
+# NEON RESULT SECTION
 # ==========================================================
 
 def draw_neon_section(
-
     title,
-
     models,
-
     color="#00e5ff",
-
     icon="📱",
-
     phone="",
-
-    section_type="exact"
-
+    section_type="exact",
 ):
 
     if not models:
-
         return None
 
     cards = []
@@ -397,42 +341,25 @@ def draw_neon_section(
             ui.div(
 
                 ui.div(
-
                     class_="result-orb",
-
                     style=f"""
-
-                    background:{color};
-
-                    box-shadow:
-
-                        0 0 8px {color},
-
-                        0 0 18px {color},
-
-                        0 0 28px {color};
-
+                        background:{color};
+                        box-shadow:
+                            0 0 8px {color},
+                            0 0 18px {color},
+                            0 0 28px {color};
                     """
-
                 ),
 
                 ui.div(
-
                     model,
-
                     class_="model-name"
-
                 ),
 
                 ui.div(
-
                     f"متوافق مع: {phone}",
-
                     class_="model-source"
-
-                )
-
-                if phone else None,
+                ) if phone else None,
 
                 class_=f"glass-result-card {section_type}"
 
@@ -445,29 +372,20 @@ def draw_neon_section(
         ui.div(
 
             ui.span(
-
                 icon,
-
                 class_="result-icon"
-
             ),
 
             ui.span(
-
                 title,
-
                 class_="result-title-text"
-
             ),
 
             class_="result-title",
 
             style=f"""
-
-            color:{color};
-
-            border-right:5px solid {color};
-
+                border-right:5px solid {color};
+                color:{color};
             """
 
         ),
@@ -488,19 +406,13 @@ def draw_warning_card(message):
     return ui.div(
 
         ui.span(
-
             "⚠️",
-
             class_="result-icon"
-
         ),
 
         ui.span(
-
             message,
-
             class_="result-title-text"
-
         ),
 
         class_="flat-warning-card"
@@ -514,22 +426,16 @@ def draw_system_info():
 
     return ui.div(
 
-        ui.h4(
+        ui.h4("معلومات النظام"),
 
-            "معلومات النظام"
-
+        ui.div(
+            "ZEGAAR AMMAR GLASS MANAGER",
+            class_="setting-item-text"
         ),
 
         ui.div(
-
-            "ZEGAAR AMMAR GLASS MANAGER"
-
-        ),
-
-        ui.div(
-
-            "Version 2026.07"
-
+            "Version 2026.07",
+            class_="setting-item-text"
         ),
 
         class_="metric-box glass-card"
@@ -545,15 +451,11 @@ def draw_database_status(total):
 
     return ui.div(
 
-        ui.h4(
-
-            "عدد الهواتف"
-
-        ),
+        ui.h4("قاعدة البيانات"),
 
         ui.div(
 
-            str(total),
+            f"{total} هاتف",
 
             class_="metric-value"
 
@@ -574,21 +476,11 @@ def draw_monitor_component(status):
 
     return ui.div(
 
-        ui.h4(
-
-            "المراقب الصامت"
-
-        ),
+        ui.h4("المراقب الصامت"),
 
         ui.div(
 
-            "🟢 ONLINE"
-
-            if online
-
-            else
-
-            "🔴 OFFLINE",
+            "🟢 ONLINE" if online else "🔴 OFFLINE",
 
             class_="metric-value"
 
@@ -607,11 +499,7 @@ def draw_notification_component(count=0):
 
     return ui.div(
 
-        ui.h4(
-
-            "الإشعارات"
-
-        ),
+        ui.h4("الإشعارات"),
 
         ui.div(
 
@@ -659,11 +547,7 @@ def draw_settings_modal():
 
         ui.div(
 
-            ui.h2(
-
-                "⚙️ الإعدادات"
-
-            ),
+            ui.h2("⚙️ الإعدادات"),
 
             ui.tags.button(
 
@@ -683,31 +567,15 @@ def draw_settings_modal():
 
         ui.div(
 
-            ui.output_ui(
+            ui.output_ui("system_info_area"),
 
-                "system_info_area"
+            ui.output_ui("database_status_area"),
 
-            ),
-
-            ui.output_ui(
-
-                "database_status_area"
-
-            ),
-
-            ui.output_ui(
-
-                "monitor_area"
-
-            ),
+            ui.output_ui("monitor_area"),
 
             draw_notification_component(),
 
-            ui.output_ui(
-
-                "silent_inspector_area"
-
-            ),
+            ui.output_ui("silent_inspector_area"),
 
             class_="drawer-body"
 
@@ -718,6 +586,10 @@ def draw_settings_modal():
         class_="drawer"
 
     )
+
+
+# للتوافق مع server.py
+draw_settings_drawer = draw_settings_modal
 # ==========================================================
 # MODAL OVERLAY
 # ==========================================================
@@ -725,15 +597,11 @@ def draw_settings_modal():
 def draw_modal_overlay(inner):
 
     if inner is None:
-
         return None
 
     return ui.div(
-
         inner,
-
         class_="modal-overlay"
-
     )
 
 
@@ -741,76 +609,43 @@ def draw_modal_overlay(inner):
 # PLAN 2 MODAL
 # ==========================================================
 
-def draw_plan_2_modal(
-
-    phone="",
-
-    panels=None,
-
-    sensors=None,
-
-):
+def draw_plan_2_modal(phone="", panels=None, sensors=None):
 
     panels = panels or []
-
     sensors = sensors or []
 
-    return ui.div(
+    return draw_modal_overlay(
 
         ui.div(
 
-            ui.h2(
+            ui.h2("الخطة الثانية"),
 
-                "الخطة الثانية"
-
-            ),
-
-            ui.p(
-
-                f"الهاتف: {phone}"
-
-            ),
+            ui.p(f"الهاتف: {phone}"),
 
             ui.input_select(
-
                 "p2_panel",
-
                 "نوع الشاشة",
-
                 choices=panels
-
             ),
 
             ui.input_select(
-
                 "p2_sensor",
-
                 "المستشعر",
-
                 choices=sensors
-
             ),
 
             ui.div(
 
                 ui.input_action_button(
-
                     "btn_plan2_save",
-
                     "💾 حفظ",
-
                     class_="btn-neon"
-
                 ),
 
                 ui.input_action_button(
-
                     "btn_close_modal",
-
                     "إغلاق",
-
                     class_="btn-close"
-
                 ),
 
                 class_="modal-buttons"
@@ -819,9 +654,7 @@ def draw_plan_2_modal(
 
             class_="glass-card modal-card"
 
-        ),
-
-        class_="modal-overlay"
+        )
 
     )
 
@@ -830,74 +663,43 @@ def draw_plan_2_modal(
 # PLAN 3 MODAL
 # ==========================================================
 
-def draw_plan_3_modal(
+def draw_plan_3_modal(phone="", result=None):
 
-    phone="",
-
-    result=None,
-
-):
-
-    return ui.div(
+    return draw_modal_overlay(
 
         ui.div(
 
-            ui.h2(
+            ui.h2("الخطة الثالثة"),
 
-                "الخطة الثالثة"
-
-            ),
-
-            ui.p(
-
-                f"لم يتم العثور على نتائج للهاتف: {phone}"
-
-            ),
+            ui.p(f"لم يتم العثور على نتائج للهاتف: {phone}"),
 
             ui.input_text(
-
                 "p3_size",
-
                 "المقاس"
-
             ),
 
             ui.input_text(
-
                 "p3_panel",
-
                 "نوع الشاشة"
-
             ),
 
             ui.input_text(
-
                 "p3_sensor",
-
                 "المستشعر"
-
             ),
 
             ui.div(
 
                 ui.input_action_button(
-
                     "btn_plan3_save",
-
                     "💾 إضافة",
-
                     class_="btn-neon"
-
                 ),
 
                 ui.input_action_button(
-
                     "btn_close_modal",
-
                     "إغلاق",
-
                     class_="btn-close"
-
                 ),
 
                 class_="modal-buttons"
@@ -906,197 +708,50 @@ def draw_plan_3_modal(
 
             class_="glass-card modal-card"
 
-        ),
-
-        class_="modal-overlay"
+        )
 
     )
+
+
 # ==========================================================
 # MAIN UI
 # ==========================================================
 
 app_ui = ui.page_fluid(
 
-    # ==========================
-    # HEAD
-    # ==========================
-
     inject_styles(),
 
     draw_drawer_js_handler(),
 
-    # ==========================
-    # FIXED BACKGROUND
-    # ==========================
-
-    ui.div(
-
-        class_="fixed-background"
-
-    ),
-
-    # ==========================
-    # SETTINGS DRAWER
-    # ==========================
-
     draw_settings_modal(),
 
-    # ==========================
-    # MAIN LAYOUT
-    # ==========================
-
     ui.div(
 
-        # HEADER
         draw_header(),
 
-        # SEARCH
         draw_search_box(),
 
-        # WELCOME
-        ui.output_ui(
+        ui.output_ui("welcome_area"),
 
-            "welcome_area"
-
-        ),
-
-        # RESULTS
         ui.div(
 
-            ui.output_ui(
-
-                "results_workflow_view"
-
-            ),
+            ui.output_ui("results_workflow_view"),
 
             class_="results-workflow-view"
 
         ),
 
-        # MODALS
-        ui.output_ui(
-
-            "dynamic_modal_container"
-
-        ),
+        ui.output_ui("dynamic_modal_container"),
 
         class_="main-layout"
 
     )
 
 )
-# ==========================================================
-# COMPATIBILITY EXPORTS
-# ==========================================================
-
-# server.py يستورد هذه الأسماء
-# لذلك نحافظ عليها جميعاً
-
-draw_welcome_header = draw_welcome_section
-
-draw_settings_drawer = draw_settings_modal
 
 
 # ==========================================================
-# EMPTY COMPONENT
-# ==========================================================
-
-def draw_empty():
-
-    return ui.div()
-
-
-# ==========================================================
-# SAFE HTML
-# ==========================================================
-
-def safe_text(value):
-
-    if value is None:
-
-        return ""
-
-    return str(value).strip()
-
-
-# ==========================================================
-# SAFE LIST
-# ==========================================================
-
-def safe_models(models):
-
-    if not models:
-
-        return []
-
-    return [
-
-        str(m).strip()
-
-        for m in models
-
-        if str(m).strip()
-
-    ]
-
-
-# ==========================================================
-# SAFE SECTION
-# ==========================================================
-
-def safe_section(
-
-    title,
-
-    models,
-
-    color,
-
-    icon,
-
-    section_type,
-
-):
-
-    models = safe_models(models)
-
-    if not models:
-
-        return None
-
-    return draw_neon_section(
-
-        title=title,
-
-        models=models,
-
-        color=color,
-
-        icon=icon,
-
-        section_type=section_type,
-
-    )
-
-
-# ==========================================================
-# SAFE CARD
-# ==========================================================
-
-def safe_coords(coords):
-
-    if not coords:
-
-        return None
-
-    return draw_technical_coords(coords)
-
-
-# ==========================================================
-# END HELPERS
-# ==========================================================
-# ==========================================================
-# FINAL COMPATIBILITY
+# EXPORTS
 # ==========================================================
 
 __all__ = [
@@ -1150,8 +805,3 @@ __all__ = [
     "draw_plan_3_modal",
 
 ]
-
-
-# ==========================================================
-# END OF FILE
-# ==========================================================
