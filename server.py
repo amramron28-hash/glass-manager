@@ -39,6 +39,73 @@ from ui_plans import (
 )
 
 MAX_SUGGESTIONS = 10
+
+
+# ======================================================
+# EXTRACT UNIQUE MODELS
+# ======================================================
+
+def _extract_unique_models(db_data):
+
+    models = set()
+
+    for panels in (db_data or {}).values():
+
+        if not isinstance(panels, dict):
+            continue
+
+        for sensors in panels.values():
+
+            if not isinstance(sensors, dict):
+                continue
+
+            for data in sensors.values():
+
+                model_list = (
+                    data.get("models", [])
+                    if isinstance(data, dict)
+                    else data
+                )
+
+                if not isinstance(model_list, list):
+                    continue
+
+                for model in model_list:
+
+                    if isinstance(model, str) and model.strip():
+
+                        models.add(
+                            model.strip()
+                        )
+
+    return sorted(models)
+
+
+# ======================================================
+# SERVER
+# ======================================================
+
+def server(input, output, session):
+
+    workflow_state = reactive.value(None)
+
+    show_curtain = reactive.value(False)
+
+    show_not_found_modal = reactive.value(False)
+
+
+    # ======================================================
+    # HEALTH SNAPSHOT
+    # ======================================================
+
+    @reactive.calc
+    def health_snapshot():
+
+        reactive.invalidate_later(
+            REFRESH_INTERVAL_SEC
+        )
+
+        return monitor() or {}
     # ======================================================
     # SEARCH ENGINE
     # ======================================================
@@ -55,7 +122,9 @@ MAX_SUGGESTIONS = 10
         ).strip()
 
         # إظهار الاقتراحات من أول حرف
-        show_curtain.set(len(query) >= 1)
+        show_curtain.set(
+            len(query) >= 1
+        )
 
         if not query:
 
@@ -91,6 +160,7 @@ MAX_SUGGESTIONS = 10
 
         # عند المطابقة التامة تختفي الستارة
         if matched_exact:
+
             show_curtain.set(False)
 
         show_not_found_modal.set(
@@ -130,7 +200,7 @@ MAX_SUGGESTIONS = 10
         run_intelligent_inspector()
 
         # تحديث قاعدة البيانات بعد الفحص
-        get_database()
+        get_database() 
     # ======================================================
     # WELCOME
     # ======================================================
@@ -139,6 +209,7 @@ MAX_SUGGESTIONS = 10
     def welcome_area():
 
         if workflow_state() is None:
+
             return draw_welcome_section()
 
         return None
@@ -154,20 +225,30 @@ MAX_SUGGESTIONS = 10
         res = workflow_state()
 
         if not res:
+
             return None
 
         if res.get("status") != "success":
+
             return None
 
-        coords = res.get("coords", {})
-        results = res.get("compatibles", {})
-
-        output_cards = []
-
-        # البطاقة الرئيسية
-        output_cards.append(
-            draw_technical_coords(coords)
+        coords = res.get(
+            "coords",
+            {}
         )
+
+        results = res.get(
+            "compatibles",
+            {}
+        )
+
+        output_cards = [
+
+            draw_technical_coords(
+                coords
+            )
+
+        ]
 
         # مطابق تماماً
         if results.get("exact"):
@@ -178,7 +259,7 @@ MAX_SUGGESTIONS = 10
 
                     "هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)",
 
-                    results["exact"],
+                    results.get("exact", []),
 
                     "#2ecc71",
 
@@ -197,7 +278,7 @@ MAX_SUGGESTIONS = 10
 
                     "هواتف أكبر بقليل متوافقة (Plus +0.01 → +0.03)",
 
-                    results["plus"],
+                    results.get("plus", []),
 
                     "#3498db",
 
@@ -216,7 +297,7 @@ MAX_SUGGESTIONS = 10
 
                     "هواتف أصغر بقليل متوافقة (Minus -0.01 → -0.03)",
 
-                    results["minus"],
+                    results.get("minus", []),
 
                     "#e67e22",
 
@@ -226,7 +307,7 @@ MAX_SUGGESTIONS = 10
 
             )
 
-        # تحذير اختلاف المستشعر
+        # اختلاف المستشعر
         if results.get("warn"):
 
             output_cards.append(
@@ -235,7 +316,7 @@ MAX_SUGGESTIONS = 10
 
                     "تنبيه: نفس المقاس لكن مستشعر مختلف",
 
-                    results["warn"],
+                    results.get("warn", []),
 
                     "#ef4444",
 
@@ -245,7 +326,11 @@ MAX_SUGGESTIONS = 10
 
             )
 
-        return ui.TagList(*output_cards)
+        return ui.TagList(
+
+            *output_cards
+
+                )
     # ======================================================
     # AUTOCOMPLETE
     # ======================================================
@@ -254,6 +339,7 @@ MAX_SUGGESTIONS = 10
     def suggestions_curtain():
 
         if not show_curtain():
+
             return None
 
         query = str(
@@ -262,28 +348,44 @@ MAX_SUGGESTIONS = 10
 
         # يبدأ الاقتراح من أول حرف
         if len(query) < 1:
+
             return None
 
         db = get_database() or {}
 
-        models = _extract_unique_models(db)
+        models = _extract_unique_models(
+            db
+        )
 
         matches = [
+
             model
+
             for model in models
+
             if query in model.lower()
+
         ]
 
         # إزالة التكرارات مع الحفاظ على الترتيب
-        matches = list(dict.fromkeys(matches))
+        matches = list(
+            dict.fromkeys(matches)
+        )
 
         # الحد الأقصى
-        matches = matches[:MAX_SUGGESTIONS]
+        matches = matches[
+            :MAX_SUGGESTIONS
+        ]
 
         if not matches:
+
             return None
 
-        return draw_suggestions_curtain(matches)
+        return draw_suggestions_curtain(
+            matches
+        )
+
+
     # ======================================================
     # SETTINGS
     # ======================================================
@@ -300,18 +402,40 @@ MAX_SUGGESTIONS = 10
         health = health_snapshot()
 
         stats = (
-            health.get("statistics", {})
-            if isinstance(health, dict)
+
+            health.get(
+                "statistics",
+                {}
+            )
+
+            if isinstance(
+                health,
+                dict
+            )
+
             else {}
+
         )
 
         total = (
-            stats.get("phones", 0)
-            if isinstance(stats, dict)
+
+            stats.get(
+                "phones",
+                0
+            )
+
+            if isinstance(
+                stats,
+                dict
+            )
+
             else 0
+
         )
 
-        return draw_database_status(total)
+        return draw_database_status(
+            total
+        )
 
 
     @render.ui
@@ -320,20 +444,30 @@ MAX_SUGGESTIONS = 10
         health = health_snapshot()
 
         status = (
-            health.get("status", "UNKNOWN")
-            if isinstance(health, dict)
+
+            health.get(
+                "status",
+                "UNKNOWN"
+            )
+
+            if isinstance(
+                health,
+                dict
+            )
+
             else "UNKNOWN"
+
         )
 
-        return draw_monitor_component(status)
+        return draw_monitor_component(
+            status
+        )
 
 
     @render.ui
     def silent_inspector_area():
 
         return draw_silent_inspector()
-
-
     # ======================================================
     # PLAN 3 MODAL
     # ======================================================
@@ -344,8 +478,9 @@ MAX_SUGGESTIONS = 10
         if show_not_found_modal():
 
             return draw_modal_overlay(
+
                 draw_plan_3_modal()
+
             )
 
         return None
-        
