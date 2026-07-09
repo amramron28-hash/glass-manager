@@ -1,7 +1,7 @@
 /* ==========================================================
    ZEGAAR AMMAR GLASS MANAGER
    MAIN VISUAL IDENTITY SYSTEM
-   style_v2.css
+   style_v2.css FINAL BUILD
    ========================================================== */
 
 
@@ -13,13 +13,16 @@
 
     --bg-main: #080d14;
 
-    --glass-bg: rgba(255,255,255,0.08);
+    --glass-bg:
+        rgba(255,255,255,0.08);
 
     --glass-border:
         rgba(255,255,255,0.18);
 
+
     --neon-blue:
         #00e5ff;
+
 
     --exact:
         #2ecc71;
@@ -44,8 +47,10 @@
     --shadow-glass:
         0 10px 35px rgba(0,0,0,.45);
 
+
     --glow-blue:
         0 0 25px rgba(0,229,255,.35);
+
 }
 
 
@@ -57,7 +62,8 @@
 
 * {
 
-    box-sizing:border-box;
+    box-sizing:
+    border-box;
 
 }
 
@@ -66,21 +72,34 @@
 html,
 body {
 
-    margin:0;
+    margin:
+    0;
 
-    width:100%;
+    width:
+    100%;
 
-    height:100%;
+    height:
+    100%;
 
-    overflow:hidden;
 
-    direction:rtl;
+    overflow:
+    hidden;
 
-    background:var(--bg-main);
 
-    color:var(--text-main);
+    direction:
+    rtl;
+
+
+    background:
+    var(--bg-main);
+
+
+    color:
+    var(--text-main);
+
 
     font-family:
+
         "Segoe UI",
         "Cairo",
         Tahoma,
@@ -90,17 +109,50 @@ body {
 
 
 
-/* منع حاويات Shiny من إضافة حركة */
+
+/* ==========================================================
+   SHINY GLOBAL FIX
+   ========================================================== */
+
 
 .container-fluid {
 
-    padding:0 !important;
+    padding:
+    0 !important;
 
-    margin:0 auto;
 
-    max-width:100%;
+    margin:
+    0 auto;
+
+
+    max-width:
+    100%;
 
 }
+
+
+
+
+.shiny-html-output {
+
+    width:
+    100%;
+
+}
+
+
+
+.shiny-output-error {
+
+    color:
+    #ff5555;
+
+
+    text-align:
+    center;
+
+}
+
 
 
 
@@ -111,48 +163,59 @@ body {
 
 .fixed-background {
 
-    position:fixed;
+    position:
+    fixed;
 
-    inset:0;
 
-    z-index:-20;
+    inset:
+    0;
+
+
+    z-index:
+    -20;
+
 
     background:
 
-    url("phone_image.webp")
+        url("phone_image.webp")
 
-    center center /
+        center center /
 
-    cover
+        cover
 
-    no-repeat;
-
+        no-repeat;
 
 }
+
 
 
 
 .fixed-background::after {
 
+    content:
+    "";
 
-    content:"";
 
-    position:absolute;
+    position:
+    absolute;
 
-    inset:0;
+
+    inset:
+    0;
 
 
     background:
 
-    rgba(5,10,18,.78);
+        rgba(5,10,18,.78);
+
 
 
     backdrop-filter:
 
-    blur(3px);
-
+        blur(3px);
 
 }
+
 
 
 
@@ -164,36 +227,43 @@ body {
 .main-layout {
 
 
-    position:relative;
+    position:
+    relative;
 
 
-    width:100%;
+    width:
+    100%;
 
 
-    height:100vh;
+    height:
+    100vh;
 
 
-    overflow:hidden;
+    overflow:
+    hidden;
 
 
-    display:flex;
+
+    display:
+    flex;
 
 
-    flex-direction:column;
+
+    flex-direction:
+    column;
 
 
-    align-items:center;
+
+    align-items:
+    center;
+
 
 
     padding:
 
-    18px 14px;
-
+        18px 14px;
 
 }
-
-
-
 /* ==========================================================
    BRAND AREA
    ========================================================== */
@@ -201,15 +271,16 @@ body {
 
 .brand-wrapper {
 
-
-    width:100%;
-
-
-    text-align:center;
+    width:
+    100%;
 
 
-    margin-bottom:12px;
+    text-align:
+    center;
 
+
+    margin-bottom:
+    12px;
 
 }
 
@@ -217,79 +288,90 @@ body {
 
 .brand-neon-main {
 
-
     font-size:
 
-    clamp(26px,7vw,38px);
+        clamp(26px,7vw,38px);
 
 
-    font-weight:900;
+    font-weight:
+    900;
 
 
-    letter-spacing:2px;
+    letter-spacing:
+    2px;
 
 
-    line-height:1.1;
+    line-height:
+    1.1;
 
 
-    color:var(--neon-blue);
+    color:
+    var(--neon-blue);
+
 
 
     text-shadow:
 
+        0 0 8px var(--neon-blue),
 
-    0 0 8px var(--neon-blue),
+        0 0 20px var(--neon-blue),
 
-    0 0 20px var(--neon-blue),
-
-    0 0 40px rgba(0,229,255,.7);
-
-
+        0 0 40px rgba(0,229,255,.7);
 
 }
+
 
 
 
 .brand-neon-sub {
 
 
-    margin-top:5px;
+    margin-top:
+    5px;
 
 
-    font-size:16px;
+    font-size:
+    16px;
 
 
-    letter-spacing:5px;
+    letter-spacing:
+    5px;
 
 
-    color:white;
+    color:
+    white;
+
 
 
     text-shadow:
 
-    0 0 12px rgba(255,255,255,.5);
-
-
+        0 0 12px rgba(255,255,255,.5);
 
 }
 
 
 
+
 /* ==========================================================
-   WELCOME IMAGE
+   WELCOME SCREEN
    ========================================================== */
 
 
 .welcome-screen {
 
+    width:
+    100%;
 
-    width:100%;
+
+    text-align:
+    center;
 
 
-    text-align:center;
-
+    flex-shrink:
+    0;
 
 }
+
 
 
 
@@ -298,30 +380,40 @@ body {
 
     width:
 
-    min(55vw,240px);
+        min(55vw,240px);
 
 
-    max-height:32vh;
+
+    max-height:
+
+        32vh;
 
 
-    object-fit:contain;
+
+    object-fit:
+
+        contain;
 
 
-    display:block;
+
+    display:
+
+        block;
+
 
 
     margin:
 
-    10px auto;
+        10px auto;
+
 
 
     animation:
 
-    floating 3s ease-in-out infinite;
-
-
+        floating 3s ease-in-out infinite;
 
 }
+
 
 
 
@@ -330,99 +422,132 @@ body {
 
     0% {
 
-        transform:translateY(0);
+        transform:
+        translateY(0);
 
     }
 
 
     50% {
 
-        transform:translateY(-8px);
+        transform:
+        translateY(-8px);
 
     }
 
 
     100% {
 
-        transform:translateY(0);
+        transform:
+        translateY(0);
 
     }
 
-
 }
+
+
+
+
 /* ==========================================================
-   SEARCH AREA
+   SMART SEARCH AREA
    ========================================================== */
 
 
 .search-box {
 
-    position:relative;
 
-    width:100%;
+    position:
+    relative;
 
-    max-width:520px;
+
+    width:
+    100%;
+
+
+
+    max-width:
+    520px;
+
+
 
     margin:
 
-    8px auto 15px;
+        8px auto 15px;
 
-    z-index:50;
+
+
+    z-index:
+    50;
 
 }
+
 
 
 
 .search-box input[type="text"] {
 
 
-    width:100%;
+    width:
+    100%;
 
 
-    height:48px;
+
+    height:
+    48px;
+
 
 
     padding:
 
-    0 18px;
+        0 18px;
 
 
-    border-radius:16px;
+
+    border-radius:
+    16px;
+
 
 
     border:
 
-    1px solid var(--glass-border);
+        1px solid var(--glass-border);
+
 
 
     background:
 
-    rgba(255,255,255,.07);
+        rgba(255,255,255,.07);
+
 
 
     backdrop-filter:
 
-    blur(15px);
+        blur(15px);
+
 
 
     color:
 
-    var(--text-main);
+        var(--text-main);
 
 
-    font-size:16px;
+
+    font-size:
+    16px;
 
 
-    outline:none;
+
+    outline:
+    none;
+
 
 
     box-shadow:
 
-    0 0 15px rgba(0,229,255,.15);
-
-
+        0 0 15px rgba(0,229,255,.15);
 
 }
+
 
 
 
@@ -431,16 +556,16 @@ body {
 
     border-color:
 
-    var(--neon-blue);
+        var(--neon-blue);
+
 
 
     box-shadow:
 
-    0 0 20px rgba(0,229,255,.45);
-
-
+        0 0 20px rgba(0,229,255,.45);
 
 }
+
 
 
 
@@ -449,8 +574,7 @@ body {
 
     color:
 
-    var(--text-muted);
-
+        var(--text-muted);
 
 }
 
@@ -465,106 +589,142 @@ body {
 .suggestions-curtain {
 
 
-    position:absolute;
+    position:
+
+        absolute;
 
 
-    top:55px;
+
+    top:
+
+        55px;
 
 
-    right:0;
+
+    right:
+
+        0;
 
 
-    left:0;
+
+    left:
+
+        0;
 
 
-    max-height:280px;
+
+    max-height:
+
+        280px;
 
 
-    overflow-y:auto;
+
+    overflow-y:
+
+        auto;
 
 
-    z-index:100;
+
+    z-index:
+
+        100;
 
 
 
     background:
 
-    rgba(10,18,30,.88);
+        rgba(10,18,30,.88);
+
 
 
     backdrop-filter:
 
-    blur(20px);
+        blur(20px);
 
 
 
     border:
 
-    1px solid var(--glass-border);
+        1px solid var(--glass-border);
 
 
 
     border-radius:
 
-    18px;
+        18px;
 
 
 
     box-shadow:
 
-    0 10px 35px rgba(0,0,0,.5);
-
-
+        0 10px 35px rgba(0,0,0,.5);
 
 }
+
 
 
 
 .suggestion-row {
 
 
-    display:flex;
+    display:
+
+        flex;
 
 
-    align-items:center;
+
+    align-items:
+
+        center;
 
 
-    gap:10px;
+
+    gap:
+
+        10px;
+
 
 
     padding:
 
-    12px 15px;
+        12px 15px;
 
 
-    cursor:pointer;
+
+    cursor:
+
+        pointer;
+
 
 
     color:
 
-    var(--text-main);
+        var(--text-main);
+
 
 
     border-bottom:
 
-    1px solid rgba(255,255,255,.08);
+        1px solid rgba(255,255,255,.08);
 
 
-    transition:.2s;
 
+    transition:
 
+        .2s;
 
 }
+
 
 
 
 .suggestion-row:last-child {
 
-
-    border-bottom:none;
-
+    border-bottom:
+    none;
 
 }
+
 
 
 
@@ -573,40 +733,35 @@ body {
 
     background:
 
-    rgba(0,229,255,.15);
+        rgba(0,229,255,.15);
+
 
 
     transform:
 
-    translateX(-5px);
-
-
+        translateX(-5px);
 
 }
+
 
 
 
 .suggestion-icon {
 
-
-    font-size:18px;
-
+    font-size:
+    18px;
 
 }
+
 
 
 
 .suggestion-text {
 
-
-    flex:1;
-
+    flex:
+    1;
 
 }
-
-
-
-
 /* ==========================================================
    GLASS CARDS SYSTEM
    ========================================================== */
@@ -615,53 +770,61 @@ body {
 .glass-card {
 
 
-    width:100%;
+    width:
+    100%;
+
 
 
     background:
 
-    var(--glass-bg);
+        var(--glass-bg);
+
 
 
     backdrop-filter:
 
-    blur(20px);
+        blur(20px);
+
+
+
+    -webkit-backdrop-filter:
+
+        blur(20px);
 
 
 
     border:
 
-    1px solid var(--glass-border);
+        1px solid var(--glass-border);
 
 
 
     border-radius:
 
-    22px;
+        22px;
 
 
 
     padding:
 
-    16px;
+        16px;
 
 
 
     box-shadow:
 
-    var(--shadow-glass),
+        var(--shadow-glass),
 
-    var(--glow-blue);
+        var(--glow-blue);
 
 
 
     animation:
 
-    fadeIn .25s ease;
-
-
+        fadeIn .25s ease;
 
 }
+
 
 
 
@@ -670,23 +833,47 @@ body {
 
     from {
 
-        opacity:0;
+        opacity:
+        0;
 
-        transform:translateY(10px);
+
+        transform:
+
+        translateY(10px);
 
     }
+
 
 
     to {
 
-        opacity:1;
+        opacity:
+        1;
 
-        transform:translateY(0);
+
+        transform:
+
+        translateY(0);
 
     }
 
+}
+
+
+
+
+.glass-card:hover {
+
+
+    box-shadow:
+
+        0 0 35px rgba(0,229,255,.35),
+
+        0 15px 40px rgba(0,0,0,.5);
 
 }
+
+
 
 
 
@@ -698,14 +885,15 @@ body {
 .neon-card {
 
 
-    margin-top:10px;
+    margin-top:
+    10px;
 
 
-    text-align:center;
-
-
+    text-align:
+    center;
 
 }
+
 
 
 
@@ -714,24 +902,27 @@ body {
 
     margin:
 
-    0 0 12px;
+        0 0 12px;
 
 
-    font-size:22px;
+    font-size:
+
+        22px;
+
 
 
     color:
 
-    var(--neon-blue);
+        var(--neon-blue);
+
 
 
     text-shadow:
 
-    0 0 15px rgba(0,229,255,.6);
-
-
+        0 0 15px rgba(0,229,255,.6);
 
 }
+
 
 
 
@@ -740,24 +931,130 @@ body {
 
     margin:
 
-    5px 0;
+        5px 0;
+
 
 
     color:
 
-    var(--text-muted);
+        var(--text-muted);
 
 
-    font-size:15px;
 
+    font-size:
 
+        15px;
 
 }
 
 
 
+
+
 /* ==========================================================
-   RESULT NEON CONTAINERS
+   RESULT TITLE GLASS SYSTEM
+   ========================================================== */
+
+
+.result-title {
+
+
+    display:
+
+        flex;
+
+
+
+    align-items:
+
+        center;
+
+
+
+    gap:
+
+        10px;
+
+
+
+    margin:
+
+        18px 0 12px;
+
+
+
+    padding:
+
+        14px 18px;
+
+
+
+    border-radius:
+
+        16px;
+
+
+
+    background:
+
+        rgba(255,255,255,.05);
+
+
+
+    backdrop-filter:
+
+        blur(18px);
+
+
+
+    -webkit-backdrop-filter:
+
+        blur(18px);
+
+
+
+    font-size:
+
+        15px;
+
+
+
+    font-weight:
+
+        800;
+
+}
+
+
+
+
+.result-title-text {
+
+
+    flex:
+
+    1;
+
+}
+
+
+
+
+.result-icon {
+
+
+    font-size:
+
+    18px;
+
+}
+
+
+
+
+
+/* ==========================================================
+   RESULT CONTAINER
    ========================================================== */
 
 
@@ -766,39 +1063,222 @@ body {
 
     margin-top:
 
-    16px;
-
-
+    20px;
 
 }
 
-
-
-.result-title {
-
-
-    font-weight:800;
-
-
-    text-align:center;
-
-
-    margin-bottom:
-
-    12px;
-
-
-    font-size:17px;
-
-
-
-}
 
 
 
 
 /* ==========================================================
-   RESULT MODEL CARDS
+   GLASS RESULT CARDS
+   ========================================================== */
+
+
+.glass-result-card {
+
+
+    position:
+
+        relative;
+
+
+
+    overflow:
+
+        hidden;
+
+
+
+    display:
+
+        flex;
+
+
+
+    align-items:
+
+        center;
+
+
+
+    gap:
+
+        16px;
+
+
+
+    margin:
+
+        12px 0;
+
+
+
+    padding:
+
+        18px;
+
+
+
+    border-radius:
+
+        22px;
+
+
+
+    background:
+
+        linear-gradient(
+
+            180deg,
+
+            rgba(28,38,52,.55),
+
+            rgba(12,18,28,.45)
+
+        );
+
+
+
+    backdrop-filter:
+
+        blur(22px);
+
+
+
+    -webkit-backdrop-filter:
+
+        blur(22px);
+
+
+
+    border:
+
+        1px solid rgba(255,255,255,.12);
+
+
+
+    box-shadow:
+
+
+
+        inset 0 1px 1px rgba(255,255,255,.10),
+
+
+
+        0 10px 35px rgba(0,0,0,.35);
+
+
+
+    transition:
+
+        .25s ease;
+
+}
+
+
+
+
+.glass-result-card:hover {
+
+
+    transform:
+
+        translateY(-2px);
+
+
+
+    box-shadow:
+
+
+
+        inset 0 1px 1px rgba(255,255,255,.12),
+
+
+
+        0 0 25px rgba(0,191,255,.30);
+
+}
+
+
+
+
+.result-orb {
+
+
+    width:
+
+        16px;
+
+
+
+    height:
+
+        16px;
+
+
+
+    border-radius:
+
+        50%;
+
+
+
+    flex-shrink:
+
+        0;
+
+}
+
+
+
+
+.model-name {
+
+
+    flex:
+
+        1;
+
+
+
+    color:
+
+        white;
+
+
+
+    font-size:
+
+        15px;
+
+
+
+    font-weight:
+
+        700;
+
+
+
+    text-align:
+
+        right;
+
+
+
+    word-break:
+
+        break-word;
+
+}
+
+
+
+
+
+/* ==========================================================
+   OLD COMPATIBILITY RESULT CARDS
    ========================================================== */
 
 
@@ -807,35 +1287,46 @@ body {
 
     padding:
 
-    12px;
+        12px;
+
 
 
     margin:
 
-    8px 0;
+        8px 0;
+
 
 
     border-radius:
 
-    14px;
+        14px;
+
 
 
     background:
 
-    rgba(255,255,255,.06);
+        rgba(255,255,255,.06);
 
 
 
-    text-align:center;
+    text-align:
+
+        center;
 
 
-    font-weight:700;
+
+    font-weight:
+
+        700;
 
 
-    transition:.25s;
 
+    transition:
+
+        .25s;
 
 }
+
 
 
 
@@ -844,11 +1335,11 @@ body {
 
     transform:
 
-    scale(1.02);
-
-
+        scale(1.02);
 
 }
+
+
 
 
 
@@ -860,21 +1351,22 @@ body {
 
     color:
 
-    var(--exact);
+        var(--exact);
+
 
 
     border:
 
-    1px solid var(--exact);
+        1px solid var(--exact);
+
 
 
     box-shadow:
 
-    0 0 18px var(--exact);
-
-
+        0 0 18px var(--exact);
 
 }
+
 
 
 
@@ -886,21 +1378,22 @@ body {
 
     color:
 
-    var(--plus);
+        var(--plus);
+
 
 
     border:
 
-    1px solid var(--plus);
+        1px solid var(--plus);
+
 
 
     box-shadow:
 
-    0 0 18px var(--plus);
-
-
+        0 0 18px var(--plus);
 
 }
+
 
 
 
@@ -912,21 +1405,22 @@ body {
 
     color:
 
-    var(--minus);
+        var(--minus);
+
 
 
     border:
 
-    1px solid var(--minus);
+        1px solid var(--minus);
+
 
 
     box-shadow:
 
-    0 0 18px var(--minus);
-
-
+        0 0 18px var(--minus);
 
 }
+
 
 
 
@@ -938,19 +1432,19 @@ body {
 
     color:
 
-    var(--warning);
+        var(--warning);
+
 
 
     border:
 
-    1px solid var(--warning);
+        1px solid var(--warning);
+
 
 
     box-shadow:
 
-    0 0 18px var(--warning);
-
-
+        0 0 18px var(--warning);
 
    }
 /* ==========================================================
@@ -960,79 +1454,81 @@ body {
 
 .btn-settings-open {
 
-
-    position:fixed;
-
-
-    top:18px;
+    position:
+    fixed;
 
 
-    left:18px;
+    top:
+    18px;
 
 
-    width:46px;
+    left:
+    18px;
 
 
-    height:46px;
+    width:
+    46px;
 
 
-    border-radius:50%;
+    height:
+    46px;
 
 
-
-    display:flex;
-
-
-    align-items:center;
+    border-radius:
+    50%;
 
 
-    justify-content:center;
+    display:
+    flex;
 
 
+    align-items:
+    center;
 
-    z-index:300;
 
+    justify-content:
+    center;
+
+
+    z-index:
+    300;
 
 
     border:
 
-    1px solid var(--glass-border);
-
+        1px solid var(--glass-border);
 
 
     background:
 
-    rgba(255,255,255,.08);
-
+        rgba(255,255,255,.08);
 
 
     backdrop-filter:
 
-    blur(15px);
-
+        blur(15px);
 
 
     color:
 
-    var(--neon-blue);
+        var(--neon-blue);
 
 
+    font-size:
 
-    font-size:24px;
+        24px;
 
 
-    cursor:pointer;
+    cursor:
 
+        pointer;
 
 
     box-shadow:
 
-    0 0 20px rgba(0,229,255,.45);
-
-
+        0 0 20px rgba(0,229,255,.45);
 
 }
-
 
 
 
@@ -1041,11 +1537,11 @@ body {
 
     transform:
 
-    rotate(30deg) scale(1.05);
-
-
+        rotate(30deg) scale(1.05);
 
 }
+
+
 
 
 
@@ -1057,69 +1553,79 @@ body {
 .drawer {
 
 
-    position:fixed;
+    position:
+
+        fixed;
 
 
-    top:0;
+    top:
+
+        0;
 
 
-    right:-360px;
+    right:
+
+        -360px;
 
 
-    width:340px;
+    width:
+
+        340px;
 
 
-    max-width:90vw;
+    max-width:
+
+        90vw;
 
 
+    height:
 
-    height:100vh;
+        100vh;
 
 
+    z-index:
 
-    z-index:500;
-
+        500;
 
 
     padding:
 
-    20px;
+        20px;
 
 
+    overflow-y:
 
-    overflow-y:auto;
-
+        auto;
 
 
     background:
 
-    rgba(8,15,25,.92);
-
+        rgba(8,15,25,.92);
 
 
     backdrop-filter:
 
-    blur(25px);
+        blur(25px);
 
+
+    -webkit-backdrop-filter:
+
+        blur(25px);
 
 
     border-left:
 
-    1px solid var(--glass-border);
-
+        1px solid var(--glass-border);
 
 
     box-shadow:
 
-    -10px 0 35px rgba(0,0,0,.5);
-
+        -10px 0 35px rgba(0,0,0,.5);
 
 
     transition:
 
-    right .35s ease;
-
-
+        right .35s ease;
 
 }
 
@@ -1127,32 +1633,36 @@ body {
 
 .drawer-open {
 
+    right:
 
-    right:0 !important;
-
+    0 !important;
 
 }
 
 
 
-/* رأس الدرج */
-
 
 .drawer-header {
 
 
-    display:flex;
+    display:
+
+    flex;
 
 
-    justify-content:space-between;
+    justify-content:
+
+    space-between;
 
 
-    align-items:center;
+    align-items:
+
+    center;
 
 
-    margin-bottom:20px;
+    margin-bottom:
 
-
+    20px;
 
 }
 
@@ -1160,11 +1670,9 @@ body {
 
 .drawer-header h2 {
 
-
     color:
 
     var(--neon-blue);
-
 
 }
 
@@ -1174,47 +1682,53 @@ body {
 .drawer-close-btn {
 
 
-    width:40px;
+    width:
+
+    40px;
 
 
-    height:40px;
+    height:
+
+    40px;
 
 
+    border-radius:
 
-    border-radius:50%;
-
+    50%;
 
 
     border:
 
-    1px solid rgba(255,255,255,.2);
-
+        1px solid rgba(255,255,255,.2);
 
 
     background:
 
-    rgba(255,255,255,.08);
+        rgba(255,255,255,.08);
 
 
+    color:
 
-    color:white;
-
-
-
-    font-size:22px;
+        white;
 
 
+    font-size:
 
-    cursor:pointer;
+        22px;
 
 
+    cursor:
+
+        pointer;
 
 }
 
 
 
+
+
 /* ==========================================================
-   SETTINGS CARDS
+   SETTINGS METRICS
    ========================================================== */
 
 
@@ -1223,38 +1737,35 @@ body {
 
     margin:
 
-    12px 0;
+        12px 0;
 
 
     padding:
 
-    14px;
-
+        14px;
 
 
     border-radius:
 
-    18px;
-
+        18px;
 
 
     background:
 
-    rgba(255,255,255,.06);
-
+        rgba(255,255,255,.06);
 
 
     border:
 
-    1px solid var(--glass-border);
+        1px solid var(--glass-border);
 
 
+    text-align:
 
-    text-align:center;
-
-
+        center;
 
 }
+
 
 
 
@@ -1263,15 +1774,15 @@ body {
 
     margin:
 
-    0 0 8px;
+        0 0 8px;
 
 
     color:
 
-    var(--neon-blue);
-
+        var(--neon-blue);
 
 }
+
 
 
 
@@ -1280,21 +1791,20 @@ body {
 
     font-size:
 
-    26px;
+        26px;
 
 
     font-weight:
 
-    900;
+        900;
 
 
     color:
 
-    var(--neon-blue);
-
-
+        var(--neon-blue);
 
 }
+
 
 
 
@@ -1307,49 +1817,44 @@ body {
 .btn-neon {
 
 
-    border:none;
+    border:
 
+        none;
 
 
     padding:
 
-    12px 20px;
-
+        12px 20px;
 
 
     border-radius:
 
-    14px;
-
+        14px;
 
 
     background:
 
-    var(--neon-blue);
-
+        var(--neon-blue);
 
 
     color:
 
-    #00141b;
-
+        #00141b;
 
 
     font-weight:
 
-    800;
+        800;
 
 
+    cursor:
 
-    cursor:pointer;
-
+        pointer;
 
 
     box-shadow:
 
-    0 0 20px rgba(0,229,255,.6);
-
-
+        0 0 20px rgba(0,229,255,.6);
 
 }
 
@@ -1359,89 +1864,95 @@ body {
 .btn-close {
 
 
-    border:none;
+    border:
 
+        none;
 
 
     padding:
 
-    12px 20px;
-
+        12px 20px;
 
 
     border-radius:
 
-    14px;
-
+        14px;
 
 
     background:
 
-    #e74c3c;
+        #e74c3c;
 
 
+    color:
 
-    color:white;
-
-
-
-    cursor:pointer;
+        white;
 
 
+    cursor:
+
+        pointer;
 
 }
 
 
 
+
+
 /* ==========================================================
-   MODAL SYSTEM (PLAN 2 / PLAN 3)
+   MODAL SYSTEM
    ========================================================== */
 
 
 .modal-overlay {
 
 
-    position:fixed;
+    position:
+
+        fixed;
 
 
+    inset:
 
-    inset:0;
-
-
-
-    z-index:600;
+        0;
 
 
+    z-index:
 
-    display:flex;
-
-
-
-    align-items:center;
+        600;
 
 
+    display:
 
-    justify-content:center;
+        flex;
 
 
+    align-items:
 
-    padding:20px;
+        center;
 
+
+    justify-content:
+
+        center;
+
+
+    padding:
+
+        20px;
 
 
     background:
 
-    rgba(0,0,0,.65);
-
+        rgba(0,0,0,.65);
 
 
     backdrop-filter:
 
-    blur(5px);
-
-
+        blur(5px);
 
 }
+
 
 
 
@@ -1450,163 +1961,101 @@ body {
 
     width:
 
-    100%;
-
+        100%;
 
 
     max-width:
 
-    480px;
-
-
+        480px;
 
 }
+
 
 
 
 .modal-buttons {
 
 
-    display:flex;
+    display:
+
+        flex;
 
 
+    justify-content:
 
-    justify-content:center;
+        center;
 
 
+    gap:
 
-    gap:12px;
-
+        12px;
 
 
     margin-top:
 
-    20px;
-
-
+        20px;
 
 }
 
 
 
-/* ==========================================================
-   PLAN PLUS INDICATORS
-   ========================================================== */
 
 
-.plan-plus {
-
-
-    display:inline-flex;
-
-
-    align-items:center;
-
-
-    justify-content:center;
-
-
-
-    width:34px;
-
-
-    height:34px;
-
-
-
-    border-radius:50%;
-
-
-
-    background:
-
-    rgba(0,229,255,.15);
-
-
-
-    color:
-
-    var(--neon-blue);
-
-
-
-    border:
-
-    1px solid var(--neon-blue);
-
-
-
-    font-size:22px;
-
-
-
-   }
 /* ==========================================================
    RESULTS SCROLL AREA
    ========================================================== */
 
 
-/*
-   الواجهة فارغة:
-   ثابتة ولا تتحرك باللمس
-
-   عند ظهور النتائج:
-   يسمح فقط بمنطقة النتائج بالتمرير
-*/
-
-
 .results-workflow-view {
 
 
-    width:100%;
+    width:
+
+        100%;
 
 
-    max-width:520px;
+    max-width:
+
+        520px;
 
 
+    overflow-y:
 
-    overflow-y:auto;
+        auto;
 
 
+    overflow-x:
 
-    overflow-x:hidden;
-
+        hidden;
 
 
     padding:
 
-    5px 8px 30px;
+        5px 8px 30px;
 
 
+    flex:
 
-    flex:1;
-
+        1;
 
 
     scrollbar-width:
 
-    thin;
-
-
+        thin;
 
 }
 
 
-
-
-
-/* ==========================================================
-   HIDE DEFAULT SCROLLBAR
-   ========================================================== */
 
 
 .results-workflow-view::-webkit-scrollbar {
 
+    width:
 
-    width:5px;
-
+    5px;
 
 }
+
 
 
 .results-workflow-view::-webkit-scrollbar-thumb {
@@ -1614,57 +2063,75 @@ body {
 
     background:
 
-    rgba(0,229,255,.4);
+        rgba(0,229,255,.4);
 
 
     border-radius:
 
-    10px;
-
+        10px;
 
 }
+
 
 
 
 
 /* ==========================================================
-   EMPTY SCREEN FIX
+   PLAN PLUS INDICATOR
    ========================================================== */
 
 
-.welcome-screen {
+.plan-plus {
 
 
-    flex-shrink:0;
+    display:
+
+        inline-flex;
 
 
-}
+    align-items:
+
+        center;
 
 
+    justify-content:
 
-/* ==========================================================
-   SHINY OUTPUT CONTAINERS FIX
-   ========================================================== */
-
-
-.shiny-html-output {
+        center;
 
 
-    width:100%;
+    width:
+
+        34px;
 
 
-}
+    height:
+
+        34px;
 
 
+    border-radius:
 
-.shiny-output-error {
-
-
-    color:#ff5555;
+        50%;
 
 
-    text-align:center;
+    background:
 
+        rgba(0,229,255,.15);
+
+
+    color:
+
+        var(--neon-blue);
+
+
+    border:
+
+        1px solid var(--neon-blue);
+
+
+    font-size:
+
+        22px;
 
 }
 
@@ -1680,14 +2147,11 @@ body {
 @media(max-width:600px){
 
 
-
     .main-layout {
-
 
         padding:
 
-        14px 10px;
-
+            14px 10px;
 
     }
 
@@ -1695,11 +2159,9 @@ body {
 
     .brand-neon-main {
 
-
         font-size:
 
-        28px;
-
+            28px;
 
     }
 
@@ -1707,36 +2169,29 @@ body {
 
     .brand-neon-sub {
 
-
         font-size:
 
-        13px;
-
+            13px;
 
 
         letter-spacing:
 
-        3px;
-
+            3px;
 
     }
 
 
 
-
     .main-phone-image {
-
 
         width:
 
-        190px;
-
+            190px;
 
 
         max-height:
 
-        28vh;
-
+            28vh;
 
     }
 
@@ -1744,30 +2199,24 @@ body {
 
     .search-box input[type="text"] {
 
-
         height:
 
-        44px;
-
+            44px;
 
     }
-
 
 
 
     .drawer {
 
-
         width:
 
-        90vw;
-
+            90vw;
 
     }
 
-
-
 }
+
 
 
 
@@ -1780,14 +2229,11 @@ body {
 @media(max-height:700px){
 
 
-
     .main-phone-image {
-
 
         width:
 
-        150px;
-
+            150px;
 
     }
 
@@ -1795,11 +2241,9 @@ body {
 
     .brand-wrapper {
 
-
         margin-bottom:
 
-        5px;
-
+            5px;
 
     }
 
@@ -1807,35 +2251,36 @@ body {
 
     .brand-neon-main {
 
-
         font-size:
 
-        24px;
-
+            24px;
 
     }
-
 
 }
 
 
 
+
+
 /* ==========================================================
-   PREVENT TEXT BREAKING
+   TEXT PROTECTION
    ========================================================== */
 
 
 .phone-title,
 .ammar-flat-card,
+.glass-result-card,
 .result-title {
 
 
     word-break:
 
-    break-word;
-
+        break-word;
 
 }
+
+
 
 
 
@@ -1849,16 +2294,15 @@ body {
 
     box-shadow:
 
-    0 0 35px rgba(0,229,255,.35),
-
-    0 15px 40px rgba(0,0,0,.5);
+        0 0 35px rgba(0,229,255,.35),
 
 
+        0 15px 40px rgba(0,0,0,.5);
 
 }
 
 
 
 /* ==========================================================
-   END OF VISUAL IDENTITY
+   END OF STYLE_V2.CSS FINAL BUILD
    ========================================================== */
