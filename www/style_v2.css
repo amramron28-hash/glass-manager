@@ -1,16 +1,35 @@
+/* --- 0. تثبيت خلفية التطبيق ملء الشاشة --- */
+body {
+    background-image: url('/www/phone_image.webp') !important; /* مسار الصورة داخل مجلد الويب */
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important; /* هذا السطر يثبت الصورة تماماً أثناء التمرير */
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+    background-color: #0d1117 !important; /* لون احتياطي داكن في حال تأخر تحميل الصورة */
+}
+
+/* لضمان أن حاويات التطبيق الرئيسية شفافة وتمر فوق الخلفية بسلاسة */
+.main-panel, .container-fluid, .content {
+    background: transparent !important;
+}
+
 /* --- 1. تأثير الزجاج الشفاف (Glassmorphism) --- */
 .glass-card {
     background: rgba(255, 255, 255, 0.05) !important;
     backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    padding: 15px;
-    margin: 10px;
+    -webkit-backdrop-filter: blur(10px) !important; /* لدعم متصفحات آيفون وسفاري */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 15px !important;
+    padding: 15px !important;
+    margin: 10px !important;
 }
 
 /* --- 2. شريط البحث (إعادة النيون) --- */
 .shiny-input-container {
-    padding: 10px;
+    padding: 10px !important;
 }
 input[type="search"], input[type="text"] {
     background: #0d1117 !important;
@@ -26,10 +45,10 @@ input[type="search"], input[type="text"] {
     background: rgba(46, 204, 113, 0.1) !important;
     border-left: 4px solid #2ecc71 !important;
     box-shadow: 0 0 15px rgba(46, 204, 113, 0.2) !important;
-    margin: 5px 0;
-    padding: 10px;
-    color: #fff;
-    border-radius: 0 5px 5px 0;
+    margin: 5px 0 !important;
+    padding: 10px !important;
+    color: #fff !important;
+    border-radius: 0 5px 5px 0 !important;
 }
 
 /* --- 4. معالجة "الستارة" (قائمة الـ Auto-complete) --- */
