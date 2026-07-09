@@ -1,7 +1,5 @@
 from shiny import ui
 
-from ui_theme import THEME, SIZES, UI_SETTINGS
-
 
 # ==========================================================
 # SETTINGS BUTTON
@@ -11,14 +9,13 @@ def draw_settings_button():
 
     return ui.tags.button(
 
-        UI_SETTINGS["settings_icon"],
+        "⚙",
 
         id="btn_settings",
 
         class_="btn-settings-open"
 
     )
-
 
 
 # ==========================================================
@@ -30,19 +27,13 @@ def draw_brand():
     return ui.div(
 
         ui.div(
-
             "ZEGAAR AMMAR",
-
             class_="brand-neon-main"
-
         ),
 
         ui.div(
-
             "GLASS MANAGER",
-
             class_="brand-neon-sub"
-
         ),
 
         class_="brand-wrapper"
@@ -50,9 +41,8 @@ def draw_brand():
     )
 
 
-
 # ==========================================================
-# WELCOME IMAGE
+# MAIN IMAGE ONLY
 # ==========================================================
 
 def draw_main_image():
@@ -64,7 +54,6 @@ def draw_main_image():
         class_="main-phone-image"
 
     )
-
 
 
 # ==========================================================
@@ -84,7 +73,6 @@ def draw_header():
     )
 
 
-
 # ==========================================================
 # WELCOME SCREEN
 # ==========================================================
@@ -94,8 +82,6 @@ def draw_welcome_header():
     return ui.div(
 
         draw_main_image(),
-
-        draw_brand(),
 
         class_="welcome-screen"
 
