@@ -10,13 +10,19 @@ def draw_search_box():
     return ui.div(
 
         ui.input_text(
+
             "search_query",
+
             "",
+
             placeholder="ابحث عن موديل الهاتف..."
+
         ),
 
         ui.output_ui(
+
             "suggestions_curtain"
+
         ),
 
         class_="search-box"
@@ -33,42 +39,44 @@ def draw_suggestions_curtain(suggestions):
     if not suggestions:
         return None
 
-    return ui.div(
+    rows = []
 
-        *[
+    for model in suggestions:
 
-            ui.tags.div(
+        rows.append(
 
-                ui.span(
+            ui.div(
+
+                ui.div(
+
                     "📱",
+
                     class_="suggestion-icon"
+
                 ),
 
-                ui.span(
+                ui.div(
+
                     model,
+
                     class_="suggestion-text"
+
                 ),
 
                 class_="suggestion-row",
 
                 **{
-                    "onclick":
-                    f"""
-                    document.querySelector('#search_query').value='{model}';
-                    document.querySelector('#search_query').dispatchEvent(
-                        new Event('input',{{
-                            bubbles:true
-                        }})
-                    );
-                    """
+                    "data-value": model
                 }
 
             )
 
-            for model in suggestions
+        )
 
-        ],
+    return ui.div(
 
-        class_="suggestions-curtain glass-card"
+        *rows,
+
+        class_="suggestions-curtain"
 
     )
