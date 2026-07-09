@@ -4,112 +4,41 @@ from config import REFRESH_INTERVAL_SEC
 
 from logic_engine import (
     run_system_workflows,
-    run_intelligent_inspector
+    run_intelligent_inspector,
 )
 
 from silent_monitor import (
     get_database,
-    monitor
+    monitor,
 )
-
 
 from ui_cards import (
     draw_technical_coords,
-    draw_neon_section
+    draw_neon_section,
 )
 
 from ui_header import (
-    draw_welcome_header as draw_welcome_section
+    draw_welcome_header as draw_welcome_section,
 )
 
 from ui_settings import (
     draw_system_info,
     draw_database_status,
     draw_monitor_component,
-    draw_silent_inspector
+    draw_silent_inspector,
+    draw_notification_component,
 )
 
 from ui_search import (
-    draw_suggestions_curtain
+    draw_suggestions_curtain,
 )
 
 from ui_plans import (
     draw_plan_3_modal,
-    draw_modal_overlay
+    draw_modal_overlay,
 )
 
-
 MAX_SUGGESTIONS = 10
-
-
-
-# ==========================================================
-# MODELS EXTRACTOR
-# ==========================================================
-
-def _extract_unique_models(db_data: dict) -> list:
-
-    models = set()
-
-    for panels in (db_data or {}).values():
-
-        if not isinstance(panels, dict):
-            continue
-
-        for sensors in panels.values():
-
-            if not isinstance(sensors, dict):
-                continue
-
-            for data in sensors.values():
-
-                model_list = (
-                    data.get("models", [])
-                    if isinstance(data, dict)
-                    else data
-                )
-
-                if not isinstance(model_list, list):
-                    continue
-
-                for model in model_list:
-
-                    if isinstance(model, str) and model.strip():
-
-                        models.add(
-                            model.strip()
-                        )
-
-    return sorted(models)
-
-
-
-# ==========================================================
-# SERVER
-# ==========================================================
-
-def server(input, output, session):
-
-    workflow_state = reactive.value(None)
-
-    show_curtain = reactive.value(False)
-
-    show_not_found_modal = reactive.value(False)
-
-
-
-    # ======================================================
-    # HEALTH
-    # ======================================================
-
-    @reactive.calc
-    def health_snapshot():
-
-        reactive.invalidate_later(
-            REFRESH_INTERVAL_SEC
-        )
-
-        return monitor() or {}
     # ======================================================
     # SEARCH ENGINE
     # ======================================================
@@ -117,7 +46,7 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(
         input.search_query,
-        ignore_none=True
+        ignore_none=False,
     )
     async def _run_search():
 
@@ -125,8 +54,9 @@ def server(input, output, session):
             input.search_query() or ""
         ).strip()
 
+        # إظهار الاقتراحات من أول حرف
+        show_curtain.set(len(query) >= 1)
 
-        # لا نشغل المحرك قبل وجود نص
         if not query:
 
             workflow_state.set(None)
@@ -135,22 +65,18 @@ def server(input, output, session):
 
             return
 
-
         db = get_database() or {}
-
 
         res = run_system_workflows(
             query,
             db_data=db
         )
 
-
         workflow_state.set(res)
 
+        matched_exact = (
 
-        exact = (
-
-            res
+            bool(res)
 
             and res.get("status") == "success"
 
@@ -163,59 +89,48 @@ def server(input, output, session):
 
         )
 
-
-        # إظهار الستارة إذا كان المستخدم يكتب فقط
-
-        show_curtain.set(
-            not exact
-        )
-
+        # عند المطابقة التامة تختفي الستارة
+        if matched_exact:
+            show_curtain.set(False)
 
         show_not_found_modal.set(
 
             bool(res)
 
-            and res.get("status")
-            == "plan_3"
+            and res.get("status") == "plan_3"
 
         )
 
 
-
     # ======================================================
-    # CLOSE MODAL
+    # CLOSE PLAN MODAL
     # ======================================================
 
     @reactive.effect
     @reactive.event(
         input.btn_close_modal,
-        ignore_none=True
+        ignore_none=True,
     )
-
     async def _close_modal():
 
         show_not_found_modal.set(False)
 
 
-
     # ======================================================
-    # INSPECTOR
+    # RUN SILENT INSPECTOR
     # ======================================================
 
     @reactive.effect
     @reactive.event(
         input.btn_run_inspector,
-        ignore_none=True
+        ignore_none=True,
     )
-
     async def _run_inspector():
 
         run_intelligent_inspector()
 
+        # تحديث قاعدة البيانات بعد الفحص
         get_database()
-
-
-
     # ======================================================
     # WELCOME
     # ======================================================
@@ -224,12 +139,13 @@ def server(input, output, session):
     def welcome_area():
 
         if workflow_state() is None:
-
             return draw_welcome_section()
 
         return None
+
+
     # ======================================================
-    # RESULTS VIEW
+    # RESULTS
     # ======================================================
 
     @render.ui
@@ -237,159 +153,99 @@ def server(input, output, session):
 
         res = workflow_state()
 
-
         if not res:
-
             return None
-
 
         if res.get("status") != "success":
-
             return None
 
+        coords = res.get("coords", {})
+        results = res.get("compatibles", {})
 
+        output_cards = []
 
-        coords = res.get(
-            "coords",
-            {}
+        # البطاقة الرئيسية
+        output_cards.append(
+            draw_technical_coords(coords)
         )
 
+        # مطابق تماماً
+        if results.get("exact"):
 
-        results = res.get(
-            "compatibles",
-            {}
-        )
-
-
-        phone = coords.get(
-            "real_name",
-            ""
-        )
-
-
-        exact_list = results.get(
-            "exact",
-            []
-        )
-
-
-        plus_list = results.get(
-            "plus",
-            []
-        )
-
-
-        minus_list = results.get(
-            "minus",
-            []
-        )
-
-
-        warn_list = results.get(
-            "warn",
-            []
-        )
-
-
-        output = [
-
-            draw_technical_coords(
-                coords
-            )
-
-        ]
-
-
-        if exact_list:
-
-            output.append(
+            output_cards.append(
 
                 draw_neon_section(
 
                     "هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)",
 
-                    exact_list,
+                    results["exact"],
 
                     "#2ecc71",
 
-                    "🟢",
-
-                    phone
+                    "🟢"
 
                 )
 
             )
 
+        # أكبر قليلاً
+        if results.get("plus"):
 
-        if plus_list:
-
-            output.append(
+            output_cards.append(
 
                 draw_neon_section(
 
-                    "هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)",
+                    "هواتف أكبر بقليل متوافقة (Plus +0.01 → +0.03)",
 
-                    plus_list,
+                    results["plus"],
 
                     "#3498db",
 
-                    "🔵",
-
-                    phone
+                    "🔵"
 
                 )
 
             )
 
+        # أصغر قليلاً
+        if results.get("minus"):
 
-        if minus_list:
-
-            output.append(
+            output_cards.append(
 
                 draw_neon_section(
 
-                    "هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)",
+                    "هواتف أصغر بقليل متوافقة (Minus -0.01 → -0.03)",
 
-                    minus_list,
+                    results["minus"],
 
                     "#e67e22",
 
-                    "🟤",
-
-                    phone
+                    "🟤"
 
                 )
 
             )
 
+        # تحذير اختلاف المستشعر
+        if results.get("warn"):
 
-        if warn_list:
-
-            output.append(
+            output_cards.append(
 
                 draw_neon_section(
 
-                    "تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف",
+                    "تنبيه: نفس المقاس لكن مستشعر مختلف",
 
-                    warn_list,
+                    results["warn"],
 
                     "#ef4444",
 
-                    "⚠️",
-
-                    phone
+                    "⚠️"
 
                 )
 
             )
 
-
-        return ui.TagList(
-            *output
-        )
-
-
-
+        return ui.TagList(*output_cards)
     # ======================================================
     # AUTOCOMPLETE
     # ======================================================
@@ -398,54 +254,38 @@ def server(input, output, session):
     def suggestions_curtain():
 
         if not show_curtain():
-
             return None
-
 
         query = str(
             input.search_query() or ""
         ).strip().lower()
 
-
-
-        # يظهر من أول حرف
-
+        # يبدأ الاقتراح من أول حرف
         if len(query) < 1:
-
             return None
-
-
 
         db = get_database() or {}
 
-        models = _extract_unique_models(
-            db
-        )
-
+        models = _extract_unique_models(db)
 
         matches = [
-
             model
-
             for model in models
-
             if query in model.lower()
+        ]
 
-        ][:MAX_SUGGESTIONS]
+        # إزالة التكرارات مع الحفاظ على الترتيب
+        matches = list(dict.fromkeys(matches))
 
-
+        # الحد الأقصى
+        matches = matches[:MAX_SUGGESTIONS]
 
         if not matches:
-
             return None
 
-
-
-        return draw_suggestions_curtain(
-            matches
-    )
+        return draw_suggestions_curtain(matches)
     # ======================================================
-    # SETTINGS PANEL
+    # SETTINGS
     # ======================================================
 
     @render.ui
@@ -454,39 +294,24 @@ def server(input, output, session):
         return draw_system_info()
 
 
-
     @render.ui
     def database_status_area():
 
         health = health_snapshot()
 
-
         stats = (
-
             health.get("statistics", {})
-
             if isinstance(health, dict)
-
             else {}
-
         )
-
 
         total = (
-
             stats.get("phones", 0)
-
             if isinstance(stats, dict)
-
             else 0
-
         )
 
-
-        return draw_database_status(
-            total
-        )
-
+        return draw_database_status(total)
 
 
     @render.ui
@@ -494,32 +319,19 @@ def server(input, output, session):
 
         health = health_snapshot()
 
-
         status = (
-
-            health.get(
-                "status",
-                "UNKNOWN"
-            )
-
+            health.get("status", "UNKNOWN")
             if isinstance(health, dict)
-
             else "UNKNOWN"
-
         )
 
-
-        return draw_monitor_component(
-            status
-        )
-
+        return draw_monitor_component(status)
 
 
     @render.ui
     def silent_inspector_area():
 
         return draw_silent_inspector()
-
 
 
     # ======================================================
@@ -532,10 +344,8 @@ def server(input, output, session):
         if show_not_found_modal():
 
             return draw_modal_overlay(
-
                 draw_plan_3_modal()
-
             )
 
-
         return None
+        
