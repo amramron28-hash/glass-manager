@@ -10,7 +10,6 @@ def draw_technical_coords(coords):
     if not coords:
         return None
 
-
     return ui.div(
 
         ui.h3(
@@ -18,24 +17,20 @@ def draw_technical_coords(coords):
             class_="phone-title"
         ),
 
-
         ui.div(
             f"المقاس : {coords.get('size','-')}",
             class_="coord-line"
         ),
-
 
         ui.div(
             f"نوع الشاشة : {coords.get('panel','-')}",
             class_="coord-line"
         ),
 
-
         ui.div(
             f"المستشعر : {coords.get('sensor','-')}",
             class_="coord-line"
         ),
-
 
         class_="glass-card neon-card"
 
@@ -50,9 +45,10 @@ def draw_technical_coords(coords):
 def draw_neon_section(
     title,
     models,
-    color,
-    icon,
-    phone=""
+    color="#00e5ff",
+    icon="📱",
+    phone="",
+    section_type=""
 ):
 
     if not models:
@@ -102,7 +98,7 @@ def draw_neon_section(
                 else None,
 
 
-                class_="ammar-flat-card",
+                class_=f"ammar-flat-card {section_type}",
 
                 style=f"""
                 border:1px solid {color};
@@ -130,7 +126,15 @@ def draw_warning_card(message):
 
     return ui.div(
 
-        "⚠️ " + message,
+        ui.span(
+            "⚠️",
+            class_="result-icon"
+        ),
+
+        ui.span(
+            message,
+            class_="result-title-text"
+        ),
 
         class_="flat-warning-card"
 
