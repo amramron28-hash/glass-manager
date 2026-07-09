@@ -8,18 +8,14 @@ from shiny import ui
 def draw_settings_button():
 
     return ui.tags.button(
-
         "⚙",
-
         id="btn_settings",
-
         class_="btn-settings-open"
-
     )
 
 
 # ==========================================================
-# BRAND
+# APP BRAND
 # ==========================================================
 
 def draw_brand():
@@ -42,7 +38,7 @@ def draw_brand():
 
 
 # ==========================================================
-# MAIN IMAGE ONLY
+# MAIN IMAGE
 # ==========================================================
 
 def draw_main_image():
@@ -51,13 +47,15 @@ def draw_main_image():
 
         src="phone_image.webp",
 
+        alt="Phone",
+
         class_="main-phone-image"
 
     )
 
 
 # ==========================================================
-# MAIN HEADER
+# HEADER
 # ==========================================================
 
 def draw_header():
@@ -74,12 +72,14 @@ def draw_header():
 
 
 # ==========================================================
-# WELCOME SCREEN
+# WELCOME HEADER
 # ==========================================================
 
 def draw_welcome_header():
 
     return ui.div(
+
+        draw_header(),
 
         draw_main_image(),
 
