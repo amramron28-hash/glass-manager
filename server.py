@@ -1,40 +1,53 @@
 from shiny import render, reactive, ui
 
 from config import REFRESH_INTERVAL_SEC
-from logic_engine import run_system_workflows, run_intelligent_inspector
-from silent_monitor import get_database, monitor
+
+from logic_engine import (
+    run_system_workflows,
+    run_intelligent_inspector
+)
+
+from silent_monitor import (
+    get_database,
+    monitor
+)
+
 
 from ui_cards import (
     draw_technical_coords,
-    draw_neon_section,
+    draw_neon_section
 )
 
 from ui_header import (
-    draw_welcome_header as draw_welcome_section,
+    draw_welcome_header as draw_welcome_section
 )
 
 from ui_settings import (
     draw_system_info,
     draw_database_status,
     draw_monitor_component,
-    draw_silent_inspector,
+    draw_silent_inspector
 )
 
 from ui_search import (
-    draw_suggestions_curtain,
+    draw_suggestions_curtain
 )
 
 from ui_plans import (
     draw_plan_3_modal,
-    draw_modal_overlay,
+    draw_modal_overlay
 )
 
 
 MAX_SUGGESTIONS = 10
 
 
+
+# ==========================================================
+# MODELS EXTRACTOR
+# ==========================================================
+
 def _extract_unique_models(db_data: dict) -> list:
-    """استخراج قائمة مسطحة وفريدة بكل أسماء الموديلات من قاعدة البيانات المتداخلة"""
 
     models = set()
 
@@ -59,14 +72,21 @@ def _extract_unique_models(db_data: dict) -> list:
                 if not isinstance(model_list, list):
                     continue
 
-                for m in model_list:
+                for model in model_list:
 
-                    if isinstance(m, str) and m.strip():
-                        models.add(m.strip())
+                    if isinstance(model, str) and model.strip():
+
+                        models.add(
+                            model.strip()
+                        )
 
     return sorted(models)
 
 
+
+# ==========================================================
+# SERVER
+# ==========================================================
 
 def server(input, output, session):
 
@@ -77,9 +97,10 @@ def server(input, output, session):
     show_not_found_modal = reactive.value(False)
 
 
-    # ============================================================
-    # HEALTH MONITOR
-    # ============================================================
+
+    # ======================================================
+    # HEALTH
+    # ======================================================
 
     @reactive.calc
     def health_snapshot():
@@ -89,19 +110,15 @@ def server(input, output, session):
         )
 
         return monitor() or {}
-
-
-
-    # ============================================================
-    # SEARCH
-    # ============================================================
+    # ======================================================
+    # SEARCH ENGINE
+    # ======================================================
 
     @reactive.effect
     @reactive.event(
         input.search_query,
         ignore_none=True
     )
-
     async def _run_search():
 
         query = str(
@@ -109,11 +126,10 @@ def server(input, output, session):
         ).strip()
 
 
-        if len(query) < 2:
+        # لا نشغل المحرك قبل وجود نص
+        if not query:
 
             workflow_state.set(None)
-
-            show_curtain.set(False)
 
             show_not_found_modal.set(False)
 
@@ -132,9 +148,9 @@ def server(input, output, session):
         workflow_state.set(res)
 
 
-        matched_exactly = (
+        exact = (
 
-            bool(res)
+            res
 
             and res.get("status") == "success"
 
@@ -148,8 +164,10 @@ def server(input, output, session):
         )
 
 
+        # إظهار الستارة إذا كان المستخدم يكتب فقط
+
         show_curtain.set(
-            not matched_exactly
+            not exact
         )
 
 
@@ -164,9 +182,9 @@ def server(input, output, session):
 
 
 
-    # ============================================================
+    # ======================================================
     # CLOSE MODAL
-    # ============================================================
+    # ======================================================
 
     @reactive.effect
     @reactive.event(
@@ -180,9 +198,9 @@ def server(input, output, session):
 
 
 
-    # ============================================================
+    # ======================================================
     # INSPECTOR
-    # ============================================================
+    # ======================================================
 
     @reactive.effect
     @reactive.event(
@@ -198,9 +216,9 @@ def server(input, output, session):
 
 
 
-    # ============================================================
+    # ======================================================
     # WELCOME
-    # ============================================================
+    # ======================================================
 
     @render.ui
     def welcome_area():
@@ -210,12 +228,9 @@ def server(input, output, session):
             return draw_welcome_section()
 
         return None
-
-
-
-    # ============================================================
-    # RESULTS
-    # ============================================================
+    # ======================================================
+    # RESULTS VIEW
+    # ======================================================
 
     @render.ui
     def results_workflow_view():
@@ -223,9 +238,15 @@ def server(input, output, session):
         res = workflow_state()
 
 
-        if not res or res.get("status") != "success":
+        if not res:
 
             return None
+
+
+        if res.get("status") != "success":
+
+            return None
+
 
 
         coords = res.get(
@@ -234,41 +255,144 @@ def server(input, output, session):
         )
 
 
-        comp = res.get(
+        results = res.get(
             "compatibles",
             {}
         )
 
 
+        phone = coords.get(
+            "real_name",
+            ""
+        )
+
+
+        exact_list = results.get(
+            "exact",
+            []
+        )
+
+
+        plus_list = results.get(
+            "plus",
+            []
+        )
+
+
+        minus_list = results.get(
+            "minus",
+            []
+        )
+
+
+        warn_list = results.get(
+            "warn",
+            []
+        )
+
+
+        output = [
+
+            draw_technical_coords(
+                coords
+            )
+
+        ]
+
+
+        if exact_list:
+
+            output.append(
+
+                draw_neon_section(
+
+                    "هواتف مطابقة تماماً في الأبعاد والقص (Exact 0.00)",
+
+                    exact_list,
+
+                    "#2ecc71",
+
+                    "🟢",
+
+                    phone
+
+                )
+
+            )
+
+
+        if plus_list:
+
+            output.append(
+
+                draw_neon_section(
+
+                    "هواتف أكبر بقليل متوافقة (Plus +0.01 إلى +0.03)",
+
+                    plus_list,
+
+                    "#3498db",
+
+                    "🔵",
+
+                    phone
+
+                )
+
+            )
+
+
+        if minus_list:
+
+            output.append(
+
+                draw_neon_section(
+
+                    "هواتف أصغر بقليل متوافقة (Minus -0.01 إلى -0.03)",
+
+                    minus_list,
+
+                    "#e67e22",
+
+                    "🟤",
+
+                    phone
+
+                )
+
+            )
+
+
+        if warn_list:
+
+            output.append(
+
+                draw_neon_section(
+
+                    "تنبيه حساس: هواتف بنفس المقاس ولكن بمستشعر مختلف",
+
+                    warn_list,
+
+                    "#ef4444",
+
+                    "⚠️",
+
+                    phone
+
+                )
+
+            )
+
+
         return ui.TagList(
-
-            draw_technical_coords(coords),
-
-            draw_neon_section(
-                "مطابقة تماماً",
-                comp.get("exact", []),
-                "exact"
-            ),
-
-            draw_neon_section(
-                "إضافات",
-                comp.get("plus", []),
-                "plus"
-            ),
-
-            draw_neon_section(
-                "أصغر",
-                comp.get("minus", []),
-                "minus"
-            ),
-
+            *output
         )
 
 
 
-    # ============================================================
-    # SUGGESTIONS
-    # ============================================================
+    # ======================================================
+    # AUTOCOMPLETE
+    # ======================================================
 
     @render.ui
     def suggestions_curtain():
@@ -283,35 +407,46 @@ def server(input, output, session):
         ).strip().lower()
 
 
-        if len(query) < 2:
+
+        # يظهر من أول حرف
+
+        if len(query) < 1:
 
             return None
 
 
+
         db = get_database() or {}
 
-
-        all_models = _extract_unique_models(db)
+        models = _extract_unique_models(
+            db
+        )
 
 
         matches = [
 
-            m
+            model
 
-            for m in all_models
+            for model in models
 
-            if query in m.lower()
+            if query in model.lower()
 
         ][:MAX_SUGGESTIONS]
 
 
-        return draw_suggestions_curtain(matches)
+
+        if not matches:
+
+            return None
 
 
 
-    # ============================================================
-    # SETTINGS
-    # ============================================================
+        return draw_suggestions_curtain(
+            matches
+    )
+    # ======================================================
+    # SETTINGS PANEL
+    # ======================================================
 
     @render.ui
     def system_info_area():
@@ -324,6 +459,7 @@ def server(input, output, session):
     def database_status_area():
 
         health = health_snapshot()
+
 
         stats = (
 
@@ -347,7 +483,9 @@ def server(input, output, session):
         )
 
 
-        return draw_database_status(total)
+        return draw_database_status(
+            total
+        )
 
 
 
@@ -357,7 +495,7 @@ def server(input, output, session):
         health = health_snapshot()
 
 
-        label = (
+        status = (
 
             health.get(
                 "status",
@@ -371,7 +509,9 @@ def server(input, output, session):
         )
 
 
-        return draw_monitor_component(label)
+        return draw_monitor_component(
+            status
+        )
 
 
 
@@ -382,9 +522,9 @@ def server(input, output, session):
 
 
 
-    # ============================================================
+    # ======================================================
     # PLAN 3 MODAL
-    # ============================================================
+    # ======================================================
 
     @render.ui
     def dynamic_modal_container():
@@ -392,7 +532,10 @@ def server(input, output, session):
         if show_not_found_modal():
 
             return draw_modal_overlay(
+
                 draw_plan_3_modal()
+
             )
+
 
         return None
