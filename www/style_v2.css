@@ -1,133 +1,1510 @@
-/* ==========================================================================
-   تطبيق زجاج عمار - الإصلاح النهائي لثبات الخلفية وتنسيق الأزرار والشعار
-   ========================================================================== */
+/* ==========================================================
+   ZEGAAR AMMAR GLASS MANAGER
+   style_v2.css
+   FINAL REBUILD v3
+   ========================================================== */
 
-/* --- 0. تثبيت الخلفية الموحدة بشكل حتمي ومنع التكرار --- */
-html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    height: 100vh !important;
-    width: 100vw !important;
-    overflow-x: hidden !important;
-    background-color: #0d1117 !important;
+
+/* ==========================================================
+   ROOT VARIABLES
+   ========================================================== */
+
+:root{
+
+    --bg-main:#080d14;
+
+    --glass-bg:rgba(255,255,255,.08);
+
+    --glass-border:rgba(255,255,255,.16);
+
+    --neon-blue:#00e5ff;
+
+    --exact:#2ecc71;
+
+    --plus:#3498db;
+
+    --minus:#e67e22;
+
+    --warning:#ef4444;
+
+    --text-main:#ecf7ff;
+
+    --text-muted:#9aa8b8;
+
+    --shadow-glass:
+        0 10px 35px rgba(0,0,0,.45);
+
+    --glow-blue:
+        0 0 25px rgba(0,229,255,.30);
+
 }
 
-body {
-    background-image: url('phone_image.webp') !important;
-    background-size: cover !important;        /* جعل الصورة تغطي الشاشة بالكامل */
-    background-position: center top !important; /* محاذاة من الأعلى */
-    background-repeat: no-repeat !important;   /* منع تكرار الصورة نهائياً فوق بعضها */
-    background-attachment: fixed !important;   /* تثبيت الخلفية تماماً عند تحرك النتائج */
+
+
+/* ==========================================================
+   RESET
+   ========================================================== */
+
+*{
+
+    margin:0;
+
+    padding:0;
+
+    box-sizing:border-box;
+
 }
 
-/* تنظيف حاويات Shiny تماماً من أي ألوان مصمتة أو خلفيات بيضاء مبعثرة */
-.main-panel, .container-fluid, .content, .container, .page-container, .app-container,
-.row, [class*="col-"], .shiny-html-output, .well {
-    background: transparent !important;
-    background-color: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
+
+html,
+body{
+
+    width:100%;
+
+    height:100%;
+
+    overflow:hidden;
+
+    direction:rtl;
+
+    font-family:
+
+        "Segoe UI",
+
+        "Cairo",
+
+        Tahoma,
+
+        sans-serif;
+
 }
 
-/* --- 1. الشعار الرئيسي (نيون أزرق سماوي عريض على سطرين) --- */
-.app-title, .logo-title, h1, h2, .title-container {
-    color: #00f0ff !important;
-    font-size: 24px !important;
-    font-weight: 900 !important;
-    text-align: center !important;
-    text-transform: uppercase !important;
-    white-space: pre-line !important;
-    margin: 15px auto !important;
-    display: block !important;
-    width: 100% !important;
-    text-shadow: 0 0 7px #00f0ff,
-                 0 0 15px #00f0ff,
-                 0 0 25px #00bfff !important;
+
+
+/* ==========================================================
+   SINGLE BACKGROUND
+   ========================================================== */
+
+body{
+
+    background:
+
+        linear-gradient(
+
+            rgba(5,10,18,.72),
+
+            rgba(5,10,18,.72)
+
+        ),
+
+        url("phone_image.webp")
+
+        center center /
+
+        cover
+
+        no-repeat
+
+        fixed;
+
+    color:var(--text-main);
+
 }
 
-/* --- 2. إزالة التشوهات البيضاء عن الأزرار والترس وزر X --- */
-button, .btn, .settings-icon, .gear-button, .close-btn, input[type="button"] {
-    background: rgba(255, 255, 255, 0.08) !important; /* تحويلها لزر زجاجي شفاف */
-    backdrop-filter: blur(5px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    color: white !important;
-    border-radius: 8px !important;
-    text-shadow: none !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+
+
+/* يمنع ظهور أي خلفية ثانية */
+
+.fixed-background{
+
+    display:none !important;
+
 }
 
-button:hover, .btn:hover {
-    background: #00bfff !important; /* توهج أزرق عند اللمس */
-    color: white !important;
+
+
+/* يمنع ظهور صورة الترحيب الكبيرة */
+
+.main-phone-image{
+
+    display:none !important;
+
 }
 
-/* --- 3. شريط البحث والبطاقة العلوية (ثابت ومستقر) --- */
-.glass-card {
-    background: rgba(255, 255, 255, 0.04) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 16px !important;
-    padding: 15px !important;
-    margin: 10px auto !important;
-    max-width: 92% !important;
+
+
+/* ==========================================================
+   SHINY FIX
+   ========================================================== */
+
+.container-fluid,
+
+.container,
+
+.row,
+
+.page-container,
+
+.main-panel,
+
+.content,
+
+.shiny-html-output{
+
+    background:transparent !important;
+
+    border:none !important;
+
+    box-shadow:none !important;
+
+    width:100%;
+
 }
 
-input[type="search"], input[type="text"] {
-    background: rgba(13, 17, 23, 0.85) !important;
-    border: 2px solid #00bfff !important;
-    color: #ffffff !important;
-    border-radius: 12px !important;
-    padding: 14px !important;
-    width: 100% !important;
-    box-shadow: 0 0 15px rgba(0, 191, 255, 0.4) !important;
+
+
+.shiny-output-error{
+
+    color:#ff6666;
+
+    text-align:center;
+
 }
 
-/* --- 4. حاوية تمرير بطاقات النتائج (تتحرك وتتلاشى وتختفي عند شريط البحث) --- */
-.shiny-html-output, #results, .output-container, #results-container {
-    display: block !important;
-    overflow-y: auto !important;
-    max-height: 55vh !important; /* تحديد مساحة التمرير بدقة منعاً لتمدد الحاوية وتكرار الصورة */
-    padding-top: 10px !important;
-    padding-bottom: 40px !important;
-    
-    -webkit-mask-image: linear-gradient(to bottom, 
-        rgba(0,0,0,0) 0%, 
-        rgba(0,0,0,1) 10%, 
-        rgba(0,0,0,1) 90%, 
-        rgba(0,0,0,0) 100%) !important;
-    mask-image: linear-gradient(to bottom, 
-        rgba(0,0,0,0) 0%, 
-        rgba(0,0,0,1) 10%, 
-        rgba(0,0,0,1) 90%, 
-        rgba(0,0,0,0) 100%) !important;
+
+
+/* ==========================================================
+   MAIN LAYOUT
+   ========================================================== */
+
+.main-layout{
+
+    width:100%;
+
+    height:100vh;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    overflow:hidden;
+
+    padding:18px 14px;
+
+}
+/* ==========================================================
+   BRAND AREA
+   ========================================================== */
+
+.brand-wrapper{
+
+    width:100%;
+
+    text-align:center;
+
+    margin-bottom:14px;
+
 }
 
-.output-container::-webkit-scrollbar, #results::-webkit-scrollbar, .shiny-html-output::-webkit-scrollbar {
-    width: 0px !important;
-    background: transparent !important;
+
+
+.brand-neon-main{
+
+    font-size:
+
+        clamp(26px,7vw,38px);
+
+    font-weight:900;
+
+    letter-spacing:2px;
+
+    color:var(--neon-blue);
+
+    text-shadow:
+
+        0 0 8px var(--neon-blue),
+
+        0 0 18px var(--neon-blue),
+
+        0 0 35px rgba(0,229,255,.65);
+
 }
 
-/* --- 5. بطاقات التصنيفات المتباعدة النيون --- */
-.neon-result-card, .exact, .plus, .minus, .warn, 
-[class*="exact"], [class*="plus"], [class*="minus"], [class*="warn"] {
-    display: block !important;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01)) !important;
-    backdrop-filter: blur(25px) !important;
-    -webkit-backdrop-filter: blur(25px) !important;
-    
-    border: 1px solid rgba(0, 255, 255, 0.1) !important;
-    border-left: 6px solid #00f0ff !important; 
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.25) !important;
-    
-    margin: 20px auto !important; 
-    padding: 20px 18px !important; 
-    width: 92% !important;
-    border-radius: 8px 18px 18px 8px !important; 
-    box-sizing: border-box !important;
-    
-    color: #ffffff !important;
-    font-size: 16px !important;
-    font-weight: bold !important;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6) !important;
+
+
+.brand-neon-sub{
+
+    margin-top:6px;
+
+    font-size:15px;
+
+    letter-spacing:5px;
+
+    color:#ffffff;
+
+    text-shadow:
+
+        0 0 10px rgba(255,255,255,.40);
+
 }
+
+
+
+/* ==========================================================
+   SEARCH BOX
+   ========================================================== */
+
+.search-box{
+
+    position:relative;
+
+    width:100%;
+
+    max-width:520px;
+
+    margin:12px auto 18px;
+
+    z-index:100;
+
+}
+
+
+
+.search-box input[type="text"],
+
+.search-box input[type="search"]{
+
+    width:100%;
+
+    height:50px;
+
+    padding:0 18px;
+
+    color:#fff;
+
+    font-size:16px;
+
+    outline:none;
+
+    border-radius:18px;
+
+    border:2px solid rgba(0,229,255,.55);
+
+    background:
+
+        rgba(10,18,30,.58);
+
+    backdrop-filter:
+
+        blur(16px);
+
+    -webkit-backdrop-filter:
+
+        blur(16px);
+
+    box-shadow:
+
+        0 0 18px rgba(0,229,255,.25);
+
+    transition:.25s;
+
+}
+
+
+
+.search-box input:focus{
+
+    border-color:var(--neon-blue);
+
+    box-shadow:
+
+        0 0 22px rgba(0,229,255,.45);
+
+}
+
+
+
+.search-box input::placeholder{
+
+    color:#9fb0c2;
+
+}
+
+
+
+/* ==========================================================
+   AUTOCOMPLETE
+   ========================================================== */
+
+.suggestions-curtain{
+
+    position:absolute;
+
+    top:56px;
+
+    right:0;
+
+    left:0;
+
+    z-index:500;
+
+    max-height:280px;
+
+    overflow-y:auto;
+
+    border-radius:18px;
+
+    border:1px solid rgba(255,255,255,.12);
+
+    background:
+
+        rgba(8,15,24,.90);
+
+    backdrop-filter:
+
+        blur(20px);
+
+    box-shadow:
+
+        0 12px 35px rgba(0,0,0,.45);
+
+}
+
+
+
+.suggestion-row{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    padding:13px 15px;
+
+    cursor:pointer;
+
+    transition:.20s;
+
+    color:#fff;
+
+    border-bottom:
+
+        1px solid rgba(255,255,255,.05);
+
+}
+
+
+
+.suggestion-row:last-child{
+
+    border-bottom:none;
+
+}
+
+
+
+.suggestion-row:hover{
+
+    background:
+
+        rgba(0,229,255,.12);
+
+}
+
+
+
+.suggestion-icon{
+
+    font-size:18px;
+
+}
+
+
+
+.suggestion-text{
+
+    flex:1;
+
+}
+
+
+
+/* ==========================================================
+   GLASS CARD
+   ========================================================== */
+
+.glass-card{
+
+    width:100%;
+
+    background:
+
+        rgba(255,255,255,.06);
+
+    backdrop-filter:
+
+        blur(22px);
+
+    -webkit-backdrop-filter:
+
+        blur(22px);
+
+    border:
+
+        1px solid rgba(255,255,255,.12);
+
+    border-radius:22px;
+
+    padding:18px;
+
+    box-shadow:
+
+        var(--shadow-glass),
+
+        var(--glow-blue);
+
+    animation:fadeIn .25s ease;
+
+}
+
+
+
+.glass-card:hover{
+
+    box-shadow:
+
+        0 0 35px rgba(0,229,255,.35),
+
+        0 15px 40px rgba(0,0,0,.45);
+
+}
+
+
+
+@keyframes fadeIn{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(10px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+
+
+/* ==========================================================
+   PHONE INFO
+   ========================================================== */
+
+.phone-title{
+
+    text-align:center;
+
+    font-size:22px;
+
+    color:var(--neon-blue);
+
+    margin-bottom:12px;
+
+    text-shadow:
+
+        0 0 12px rgba(0,229,255,.50);
+
+}
+
+
+
+.coord-line{
+
+    margin:6px 0;
+
+    color:var(--text-muted);
+
+    font-size:15px;
+
+}
+/* ==========================================================
+   RESULTS
+   ========================================================== */
+
+.neon-container{
+
+    width:100%;
+
+    margin-top:20px;
+
+}
+
+
+
+.result-title{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:14px 18px;
+
+    margin:18px 0 14px;
+
+    border-radius:18px;
+
+    background:rgba(255,255,255,.05);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    backdrop-filter:blur(18px);
+
+}
+
+
+
+.result-title-text{
+
+    flex:1;
+
+    font-size:15px;
+
+    font-weight:800;
+
+}
+
+
+
+.result-icon{
+
+    font-size:18px;
+
+}
+
+
+
+/* ==========================================================
+   GLASS RESULT CARD
+   ========================================================== */
+
+.glass-result-card{
+
+    position:relative;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+    margin:14px 0;
+
+    padding:18px;
+
+    border-radius:22px;
+
+    overflow:hidden;
+
+    background:
+
+        linear-gradient(
+
+            180deg,
+
+            rgba(30,40,56,.55),
+
+            rgba(14,20,30,.45)
+
+        );
+
+    backdrop-filter:blur(24px);
+
+    -webkit-backdrop-filter:blur(24px);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    transition:.25s;
+
+}
+
+
+
+.glass-result-card:hover{
+
+    transform:translateY(-2px);
+
+}
+
+
+
+/* ==========================================================
+   STATUS ORB
+   ========================================================== */
+
+.result-orb{
+
+    width:16px;
+
+    height:16px;
+
+    border-radius:50%;
+
+    flex-shrink:0;
+
+}
+
+
+
+/* ==========================================================
+   MODEL NAME
+   ========================================================== */
+
+.model-name{
+
+    flex:1;
+
+    font-size:15px;
+
+    font-weight:700;
+
+    color:#ffffff;
+
+    text-align:right;
+
+    word-break:break-word;
+
+}
+
+
+
+/* ==========================================================
+   EXACT
+   ========================================================== */
+
+.glass-result-card.exact{
+
+    border-left:6px solid #2ecc71;
+
+    box-shadow:
+
+        0 0 20px rgba(46,204,113,.30);
+
+}
+
+
+
+.glass-result-card.exact .result-orb{
+
+    background:#2ecc71;
+
+    box-shadow:
+
+        0 0 12px #2ecc71;
+
+}
+
+
+
+/* ==========================================================
+   PLUS
+   ========================================================== */
+
+.glass-result-card.plus{
+
+    border-left:6px solid #3498db;
+
+    box-shadow:
+
+        0 0 20px rgba(52,152,219,.30);
+
+}
+
+
+
+.glass-result-card.plus .result-orb{
+
+    background:#3498db;
+
+    box-shadow:
+
+        0 0 12px #3498db;
+
+}
+
+
+
+/* ==========================================================
+   MINUS
+   ========================================================== */
+
+.glass-result-card.minus{
+
+    border-left:6px solid #e67e22;
+
+    box-shadow:
+
+        0 0 20px rgba(230,126,34,.30);
+
+}
+
+
+
+.glass-result-card.minus .result-orb{
+
+    background:#e67e22;
+
+    box-shadow:
+
+        0 0 12px #e67e22;
+
+}
+
+
+
+/* ==========================================================
+   WARNING
+   ========================================================== */
+
+.glass-result-card.warn{
+
+    border-left:6px solid #ef4444;
+
+    box-shadow:
+
+        0 0 20px rgba(239,68,68,.30);
+
+}
+
+
+
+.glass-result-card.warn .result-orb{
+
+    background:#ef4444;
+
+    box-shadow:
+
+        0 0 12px #ef4444;
+
+}
+
+
+
+/* ==========================================================
+   BACKWARD COMPATIBILITY
+   ========================================================== */
+
+.ammar-flat-card{
+
+    border-radius:20px;
+
+    padding:18px;
+
+    margin:12px 0;
+
+    background:rgba(255,255,255,.05);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    backdrop-filter:blur(20px);
+
+    transition:.25s;
+
+}
+
+
+
+.ammar-flat-card:hover{
+
+    transform:translateY(-2px);
+
+}
+
+
+
+.ammar-flat-card.exact{
+
+    border-left:6px solid #2ecc71;
+
+}
+
+
+
+.ammar-flat-card.plus{
+
+    border-left:6px solid #3498db;
+
+}
+
+
+
+.ammar-flat-card.minus{
+
+    border-left:6px solid #e67e22;
+
+}
+
+
+
+.ammar-flat-card.warn{
+
+    border-left:6px solid #ef4444;
+
+   }
+/* ==========================================================
+   SETTINGS BUTTON
+   ========================================================== */
+
+.btn-settings-open{
+
+    position:fixed;
+
+    top:18px;
+
+    left:18px;
+
+    width:48px;
+
+    height:48px;
+
+    border:none;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    cursor:pointer;
+
+    z-index:1000;
+
+    color:#00e5ff;
+
+    background:rgba(255,255,255,.08);
+
+    backdrop-filter:blur(16px);
+
+    -webkit-backdrop-filter:blur(16px);
+
+    border:1px solid rgba(255,255,255,.15);
+
+    box-shadow:
+
+        0 0 18px rgba(0,229,255,.30);
+
+    transition:.25s;
+
+}
+
+
+
+.btn-settings-open:hover{
+
+    transform:rotate(30deg) scale(1.08);
+
+    box-shadow:
+
+        0 0 28px rgba(0,229,255,.45);
+
+}
+
+
+
+/* ==========================================================
+   SETTINGS DRAWER
+   ========================================================== */
+
+.drawer{
+
+    position:fixed;
+
+    top:0;
+
+    right:-360px;
+
+    width:340px;
+
+    max-width:92vw;
+
+    height:100vh;
+
+    overflow-y:auto;
+
+    padding:20px;
+
+    z-index:1500;
+
+    background:
+
+        rgba(8,14,24,.92);
+
+    backdrop-filter:blur(24px);
+
+    -webkit-backdrop-filter:blur(24px);
+
+    border-left:
+
+        1px solid rgba(255,255,255,.12);
+
+    transition:right .30s ease;
+
+}
+
+
+
+.drawer.drawer-open{
+
+    right:0;
+
+}
+
+
+
+/* ==========================================================
+   DRAWER HEADER
+   ========================================================== */
+
+.drawer-header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    margin-bottom:20px;
+
+}
+
+
+
+.drawer-header h2{
+
+    color:#00e5ff;
+
+    font-size:22px;
+
+    font-weight:800;
+
+}
+
+
+
+.drawer-close-btn{
+
+    width:40px;
+
+    height:40px;
+
+    border:none;
+
+    border-radius:50%;
+
+    cursor:pointer;
+
+    color:white;
+
+    background:rgba(255,255,255,.08);
+
+    border:1px solid rgba(255,255,255,.15);
+
+}
+
+
+
+/* ==========================================================
+   METRIC CARD
+   ========================================================== */
+
+.metric-box{
+
+    margin:14px 0;
+
+    padding:16px;
+
+    border-radius:20px;
+
+    background:
+
+        rgba(255,255,255,.06);
+
+    backdrop-filter:blur(20px);
+
+    border:
+
+        1px solid rgba(255,255,255,.10);
+
+}
+
+
+
+.metric-box h4{
+
+    margin-bottom:8px;
+
+    color:#00e5ff;
+
+    text-align:center;
+
+}
+
+
+
+.metric-value{
+
+    text-align:center;
+
+    font-size:26px;
+
+    font-weight:900;
+
+    color:white;
+
+}
+
+
+
+/* ==========================================================
+   BUTTONS
+   ========================================================== */
+
+.btn-neon{
+
+    width:100%;
+
+    margin-top:12px;
+
+    padding:13px;
+
+    border:none;
+
+    border-radius:16px;
+
+    cursor:pointer;
+
+    background:#00e5ff;
+
+    color:#00151c;
+
+    font-weight:800;
+
+    transition:.25s;
+
+}
+
+
+
+.btn-neon:hover{
+
+    transform:scale(1.02);
+
+}
+
+
+
+.btn-close{
+
+    width:100%;
+
+    margin-top:10px;
+
+    padding:13px;
+
+    border:none;
+
+    border-radius:16px;
+
+    cursor:pointer;
+
+    background:#ef4444;
+
+    color:white;
+
+}
+
+
+
+/* ==========================================================
+   MODAL
+   ========================================================== */
+
+.modal-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:20px;
+
+    z-index:3000;
+
+    background:rgba(0,0,0,.60);
+
+    backdrop-filter:blur(6px);
+
+}
+
+
+
+.modal-card{
+
+    width:100%;
+
+    max-width:500px;
+
+}
+
+
+
+.modal-buttons{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:12px;
+
+    margin-top:18px;
+
+}
+
+
+
+/* ==========================================================
+   PLAN +
+   ========================================================== */
+
+.plan-plus{
+
+    width:36px;
+
+    height:36px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:50%;
+
+    color:#00e5ff;
+
+    border:1px solid #00e5ff;
+
+    background:rgba(0,229,255,.10);
+
+}
+
+
+
+/* ==========================================================
+   RESULTS SCROLL
+   ========================================================== */
+
+.results-workflow-view{
+
+    width:100%;
+
+    max-width:540px;
+
+    flex:1;
+
+    overflow-y:auto;
+
+    overflow-x:hidden;
+
+    padding:8px 6px 30px;
+
+    scrollbar-width:thin;
+
+}
+
+
+
+.results-workflow-view::-webkit-scrollbar{
+
+    width:5px;
+
+}
+
+
+
+.results-workflow-view::-webkit-scrollbar-thumb{
+
+    background:
+
+        rgba(0,229,255,.35);
+
+    border-radius:20px;
+
+}
+
+
+
+/* ==========================================================
+   FIX SHINY OUTPUT
+   ========================================================== */
+
+.shiny-html-output{
+
+    width:100%;
+
+    min-height:1px;
+
+   }
+/* ==========================================================
+   MOBILE OPTIMIZATION
+   ========================================================== */
+
+@media (max-width:600px){
+
+    .main-layout{
+
+        padding:14px 10px;
+
+    }
+
+    .brand-neon-main{
+
+        font-size:28px;
+
+    }
+
+    .brand-neon-sub{
+
+        font-size:13px;
+
+        letter-spacing:3px;
+
+    }
+
+    .search-box{
+
+        max-width:100%;
+
+    }
+
+    .search-box input{
+
+        height:46px;
+
+        font-size:15px;
+
+    }
+
+    .glass-card{
+
+        border-radius:18px;
+
+        padding:15px;
+
+    }
+
+    .glass-result-card{
+
+        padding:15px;
+
+        border-radius:18px;
+
+    }
+
+    .drawer{
+
+        width:92vw;
+
+    }
+
+}
+
+
+
+/* ==========================================================
+   SMALL HEIGHT DEVICES
+   ========================================================== */
+
+@media (max-height:700px){
+
+    .brand-wrapper{
+
+        margin-bottom:8px;
+
+    }
+
+    .brand-neon-main{
+
+        font-size:24px;
+
+    }
+
+    .search-box{
+
+        margin-bottom:10px;
+
+    }
+
+}
+
+
+
+/* ==========================================================
+   TEXT PROTECTION
+   ========================================================== */
+
+.phone-title,
+
+.model-name,
+
+.result-title,
+
+.coord-line,
+
+.ammar-flat-card{
+
+    word-break:break-word;
+
+    overflow-wrap:anywhere;
+
+}
+
+
+
+/* ==========================================================
+   REMOVE BLUE TAP FLASH
+   ========================================================== */
+
+button,
+
+input,
+
+textarea,
+
+select,
+
+a{
+
+    -webkit-tap-highlight-color:transparent;
+
+}
+
+
+
+/* ==========================================================
+   SMOOTH ANIMATION
+   ========================================================== */
+
+*{
+
+    transition:
+
+        background-color .20s,
+
+        color .20s,
+
+        border-color .20s,
+
+        box-shadow .20s,
+
+        transform .20s;
+
+}
+
+
+
+/* ==========================================================
+   HIDE UNUSED SHINY ELEMENTS
+   ========================================================== */
+
+.shiny-bound-output:empty{
+
+    display:none;
+
+}
+
+
+
+/* ==========================================================
+   DISABLE HORIZONTAL SCROLL
+   ========================================================== */
+
+html,
+
+body,
+
+.main-layout{
+
+    overflow-x:hidden;
+
+}
+
+
+
+/* ==========================================================
+   FINAL POLISH
+   ========================================================== */
+
+.glass-card,
+
+.glass-result-card,
+
+.metric-box{
+
+    box-shadow:
+
+        0 8px 30px rgba(0,0,0,.35);
+
+}
+
+
+
+.glass-card:hover,
+
+.glass-result-card:hover{
+
+    box-shadow:
+
+        0 0 25px rgba(0,229,255,.30),
+
+        0 12px 35px rgba(0,0,0,.40);
+
+}
+
+
+
+/* ==========================================================
+   ACCESSIBILITY
+   ========================================================== */
+
+button:focus,
+
+input:focus{
+
+    outline:none;
+
+}
+
+
+
+/* ==========================================================
+   END OF FILE
+   ========================================================== */
