@@ -31,19 +31,19 @@ def inject_styles():
 
 <script>
 
-if("serviceWorker" in navigator){
+if ("serviceWorker" in navigator) {
 
-window.addEventListener("load",function(){
+    window.addEventListener("load", function () {
 
-navigator.serviceWorker
-.register("/service-worker.js")
-.catch(function(err){
+        navigator.serviceWorker
+            .register("/service-worker.js")
+            .catch(function (err) {
 
-console.log(err);
+                console.log(err);
 
-});
+            });
 
-});
+    });
 
 }
 
@@ -52,8 +52,10 @@ console.log(err);
 """)
 
     )
+
+
 # ==========================================================
-# DRAWER + AUTOCOMPLETE EVENTS
+# GLOBAL JAVASCRIPT
 # ==========================================================
 
 def draw_drawer_js_handler():
@@ -62,15 +64,15 @@ def draw_drawer_js_handler():
 
 <script>
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function(){
 
     // ==========================
-    // فتح وإغلاق درج الإعدادات
+    // SETTINGS DRAWER
     // ==========================
 
-    document.addEventListener("click", function (e) {
+    document.addEventListener("click", function(e){
 
-        if (e.target.id === "btn_settings") {
+        if(e.target.id==="btn_settings"){
 
             document
                 .getElementById("settings-drawer")
@@ -78,7 +80,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         }
 
-        if (e.target.id === "btn_close_drawer_trigger") {
+        if(e.target.id==="btn_close_drawer_trigger"){
 
             document
                 .getElementById("settings-drawer")
@@ -88,33 +90,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
+
     // ==========================
-    // اختيار عنصر من الاقتراحات
+    // AUTOCOMPLETE
     // ==========================
 
-    document.addEventListener("click", function (e) {
+    document.addEventListener("click", function(e){
 
-        const row = e.target.closest(".suggestion-row");
+        const row=e.target.closest(".suggestion-row");
 
-        if (!row) return;
+        if(!row) return;
 
-        const value = row.dataset.value;
+        const value=row.dataset.value;
 
-        const input = document.getElementById("search_query");
+        const input=document.getElementById("search_query");
 
-        if (!input) return;
+        if(!input) return;
 
-        input.value = value;
+        input.value=value;
 
         input.dispatchEvent(
-            new Event("input", { bubbles: true })
+            new Event(
+                "input",
+                {
+                    bubbles:true
+                }
+            )
         );
 
-        const curtain = document.querySelector(".suggestions-curtain");
+        const curtain=document.querySelector(".suggestions-curtain");
 
-        if (curtain) {
+        if(curtain){
 
-            curtain.style.display = "none";
+            curtain.style.display="none";
 
         }
 
@@ -125,6 +133,8 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 """)
+
+
 # ==========================================================
 # SETTINGS BUTTON
 # ==========================================================
@@ -142,8 +152,6 @@ def draw_settings_button():
         title="الإعدادات"
 
     )
-
-
 # ==========================================================
 # BRAND
 # ==========================================================
@@ -224,154 +232,45 @@ def draw_welcome_section():
 
 # للتوافق مع server.py
 draw_welcome_header = draw_welcome_section
+
+
 # ==========================================================
-# TECHNICAL CARD
+# SEARCH BOX
 # ==========================================================
 
-def draw_technical_coords(coords):
-
-    if not coords:
-        return None
+def draw_search_box():
 
     return ui.div(
 
-        ui.div(
+        ui.input_text(
 
-            "📱 " + coords.get("real_name", ""),
+            "search_query",
 
-            class_="phone-title"
+            "",
 
-        ),
-
-        ui.div(
-
-            ui.span("📐"),
-
-            ui.span(coords.get("size", "-")),
-
-            class_="coord-line"
+            placeholder="ابحث عن موديل الهاتف..."
 
         ),
 
-        ui.div(
+        ui.output_ui(
 
-            ui.span("🖥"),
-
-            ui.span(coords.get("panel", "-")),
-
-            class_="coord-line"
+            "suggestions_curtain"
 
         ),
 
-        ui.div(
-
-            ui.span("📡"),
-
-            ui.span(coords.get("sensor", "-")),
-
-            class_="coord-line"
-
-        ),
-
-        class_="glass-card phone-card"
+        class_="search-box"
 
     )
+
+
 # ==========================================================
-# NEON RESULT SECTION
-# ==========================================================
-
-def draw_neon_section(
-    title,
-    models,
-    color,
-    icon,
-    phone=""
-):
-
-    if not models:
-        return None
-
-    cards = []
-
-    for model in models:
-
-        cards.append(
-
-            ui.div(
-
-                ui.div(
-
-                    class_="result-orb",
-
-                    style=f"""
-                    background:{color};
-                    box-shadow:
-                        0 0 8px {color},
-                        0 0 18px {color},
-                        0 0 28px {color};
-                    """
-
-                ),
-
-                ui.div(
-
-                    model,
-
-                    class_="model-name"
-
-                ),
-
-                class_="glass-result-card",
-
-                style=f"""
-                border-right:5px solid {color};
-                """
-
-            )
-
-        )
-
-    return ui.div(
-
-        ui.div(
-
-            ui.span(
-
-                icon,
-
-                class_="result-icon"
-
-            ),
-
-            ui.span(
-
-                title,
-
-                class_="result-title-text"
-
-            ),
-
-            class_="result-title",
-
-            style=f"""
-            border-right:5px solid {color};
-            color:{color};
-            """
-
-        ),
-
-        *cards,
-
-        class_="neon-container"
-
-    )
-# ==========================================================
-# AUTO COMPLETE CURTAIN
+# AUTOCOMPLETE CURTAIN
 # ==========================================================
 
 def draw_suggestions_curtain(suggestions):
 
     if not suggestions:
+
         return None
 
     rows = []
@@ -400,7 +299,11 @@ def draw_suggestions_curtain(suggestions):
 
                 class_="suggestion-row",
 
-                **{"data-value": model}
+                **{
+
+                    "data-value": model
+
+                }
 
             )
 
@@ -410,36 +313,197 @@ def draw_suggestions_curtain(suggestions):
 
         *rows,
 
-        class_="suggestions-curtain glass-card"
+        class_="suggestions-curtain"
+
+    )
+# ==========================================================
+# TECHNICAL PHONE CARD
+# ==========================================================
+
+def draw_technical_coords(coords):
+
+    if not coords:
+        return None
+
+    return ui.div(
+
+        ui.h3(
+
+            coords.get("real_name", ""),
+
+            class_="phone-title"
+
+        ),
+
+        ui.div(
+
+            f"المقاس : {coords.get('size','-')}",
+
+            class_="coord-line"
+
+        ),
+
+        ui.div(
+
+            f"نوع الشاشة : {coords.get('panel','-')}",
+
+            class_="coord-line"
+
+        ),
+
+        ui.div(
+
+            f"المستشعر : {coords.get('sensor','-')}",
+
+            class_="coord-line"
+
+        ),
+
+        class_="glass-card neon-card"
 
     )
 
 
 # ==========================================================
-# SEARCH BOX
+# RESULT SECTION
 # ==========================================================
 
-def draw_search_box():
+def draw_neon_section(
+
+    title,
+
+    models,
+
+    color="#00e5ff",
+
+    icon="📱",
+
+    phone="",
+
+    section_type="exact"
+
+):
+
+    if not models:
+
+        return None
+
+    cards = []
+
+    for model in models:
+
+        cards.append(
+
+            ui.div(
+
+                ui.div(
+
+                    class_="result-orb",
+
+                    style=f"""
+
+                    background:{color};
+
+                    box-shadow:
+
+                        0 0 8px {color},
+
+                        0 0 18px {color},
+
+                        0 0 28px {color};
+
+                    """
+
+                ),
+
+                ui.div(
+
+                    model,
+
+                    class_="model-name"
+
+                ),
+
+                ui.div(
+
+                    f"متوافق مع: {phone}",
+
+                    class_="model-source"
+
+                )
+
+                if phone else None,
+
+                class_=f"glass-result-card {section_type}"
+
+            )
+
+        )
 
     return ui.div(
 
-        ui.input_text(
+        ui.div(
 
-            "search_query",
+            ui.span(
 
-            "",
+                icon,
 
-            placeholder="ابحث عن موديل الهاتف..."
+                class_="result-icon"
+
+            ),
+
+            ui.span(
+
+                title,
+
+                class_="result-title-text"
+
+            ),
+
+            class_="result-title",
+
+            style=f"""
+
+            color:{color};
+
+            border-right:5px solid {color};
+
+            """
 
         ),
 
-        ui.output_ui(
+        *cards,
 
-            "suggestions_curtain"
+        class_="neon-container"
+
+    )
+
+
+# ==========================================================
+# WARNING CARD
+# ==========================================================
+
+def draw_warning_card(message):
+
+    return ui.div(
+
+        ui.span(
+
+            "⚠️",
+
+            class_="result-icon"
 
         ),
 
-        class_="search-box"
+        ui.span(
+
+            message,
+
+            class_="result-title-text"
+
+        ),
+
+        class_="flat-warning-card"
 
     )
 # ==========================================================
@@ -519,8 +583,11 @@ def draw_monitor_component(status):
         ui.div(
 
             "🟢 ONLINE"
+
             if online
+
             else
+
             "🔴 OFFLINE",
 
             class_="metric-value"
@@ -580,6 +647,8 @@ def draw_silent_inspector():
         class_="glass-card"
 
     )
+
+
 # ==========================================================
 # SETTINGS DRAWER
 # ==========================================================
@@ -598,7 +667,7 @@ def draw_settings_modal():
 
             ui.tags.button(
 
-                "✖",
+                "✕",
 
                 id="btn_close_drawer_trigger",
 
@@ -656,6 +725,7 @@ def draw_settings_modal():
 def draw_modal_overlay(inner):
 
     if inner is None:
+
         return None
 
     return ui.div(
@@ -671,13 +741,21 @@ def draw_modal_overlay(inner):
 # PLAN 2 MODAL
 # ==========================================================
 
-def draw_plan_2_modal(phone="", panels=None, sensors=None):
+def draw_plan_2_modal(
+
+    phone="",
+
+    panels=None,
+
+    sensors=None,
+
+):
 
     panels = panels or []
 
     sensors = sensors or []
 
-    return draw_modal_overlay(
+    return ui.div(
 
         ui.div(
 
@@ -741,7 +819,9 @@ def draw_plan_2_modal(phone="", panels=None, sensors=None):
 
             class_="glass-card modal-card"
 
-        )
+        ),
+
+        class_="modal-overlay"
 
     )
 
@@ -750,9 +830,15 @@ def draw_plan_2_modal(phone="", panels=None, sensors=None):
 # PLAN 3 MODAL
 # ==========================================================
 
-def draw_plan_3_modal(phone="", result=None):
+def draw_plan_3_modal(
 
-    return draw_modal_overlay(
+    phone="",
+
+    result=None,
+
+):
+
+    return ui.div(
 
         ui.div(
 
@@ -820,53 +906,78 @@ def draw_plan_3_modal(phone="", result=None):
 
             class_="glass-card modal-card"
 
-        )
+        ),
 
-                )
+        class_="modal-overlay"
+
+    )
 # ==========================================================
 # MAIN UI
 # ==========================================================
 
 app_ui = ui.page_fluid(
 
+    # ==========================
+    # HEAD
+    # ==========================
+
     inject_styles(),
 
     draw_drawer_js_handler(),
 
-    # ======================================================
-    # الخلفية الثابتة
-    # ======================================================
+    # ==========================
+    # FIXED BACKGROUND
+    # ==========================
 
     ui.div(
+
         class_="fixed-background"
+
     ),
 
-    # ======================================================
-    # درج الإعدادات
-    # ======================================================
+    # ==========================
+    # SETTINGS DRAWER
+    # ==========================
 
     draw_settings_modal(),
 
-    # ======================================================
-    # الواجهة الرئيسية
-    # ======================================================
+    # ==========================
+    # MAIN LAYOUT
+    # ==========================
 
     ui.div(
 
+        # HEADER
         draw_header(),
 
+        # SEARCH
         draw_search_box(),
 
+        # WELCOME
         ui.output_ui(
+
             "welcome_area"
+
         ),
 
-        ui.output_ui(
-            "results_workflow_view"
+        # RESULTS
+        ui.div(
+
+            ui.output_ui(
+
+                "results_workflow_view"
+
+            ),
+
+            class_="results-workflow-view"
+
         ),
 
+        # MODALS
         ui.output_ui(
+
             "dynamic_modal_container"
+
         ),
 
         class_="main-layout"
@@ -874,3 +985,173 @@ app_ui = ui.page_fluid(
     )
 
 )
+# ==========================================================
+# COMPATIBILITY EXPORTS
+# ==========================================================
+
+# server.py يستورد هذه الأسماء
+# لذلك نحافظ عليها جميعاً
+
+draw_welcome_header = draw_welcome_section
+
+draw_settings_drawer = draw_settings_modal
+
+
+# ==========================================================
+# EMPTY COMPONENT
+# ==========================================================
+
+def draw_empty():
+
+    return ui.div()
+
+
+# ==========================================================
+# SAFE HTML
+# ==========================================================
+
+def safe_text(value):
+
+    if value is None:
+
+        return ""
+
+    return str(value).strip()
+
+
+# ==========================================================
+# SAFE LIST
+# ==========================================================
+
+def safe_models(models):
+
+    if not models:
+
+        return []
+
+    return [
+
+        str(m).strip()
+
+        for m in models
+
+        if str(m).strip()
+
+    ]
+
+
+# ==========================================================
+# SAFE SECTION
+# ==========================================================
+
+def safe_section(
+
+    title,
+
+    models,
+
+    color,
+
+    icon,
+
+    section_type,
+
+):
+
+    models = safe_models(models)
+
+    if not models:
+
+        return None
+
+    return draw_neon_section(
+
+        title=title,
+
+        models=models,
+
+        color=color,
+
+        icon=icon,
+
+        section_type=section_type,
+
+    )
+
+
+# ==========================================================
+# SAFE CARD
+# ==========================================================
+
+def safe_coords(coords):
+
+    if not coords:
+
+        return None
+
+    return draw_technical_coords(coords)
+
+
+# ==========================================================
+# END HELPERS
+# ==========================================================
+# ==========================================================
+# FINAL COMPATIBILITY
+# ==========================================================
+
+__all__ = [
+
+    "app_ui",
+
+    "inject_styles",
+
+    "draw_drawer_js_handler",
+
+    "draw_header",
+
+    "draw_brand",
+
+    "draw_main_image",
+
+    "draw_search_box",
+
+    "draw_suggestions_curtain",
+
+    "draw_settings_button",
+
+    "draw_settings_modal",
+
+    "draw_settings_drawer",
+
+    "draw_system_info",
+
+    "draw_database_status",
+
+    "draw_monitor_component",
+
+    "draw_notification_component",
+
+    "draw_silent_inspector",
+
+    "draw_welcome_header",
+
+    "draw_welcome_section",
+
+    "draw_technical_coords",
+
+    "draw_neon_section",
+
+    "draw_warning_card",
+
+    "draw_modal_overlay",
+
+    "draw_plan_2_modal",
+
+    "draw_plan_3_modal",
+
+]
+
+
+# ==========================================================
+# END OF FILE
+# ==========================================================
