@@ -1,50 +1,181 @@
 from shiny import ui
 
+
 # ==========================================================
-# SETTINGS DRAWER (مصحح 100% مع كافة الدوال المطلوبة)
+# SETTINGS DRAWER
 # ==========================================================
 
 def draw_settings_drawer():
+
     return ui.div(
+
         ui.div(
+
             ui.div(
-                ui.span("⚙", class_="drawer-icon"),
-                ui.span("الإعدادات", class_="drawer-title"),
+
+                ui.span(
+                    "⚙️",
+                    class_="drawer-icon"
+                ),
+
+                ui.span(
+                    "الإعدادات",
+                    class_="drawer-title"
+                ),
+
                 class_="drawer-title-row"
+
             ),
-            # الزر المصحح مع الـ ID المطلوب للإغلاق
-            ui.tags.button("✕", id="btn_close_drawer_trigger", class_="drawer-close-btn"),
+
+            ui.tags.button(
+
+                "✕",
+
+                id="btn_close_drawer_trigger",
+
+                class_="drawer-close-btn",
+
+                title="إغلاق"
+
+            ),
+
             class_="drawer-header"
+
         ),
+
         ui.div(
+
             ui.output_ui("system_info_area"),
+
             ui.output_ui("database_status_area"),
+
             ui.output_ui("monitor_area"),
+
             ui.output_ui("silent_inspector_area"),
+
             class_="drawer-body"
+
         ),
+
         id="settings-drawer",
+
         class_="drawer"
+
     )
 
+
 # ==========================================================
-# المكونات الفرعية (المطلوبة للـ server.py)
+# SYSTEM INFO
 # ==========================================================
 
 def draw_system_info():
-    return ui.div("نظام Glass Manager - v2.0", class_="setting-item-text")
 
-def draw_database_status(count):
-    return ui.div(f"قاعدة البيانات: {count} هاتف مسجل", class_="setting-item-text")
-
-def draw_monitor_component(status):
-    return ui.div(f"الحالة: {status}", class_="setting-item-text")
-
-def draw_silent_inspector():
     return ui.div(
-        ui.tags.button("تشغيل الفحص", id="btn_run_inspector", class_="btn-run-inspector"),
-        class_="setting-item-action"
+
+        ui.h4("معلومات النظام"),
+
+        ui.div(
+            "ZEGAAR AMMAR GLASS MANAGER"
+        ),
+
+        ui.div(
+            "Version 2026.07"
+        ),
+
+        class_="metric-box glass-card"
+
     )
 
-def draw_notification_component():
-    return ui.div("الإشعارات مفعلة", class_="setting-item-text")
+
+# ==========================================================
+# DATABASE STATUS
+# ==========================================================
+
+def draw_database_status(count):
+
+    return ui.div(
+
+        ui.h4("عدد الهواتف"),
+
+        ui.div(
+
+            str(count),
+
+            class_="metric-value"
+
+        ),
+
+        class_="metric-box glass-card"
+
+    )
+
+
+# ==========================================================
+# MONITOR
+# ==========================================================
+
+def draw_monitor_component(status):
+
+    online = str(status).upper() == "ONLINE"
+
+    return ui.div(
+
+        ui.h4("المراقب الصامت"),
+
+        ui.div(
+
+            "🟢 ONLINE" if online else "🔴 OFFLINE",
+
+            class_="metric-value"
+
+        ),
+
+        class_="metric-box glass-card"
+
+    )
+
+
+# ==========================================================
+# SILENT INSPECTOR
+# ==========================================================
+
+def draw_silent_inspector():
+
+    return ui.div(
+
+        ui.input_action_button(
+
+            "btn_run_inspector",
+
+            "🛠 تشغيل الفحص الذكي",
+
+            class_="btn-neon"
+
+        ),
+
+        class_="glass-card"
+
+    )
+
+
+# ==========================================================
+# NOTIFICATION
+# ==========================================================
+
+def draw_notification_component(count=0):
+
+    return ui.div(
+
+        ui.h4("الإشعارات"),
+
+        ui.div(
+
+            f"🔔 {count}",
+
+            class_="metric-value"
+
+        ),
+
+        class_="metric-box glass-card"
+
+    )
