@@ -4,7 +4,7 @@ from pathlib import Path
 import shiny
 from shiny import App
 
-from ui_components import app_ui
+from ui_main import app_ui
 from server import server
 
 # =====================================================
