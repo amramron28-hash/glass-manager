@@ -1,5 +1,6 @@
 from shiny import ui
 
+
 # ==========================================================
 # SETTINGS BUTTON
 # ==========================================================
@@ -49,6 +50,25 @@ def draw_brand():
 
 
 # ==========================================================
+# MAIN IMAGE
+# ==========================================================
+
+def draw_main_image():
+
+    return ui.tags.img(
+
+        src="phone_image.webp",
+
+        alt="Phone",
+
+        class_="main-phone-image",
+
+        loading="lazy"
+
+    )
+
+
+# ==========================================================
 # HEADER
 # ==========================================================
 
@@ -66,26 +86,14 @@ def draw_header():
 
 
 # ==========================================================
-# WELCOME HEADER
+# WELCOME
 # ==========================================================
 
 def draw_welcome_header():
 
     return ui.div(
 
-        ui.tags.img(
-
-            src="phone_image.webp",
-
-            alt="Phone",
-
-            loading="lazy",
-
-            draggable="false",
-
-            class_="main-phone-image"
-
-        ),
+        draw_main_image(),
 
         class_="welcome-screen"
 
