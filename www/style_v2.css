@@ -1,7 +1,7 @@
 /* ==========================================================
    ZEGAAR AMMAR GLASS MANAGER
    style_v2.css
-   FINAL REBUILD v3
+   FINAL REBUILD 2026
    ========================================================== */
 
 
@@ -12,23 +12,17 @@
 :root{
 
     --bg-main:#080d14;
-
     --glass-bg:rgba(255,255,255,.08);
-
     --glass-border:rgba(255,255,255,.16);
 
     --neon-blue:#00e5ff;
 
     --exact:#2ecc71;
-
     --plus:#3498db;
-
     --minus:#e67e22;
-
     --warning:#ef4444;
 
     --text-main:#ecf7ff;
-
     --text-muted:#9aa8b8;
 
     --shadow-glass:
@@ -40,7 +34,6 @@
 }
 
 
-
 /* ==========================================================
    RESET
    ========================================================== */
@@ -48,9 +41,7 @@
 *{
 
     margin:0;
-
     padding:0;
-
     box-sizing:border-box;
 
 }
@@ -60,21 +51,17 @@ html,
 body{
 
     width:100%;
-
     height:100%;
 
-    overflow:hidden;
-
     direction:rtl;
+
+    overflow:hidden;
 
     font-family:
 
         "Segoe UI",
-
         "Cairo",
-
         Tahoma,
-
         sans-serif;
 
 }
@@ -82,7 +69,7 @@ body{
 
 
 /* ==========================================================
-   SINGLE BACKGROUND
+   BODY
    ========================================================== */
 
 body{
@@ -91,20 +78,17 @@ body{
 
         linear-gradient(
 
-            rgba(5,10,18,.72),
+            rgba(5,10,18,.74),
 
-            rgba(5,10,18,.72)
+            rgba(5,10,18,.74)
 
         ),
 
         url("phone_image.webp")
 
         center center /
-
         cover
-
         no-repeat
-
         fixed;
 
     color:var(--text-main);
@@ -113,7 +97,9 @@ body{
 
 
 
-/* يمنع ظهور أي خلفية ثانية */
+/* ==========================================================
+   REMOVE DUPLICATE BACKGROUND
+   ========================================================== */
 
 .fixed-background{
 
@@ -121,9 +107,6 @@ body{
 
 }
 
-
-
-/* يمنع ظهور صورة الترحيب الكبيرة */
 
 .main-phone-image{
 
@@ -138,17 +121,11 @@ body{
    ========================================================== */
 
 .container-fluid,
-
 .container,
-
 .row,
-
 .page-container,
-
 .main-panel,
-
 .content,
-
 .shiny-html-output{
 
     background:transparent !important;
@@ -160,7 +137,6 @@ body{
     width:100%;
 
 }
-
 
 
 .shiny-output-error{
@@ -191,11 +167,39 @@ body{
 
     overflow:hidden;
 
-    padding:18px 14px;
+    padding:
+
+        18px
+        14px;
 
 }
+
+
+
 /* ==========================================================
-   BRAND AREA
+   HEADER
+   ========================================================== */
+
+.main-header{
+
+    width:100%;
+
+    max-width:560px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+
+
+/* ==========================================================
+   BRAND
    ========================================================== */
 
 .brand-wrapper{
@@ -204,7 +208,9 @@ body{
 
     text-align:center;
 
-    margin-bottom:14px;
+    margin-top:10px;
+
+    margin-bottom:16px;
 
 }
 
@@ -214,7 +220,7 @@ body{
 
     font-size:
 
-        clamp(26px,7vw,38px);
+        clamp(28px,7vw,40px);
 
     font-weight:900;
 
@@ -224,34 +230,35 @@ body{
 
     text-shadow:
 
-        0 0 8px var(--neon-blue),
-
-        0 0 18px var(--neon-blue),
-
-        0 0 35px rgba(0,229,255,.65);
+        0 0 10px var(--neon-blue),
+        0 0 22px var(--neon-blue),
+        0 0 42px rgba(0,229,255,.55);
 
 }
 
 
+
+/* ===== GLASS MANAGER ===== */
 
 .brand-neon-sub{
 
-    margin-top:6px;
+    margin-top:8px;
 
-    font-size:15px;
+    font-size:17px;
 
-    letter-spacing:5px;
+    font-weight:900;      /* أصبح عريضاً */
+
+    letter-spacing:4px;
 
     color:#ffffff;
 
+    text-transform:uppercase;
+
     text-shadow:
 
-        0 0 10px rgba(255,255,255,.40);
+        0 0 10px rgba(255,255,255,.45);
 
 }
-
-
-
 /* ==========================================================
    SEARCH BOX
    ========================================================== */
@@ -271,60 +278,53 @@ body{
 }
 
 
-
 .search-box input[type="text"],
-
 .search-box input[type="search"]{
 
     width:100%;
 
-    height:50px;
+    height:52px;
 
     padding:0 18px;
-
-    color:#fff;
-
-    font-size:16px;
-
-    outline:none;
 
     border-radius:18px;
 
     border:2px solid rgba(0,229,255,.55);
 
-    background:
+    background:rgba(10,18,30,.60);
 
-        rgba(10,18,30,.58);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
 
-    backdrop-filter:
+    color:#ffffff;
 
-        blur(16px);
+    font-size:16px;
 
-    -webkit-backdrop-filter:
+    font-weight:600;
 
-        blur(16px);
-
-    box-shadow:
-
-        0 0 18px rgba(0,229,255,.25);
+    outline:none;
 
     transition:.25s;
+
+    box-shadow:
+        0 0 18px rgba(0,229,255,.25);
 
 }
 
 
+/* عند التركيز */
 
 .search-box input:focus{
 
     border-color:var(--neon-blue);
 
     box-shadow:
-
         0 0 22px rgba(0,229,255,.45);
 
 }
 
 
+/* النص الافتراضي */
 
 .search-box input::placeholder{
 
@@ -332,6 +332,33 @@ body{
 
 }
 
+
+/* ==========================================================
+   إصلاح اتجاه الكتابة
+   ========================================================== */
+
+/* يبدأ من اليسار عند كتابة الإنجليزية */
+
+.search-box input{
+
+    direction:ltr;
+
+    text-align:left;
+
+    unicode-bidi:plaintext;
+
+}
+
+
+/* عند إدخال العربية */
+
+.search-box input:lang(ar){
+
+    direction:rtl;
+
+    text-align:right;
+
+}
 
 
 /* ==========================================================
@@ -342,7 +369,7 @@ body{
 
     position:absolute;
 
-    top:56px;
+    top:58px;
 
     right:0;
 
@@ -350,29 +377,27 @@ body{
 
     z-index:500;
 
-    max-height:280px;
-
     overflow-y:auto;
+
+    max-height:300px;
 
     border-radius:18px;
 
+    background:rgba(8,15,24,.92);
+
     border:1px solid rgba(255,255,255,.12);
 
-    background:
-
-        rgba(8,15,24,.90);
-
-    backdrop-filter:
-
-        blur(20px);
+    backdrop-filter:blur(20px);
 
     box-shadow:
-
         0 12px 35px rgba(0,0,0,.45);
 
 }
 
 
+/* ==========================================================
+   SUGGESTION ROW
+   ========================================================== */
 
 .suggestion-row{
 
@@ -382,20 +407,18 @@ body{
 
     gap:12px;
 
-    padding:13px 15px;
+    padding:13px 16px;
 
     cursor:pointer;
 
     transition:.20s;
 
-    color:#fff;
+    color:#ffffff;
 
     border-bottom:
-
-        1px solid rgba(255,255,255,.05);
+        1px solid rgba(255,255,255,.06);
 
 }
-
 
 
 .suggestion-row:last-child{
@@ -405,33 +428,52 @@ body{
 }
 
 
-
 .suggestion-row:hover{
 
     background:
-
         rgba(0,229,255,.12);
 
 }
 
 
+/* ==========================================================
+   ICON
+   ========================================================== */
 
 .suggestion-icon{
 
     font-size:18px;
 
+    flex-shrink:0;
+
 }
 
 
+/* ==========================================================
+   MODEL NAME
+   ========================================================== */
 
 .suggestion-text{
 
     flex:1;
 
-}
+    text-align:left;
 
+    direction:ltr;
 
+    font-size:15px;
 
+    font-weight:600;
+
+    color:#ffffff;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+
+   }
 /* ==========================================================
    GLASS CARD
    ========================================================== */
@@ -440,36 +482,26 @@ body{
 
     width:100%;
 
-    background:
+    margin:14px 0;
 
-        rgba(255,255,255,.06);
-
-    backdrop-filter:
-
-        blur(22px);
-
-    -webkit-backdrop-filter:
-
-        blur(22px);
-
-    border:
-
-        1px solid rgba(255,255,255,.12);
+    padding:20px;
 
     border-radius:22px;
 
-    padding:18px;
+    background:rgba(255,255,255,.06);
+
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+
+    border:1px solid rgba(255,255,255,.12);
 
     box-shadow:
-
         var(--shadow-glass),
-
         var(--glow-blue);
 
     animation:fadeIn .25s ease;
 
 }
-
 
 
 .glass-card:hover{
@@ -483,14 +515,13 @@ body{
 }
 
 
-
 @keyframes fadeIn{
 
     from{
 
         opacity:0;
 
-        transform:translateY(10px);
+        transform:translateY(12px);
 
     }
 
@@ -505,38 +536,55 @@ body{
 }
 
 
-
 /* ==========================================================
-   PHONE INFO
+   PHONE TITLE
    ========================================================== */
 
 .phone-title{
 
     text-align:center;
 
-    font-size:22px;
+    font-size:24px;
+
+    font-weight:900;
 
     color:var(--neon-blue);
 
-    margin-bottom:12px;
+    margin-bottom:16px;
 
     text-shadow:
 
-        0 0 12px rgba(0,229,255,.50);
+        0 0 12px rgba(0,229,255,.45);
 
 }
 
 
+/* ==========================================================
+   PHONE INFO
+   ========================================================== */
 
 .coord-line{
 
-    margin:6px 0;
-
-    color:var(--text-muted);
+    padding:8px 0;
 
     font-size:15px;
 
+    color:var(--text-muted);
+
+    border-bottom:
+
+        1px solid rgba(255,255,255,.06);
+
 }
+
+
+.coord-line:last-child{
+
+    border-bottom:none;
+
+}
+
+
 /* ==========================================================
    RESULTS
    ========================================================== */
@@ -550,18 +598,17 @@ body{
 }
 
 
-
 .result-title{
 
     display:flex;
 
     align-items:center;
 
-    gap:10px;
+    gap:12px;
 
     padding:14px 18px;
 
-    margin:18px 0 14px;
+    margin:20px 0 14px;
 
     border-radius:18px;
 
@@ -574,34 +621,29 @@ body{
 }
 
 
+.result-icon{
+
+    font-size:20px;
+
+}
+
 
 .result-title-text{
 
     flex:1;
 
-    font-size:15px;
+    font-size:16px;
 
     font-weight:800;
 
 }
 
 
-
-.result-icon{
-
-    font-size:18px;
-
-}
-
-
-
 /* ==========================================================
-   GLASS RESULT CARD
+   RESULT CARD
    ========================================================== */
 
 .glass-result-card{
-
-    position:relative;
 
     display:flex;
 
@@ -609,9 +651,9 @@ body{
 
     gap:16px;
 
-    margin:14px 0;
-
     padding:18px;
+
+    margin:14px 0;
 
     border-radius:22px;
 
@@ -623,15 +665,13 @@ body{
 
             180deg,
 
-            rgba(30,40,56,.55),
+            rgba(30,40,56,.58),
 
-            rgba(14,20,30,.45)
+            rgba(14,20,30,.48)
 
         );
 
     backdrop-filter:blur(24px);
-
-    -webkit-backdrop-filter:blur(24px);
 
     border:1px solid rgba(255,255,255,.10);
 
@@ -640,13 +680,11 @@ body{
 }
 
 
-
 .glass-result-card:hover{
 
     transform:translateY(-2px);
 
 }
-
 
 
 /* ==========================================================
@@ -666,7 +704,6 @@ body{
 }
 
 
-
 /* ==========================================================
    MODEL NAME
    ========================================================== */
@@ -681,12 +718,28 @@ body{
 
     color:#ffffff;
 
-    text-align:right;
+    direction:ltr;
+
+    text-align:left;
 
     word-break:break-word;
 
 }
 
+
+/* ==========================================================
+   SOURCE
+   ========================================================== */
+
+.model-source{
+
+    margin-top:6px;
+
+    font-size:13px;
+
+    color:#9fb0c2;
+
+}
 
 
 /* ==========================================================
@@ -695,7 +748,7 @@ body{
 
 .glass-result-card.exact{
 
-    border-left:6px solid #2ecc71;
+    border-left:6px solid var(--exact);
 
     box-shadow:
 
@@ -703,18 +756,13 @@ body{
 
 }
 
-
-
 .glass-result-card.exact .result-orb{
 
-    background:#2ecc71;
+    background:var(--exact);
 
-    box-shadow:
-
-        0 0 12px #2ecc71;
+    box-shadow:0 0 12px var(--exact);
 
 }
-
 
 
 /* ==========================================================
@@ -723,7 +771,7 @@ body{
 
 .glass-result-card.plus{
 
-    border-left:6px solid #3498db;
+    border-left:6px solid var(--plus);
 
     box-shadow:
 
@@ -731,18 +779,13 @@ body{
 
 }
 
-
-
 .glass-result-card.plus .result-orb{
 
-    background:#3498db;
+    background:var(--plus);
 
-    box-shadow:
-
-        0 0 12px #3498db;
+    box-shadow:0 0 12px var(--plus);
 
 }
-
 
 
 /* ==========================================================
@@ -751,7 +794,7 @@ body{
 
 .glass-result-card.minus{
 
-    border-left:6px solid #e67e22;
+    border-left:6px solid var(--minus);
 
     box-shadow:
 
@@ -759,18 +802,13 @@ body{
 
 }
 
-
-
 .glass-result-card.minus .result-orb{
 
-    background:#e67e22;
+    background:var(--minus);
 
-    box-shadow:
-
-        0 0 12px #e67e22;
+    box-shadow:0 0 12px var(--minus);
 
 }
-
 
 
 /* ==========================================================
@@ -779,7 +817,7 @@ body{
 
 .glass-result-card.warn{
 
-    border-left:6px solid #ef4444;
+    border-left:6px solid var(--warning);
 
     box-shadow:
 
@@ -787,79 +825,11 @@ body{
 
 }
 
-
-
 .glass-result-card.warn .result-orb{
 
-    background:#ef4444;
+    background:var(--warning);
 
-    box-shadow:
-
-        0 0 12px #ef4444;
-
-}
-
-
-
-/* ==========================================================
-   BACKWARD COMPATIBILITY
-   ========================================================== */
-
-.ammar-flat-card{
-
-    border-radius:20px;
-
-    padding:18px;
-
-    margin:12px 0;
-
-    background:rgba(255,255,255,.05);
-
-    border:1px solid rgba(255,255,255,.10);
-
-    backdrop-filter:blur(20px);
-
-    transition:.25s;
-
-}
-
-
-
-.ammar-flat-card:hover{
-
-    transform:translateY(-2px);
-
-}
-
-
-
-.ammar-flat-card.exact{
-
-    border-left:6px solid #2ecc71;
-
-}
-
-
-
-.ammar-flat-card.plus{
-
-    border-left:6px solid #3498db;
-
-}
-
-
-
-.ammar-flat-card.minus{
-
-    border-left:6px solid #e67e22;
-
-}
-
-
-
-.ammar-flat-card.warn{
-
-    border-left:6px solid #ef4444;
+    box-shadow:0 0 12px var(--warning);
 
    }
 /* ==========================================================
@@ -874,9 +844,9 @@ body{
 
     left:18px;
 
-    width:48px;
+    width:52px;
 
-    height:48px;
+    height:52px;
 
     border:none;
 
@@ -890,38 +860,35 @@ body{
 
     cursor:pointer;
 
-    z-index:1000;
+    z-index:2000;
+
+    font-size:22px;
 
     color:#00e5ff;
 
     background:rgba(255,255,255,.08);
 
-    backdrop-filter:blur(16px);
+    backdrop-filter:blur(18px);
 
-    -webkit-backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(18px);
 
     border:1px solid rgba(255,255,255,.15);
 
     box-shadow:
-
         0 0 18px rgba(0,229,255,.30);
 
     transition:.25s;
 
 }
 
-
-
 .btn-settings-open:hover{
 
-    transform:rotate(30deg) scale(1.08);
+    transform:rotate(45deg) scale(1.08);
 
     box-shadow:
-
-        0 0 28px rgba(0,229,255,.45);
+        0 0 30px rgba(0,229,255,.45);
 
 }
-
 
 
 /* ==========================================================
@@ -946,32 +913,25 @@ body{
 
     padding:20px;
 
-    z-index:1500;
-
-    background:
-
-        rgba(8,14,24,.92);
+    background:rgba(8,14,24,.95);
 
     backdrop-filter:blur(24px);
 
     -webkit-backdrop-filter:blur(24px);
 
-    border-left:
-
-        1px solid rgba(255,255,255,.12);
+    border-left:1px solid rgba(255,255,255,.12);
 
     transition:right .30s ease;
 
+    z-index:3000;
+
 }
-
-
 
 .drawer.drawer-open{
 
     right:0;
 
 }
-
 
 
 /* ==========================================================
@@ -986,23 +946,35 @@ body{
 
     justify-content:space-between;
 
-    margin-bottom:20px;
+    margin-bottom:22px;
 
 }
 
+.drawer-title-row{
 
+    display:flex;
 
-.drawer-header h2{
+    align-items:center;
+
+    gap:10px;
+
+}
+
+.drawer-icon{
+
+    font-size:24px;
+
+}
+
+.drawer-title{
 
     color:#00e5ff;
 
     font-size:22px;
 
-    font-weight:800;
+    font-weight:900;
 
 }
-
-
 
 .drawer-close-btn{
 
@@ -1018,12 +990,28 @@ body{
 
     color:white;
 
+    font-size:18px;
+
     background:rgba(255,255,255,.08);
 
     border:1px solid rgba(255,255,255,.15);
 
 }
 
+
+/* ==========================================================
+   DRAWER BODY
+   ========================================================== */
+
+.drawer-body{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:16px;
+
+}
 
 
 /* ==========================================================
@@ -1032,37 +1020,31 @@ body{
 
 .metric-box{
 
-    margin:14px 0;
-
-    padding:16px;
+    padding:18px;
 
     border-radius:20px;
 
-    background:
+    background:rgba(255,255,255,.06);
 
-        rgba(255,255,255,.06);
+    backdrop-filter:blur(18px);
 
-    backdrop-filter:blur(20px);
-
-    border:
-
-        1px solid rgba(255,255,255,.10);
+    border:1px solid rgba(255,255,255,.10);
 
 }
-
-
 
 .metric-box h4{
 
-    margin-bottom:8px;
+    text-align:center;
 
     color:#00e5ff;
 
-    text-align:center;
+    margin-bottom:10px;
+
+    font-size:16px;
+
+    font-weight:800;
 
 }
-
-
 
 .metric-value{
 
@@ -1072,10 +1054,9 @@ body{
 
     font-weight:900;
 
-    color:white;
+    color:#ffffff;
 
 }
-
 
 
 /* ==========================================================
@@ -1088,7 +1069,7 @@ body{
 
     margin-top:12px;
 
-    padding:13px;
+    padding:14px;
 
     border:none;
 
@@ -1100,13 +1081,13 @@ body{
 
     color:#00151c;
 
-    font-weight:800;
+    font-size:15px;
+
+    font-weight:900;
 
     transition:.25s;
 
 }
-
-
 
 .btn-neon:hover{
 
@@ -1114,15 +1095,13 @@ body{
 
 }
 
-
-
 .btn-close{
 
     width:100%;
 
     margin-top:10px;
 
-    padding:13px;
+    padding:14px;
 
     border:none;
 
@@ -1134,8 +1113,9 @@ body{
 
     color:white;
 
-}
+    font-weight:800;
 
+}
 
 
 /* ==========================================================
@@ -1156,15 +1136,13 @@ body{
 
     padding:20px;
 
-    z-index:3000;
-
     background:rgba(0,0,0,.60);
 
     backdrop-filter:blur(6px);
 
+    z-index:5000;
+
 }
-
-
 
 .modal-card{
 
@@ -1174,50 +1152,15 @@ body{
 
 }
 
-
-
 .modal-buttons{
 
     display:flex;
-
-    justify-content:center;
 
     gap:12px;
 
     margin-top:18px;
 
-}
-
-
-
-/* ==========================================================
-   PLAN +
-   ========================================================== */
-
-.plan-plus{
-
-    width:36px;
-
-    height:36px;
-
-    display:inline-flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    border-radius:50%;
-
-    color:#00e5ff;
-
-    border:1px solid #00e5ff;
-
-    background:rgba(0,229,255,.10);
-
-}
-
-
-
+   }
 /* ==========================================================
    RESULTS SCROLL
    ========================================================== */
@@ -1238,32 +1181,45 @@ body{
 
     scrollbar-width:thin;
 
-}
+    scrollbar-color:
+        rgba(0,229,255,.45)
+        transparent;
 
+}
 
 
 .results-workflow-view::-webkit-scrollbar{
 
-    width:5px;
+    width:6px;
 
 }
 
 
+.results-workflow-view::-webkit-scrollbar-track{
+
+    background:transparent;
+
+}
+
 
 .results-workflow-view::-webkit-scrollbar-thumb{
 
-    background:
-
-        rgba(0,229,255,.35);
+    background:rgba(0,229,255,.40);
 
     border-radius:20px;
 
 }
 
 
+.results-workflow-view::-webkit-scrollbar-thumb:hover{
+
+    background:rgba(0,229,255,.65);
+
+}
+
 
 /* ==========================================================
-   FIX SHINY OUTPUT
+   SHINY OUTPUT FIX
    ========================================================== */
 
 .shiny-html-output{
@@ -1272,9 +1228,27 @@ body{
 
     min-height:1px;
 
-   }
+}
+
+
+.shiny-bound-output:empty{
+
+    display:none;
+
+}
+
+
+.shiny-output-error{
+
+    color:#ff6b6b;
+
+    text-align:center;
+
+}
+
+
 /* ==========================================================
-   MOBILE OPTIMIZATION
+   RESPONSIVE
    ========================================================== */
 
 @media (max-width:600px){
@@ -1293,9 +1267,11 @@ body{
 
     .brand-neon-sub{
 
-        font-size:13px;
+        font-size:15px;
 
-        letter-spacing:3px;
+        font-weight:900;
+
+        letter-spacing:2px;
 
     }
 
@@ -1307,7 +1283,7 @@ body{
 
     .search-box input{
 
-        height:46px;
+        height:48px;
 
         font-size:15px;
 
@@ -1315,15 +1291,15 @@ body{
 
     .glass-card{
 
-        border-radius:18px;
+        padding:16px;
 
-        padding:15px;
+        border-radius:18px;
 
     }
 
     .glass-result-card{
 
-        padding:15px;
+        padding:16px;
 
         border-radius:18px;
 
@@ -1338,9 +1314,8 @@ body{
 }
 
 
-
 /* ==========================================================
-   SMALL HEIGHT DEVICES
+   SMALL HEIGHT
    ========================================================== */
 
 @media (max-height:700px){
@@ -1366,20 +1341,16 @@ body{
 }
 
 
-
 /* ==========================================================
    TEXT PROTECTION
    ========================================================== */
 
 .phone-title,
-
-.model-name,
-
-.result-title,
-
 .coord-line,
-
-.ammar-flat-card{
+.model-name,
+.result-title,
+.result-title-text,
+.metric-value{
 
     word-break:break-word;
 
@@ -1388,19 +1359,14 @@ body{
 }
 
 
-
 /* ==========================================================
-   REMOVE BLUE TAP FLASH
+   REMOVE TAP FLASH
    ========================================================== */
 
 button,
-
 input,
-
 textarea,
-
 select,
-
 a{
 
     -webkit-tap-highlight-color:transparent;
@@ -1408,49 +1374,33 @@ a{
 }
 
 
-
 /* ==========================================================
-   SMOOTH ANIMATION
+   GLOBAL ANIMATION
    ========================================================== */
 
 *{
 
     transition:
 
-        background-color .20s,
+        background-color .20s ease,
 
-        color .20s,
+        color .20s ease,
 
-        border-color .20s,
+        border-color .20s ease,
 
-        box-shadow .20s,
+        box-shadow .20s ease,
 
-        transform .20s;
-
-}
-
-
-
-/* ==========================================================
-   HIDE UNUSED SHINY ELEMENTS
-   ========================================================== */
-
-.shiny-bound-output:empty{
-
-    display:none;
+        transform .20s ease;
 
 }
 
 
-
 /* ==========================================================
-   DISABLE HORIZONTAL SCROLL
+   REMOVE HORIZONTAL SCROLL
    ========================================================== */
 
 html,
-
 body,
-
 .main-layout{
 
     overflow-x:hidden;
@@ -1458,15 +1408,12 @@ body,
 }
 
 
-
 /* ==========================================================
    FINAL POLISH
    ========================================================== */
 
 .glass-card,
-
 .glass-result-card,
-
 .metric-box{
 
     box-shadow:
@@ -1476,19 +1423,17 @@ body,
 }
 
 
-
 .glass-card:hover,
-
-.glass-result-card:hover{
+.glass-result-card:hover,
+.metric-box:hover{
 
     box-shadow:
 
-        0 0 25px rgba(0,229,255,.30),
+        0 0 26px rgba(0,229,255,.35),
 
-        0 12px 35px rgba(0,0,0,.40);
+        0 12px 36px rgba(0,0,0,.45);
 
 }
-
 
 
 /* ==========================================================
@@ -1496,13 +1441,13 @@ body,
    ========================================================== */
 
 button:focus,
-
-input:focus{
+input:focus,
+select:focus,
+textarea:focus{
 
     outline:none;
 
 }
-
 
 
 /* ==========================================================
