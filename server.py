@@ -25,6 +25,7 @@ from ui_settings import (
     draw_system_info,
     draw_database_status,
     draw_monitor_component,
+    draw_notification_component,
     draw_silent_inspector,
 )
 
@@ -33,8 +34,8 @@ from ui_search import (
 )
 
 from ui_plans import (
-    draw_plan_3_modal,
     draw_modal_overlay,
+    draw_plan_3_modal,
 )
 
 MAX_SUGGESTIONS = 10
@@ -73,12 +74,13 @@ def _extract_unique_models(db_data):
 
                 for model in items:
 
-                    if isinstance(model, str):
+                    if not isinstance(model, str):
+                        continue
 
-                        model = model.strip()
+                    model = model.strip()
 
-                        if model:
-                            models.add(model)
+                    if model:
+                        models.add(model)
 
     return sorted(models)
 
@@ -95,9 +97,9 @@ def server(input, output, session):
 
     show_not_found_modal = reactive.value(False)
 
-    show_settings_drawer = reactive.value(False)
+
     # ======================================================
-    # HEALTH SNAPSHOT
+    # DATABASE STATUS (يتحدث تلقائياً كل عدة ثوان)
     # ======================================================
 
     @reactive.calc
@@ -106,8 +108,6 @@ def server(input, output, session):
         reactive.invalidate_later(REFRESH_INTERVAL_SEC)
 
         return monitor() or {}
-
-
     # ======================================================
     # SEARCH WORKFLOW
     # ======================================================
@@ -118,63 +118,54 @@ def server(input, output, session):
 
         query = str(input.search_query() or "").strip()
 
-        if not query:
+        if query == "":
 
             workflow_state.set(None)
-
             show_curtain.set(False)
-
             show_not_found_modal.set(False)
-
             return
 
         show_curtain.set(True)
 
-        db = get_database() or {}
+        database = get_database() or {}
 
         result = run_system_workflows(
-
-            query,
-
-            db_data=db,
-
+            query=query,
+            db_data=database,
         )
 
         workflow_state.set(result)
 
         if not result:
-
             return
+
+        status = result.get("status", "")
 
         coords = result.get("coords", {})
 
         real_name = str(
-
             coords.get("real_name", "")
-
         ).strip().lower()
 
         if (
-
-            result.get("status") == "success"
-
+            status == "success"
             and
-
             real_name == query.lower()
-
         ):
 
             show_curtain.set(False)
 
-        show_not_found_modal.set(
+        if status == "plan_3":
 
-            result.get("status") == "plan_3"
+            show_not_found_modal.set(True)
 
-        )
+        else:
+
+            show_not_found_modal.set(False)
 
 
     # ======================================================
-    # CLOSE MODAL
+    # CLOSE PLAN 3 MODAL
     # ======================================================
 
     @reactive.effect
@@ -185,7 +176,7 @@ def server(input, output, session):
 
 
     # ======================================================
-    # RUN INSPECTOR
+    # RUN INTELLIGENT INSPECTOR
     # ======================================================
 
     @reactive.effect
@@ -194,28 +185,30 @@ def server(input, output, session):
 
         run_intelligent_inspector()
 
+        # إعادة تحميل قاعدة البيانات بعد الفحص
         get_database()
 
 
     # ======================================================
-    # SETTINGS DRAWER
+    # KEEP DATABASE CONNECTED
     # ======================================================
 
     @reactive.effect
-    @reactive.event(input.btn_open_drawer, ignore_none=True)
-    async def _open_drawer():
+    def _keep_database_alive():
 
-        show_settings_drawer.set(True)
+        reactive.invalidate_later(REFRESH_INTERVAL_SEC)
 
+        get_database()
+
+
+    # ======================================================
+    # KEEP MONITOR ALIVE
+    # ======================================================
 
     @reactive.effect
-    @reactive.event(
-        input.btn_close_drawer_trigger,
-        ignore_none=True,
-    )
-    async def _close_drawer():
+    def _keep_monitor_alive():
 
-        show_settings_drawer.set(False)
+        health_snapshot()
     # ======================================================
     # WELCOME AREA
     # ======================================================
@@ -223,15 +216,15 @@ def server(input, output, session):
     @render.ui
     def welcome_area():
 
+        # تظهر الصورة فقط قبل البحث
         if workflow_state() is None:
-
             return draw_welcome_header()
 
         return None
 
 
     # ======================================================
-    # RESULTS AREA
+    # RESULTS
     # ======================================================
 
     @render.ui
@@ -240,24 +233,20 @@ def server(input, output, session):
         result = workflow_state()
 
         if result is None:
-
             return None
 
         if result.get("status") != "success":
-
             return None
 
-        coords = result.get("coords") or {}
-
-        compatibles = result.get("compatibles") or {}
+        coords = result.get("coords", {})
+        compatibles = result.get("compatibles", {})
 
         cards = []
 
-        technical_card = draw_technical_coords(coords)
+        phone_card = draw_technical_coords(coords)
 
-        if technical_card is not None:
-
-            cards.append(technical_card)
+        if phone_card is not None:
+            cards.append(phone_card)
 
         sections = [
 
@@ -266,6 +255,7 @@ def server(input, output, session):
                 "مطابقة تماماً",
                 "#2ecc71",
                 "🟢",
+                "exact",
             ),
 
             (
@@ -273,6 +263,7 @@ def server(input, output, session):
                 "أكبر بقليل",
                 "#3498db",
                 "🔵",
+                "plus",
             ),
 
             (
@@ -280,46 +271,40 @@ def server(input, output, session):
                 "أصغر بقليل",
                 "#e67e22",
                 "🟠",
+                "minus",
             ),
 
             (
                 "warn",
-                "تنبيه: مستشعر مختلف",
+                "تحذير: مستشعر مختلف",
                 "#ef4444",
                 "⚠️",
+                "warn",
             ),
 
         ]
 
-        for key, title, color, icon in sections:
+        for key, title, color, icon, section_type in sections:
 
             models = compatibles.get(key, [])
 
             if not models:
-
                 continue
 
             section = draw_neon_section(
 
                 title=title,
-
                 models=models,
-
                 color=color,
-
                 icon=icon,
-
-                section_type=key,
+                section_type=section_type,
 
             )
 
             if section is not None:
-
                 cards.append(section)
 
         return ui.TagList(*cards)
-
-
     # ======================================================
     # AUTOCOMPLETE
     # ======================================================
@@ -328,42 +313,33 @@ def server(input, output, session):
     def suggestions_curtain():
 
         if not show_curtain():
-
             return None
 
         query = str(
-
             input.search_query() or ""
-
         ).strip().lower()
 
-        if len(query) < 1:
-
+        if query == "":
             return None
 
         database = get_database() or {}
 
-        all_models = _extract_unique_models(database)
+        models = _extract_unique_models(database)
 
         matches = [
-
             model
-
-            for model in all_models
-
+            for model in models
             if query in model.lower()
-
         ][:MAX_SUGGESTIONS]
 
         if not matches:
-
             return None
 
         return draw_suggestions_curtain(matches)
 
 
     # ======================================================
-    # SETTINGS
+    # SYSTEM INFO
     # ======================================================
 
     @render.ui
@@ -372,31 +348,25 @@ def server(input, output, session):
         return draw_system_info()
 
 
+    # ======================================================
+    # DATABASE STATUS
+    # ======================================================
+
     @render.ui
     def database_status_area():
 
         health = health_snapshot()
 
-        statistics = health.get(
+        statistics = health.get("statistics", {})
 
-            "statistics",
+        phones = statistics.get("phones", 0)
 
-            {},
+        return draw_database_status(phones)
 
-        )
 
-        return draw_database_status(
-
-            statistics.get(
-
-                "phones",
-
-                0,
-
-            )
-
-        )
-
+    # ======================================================
+    # MONITOR STATUS
+    # ======================================================
 
     @render.ui
     def monitor_area():
@@ -408,22 +378,42 @@ def server(input, output, session):
         if isinstance(health, dict):
 
             status = health.get(
-
                 "status",
-
-                "UNKNOWN",
-
+                "UNKNOWN"
             )
 
         return draw_monitor_component(status)
 
 
+    # ======================================================
+    # NOTIFICATIONS
+    # ======================================================
+
+    @render.ui
+    def notification_area():
+
+        health = health_snapshot()
+
+        notifications = 0
+
+        if isinstance(health, dict):
+
+            notifications = health.get(
+                "notifications",
+                0
+            )
+
+        return draw_notification_component(notifications)
+
+
+    # ======================================================
+    # SILENT INSPECTOR
+    # ======================================================
+
     @render.ui
     def silent_inspector_area():
 
         return draw_silent_inspector()
-
-
     # ======================================================
     # PLAN 3 MODAL
     # ======================================================
@@ -432,82 +422,110 @@ def server(input, output, session):
     def dynamic_modal_container():
 
         if not show_not_found_modal():
-
             return None
+
+        result = workflow_state() or {}
+
+        coords = result.get("coords", {})
+
+        phone = coords.get(
+            "real_name",
+            str(input.search_query() or "").strip()
+        )
 
         return draw_modal_overlay(
 
-            draw_plan_3_modal()
+            draw_plan_3_modal(
+                phone=phone,
+                result=result,
+            )
 
         )
-    # ======================================================
-    # SETTINGS DRAWER SCRIPT
-    # ======================================================
-
-    @render.ui
-    def settings_drawer_script():
-
-        if show_settings_drawer():
-
-            return ui.tags.script("""
-(function(){
-
-const drawer=document.getElementById("settings-drawer");
-
-if(drawer){
-
-drawer.classList.add("drawer-open");
-
-}
-
-})();
-""")
-
-        return ui.tags.script("""
-(function(){
-
-const drawer=document.getElementById("settings-drawer");
-
-if(drawer){
-
-drawer.classList.remove("drawer-open");
-
-}
-
-})();
-""")
 
 
     # ======================================================
-    # KEEP HEALTH MONITOR ALIVE
+    # CLEAN EMPTY QUERY
     # ======================================================
 
     @reactive.effect
-    def _keep_monitor_alive():
+    def _cleanup_state():
 
-        health_snapshot()
+        query = str(
+            input.search_query() or ""
+        ).strip()
+
+        if query:
+            return
+
+        workflow_state.set(None)
+
+        show_curtain.set(False)
+
+        show_not_found_modal.set(False)
 
 
     # ======================================================
-    # KEEP DATABASE LOADED
+    # REFRESH DATABASE
     # ======================================================
 
     @reactive.effect
-    def _keep_database_alive():
+    def _refresh_database():
+
+        reactive.invalidate_later(REFRESH_INTERVAL_SEC)
 
         get_database()
 
 
     # ======================================================
-    # KEEP WORKFLOW STATE SAFE
+    # REFRESH MONITOR
     # ======================================================
 
     @reactive.effect
-    def _cleanup_empty_query():
+    def _refresh_monitor():
 
-        query = str(input.search_query() or "").strip()
+        reactive.invalidate_later(REFRESH_INTERVAL_SEC)
 
-        if query:
+        monitor()
+    # ======================================================
+    # KEEP DATABASE SYNCHRONIZED
+    # ======================================================
+
+    @reactive.effect
+    def _sync_database():
+
+        reactive.invalidate_later(REFRESH_INTERVAL_SEC)
+
+        try:
+
+            # يعيد تحميل قاعدة البيانات (ومنها Supabase إذا كان
+            # get_database() يعتمد عليها)
+            get_database()
+
+        except Exception:
+
+            pass
+
+
+    # ======================================================
+    # KEEP HEALTH SNAPSHOT UPDATED
+    # ======================================================
+
+    @reactive.effect
+    def _update_health():
+
+        reactive.invalidate_later(REFRESH_INTERVAL_SEC)
+
+        health_snapshot()
+
+
+    # ======================================================
+    # KEEP SEARCH STATE CONSISTENT
+    # ======================================================
+
+    @reactive.effect
+    def _hide_results_when_empty():
+
+        if str(input.search_query() or "").strip():
 
             return
 
@@ -521,3 +539,5 @@ drawer.classList.remove("drawer-open");
     # ======================================================
     # END SERVER
     # ======================================================
+
+    return     
