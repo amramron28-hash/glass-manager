@@ -1,6 +1,10 @@
 from shiny import render, reactive, ui
 
+from core.logger import get_logger
+
 from config import REFRESH_INTERVAL_SEC
+
+log = get_logger("server")
 
 from logic_engine import (
     run_system_workflows,
@@ -193,21 +197,6 @@ def server(input, output, session):
 
         get_database()
 
-
-    # ======================================================
-    # KEEP DATABASE + MONITOR ALIVE
-    # ======================================================
-
-    @reactive.effect
-    def _background_refresh():
-
-        reactive.invalidate_later(
-            REFRESH_INTERVAL_SEC
-        )
-
-        get_database()
-
-        health_snapshot()
 
     # ======================================================
     # WELCOME AREA
@@ -514,9 +503,9 @@ def server(input, output, session):
 
             health_snapshot()
 
-        except Exception:
+        except Exception as e:
 
-            pass
+            log.error(f"Background sync error: {e}")
 
 
     # ======================================================
