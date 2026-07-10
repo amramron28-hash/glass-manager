@@ -1,10 +1,11 @@
-const CACHE_NAME = "glass-manager-cache-v3"; // تم تحديث الإصدار لإجبار المتصفح على التحديث
+const CACHE_NAME = "glass-manager-cache-v4"; // تم رفع الإصدار لإجبار تنظيف الكاش القديم
 
+// ⚠️ لا تضف "/" هنا أبداً — إنها صفحة ديناميكية يولّدها Shiny
+// وتحتوي على session token مختلف في كل مرة. تخزينها يكسر الجلسة.
 const STATIC_ASSETS = [
-    "/",
     "/manifest.json",
     "/models_db.json",
-    "/style_v2.css" // تم ربطه بالملف الصحيح الجديد
+    "/style_v2.css"
 ];
 
 // =========================
@@ -40,19 +41,30 @@ self.addEventListener("activate", (event) => {
 });
 
 // =========================
-// FETCH (cache-first strategy)
+// FETCH
 // =========================
 self.addEventListener("fetch", (event) => {
     if (event.request.method !== "GET") return;
 
+    // ✅ طلبات التصفح (الصفحة الرئيسية وأي تنقل) دائماً من الشبكة مباشرة
+    // هذا يضمن أن Shiny يحصل على session token جديد وصحيح في كل مرة
+    if (event.request.mode === "navigate") {
+        event.respondWith(
+            fetch(event.request).catch(() => {
+                // في حال انقطاع الشبكة فقط، حاول أي نسخة مخزنة كحل أخير
+                return caches.match(event.request);
+            })
+        );
+        return;
+    }
+
+    // ✅ الملفات الثابتة فقط (CSS, JSON, صور...) تستخدم cache-first
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
-            // إذا وجد الملف في الكاش، نستخدمه
             if (cachedResponse) {
                 return cachedResponse;
             }
 
-            // إذا لم يوجد، نطلبه من الشبكة
             return fetch(event.request).then((networkResponse) => {
                 if (
                     !networkResponse ||
