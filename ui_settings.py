@@ -1,6 +1,5 @@
 from shiny import ui
 
-
 # ==========================================================
 # SETTINGS DRAWER
 # ==========================================================
@@ -13,17 +12,11 @@ def draw_settings_drawer():
 
             ui.div(
 
-                ui.span(
-                    "⚙️",
-                    class_="drawer-icon"
-                ),
+                ui.span("⚙️", class_="drawer-icon"),
 
-                ui.span(
-                    "الإعدادات",
-                    class_="drawer-title"
-                ),
+                ui.span("الإعدادات", class_="drawer-title"),
 
-                class_="drawer-title-row"
+                class_="drawer-title-row",
 
             ),
 
@@ -35,11 +28,11 @@ def draw_settings_drawer():
 
                 class_="drawer-close-btn",
 
-                title="إغلاق"
+                title="إغلاق",
 
             ),
 
-            class_="drawer-header"
+            class_="drawer-header",
 
         ),
 
@@ -51,15 +44,17 @@ def draw_settings_drawer():
 
             ui.output_ui("monitor_area"),
 
+            ui.output_ui("notification_area"),
+
             ui.output_ui("silent_inspector_area"),
 
-            class_="drawer-body"
+            class_="drawer-body",
 
         ),
 
         id="settings-drawer",
 
-        class_="drawer"
+        class_="drawer",
 
     )
 
@@ -74,15 +69,11 @@ def draw_system_info():
 
         ui.h4("معلومات النظام"),
 
-        ui.div(
-            "ZEGAAR AMMAR GLASS MANAGER"
-        ),
+        ui.div("ZEGAAR AMMAR GLASS MANAGER"),
 
-        ui.div(
-            "Version 2026.07"
-        ),
+        ui.div("Version 2026.07"),
 
-        class_="metric-box glass-card"
+        class_="metric-box glass-card",
 
     )
 
@@ -97,15 +88,9 @@ def draw_database_status(count):
 
         ui.h4("عدد الهواتف"),
 
-        ui.div(
+        ui.div(str(count), class_="metric-value"),
 
-            str(count),
-
-            class_="metric-value"
-
-        ),
-
-        class_="metric-box glass-card"
+        class_="metric-box glass-card",
 
     )
 
@@ -126,11 +111,34 @@ def draw_monitor_component(status):
 
             "🟢 ONLINE" if online else "🔴 OFFLINE",
 
-            class_="metric-value"
+            class_="metric-value",
 
         ),
 
-        class_="metric-box glass-card"
+        class_="metric-box glass-card",
+
+    )
+
+
+# ==========================================================
+# NOTIFICATIONS
+# ==========================================================
+
+def draw_notification_component(count=0):
+
+    return ui.div(
+
+        ui.h4("الإشعارات"),
+
+        ui.div(
+
+            f"🔔 {count}",
+
+            class_="metric-value",
+
+        ),
+
+        class_="metric-box glass-card",
 
     )
 
@@ -149,33 +157,31 @@ def draw_silent_inspector():
 
             "🛠 تشغيل الفحص الذكي",
 
-            class_="btn-neon"
+            class_="btn-neon",
 
         ),
 
-        class_="glass-card"
+        class_="glass-card",
 
     )
 
 
 # ==========================================================
-# NOTIFICATION
+# EXPORTS
 # ==========================================================
 
-def draw_notification_component(count=0):
+__all__ = [
 
-    return ui.div(
+    "draw_settings_drawer",
 
-        ui.h4("الإشعارات"),
+    "draw_system_info",
 
-        ui.div(
+    "draw_database_status",
 
-            f"🔔 {count}",
+    "draw_monitor_component",
 
-            class_="metric-value"
+    "draw_notification_component",
 
-        ),
+    "draw_silent_inspector",
 
-        class_="metric-box glass-card"
-
-    )
+]
