@@ -110,11 +110,11 @@ def server(input, output, session):
     # ======================================================
 
     @reactive.calc
-    async def health_snapshot():
+    def health_snapshot():
 
         reactive.invalidate_later(REFRESH_INTERVAL_SEC)
 
-        return await monitor_async() or {}
+        return monitor() or {}
 
     # ======================================================
     # SEARCH WORKFLOW
@@ -368,7 +368,7 @@ def server(input, output, session):
     @render.ui
     async def database_status_area():
 
-        health = await health_snapshot()
+        health = health_snapshot()
 
         statistics = {}
 
@@ -394,7 +394,7 @@ def server(input, output, session):
     @render.ui
     async def monitor_area():
 
-        health = await health_snapshot()
+        health = health_snapshot()
 
         status = "OFFLINE"
 
@@ -415,7 +415,7 @@ def server(input, output, session):
     @render.ui
     async def notification_area():
 
-        health = await health_snapshot()
+        health = health_snapshot()
 
         count = 0
 
@@ -505,7 +505,7 @@ def server(input, output, session):
 
             await get_database_async()
 
-            await health_snapshot()
+            health_snapshot()
 
         except Exception as e:
 
