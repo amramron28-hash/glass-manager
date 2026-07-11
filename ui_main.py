@@ -22,17 +22,13 @@ app_ui = ui.page_fluid(
 
         ui.tags.link(
             rel="stylesheet",
-            href="style_v2.css?v=3"
+            href="style_v2.css?v=4"
         ),
 
-        ui.tags.link(
-            rel="manifest",
-            href="manifest.json"
-        ),
     ),
 
     # ==========================================================
-    # GLOBAL JAVASCRIPT
+    # DRAWER EVENTS
     # ==========================================================
 
     ui.tags.script("""
@@ -61,25 +57,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 
-if ("serviceWorker" in navigator) {
-
-    window.addEventListener("load", function(){
-
-        navigator.serviceWorker
-            .register("/service-worker.js")
-            .catch(console.error);
-
-    });
-
-}
-
 """),
 
     # ==========================================================
-    # BACKGROUND
+    # FIXED BACKGROUND
     # ==========================================================
 
-    ui.div(class_="fixed-background"),
+    ui.div(
+        class_="fixed-background"
+    ),
 
     # ==========================================================
     # SETTINGS DRAWER
@@ -97,17 +83,20 @@ if ("serviceWorker" in navigator) {
 
         draw_search_box(),
 
-        ui.output_ui("welcome_area"),
-
-        ui.div(
-
-            ui.output_ui("results_workflow_view"),
-
-            class_="results-workflow-view"
-
+        ui.output_ui(
+            "welcome_area"
         ),
 
-        ui.output_ui("dynamic_modal_container"),
+        ui.div(
+            ui.output_ui(
+                "results_workflow_view"
+            ),
+            class_="results-workflow-view",
+        ),
+
+        ui.output_ui(
+            "dynamic_modal_container"
+        ),
 
         class_="main-layout"
 
