@@ -32,7 +32,7 @@ app = App(
     ui=app_ui,
     server=server,
     static_assets=WWW_DIR,
-    debug=False,
+    debug=True,  # ⚠️ مؤقت للتشخيص فقط — أعده لـ False بعد حل المشكلة
 )
 
 print("APP CREATED SUCCESSFULLY")
