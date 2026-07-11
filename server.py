@@ -14,7 +14,7 @@ from logic_engine import (
     find_group_by_specs,
 )
 
-from database import add_model
+from database import add_model, delete_model
 
 from silent_monitor import (
     get_database,
@@ -38,6 +38,7 @@ from ui_settings import (
     draw_monitor_component,
     draw_notification_component,
     draw_silent_inspector,
+    draw_duplicate_issues,
 )
 
 from ui_search import (
@@ -185,11 +186,11 @@ def server(input, output, session):
     # ======================================================
 
     @reactive.calc
-    def health_snapshot():
+    async def health_snapshot():
 
         reactive.invalidate_later(REFRESH_INTERVAL_SEC)
 
-        return monitor() or {}
+        return await monitor_async() or {}
 
     # ======================================================
     # SEARCH WORKFLOW
@@ -604,7 +605,7 @@ def server(input, output, session):
     @render.ui
     async def database_status_area():
 
-        health = health_snapshot()
+        health = await health_snapshot()
 
         statistics = {}
 
@@ -630,7 +631,7 @@ def server(input, output, session):
     @render.ui
     async def monitor_area():
 
-        health = health_snapshot()
+        health = await health_snapshot()
 
         status = "OFFLINE"
 
@@ -651,7 +652,7 @@ def server(input, output, session):
     @render.ui
     async def notification_area():
 
-        health = health_snapshot()
+        health = await health_snapshot()
 
         count = 0
 
@@ -663,6 +664,56 @@ def server(input, output, session):
             )
 
         return draw_notification_component(count)
+
+
+    # ======================================================
+    # DUPLICATE ISSUES (المراقب الصامت - عيني ويدي)
+    # ======================================================
+
+    @render.ui
+    async def duplicate_issues_area():
+
+        health = await health_snapshot()
+
+        issues = []
+        auto_log = []
+
+        if isinstance(health, dict):
+
+            issues = health.get("duplicate_issues", [])
+            auto_log = health.get("auto_fix_log", [])
+
+        return draw_duplicate_issues(issues, auto_log)
+
+
+    @reactive.effect
+    @reactive.event(input.fix_duplicate, ignore_none=True)
+    async def _fix_duplicate():
+
+        payload = str(input.fix_duplicate() or "")
+
+        parts = payload.split("|")
+
+        if len(parts) != 4:
+            return
+
+        model, size, panel, sensor = parts
+
+        try:
+
+            await asyncio.to_thread(
+                delete_model,
+                model,
+                size,
+                panel,
+                sensor,
+            )
+
+        except Exception as e:
+
+            log.error(f"Fix duplicate error: {e}")
+
+        await get_database_async()
 
 
     # ======================================================
@@ -766,7 +817,7 @@ def server(input, output, session):
 
             await get_database_async()
 
-            health_snapshot()
+            await health_snapshot()
 
         except Exception as e:
 
