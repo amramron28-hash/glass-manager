@@ -1,6 +1,7 @@
-import os
+hereimport os
 import json
 import time
+import asyncio
 import traceback
 import hashlib
 from datetime import datetime
@@ -161,3 +162,19 @@ def get_db_hash():
     db = get_database() or {}
     db_str = json.dumps(db, sort_keys=True)
     return hashlib.md5(db_str.encode()).hexdigest()
+
+
+# ==========================================================
+# نسخ ASYNC آمنة — لا تحظر حلقة الأحداث المشتركة (event loop)
+# ==========================================================
+# ⚠️ مهم: get_database() و monitor() يقومان أحياناً باستدعاء
+# Supabase عبر HTTP بشكل متزامن (blocking). استدعاؤهما مباشرة
+# داخل دالة async في Shiny يُجمّد حلقة الأحداث المشتركة بين كل
+# الجلسات المتصلة في نفس اللحظة. الحل: تشغيلهما في خيط منفصل
+# عبر asyncio.to_thread حتى لا يتأثر أي مستخدم آخر بالانتظار.
+
+async def get_database_async():
+    return await asyncio.to_thread(get_database)
+
+async def monitor_async():
+    return await asyncio.to_thread(monitor)
