@@ -533,6 +533,80 @@ def get_compatibles_strict(
 # PLAN 2 GROUP FINDER
 # ==========================================================
 
+# ==========================================================
+# CROSS-GROUP DUPLICATE DETECTOR (المراقب الصامت)
+# ==========================================================
+# يكتشف الهواتف المسجّلة بنفس الاسم في أكثر من مجموعة
+# (مقاس/نوع شاشة/مستشعر) مختلفة - غالباً بسبب خطأ إدخال يدوي
+# (مثال: نفس الهاتف بمقاس 6.5 في مجموعة، وبالخطأ 6.67 في أخرى)
+
+def detect_cross_group_duplicates(db_data: Dict) -> list:
+
+    if not isinstance(db_data, dict):
+        return []
+
+    locations: Dict[str, list] = {}
+
+    for size, panels in db_data.items():
+
+        if not isinstance(panels, dict):
+            continue
+
+        for panel, sensors in panels.items():
+
+            if not isinstance(sensors, dict):
+                continue
+
+            for sensor, data in sensors.items():
+
+                models = data.get("models", []) if isinstance(data, dict) else data
+
+                if not isinstance(models, list):
+                    continue
+
+                group_size = len(models)
+
+                for model in models:
+
+                    if not isinstance(model, str) or not model.strip():
+                        continue
+
+                    key = normalize_text(model)
+
+                    locations.setdefault(key, []).append({
+                        "model": model.strip(),
+                        "size": size,
+                        "panel": panel,
+                        "sensor": sensor,
+                        "group_size": group_size,
+                    })
+
+    issues = []
+
+    for key, entries in locations.items():
+
+        if len(entries) < 2:
+            continue
+
+        # المجموعة الأكبر (أكثر موديلات) تُعتبر المرجّحة كصحيحة
+        entries_sorted = sorted(
+            entries,
+            key=lambda e: e["group_size"],
+            reverse=True,
+        )
+
+        correct = entries_sorted[0]
+        wrongs = entries_sorted[1:]
+
+        issues.append({
+            "model": correct["model"],
+            "correct": correct,
+            "wrongs": wrongs,
+        })
+
+    return issues
+
+
 def find_group_by_specs(
         db_data: Dict,
         specs: dict,
