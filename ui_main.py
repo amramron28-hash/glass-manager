@@ -22,7 +22,7 @@ app_ui = ui.page_fluid(
 
         ui.tags.link(
             rel="stylesheet",
-            href="style_v2.css?v=5"
+            href="style_v2.css?v=7"
         ),
 
     ),
