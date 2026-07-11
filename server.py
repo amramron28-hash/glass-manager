@@ -11,7 +11,10 @@ log = get_logger("server")
 from logic_engine import (
     run_system_workflows,
     run_intelligent_inspector,
+    find_group_by_specs,
 )
+
+from database import add_model
 
 from silent_monitor import (
     get_database,
@@ -43,7 +46,10 @@ from ui_search import (
 
 from ui_plans import (
     draw_modal_overlay,
-    draw_plan_3_modal,
+    draw_wizard_size_modal,
+    draw_wizard_panel_modal,
+    draw_wizard_sensor_modal,
+    draw_wizard_confirm_modal,
 )
 
 MAX_SUGGESTIONS = 10
@@ -92,6 +98,55 @@ def _extract_unique_models(db_data):
     return sorted(models)
 
 
+def _extract_unique_panels(db_data):
+
+    panels = set()
+
+    if not isinstance(db_data, dict):
+        return []
+
+    for size_group in db_data.values():
+
+        if not isinstance(size_group, dict):
+            continue
+
+        for panel_name in size_group.keys():
+
+            panel_name = str(panel_name or "").strip()
+
+            if panel_name:
+                panels.add(panel_name)
+
+    return sorted(panels)
+
+
+def _extract_unique_sensors(db_data):
+
+    sensors = set()
+
+    if not isinstance(db_data, dict):
+        return []
+
+    for size_group in db_data.values():
+
+        if not isinstance(size_group, dict):
+            continue
+
+        for sensors_dict in size_group.values():
+
+            if not isinstance(sensors_dict, dict):
+                continue
+
+            for sensor_name in sensors_dict.keys():
+
+                sensor_name = str(sensor_name or "").strip()
+
+                if sensor_name:
+                    sensors.add(sensor_name)
+
+    return sorted(sensors)
+
+
 # ==========================================================
 # SERVER
 # ==========================================================
@@ -103,6 +158,26 @@ def server(input, output, session):
     show_curtain = reactive.value(False)
 
     show_not_found_modal = reactive.value(False)
+
+    # ------ حالة الويزارد (البحث بالمواصفات عند فشل البحث بالاسم) ------
+    wizard_step = reactive.value(None)          # None | "size" | "panel" | "sensor" | "confirm"
+    wizard_phone = reactive.value("")
+    wizard_size = reactive.value("")
+    wizard_panel = reactive.value("")
+    wizard_sensor = reactive.value("")
+    wizard_panel_add_mode = reactive.value(False)
+    wizard_sensor_add_mode = reactive.value(False)
+    wizard_matched = reactive.value(None)
+
+    def _reset_wizard():
+        wizard_step.set(None)
+        wizard_phone.set("")
+        wizard_size.set("")
+        wizard_panel.set("")
+        wizard_sensor.set("")
+        wizard_panel_add_mode.set(False)
+        wizard_sensor_add_mode.set(False)
+        wizard_matched.set(None)
 
 
     # ======================================================
@@ -173,13 +248,33 @@ def server(input, output, session):
 
             show_curtain.set(False)
 
-        show_not_found_modal.set(
-            status == "plan_3"
-        )
+        if status == "success":
+
+            _reset_wizard()
+
+            show_not_found_modal.set(False)
+
+        elif status == "plan_3":
+
+            # فشل البحث بالاسم -> ابدأ الويزارد بالخطوة الأولى (المقاس)
+            wizard_step.set("size")
+            wizard_phone.set(query)
+            wizard_size.set("")
+            wizard_panel.set("")
+            wizard_sensor.set("")
+            wizard_panel_add_mode.set(False)
+            wizard_sensor_add_mode.set(False)
+            wizard_matched.set(None)
+
+            show_not_found_modal.set(False)
+
+        else:
+
+            show_not_found_modal.set(False)
 
 
     # ======================================================
-    # CLOSE PLAN 3 MODAL
+    # CLOSE PLAN 3 MODAL / WIZARD
     # ======================================================
 
     @reactive.effect
@@ -187,6 +282,147 @@ def server(input, output, session):
     async def _close_modal():
 
         show_not_found_modal.set(False)
+
+        _reset_wizard()
+
+
+    # ======================================================
+    # WIZARD STEP 1: SIZE -> NEXT
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.wiz_size_next, ignore_none=True)
+    def _wizard_size_next():
+
+        size_val = str(input.wiz_size() or "").strip()
+
+        if not size_val:
+            return
+
+        wizard_size.set(size_val)
+        wizard_step.set("panel")
+
+
+    # ======================================================
+    # WIZARD STEP 2: PANEL -> TOGGLE ADD MODE
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.wiz_show_add_panel, ignore_none=True)
+    def _wizard_toggle_panel_add():
+
+        wizard_panel_add_mode.set(
+            not wizard_panel_add_mode()
+        )
+
+
+    # ======================================================
+    # WIZARD STEP 2: PANEL -> NEXT
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.wiz_panel_next, ignore_none=True)
+    def _wizard_panel_next():
+
+        if wizard_panel_add_mode():
+            val = str(input.wiz_panel_new() or "").strip()
+        else:
+            val = str(input.wiz_panel() or "").strip()
+
+        if not val or val == "-":
+            return
+
+        wizard_panel.set(val)
+        wizard_step.set("sensor")
+
+
+    # ======================================================
+    # WIZARD STEP 3: SENSOR -> TOGGLE ADD MODE
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.wiz_show_add_sensor, ignore_none=True)
+    def _wizard_toggle_sensor_add():
+
+        wizard_sensor_add_mode.set(
+            not wizard_sensor_add_mode()
+        )
+
+
+    # ======================================================
+    # WIZARD STEP 3: SENSOR -> SEARCH FOR MATCHING GROUP
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.wiz_sensor_next, ignore_none=True)
+    async def _wizard_sensor_next():
+
+        if wizard_sensor_add_mode():
+            val = str(input.wiz_sensor_new() or "").strip()
+        else:
+            val = str(input.wiz_sensor() or "").strip()
+
+        if not val or val == "-":
+            return
+
+        wizard_sensor.set(val)
+
+        database = await get_database_async() or {}
+
+        specs = {
+            "size": wizard_size(),
+            "panel": wizard_panel(),
+            "sensor": val,
+        }
+
+        matched = await asyncio.to_thread(
+            find_group_by_specs,
+            database,
+            specs,
+        )
+
+        wizard_matched.set(matched)
+        wizard_step.set("confirm")
+
+
+    # ======================================================
+    # WIZARD CONFIRM: SAVE (MERGE OR NEW GROUP)
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.wiz_confirm_save, ignore_none=True)
+    async def _wizard_confirm_save():
+
+        phone = wizard_phone()
+        size = wizard_size()
+        panel = wizard_panel()
+        sensor = wizard_sensor()
+
+        try:
+
+            ok = await asyncio.to_thread(
+                add_model,
+                size,
+                panel,
+                sensor,
+                phone,
+            )
+
+        except Exception as e:
+
+            log.error(f"Wizard save error: {e}")
+            ok = False
+
+        _reset_wizard()
+
+        await get_database_async()
+
+        if ok:
+
+            ui.update_text(
+                "search_query",
+                value=phone,
+            )
 
 
     # ======================================================
@@ -439,33 +675,58 @@ def server(input, output, session):
         return draw_silent_inspector()
 
     # ======================================================
-    # PLAN 3 MODAL
+    # WIZARD MODAL (الخطة 2/3)
     # ======================================================
 
     @render.ui
-    def dynamic_modal_container():
+    async def dynamic_modal_container():
 
-        if not show_not_found_modal():
+        step = wizard_step()
 
+        if step is None:
             return None
 
-        result = workflow_state() or {}
+        phone = wizard_phone()
 
-        phone = str(
-            input.search_query() or ""
-        ).strip()
+        if step == "size":
 
-        return draw_modal_overlay(
+            return draw_wizard_size_modal(phone)
 
-            draw_plan_3_modal(
+        if step == "panel":
 
-                phone=phone,
+            database = await get_database_async() or {}
 
-                result=result,
+            panels = _extract_unique_panels(database)
 
+            return draw_wizard_panel_modal(
+                phone,
+                panels,
+                wizard_panel_add_mode(),
             )
 
-        )
+        if step == "sensor":
+
+            database = await get_database_async() or {}
+
+            sensors = _extract_unique_sensors(database)
+
+            return draw_wizard_sensor_modal(
+                phone,
+                sensors,
+                wizard_sensor_add_mode(),
+            )
+
+        if step == "confirm":
+
+            return draw_wizard_confirm_modal(
+                phone,
+                wizard_size(),
+                wizard_panel(),
+                wizard_sensor(),
+                wizard_matched(),
+            )
+
+        return None
 
 
     # ======================================================
