@@ -62,11 +62,6 @@ def draw_neon_section(
             ui.div(
 
                 ui.div(
-                    class_="result-orb",
-                    style=f"background:{color};"
-                ),
-
-                ui.div(
                     model,
                     class_="model-name"
                 ),
@@ -123,3 +118,4 @@ def draw_warning_card(message):
         class_="glass-result-card warn"
 
     )
+
