@@ -1,3 +1,5 @@
+hereimport asyncio
+
 from shiny import render, reactive, ui
 
 from core.logger import get_logger
@@ -14,6 +16,8 @@ from logic_engine import (
 from silent_monitor import (
     get_database,
     monitor,
+    get_database_async,
+    monitor_async,
 )
 
 from ui_cards import (
@@ -106,11 +110,11 @@ def server(input, output, session):
     # ======================================================
 
     @reactive.calc
-    def health_snapshot():
+    async def health_snapshot():
 
         reactive.invalidate_later(REFRESH_INTERVAL_SEC)
 
-        return monitor() or {}
+        return await monitor_async() or {}
 
     # ======================================================
     # SEARCH WORKFLOW
@@ -132,7 +136,7 @@ def server(input, output, session):
 
             return
 
-        database = get_database() or {}
+        database = await get_database_async() or {}
 
         show_curtain.set(True)
 
@@ -193,9 +197,9 @@ def server(input, output, session):
     @reactive.event(input.btn_run_inspector, ignore_none=True)
     async def _run_inspector():
 
-        run_intelligent_inspector()
+        await asyncio.to_thread(run_intelligent_inspector)
 
-        get_database()
+        await get_database_async()
 
 
     # ======================================================
@@ -312,7 +316,7 @@ def server(input, output, session):
     # ======================================================
 
     @render.ui
-    def suggestions_curtain():
+    async def suggestions_curtain():
 
         if not show_curtain():
 
@@ -326,7 +330,7 @@ def server(input, output, session):
 
             return None
 
-        database = get_database() or {}
+        database = await get_database_async() or {}
 
         all_models = _extract_unique_models(database)
 
@@ -362,9 +366,9 @@ def server(input, output, session):
     # ======================================================
 
     @render.ui
-    def database_status_area():
+    async def database_status_area():
 
-        health = health_snapshot()
+        health = await health_snapshot()
 
         statistics = {}
 
@@ -388,9 +392,9 @@ def server(input, output, session):
     # ======================================================
 
     @render.ui
-    def monitor_area():
+    async def monitor_area():
 
-        health = health_snapshot()
+        health = await health_snapshot()
 
         status = "OFFLINE"
 
@@ -409,9 +413,9 @@ def server(input, output, session):
     # ======================================================
 
     @render.ui
-    def notification_area():
+    async def notification_area():
 
-        health = health_snapshot()
+        health = await health_snapshot()
 
         count = 0
 
@@ -491,7 +495,7 @@ def server(input, output, session):
     # ======================================================
 
     @reactive.effect
-    def _background_sync():
+    async def _background_sync():
 
         reactive.invalidate_later(
             REFRESH_INTERVAL_SEC
@@ -499,9 +503,9 @@ def server(input, output, session):
 
         try:
 
-            get_database()
+            await get_database_async()
 
-            health_snapshot()
+            await health_snapshot()
 
         except Exception as e:
 
