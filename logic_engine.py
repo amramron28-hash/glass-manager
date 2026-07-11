@@ -1,4 +1,4 @@
-import re
+hereimport re
 import time
 from typing import Dict, Optional, Tuple, Any
 
@@ -72,6 +72,23 @@ def normalize_text(text: Any) -> str:
 
 
     _norm_cache[key] = cleaned
+
+    return cleaned
+
+
+# ==========================================================
+# PANEL NAME NORMALIZER
+# ==========================================================
+# يوحّد أسماء أنواع الشاشة المتشابهة التي قد تُدخل بصيغ مختلفة
+# في قاعدة البيانات (مثال: "Punch-Hole" و "Punch-Hole Screen"
+# يجب أن يُعتبرا نفس النوع عند المطابقة).
+
+def normalize_panel(text: Any) -> str:
+
+    cleaned = normalize_text(text)
+
+    if cleaned.endswith("screen"):
+        cleaned = cleaned[: -len("screen")]
 
     return cleaned
 
@@ -419,8 +436,15 @@ def get_compatibles_strict(
 
 
 
-        panel_data = panels.get(panel)
+        current_panel_norm = normalize_panel(panel)
 
+        panel_data = None
+
+        for panel_key, sensors_dict in panels.items():
+
+            if normalize_panel(panel_key) == current_panel_norm:
+                panel_data = sensors_dict
+                break
 
         if not isinstance(
             panel_data,
@@ -540,7 +564,7 @@ def find_group_by_specs(
 
 
 
-    required_panel = normalize_text(
+    required_panel = normalize_panel(
         specs.get("panel")
     )
 
@@ -580,7 +604,7 @@ def find_group_by_specs(
         for panel_key, sensors in panels.items():
 
 
-            if normalize_text(panel_key) != required_panel:
+            if normalize_panel(panel_key) != required_panel:
                 continue
 
 
