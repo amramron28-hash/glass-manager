@@ -53,6 +53,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
         }
 
+        // اختيار اقتراح من قائمة البحث التلقائي
+        const row = e.target.closest(".suggestion-row");
+
+        if(row){
+
+            const value = row.dataset.value;
+
+            const input = document.getElementById("search_query");
+
+            if(input && value){
+
+                input.value = value;
+
+                input.dispatchEvent(
+                    new Event("input", {bubbles:true})
+                );
+
+            }
+
+        }
+
     });
 
 });
