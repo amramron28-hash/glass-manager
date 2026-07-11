@@ -71,11 +71,6 @@ def draw_neon_section(
                     class_="model-name"
                 ),
 
-                ui.div(
-                    f"متوافق مع: {phone}",
-                    class_="model-source"
-                ) if phone else None,
-
                 class_=f"glass-result-card {section_type}"
 
             )
