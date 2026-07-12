@@ -775,7 +775,7 @@ def run_intelligent_inspector(
             supabase
             .table("phones")
             .select(
-                "id,size,panel,sensor,model_name,model"
+                "id,size,panel,sensor,model_name"
             )
             .execute()
         )
