@@ -3,33 +3,12 @@
     "Punch-Hole Screen": {
       "under_display_fingerprint": {
         "models": [
-          "Oppo A74 4G",
-          "Oppo A78 4G",
-          "Oppo A93 4G",
-          "Oppo A94 4G",
-          "Oppo A95 4G",
-          "Oppo F17 Pro",
-          "Oppo F19",
-          "Oppo F19 Pro",
-          "Oppo F19 Pro Plus",
-          "Oppo F19s",
-          "Oppo F21 Pro 4G",
-          "Oppo F21 Pro 5G",
-          "Oppo F21s Pro",
-          "Oppo Reno 4 4G",
-          "Oppo Reno 5 4G",
-          "Oppo Reno 6 4G",
-          "Oppo Reno 7 4G",
-          "Oppo Reno 8 4G",
-          "Oppo Reno 8T 4G",
-          "Realme 7 Pro",
-          "Realme 8 4G",
-          "Realme 8 Pro",
-          "Realme 9 4G",
-          "Realme 9 Pro Plus",
-          "Realme 10 4G",
-          "Realme 11 4G",
-          "Realme Narzo 60"
+          "Oppo A74 4G", "Oppo A78 4G", "Oppo A93 4G", "Oppo A94 4G", "Oppo A95 4G",
+          "Oppo F17 Pro", "Oppo F19", "Oppo F19 Pro", "Oppo F19 Pro Plus", "Oppo F19s",
+          "Oppo F21 Pro 4G", "Oppo F21 Pro 5G", "Oppo F21s Pro", "Oppo Reno 4 4G",
+          "Oppo Reno 5 4G", "Oppo Reno 6 4G", "Oppo Reno 7 4G", "Oppo Reno 8 4G",
+          "Oppo Reno 8T 4G", "Realme 7 Pro", "Realme 8 4G", "Realme 8 Pro", "Realme 9 4G",
+          "Realme 9 Pro Plus", "Realme 10 4G", "Realme 11 4G", "Realme Narzo 60"
         ]
       }
     }
@@ -38,38 +17,17 @@
     "Notch Screen": {
       "virtual_camera_sensor": {
         "models": [
-          "Samsung Galaxy A02",
-          "Samsung Galaxy A02s",
-          "Samsung Galaxy A03",
-          "Samsung Galaxy A03s",
-          "Samsung Galaxy A04",
-          "Samsung Galaxy A04s",
-          "Samsung Galaxy A04e",
-          "Samsung Galaxy M02",
-          "Samsung Galaxy A15 4G",
-          "Samsung Galaxy A15 5G",
-          "Samsung Galaxy A24 4G",
-          "Samsung Galaxy A25 5G"
+          "Samsung Galaxy A02", "Samsung Galaxy A02s", "Samsung Galaxy A03", 
+          "Samsung Galaxy A03s", "Samsung Galaxy A04", "Samsung Galaxy A04s", 
+          "Samsung Galaxy A04e", "Samsung Galaxy M02", "Samsung Galaxy A15 4G", 
+          "Samsung Galaxy A15 5G", "Samsung Galaxy A24 4G", "Samsung Galaxy A25 5G"
         ]
       },
       "hardware_top_sensor": {
         "models": [
-          "Oppo A15",
-          "Oppo A15s",
-          "Oppo A16",
-          "Oppo A16k",
-          "Oppo A17",
-          "Oppo A17k",
-          "Oppo A78 5G",
-          "Realme C11 2021",
-          "Realme C21",
-          "Realme C21Y",
-          "Realme C25",
-          "Realme C25s",
-          "Realme C30",
-          "Realme C31",
-          "Realme C33",
-          "Realme Narzo 50i"
+          "Oppo A15", "Oppo A15s", "Oppo A16", "Oppo A16k", "Oppo A17", "Oppo A17k",
+          "Oppo A78 5G", "Realme C11 2021", "Realme C21", "Realme C21Y", "Realme C25", 
+          "Realme C25s", "Realme C30", "Realme C31", "Realme C33", "Realme Narzo 50i"
         ]
       }
     }
@@ -78,11 +36,7 @@
     "Notch Screen": {
       "hardware_top_sensor": {
         "models": [
-          "Oppo A18",
-          "Oppo A38",
-          "Oppo A57 4G",
-          "Oppo A57s",
-          "Oppo A77 4G"
+          "Oppo A18", "Oppo A38", "Oppo A57 4G", "Oppo A57s", "Oppo A77 4G"
         ]
       }
     }
@@ -91,15 +45,9 @@
     "Notch Screen": {
       "virtual_camera_sensor": {
         "models": [
-          "Samsung Galaxy A12",
-          "Samsung Galaxy A13 4G",
-          "Samsung Galaxy A13 5G",
-          "Samsung Galaxy A14 4G",
-          "Samsung Galaxy A14 5G",
-          "Samsung Galaxy A23 4G",
-          "Samsung Galaxy A23 5G",
-          "Samsung Galaxy M12",
-          "Samsung Galaxy M14 5G",
+          "Samsung Galaxy A12", "Samsung Galaxy A13 4G", "Samsung Galaxy A13 5G",
+          "Samsung Galaxy A14 4G", "Samsung Galaxy A14 5G", "Samsung Galaxy A23 4G",
+          "Samsung Galaxy A23 5G", "Samsung Galaxy M12", "Samsung Galaxy M14 5G",
           "Redmi Note 10 Pro 5G"
         ]
       },
@@ -117,9 +65,7 @@
       },
       "hardware_top_sensor": {
         "models": [
-          "Oppo A96",
-          "Realme 8i",
-          "Realme 9i"
+          "Oppo A96", "Realme 8i", "Realme 9i"
         ]
       }
     }
@@ -128,47 +74,20 @@
     "Punch-Hole Screen": {
       "virtual_camera_sensor": {
         "models": [
-          "Redmi Note 10 Pro 4G",
-          "Redmi Note 11 Pro 4G",
-          "Redmi Note 11 Pro 5G",
-          "Redmi Note 12 Pro 4G",
-          "Redmi Note 12 Pro 5G",
-          "Redmi Note 13 Pro 4G",
-          "Poco X4 Pro 5G",
-          "Poco X5 Pro 5G",
-          "Poco X6 Pro 5G",
-          "Poco M6 Pro 4G"
+          "Redmi Note 10 Pro 4G", "Redmi Note 11 Pro 4G", "Redmi Note 11 Pro 5G", 
+          "Redmi Note 12 Pro 4G", "Redmi Note 12 Pro 5G", "Redmi Note 13 Pro 4G",
+          "Poco X4 Pro 5G", "Poco X5 Pro 5G", "Poco X6 Pro 5G", "Poco M6 Pro 4G"
         ]
       },
       "hardware_top_sensor": {
         "models": [
-          "Redmi Note 9 Pro",
-          "Redmi Note 9 Pro Max",
-          "Redmi Note 9S",
-          "Redmi Note 10T 5G",
-          "Redmi 10 2022",
-          "Redmi 10 Prime 2021",
-          "Redmi 10 Prime 2022",
-          "Redmi Note 11 SE 5G",
-          "Poco M3 Pro 5G",
-          "Oppo A74 5G",
-          "Infinix Note 30",
-          "Infinix Note 30 Pro",
-          "Infinix Note 40 4G",
-          "Infinix Note 40 5G",
-          "Tecno Pova 5",
-          "Tecno Spark 20 Pro",
-          "Huawei Nova 10 SE",
-          "Realme 6",
-          "Realme 6S",
-          "Realme 7",
-          "Realme 8 5G",
-          "Realme 9 5G India",
-          "Realme V5 5G",
-          "Realme K7X 5G",
-          "Realme K9X 5G",
-          "Realme 12 4G",
-          "Realme 13 4G"
+          "Redmi Note 9 Pro", "Redmi Note 9 Pro Max", "Redmi Note 9S", "Redmi Note 10T 5G",
+          "Redmi 10 2022", "Redmi 10 Prime 2021", "Redmi 10 Prime 2022", "Redmi Note 11 SE 5G",
+          "Poco M3 Pro 5G", "Oppo A74 5G", "Infinix Note 30", "Infinix Note 30 Pro", 
+          "Infinix Note 40 4G", "Infinix Note 40 5G", "Tecno Pova 5", "Tecno Spark 20 Pro", 
+          "Huawei Nova 10 SE", "Realme 6", "Realme 6S", "Realme 7", "Realme 8 5G", 
+          "Realme 9 5G India", "Realme V5 5G", "Realme K7X 5G", "Realme K9X 5G", 
+          "Realme 12 4G", "Realme 13 4G", "Realme C53"
         ]
       }
     }
@@ -177,13 +96,8 @@
     "Notch Screen": {
       "hardware_top_sensor": {
         "models": [
-          "Realme C51",
-          "Realme C53",
-          "Realme C61",
-          "Realme C63",
-          "Realme Note 50",
-          "Realme Note 60",
-          "Realme Narzo N53"
+          "Realme C51", "Realme C61", "Realme C63", "Realme Note 50", 
+          "Realme Note 60", "Realme Narzo N53"
         ]
       }
     }
@@ -192,12 +106,8 @@
     "Punch-Hole Screen": {
       "hardware_top_sensor": {
         "models": [
-          "Infinix Hot 40",
-          "Infinix Hot 40 Pro",
-          "Tecno Spark 20 Pro Plus",
-          "Infinix Note 40 Pro 4G",
-          "Infinix Note 40 Pro 5G",
-          "Itel S23 Plus"
+          "Infinix Hot 40", "Infinix Hot 40 Pro", "Tecno Spark 20 Pro Plus", 
+          "Infinix Note 40 Pro 4G", "Infinix Note 40 Pro 5G", "Itel S23 Plus"
         ]
       }
     }
@@ -206,9 +116,7 @@
     "Punch-Hole Screen": {
       "virtual_camera_sensor": {
         "models": [
-          "Redmi 12 4G",
-          "Redmi 13 4G",
-          "Poco M6 Pro 5G"
+          "Redmi 12 4G", "Redmi 13 4G", "Poco M6 Pro 5G"
         ]
       }
     }
