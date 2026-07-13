@@ -174,9 +174,10 @@ def draw_silent_inspector():
 # DUPLICATE ISSUES (المراقب الصامت - عيني ويدي)
 # ==========================================================
 
-def draw_duplicate_issues(issues, auto_fix_log=None):
+def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_keys=None):
 
     auto_fix_log = auto_fix_log or []
+    read_keys = read_keys or set()
 
     sections = []
 
@@ -234,6 +235,11 @@ def draw_duplicate_issues(issues, auto_fix_log=None):
 
         return ui.TagList(*sections)
 
+    unread_count = sum(
+        1 for issue in issues
+        if issue.get("model", "") not in read_keys
+    )
+
     rows = []
 
     for issue in issues:
@@ -242,13 +248,47 @@ def draw_duplicate_issues(issues, auto_fix_log=None):
         correct = issue.get("correct", {})
         wrongs = issue.get("wrongs", [])
 
+        is_unread = model not in read_keys
+        is_open = model == expanded_key
+
+        # ------ رأس الإشعار المطوي (قابل للضغط) ------
         rows.append(
-            ui.div(
+
+            ui.tags.button(
+
+                ui.span(
+                    "🔴 " if is_unread else "",
+                ),
+
                 f"📱 {model}",
-                class_="phone-title",
-                style="font-size:16px;margin-bottom:6px;"
+
+                ui.span(
+                    " ▲" if is_open else " ▼",
+                    style="opacity:.6;"
+                ),
+
+                onclick=(
+                    "Shiny.setInputValue("
+                    f"'open_issue', '{model}', "
+                    "{priority:'event'});"
+                ),
+
+                style=(
+                    "width:100%;text-align:right;background:"
+                    + ("rgba(0,229,255,.08)" if is_unread else "transparent")
+                    + ";border:none;border-bottom:1px solid rgba(255,255,255,.08);"
+                    "color:#fff;padding:10px 4px;font-size:15px;"
+                    "font-weight:" + ("800" if is_unread else "500") + ";"
+                    "cursor:pointer;display:flex;align-items:center;gap:6px;"
+                ),
+
             )
         )
+
+        if not is_open:
+            continue
+
+        # ------ التفاصيل (تظهر فقط عند الفتح) ------
 
         correct_payload = "|".join([
             str(model),
@@ -277,10 +317,10 @@ def draw_duplicate_issues(issues, auto_fix_log=None):
                         f"'fix_duplicate', '{correct_payload}', "
                         "{priority:'event'});"
                     ),
-                    style="white-space:nowrap;font-size:12px;padding:6px 10px;opacity:.85;"
+                    style="white-space:nowrap;font-size:12px;padding:6px 10px;opacity:.85;width:auto;flex-shrink:0;"
                 ),
 
-                style="display:flex;align-items:center;gap:8px;margin:6px 0;"
+                style="display:flex;align-items:center;gap:8px;margin:6px 0;padding-right:14px;"
 
             )
         )
@@ -312,10 +352,10 @@ def draw_duplicate_issues(issues, auto_fix_log=None):
                             f"'fix_duplicate', '{payload}', "
                             "{priority:'event'});"
                         ),
-                        style="white-space:nowrap;font-size:13px;padding:8px 12px;"
+                        style="white-space:nowrap;font-size:13px;padding:8px 12px;width:auto;flex-shrink:0;"
                     ),
 
-                    style="display:flex;align-items:center;gap:8px;margin:6px 0;"
+                    style="display:flex;align-items:center;gap:8px;margin:6px 0;padding-right:14px;"
 
                 )
             )
@@ -324,17 +364,16 @@ def draw_duplicate_issues(issues, auto_fix_log=None):
 
         ui.div(
 
-            ui.h4(f"🔔 الإشعارات ({len(issues)})"),
+            ui.h4(f"🔔 الإشعارات ({unread_count} غير مقروءة من {len(issues)})"),
 
             ui.div(
 
                 *rows,
 
                 style=(
-                    "max-height:320px;"
+                    "max-height:380px;"
                     "overflow-y:auto;"
                     "overflow-x:hidden;"
-                    "padding-left:4px;"
                 ),
 
             ),
