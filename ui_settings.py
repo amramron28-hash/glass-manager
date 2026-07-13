@@ -201,7 +201,17 @@ def draw_duplicate_issues(issues, auto_fix_log=None):
 
                 ui.h4("📋 آخر التصحيحات التلقائية"),
 
-                *log_rows,
+                ui.div(
+
+                    *log_rows,
+
+                    style=(
+                        "max-height:220px;"
+                        "overflow-y:auto;"
+                        "overflow-x:hidden;"
+                    ),
+
+                ),
 
                 class_="metric-box glass-card",
 
@@ -240,12 +250,38 @@ def draw_duplicate_issues(issues, auto_fix_log=None):
             )
         )
 
+        correct_payload = "|".join([
+            str(model),
+            str(correct.get("size", "")),
+            str(correct.get("panel", "")),
+            str(correct.get("sensor", "")),
+        ])
+
         rows.append(
             ui.div(
-                f"✅ المجموعة الصحيحة المرجّحة: {correct.get('size','-')} / "
-                f"{correct.get('panel','-')} / {correct.get('sensor','-')} "
-                f"({correct.get('group_size',0)} موديل)",
-                class_="coord-line",
+
+                ui.div(
+                    f"✅ المجموعة الصحيحة المرجّحة (تخمين إحصائي وليس مؤكداً): "
+                    f"{correct.get('size','-')} / "
+                    f"{correct.get('panel','-')} / {correct.get('sensor','-')} "
+                    f"({correct.get('group_size',0)} موديل)",
+                    class_="coord-line",
+                    style="flex:1;min-width:0;overflow-wrap:break-word;"
+                ),
+
+                ui.tags.button(
+                    "🔧 هذا خطأ أيضاً - احذفه من هنا",
+                    class_="btn-close",
+                    onclick=(
+                        "Shiny.setInputValue("
+                        f"'fix_duplicate', '{correct_payload}', "
+                        "{priority:'event'});"
+                    ),
+                    style="white-space:nowrap;font-size:12px;padding:6px 10px;opacity:.85;"
+                ),
+
+                style="display:flex;align-items:center;gap:8px;margin:6px 0;"
+
             )
         )
 
@@ -265,7 +301,7 @@ def draw_duplicate_issues(issues, auto_fix_log=None):
                         f"⚠️ مكرر في: {w.get('size','-')} / "
                         f"{w.get('panel','-')} / {w.get('sensor','-')}",
                         class_="coord-line",
-                        style="flex:1;"
+                        style="flex:1;min-width:0;overflow-wrap:break-word;"
                     ),
 
                     ui.tags.button(
@@ -290,7 +326,18 @@ def draw_duplicate_issues(issues, auto_fix_log=None):
 
             ui.h4(f"🔔 الإشعارات ({len(issues)})"),
 
-            *rows,
+            ui.div(
+
+                *rows,
+
+                style=(
+                    "max-height:320px;"
+                    "overflow-y:auto;"
+                    "overflow-x:hidden;"
+                    "padding-left:4px;"
+                ),
+
+            ),
 
             class_="metric-box glass-card",
 
