@@ -170,6 +170,10 @@ def server(input, output, session):
     wizard_sensor_add_mode = reactive.value(False)
     wizard_matched = reactive.value(None)
 
+    # ------ حالة الإشعارات (مطوية + مقروء/غير مقروء) ------
+    notif_expanded = reactive.value(None)   # موديل الإشعار المفتوح حالياً (أو None)
+    notif_read = reactive.value(set())      # مجموعة أسماء الموديلات المقروءة
+
     def _reset_wizard():
         wizard_step.set(None)
         wizard_phone.set("")
@@ -654,14 +658,18 @@ def server(input, output, session):
 
         health = await health_snapshot()
 
-        count = 0
+        issues = []
 
         if isinstance(health, dict):
 
-            count = health.get(
-                "notifications",
-                0
-            )
+            issues = health.get("duplicate_issues", [])
+
+        read = notif_read()
+
+        count = sum(
+            1 for issue in issues
+            if issue.get("model", "") not in read
+        )
 
         return draw_notification_component(count)
 
@@ -683,7 +691,33 @@ def server(input, output, session):
             issues = health.get("duplicate_issues", [])
             auto_log = health.get("auto_fix_log", [])
 
-        return draw_duplicate_issues(issues, auto_log)
+        return draw_duplicate_issues(
+            issues,
+            auto_log,
+            notif_expanded(),
+            notif_read(),
+        )
+
+
+    @reactive.effect
+    @reactive.event(input.open_issue, ignore_none=True)
+    def _toggle_issue():
+
+        model = str(input.open_issue() or "")
+
+        if not model:
+            return
+
+        # تعليمه كمقروء دائماً عند الضغط عليه
+        current_read = set(notif_read())
+        current_read.add(model)
+        notif_read.set(current_read)
+
+        # فتح/طي: لو كان مفتوحاً بالفعل، أغلقه؛ غير ذلك افتحه
+        if notif_expanded() == model:
+            notif_expanded.set(None)
+        else:
+            notif_expanded.set(model)
 
 
     @reactive.effect
