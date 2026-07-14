@@ -21,6 +21,8 @@ from silent_monitor import (
     monitor,
     get_database_async,
     monitor_async,
+    run_ai_check,
+    fix_ai_issue_index,
 )
 
 from ui_cards import (
@@ -39,6 +41,7 @@ from ui_settings import (
     draw_notification_component,
     draw_silent_inspector,
     draw_duplicate_issues,
+    draw_ai_issues,
 )
 
 from ui_search import (
@@ -440,6 +443,15 @@ def server(input, output, session):
 
         await asyncio.to_thread(run_intelligent_inspector)
 
+        result = await asyncio.to_thread(run_ai_check)
+
+        if result:
+            log.info(
+                f"AI check: فُحص {result['checked_now']}، "
+                f"وُجد {result['found_now']} مشكلة، "
+                f"متبقٍ {result['remaining']}"
+            )
+
         await get_database_async()
 
 
@@ -746,6 +758,41 @@ def server(input, output, session):
         except Exception as e:
 
             log.error(f"Fix duplicate error: {e}")
+
+        await get_database_async()
+
+
+    # ======================================================
+    # AI ISSUES (نتائج الفحص الذكي عبر Gemini)
+    # ======================================================
+
+    @render.ui
+    async def ai_issues_area():
+
+        health = await health_snapshot()
+
+        ai_issues = []
+
+        if isinstance(health, dict):
+
+            ai_issues = health.get("ai_issues", [])
+
+        return draw_ai_issues(ai_issues)
+
+
+    @reactive.effect
+    @reactive.event(input.fix_ai_issue, ignore_none=True)
+    async def _fix_ai_issue():
+
+        try:
+
+            index = int(input.fix_ai_issue())
+
+            await asyncio.to_thread(fix_ai_issue_index, index)
+
+        except Exception as e:
+
+            log.error(f"Fix AI issue error: {e}")
 
         await get_database_async()
 
