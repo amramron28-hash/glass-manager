@@ -14,7 +14,7 @@ from logic_engine import (
     find_group_by_specs,
 )
 
-from database import add_model, delete_model
+from database import add_model, delete_model, update_model_specs
 
 from silent_monitor import (
     get_database,
@@ -172,6 +172,9 @@ def server(input, output, session):
     wizard_panel_add_mode = reactive.value(False)
     wizard_sensor_add_mode = reactive.value(False)
     wizard_matched = reactive.value(None)
+
+    # ------ حالة التعديل اليدوي (القيم القديمة للصف المستهدف) ------
+    edit_target = reactive.value(None)   # tuple: (model, old_size, old_panel, old_sensor)
 
     # ------ حالة الإشعارات (مطوية + مقروء/غير مقروء) ------
     notif_expanded = reactive.value(None)   # موديل الإشعار المفتوح حالياً (أو None)
@@ -793,6 +796,77 @@ def server(input, output, session):
         except Exception as e:
 
             log.error(f"Fix AI issue error: {e}")
+
+        await get_database_async()
+
+
+    # ======================================================
+    # MANUAL EDIT (تعديل يدوي مباشر - بديل عند نفاد حصة AI)
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.edit_target, ignore_none=True)
+    def _set_edit_target():
+
+        payload = str(input.edit_target() or "")
+
+        parts = payload.split("|")
+
+        if len(parts) != 4:
+            return
+
+        edit_target.set(tuple(parts))
+
+
+    @reactive.effect
+    @reactive.event(input.save_manual_edit, ignore_none=True)
+    async def _save_manual_edit():
+
+        target = edit_target()
+
+        if not target:
+            return
+
+        old_model, old_size, old_panel, old_sensor = target
+
+        new_model = str(input.edit_model() or "").strip() or old_model
+        new_size = str(input.edit_size() or "").strip()
+        new_panel = str(input.edit_panel() or "").strip()
+        new_sensor = str(input.edit_sensor() or "").strip()
+
+        if not (new_size and new_panel and new_sensor):
+            return
+
+        try:
+
+            if new_model != old_model:
+
+                # تغيير الاسم أيضاً: نحذف القديم ونضيف الجديد بنفس المواصفات
+                await asyncio.to_thread(
+                    delete_model, old_model, old_size, old_panel, old_sensor
+                )
+                await asyncio.to_thread(
+                    add_model, new_size, new_panel, new_sensor, new_model
+                )
+
+            else:
+
+                await asyncio.to_thread(
+                    update_model_specs,
+                    old_model, old_size, old_panel, old_sensor,
+                    new_size, new_panel, new_sensor,
+                )
+
+        except Exception as e:
+
+            log.error(f"Manual edit save error: {e}")
+
+        edit_target.set(None)
+
+        ui.update_text("edit_model", value="")
+        ui.update_text("edit_size", value="")
+        ui.update_text("edit_panel", value="")
+        ui.update_text("edit_sensor", value="")
 
         await get_database_async()
 
