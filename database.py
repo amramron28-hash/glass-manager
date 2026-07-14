@@ -1,124 +1,78 @@
 import os
+import json
 from supabase import create_client, Client
 from core.logger import get_logger
 
 log = get_logger("database")
 
-# ==========================================
+# =========================
 # SUPABASE CONFIGURATION
-# ==========================================
+# =========================
+# يفضل استخدام متغيرات البيئة للأمان
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://mgmphimlcdchtbiyhhbt.supabase.co")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX")
 
-SUPABASE_URL = os.getenv(
-    "SUPABASE_URL",
-    "https://mgmphimlcdchtbiyhhbt.supabase.co"
-)
-
-SUPABASE_KEY = os.getenv(
-    "SUPABASE_KEY",
-    "sb_publishable_5EYoZAX1GHbi1lzyDls_1A_B1KpVIHX"
-)
-
+# إنشاء عميل Supabase الرسمي
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    log.info("Supabase connected successfully.")
 except Exception as e:
     log.error(f"Failed to initialize Supabase client: {e}")
     supabase = None
 
-
-# ==========================================
-# DATABASE LOADING
-# ==========================================
-
+# =========================
+# DATA LOADING (STRUCTURED)
+# =========================
 def load_db():
     """
-    تحميل قاعدة البيانات وتحويلها إلى:
-
-    size
-        └── panel
-                └── sensor
-                        └── models[]
+    تحميل قاعدة البيانات من Supabase وتحويلها لهيكلية متداخلة:
+    size -> panel -> sensor -> {"models": [...]}
+    هذه الهيكلية ضرورية لسرعة البحث في logic_engine
     """
-
-    if supabase is None:
-        log.warning("Supabase client not available.")
+    if not supabase:
         return {}
 
     try:
-
-        result = (
-            supabase
-            .table("phones")
-            .select("*")
-            .execute()
-        )
-
-        rows = result.data or []
-
-        database = {}
-
-        total = 0
+        # جلب كل البيانات من جدول phones
+        res = supabase.table("phones").select("*").execute()
+        rows = res.data or []
+        
+        db_structure = {}
+        total_models = 0
 
         for row in rows:
-
             size = str(row.get("size", "")).strip()
-
-            panel = str(
-                row.get("panel", "Notch Screen")
-            ).strip()
-
-            sensor = str(
-                row.get("sensor", "hardware_top_sensor")
-            ).strip()
-
-            model = str(
-                row.get("model_name")
-                or row.get("model", "")
-            ).strip()
+            panel = str(row.get("panel", "Notch Screen")).strip()
+            sensor = str(row.get("sensor", "hardware_top_sensor")).strip()
+            model = str(row.get("model_name") or row.get("model", "")).strip()
 
             if not size or not model:
                 continue
 
-            database.setdefault(size, {})
-            database[size].setdefault(panel, {})
-            database[size][panel].setdefault(
-                sensor,
-                {"models": []}
-            )
+            # بناء الهيكل المتداخل
+            db_structure.setdefault(size, {})
+            db_structure[size].setdefault(panel, {})
+            db_structure[size][panel].setdefault(sensor, {"models": []})
 
-            models = database[size][panel][sensor]["models"]
+            if model not in db_structure[size][panel][sensor]["models"]:
+                db_structure[size][panel][sensor]["models"].append(model)
+                total_models += 1
 
-            if model not in models:
-                models.append(model)
-                total += 1
-
-        for size in database:
-            for panel in database[size]:
-                for sensor in database[size][panel]:
-                    database[size][panel][sensor]["models"].sort()
-
-        log.info(f"Loaded {total} models successfully.")
-
-        return database
+        log.info(f"Loaded database with {total_models} models from Supabase")
+        return db_structure
 
     except Exception as e:
-
-        log.error(f"Error loading database: {e}")
-
+        log.error(f"Error loading database structure: {e}")
         return {}
 
-
-# ==========================================
-# ADD MODEL
-# ==========================================
-
+# =========================
+# DATA SAVING & ADDING
+# =========================
 def add_model(size, panel, sensor, model):
-
-    if supabase is None:
+    """إضافة موديل جديد إلى جدول phones في Supabase"""
+    if not supabase:
         return False
 
     try:
-
         payload = {
             "size": str(size).strip(),
             "panel": str(panel).strip(),
@@ -129,165 +83,74 @@ def add_model(size, panel, sensor, model):
         if not all(payload.values()):
             return False
 
-        exists = (
-            supabase
-            .table("phones")
-            .select("id")
-            .eq("size", payload["size"])
-            .eq("panel", payload["panel"])
-            .eq("sensor", payload["sensor"])
-            .eq("model_name", payload["model_name"])
-            .execute()
-        )
-
-        if exists.data:
-            log.info("Model already exists.")
+        res = supabase.table("phones").insert(payload).execute()
+        
+        if res.data:
+            log.info(f"Model added successfully: {payload['model_name']}")
             return True
-
-        result = (
-            supabase
-            .table("phones")
-            .insert(payload)
-            .execute()
-        )
-
-        if result.data:
-            log.info(f"Added model: {payload['model_name']}")
-            return True
-
         return False
 
     except Exception as e:
-
         log.error(f"Error adding model: {e}")
-
         return False
 
+def update_model_specs(model, old_size, old_panel, old_sensor, new_size, new_panel, new_sensor):
+    """تحديث مواصفات موديل موجود (يُستخدم لتصحيحات الفحص الذكي)"""
+    if not supabase:
+        return False
 
-# ==========================================
-# DELETE MODEL
-# ==========================================
+    try:
+        supabase.table("phones") \
+            .update({
+                "size": str(new_size).strip(),
+                "panel": str(new_panel).strip(),
+                "sensor": str(new_sensor).strip(),
+            }) \
+            .eq("model_name", str(model).strip()) \
+            .eq("size", str(old_size).strip()) \
+            .eq("panel", str(old_panel).strip()) \
+            .eq("sensor", str(old_sensor).strip()) \
+            .execute()
+
+        log.info(f"Model specs updated: {model}")
+        return True
+
+    except Exception as e:
+        log.error(f"Error updating model specs: {e}")
+        return False
 
 def delete_model(model, size, panel, sensor):
-
-    if supabase is None:
+    """حذف موديل محدد بمواصفاته بالضبط (يُستخدم لتصحيح الأخطاء/التكرارات)"""
+    if not supabase:
         return False
 
     try:
-
-        (
-            supabase
-            .table("phones")
-            .delete()
-            .eq("model_name", str(model).strip())
-            .eq("size", str(size).strip())
-            .eq("panel", str(panel).strip())
-            .eq("sensor", str(sensor).strip())
+        supabase.table("phones") \
+            .delete() \
+            .eq("model_name", str(model).strip()) \
+            .eq("size", str(size).strip()) \
+            .eq("panel", str(panel).strip()) \
+            .eq("sensor", str(sensor).strip()) \
             .execute()
-        )
 
-        log.info(f"Deleted model: {model}")
-
+        log.info(f"Model deleted: {model} ({size}/{panel}/{sensor})")
         return True
 
     except Exception as e:
-
-        log.error(f"Delete failed: {e}")
-
+        log.error(f"Error deleting model: {e}")
         return False
 
-
-# ==========================================
-# SAVE DATABASE
-# ==========================================
-
-def save_db(
-    data=None,
-    new_phone_name=None,
-    size=None,
-    panel=None,
-    sensor=None
-):
-
-    if (
-        new_phone_name
-        and size
-        and panel
-        and sensor
-    ):
-
-        return add_model(
-            size,
-            panel,
-            sensor,
-            new_phone_name
-        )
-
+def save_db(data=None, new_phone_name=None, size=None, panel=None, sensor=None):
+    """
+    دالة متوافقة مع الإصدارات القديمة والمنطق السابق.
+    إذا تم تمرير بيانات جديدة، تقوم بإضافتها.
+    """
+    if new_phone_name and size and panel and sensor:
+        return add_model(size, panel, sensor, new_phone_name)
+    
+    # في حالة Supabase، لا نحتاج لحفظ هيكل كامل لأن كل تعديل يتم عبر insert/delete مباشر
     return True
 
-
-# ==========================================
-# NOTIFICATIONS
-# ==========================================
-
 def add_notification(message, level="info"):
-    """
-    Placeholder.
-    """
-    log.info(f"[{level.upper()}] {message}")
-
-
-# ==========================================
-# EXTRA UTILITIES
-# ==========================================
-
-def reload_db():
-    """
-    إعادة تحميل قاعدة البيانات.
-    """
-    return load_db()
-
-
-def ping_database():
-    """
-    اختبار الاتصال بقاعدة البيانات.
-    """
-
-    if supabase is None:
-        return False
-
-    try:
-
-        supabase.table("phones").select("id").limit(1).execute()
-
-        return True
-
-    except Exception as e:
-
-        log.error(f"Database ping failed: {e}")
-
-        return False
-
-
-def get_total_models():
-    """
-    عدد الموديلات الموجودة.
-    """
-
-    if supabase is None:
-        return 0
-
-    try:
-
-        result = (
-            supabase
-            .table("phones")
-            .select("id")
-            .execute()
-        )
-
-        return len(result.data or [])
-
-    except Exception:
-
-        return 0
+    """دالة وهمية للتوافق مع الكود القديم، يمكن ربطها لاحقاً بجدول notifications"""
+    pass
