@@ -50,6 +50,8 @@ def draw_settings_drawer():
 
             ui.output_ui("duplicate_issues_area"),
 
+            ui.output_ui("ai_issues_area"),
+
             ui.output_ui("silent_inspector_area"),
 
             class_="drawer-body",
@@ -403,6 +405,85 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
 
 
 # ==========================================================
+# AI ISSUES (نتائج الفحص الذكي عبر Gemini)
+# ==========================================================
+
+def draw_ai_issues(ai_issues):
+
+    ai_issues = ai_issues or []
+
+    if not ai_issues:
+        return None
+
+    rows = []
+
+    for i, issue in enumerate(ai_issues):
+
+        model = issue.get("model", "")
+
+        rows.append(
+
+            ui.div(
+
+                ui.div(
+                    f"📱 {model}",
+                    style="font-weight:800;margin-bottom:6px;"
+                ),
+
+                ui.div(
+                    f"في القاعدة: {issue.get('db_size','-')} / "
+                    f"{issue.get('db_panel','-')} / {issue.get('db_sensor','-')}",
+                    style=(
+                        "width:100%;display:block;white-space:normal;"
+                        "overflow-wrap:break-word;font-size:13px;"
+                        "color:var(--text-muted);margin-bottom:4px;"
+                    )
+                ),
+
+                ui.div(
+                    f"اقتراح الذكاء الاصطناعي: {issue.get('ai_size','-')} / "
+                    f"{issue.get('ai_panel','-')} / {issue.get('ai_sensor','-')}",
+                    style=(
+                        "width:100%;display:block;white-space:normal;"
+                        "overflow-wrap:break-word;font-size:13px;"
+                        "color:#00e5ff;margin-bottom:8px;"
+                    )
+                ),
+
+                ui.tags.button(
+                    "✅ اعتماد اقتراح الذكاء الاصطناعي",
+                    class_="btn-close",
+                    onclick=(
+                        "Shiny.setInputValue("
+                        f"'fix_ai_issue', {i}, "
+                        "{priority:'event'});"
+                    ),
+                    style="font-size:12px;padding:6px 10px;"
+                ),
+
+                style=(
+                    "margin:10px 0;padding:10px 0;"
+                    "border-bottom:1px solid rgba(255,255,255,.08);"
+                )
+
+            )
+        )
+
+    return ui.div(
+
+        ui.h4(f"🤖 نتائج الفحص الذكي ({len(ai_issues)})"),
+
+        ui.div(
+            *rows,
+            style="max-height:380px;overflow-y:auto;overflow-x:hidden;"
+        ),
+
+        class_="metric-box glass-card",
+
+    )
+
+
+# ==========================================================
 # EXPORTS
 # ==========================================================
 
@@ -421,5 +502,7 @@ __all__ = [
     "draw_silent_inspector",
 
     "draw_duplicate_issues",
+
+    "draw_ai_issues",
 
 ]
