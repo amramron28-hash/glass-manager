@@ -221,6 +221,43 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
             )
         )
 
+    def _manual_edit_panel():
+        return ui.div(
+
+            ui.h4(
+                "✏️ تعديل يدوي",
+                style="margin-top:16px;font-size:15px;"
+            ),
+
+            ui.p(
+                "اضغط \"تعديل يدوي\" على أي هاتف في الإشعارات لملء الحقول تلقائياً، "
+                "أو اكتب اسم الهاتف والقيمة المطلوب تصحيحها يدوياً ثم اضغط حفظ.",
+                style="font-size:12px;color:var(--text-muted);margin-bottom:10px;"
+            ),
+
+            ui.input_text("edit_model", "اسم الهاتف بالضبط"),
+
+            ui.input_text("edit_size", "المقاس"),
+
+            ui.input_text("edit_panel", "نوع الشاشة"),
+
+            ui.input_text("edit_sensor", "المستشعر"),
+
+            ui.input_action_button(
+                "save_manual_edit",
+                "💾 حفظ التعديل",
+                class_="btn-neon"
+            ),
+
+            id="manual-edit-panel",
+
+            style=(
+                "margin-top:14px;padding-top:14px;"
+                "border-top:1px solid rgba(255,255,255,.12);"
+            ),
+
+        )
+
     if not issues:
 
         sections.append(
@@ -229,6 +266,8 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
                 ui.h4("🔔 الإشعارات"),
 
                 ui.div("لا توجد مشاكل تحتاج تدخلاً يدوياً ✅"),
+
+                _manual_edit_panel(),
 
                 class_="metric-box glass-card",
 
@@ -322,15 +361,43 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
                     )
                 ),
 
-                ui.tags.button(
-                    "🔧 هذا خطأ أيضاً - احذفه من هنا",
-                    class_="btn-close",
-                    onclick=(
-                        "Shiny.setInputValue("
-                        f"'fix_duplicate', '{correct_payload}', "
-                        "{priority:'event'});"
+                ui.div(
+
+                    ui.tags.button(
+                        "🔧 هذا خطأ أيضاً - احذفه من هنا",
+                        class_="btn-close",
+                        onclick=(
+                            "Shiny.setInputValue("
+                            f"'fix_duplicate', '{correct_payload}', "
+                            "{priority:'event'});"
+                        ),
+                        style="font-size:12px;padding:6px 10px;opacity:.85;flex:1;"
                     ),
-                    style="font-size:12px;padding:6px 10px;opacity:.85;"
+
+                    ui.tags.button(
+                        "✏️ تعديل يدوي",
+                        onclick=(
+                            f"document.getElementById('edit_model').value='{model}';"
+                                f"document.getElementById('edit_size').value='{correct.get('size','')}';"
+                            f"document.getElementById('edit_panel').value='{correct.get('panel','')}';"
+                            f"document.getElementById('edit_sensor').value='{correct.get('sensor','')}';"
+                            "document.getElementById('edit_model').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('edit_size').dispatchEvent(new Event('input',{bubbles:true}));"
+                            "document.getElementById('edit_panel').dispatchEvent(new Event('input',{bubbles:true}));"
+                            "document.getElementById('edit_sensor').dispatchEvent(new Event('input',{bubbles:true}));"
+                            "Shiny.setInputValue("
+                            f"'edit_target', '{correct_payload}', "
+                            "{priority:'event'});"
+                            "document.getElementById('manual-edit-panel')?.scrollIntoView({behavior:'smooth'});"
+                        ),
+                        style=(
+                            "font-size:12px;padding:6px 10px;flex:1;"
+                            "background:rgba(0,229,255,.15);color:#00e5ff;"
+                            "border:1px solid rgba(0,229,255,.4);border-radius:14px;"
+                        )
+                    ),
+
+                    style="display:flex;gap:8px;"
+
                 ),
 
                 style="margin:6px 0;padding-right:14px;"
@@ -361,15 +428,43 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
                         )
                     ),
 
-                    ui.tags.button(
-                        "🔧 حذف هذا المكرر الخاطئ",
-                        class_="btn-close",
-                        onclick=(
-                            "Shiny.setInputValue("
-                            f"'fix_duplicate', '{payload}', "
-                            "{priority:'event'});"
+                    ui.div(
+
+                        ui.tags.button(
+                            "🔧 حذف هذا المكرر الخاطئ",
+                            class_="btn-close",
+                            onclick=(
+                                "Shiny.setInputValue("
+                                f"'fix_duplicate', '{payload}', "
+                                "{priority:'event'});"
+                            ),
+                            style="font-size:13px;padding:8px 12px;flex:1;"
                         ),
-                        style="font-size:13px;padding:8px 12px;"
+
+                        ui.tags.button(
+                            "✏️ تعديل يدوي",
+                            onclick=(
+                                f"document.getElementById('edit_model').value='{model}';"
+                                f"document.getElementById('edit_size').value='{w.get('size','')}';"
+                                f"document.getElementById('edit_panel').value='{w.get('panel','')}';"
+                                f"document.getElementById('edit_sensor').value='{w.get('sensor','')}';"
+                                "document.getElementById('edit_model').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('edit_size').dispatchEvent(new Event('input',{bubbles:true}));"
+                                "document.getElementById('edit_panel').dispatchEvent(new Event('input',{bubbles:true}));"
+                                "document.getElementById('edit_sensor').dispatchEvent(new Event('input',{bubbles:true}));"
+                                "Shiny.setInputValue("
+                                f"'edit_target', '{payload}', "
+                                "{priority:'event'});"
+                                "document.getElementById('manual-edit-panel')?.scrollIntoView({behavior:'smooth'});"
+                            ),
+                            style=(
+                                "font-size:13px;padding:8px 12px;flex:1;"
+                                "background:rgba(0,229,255,.15);color:#00e5ff;"
+                                "border:1px solid rgba(0,229,255,.4);border-radius:14px;"
+                            )
+                        ),
+
+                        style="display:flex;gap:8px;"
+
                     ),
 
                     style="margin:6px 0;padding-right:14px;"
@@ -391,6 +486,40 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
                     "max-height:380px;"
                     "overflow-y:auto;"
                     "overflow-x:hidden;"
+                ),
+
+            ),
+
+            ui.div(
+
+                ui.h4(
+                    "✏️ تعديل يدوي",
+                    style="margin-top:16px;font-size:15px;"
+                ),
+
+                ui.p(
+                    "اضغط \"تعديل يدوي\" على أي هاتف أعلاه لملء الحقول تلقائياً، "
+                    "أو عدّل القيمة المطلوبة تصحيحها فقط ثم اضغط حفظ.",
+                    style="font-size:12px;color:var(--text-muted);margin-bottom:10px;"
+                ),
+
+                ui.input_text("edit_size", "المقاس"),
+
+                ui.input_text("edit_panel", "نوع الشاشة"),
+
+                ui.input_text("edit_sensor", "المستشعر"),
+
+                ui.input_action_button(
+                    "save_manual_edit",
+                    "💾 حفظ التعديل",
+                    class_="btn-neon"
+                ),
+
+                id="manual-edit-panel",
+
+                style=(
+                    "margin-top:14px;padding-top:14px;"
+                    "border-top:1px solid rgba(255,255,255,.12);"
                 ),
 
             ),
@@ -450,15 +579,44 @@ def draw_ai_issues(ai_issues):
                     )
                 ),
 
-                ui.tags.button(
-                    "✅ اعتماد اقتراح الذكاء الاصطناعي",
-                    class_="btn-close",
-                    onclick=(
-                        "Shiny.setInputValue("
-                        f"'fix_ai_issue', {i}, "
-                        "{priority:'event'});"
+                ui.div(
+
+                    ui.tags.button(
+                        "✅ اعتماد اقتراح الذكاء الاصطناعي",
+                        class_="btn-close",
+                        onclick=(
+                            "Shiny.setInputValue("
+                            f"'fix_ai_issue', {i}, "
+                            "{priority:'event'});"
+                        ),
+                        style="font-size:12px;padding:6px 10px;flex:1;"
                     ),
-                    style="font-size:12px;padding:6px 10px;"
+
+                    ui.tags.button(
+                        "✏️ تعديل يدوي",
+                        onclick=(
+                            f"document.getElementById('edit_model').value='{model}';"
+                            f"document.getElementById('edit_size').value='{issue.get('db_size','')}';"
+                            f"document.getElementById('edit_panel').value='{issue.get('db_panel','')}';"
+                            f"document.getElementById('edit_sensor').value='{issue.get('db_sensor','')}';"
+                            "document.getElementById('edit_model').dispatchEvent(new Event('input',{bubbles:true}));"
+                            "document.getElementById('edit_size').dispatchEvent(new Event('input',{bubbles:true}));"
+                            "document.getElementById('edit_panel').dispatchEvent(new Event('input',{bubbles:true}));"
+                            "document.getElementById('edit_sensor').dispatchEvent(new Event('input',{bubbles:true}));"
+                            "Shiny.setInputValue("
+                            f"'edit_target', '{model}|{issue.get('db_size','')}|{issue.get('db_panel','')}|{issue.get('db_sensor','')}', "
+                            "{priority:'event'});"
+                            "document.getElementById('manual-edit-panel')?.scrollIntoView({behavior:'smooth'});"
+                        ),
+                        style=(
+                            "font-size:12px;padding:6px 10px;flex:1;"
+                            "background:rgba(0,229,255,.15);color:#00e5ff;"
+                            "border:1px solid rgba(0,229,255,.4);border-radius:14px;"
+                        )
+                    ),
+
+                    style="display:flex;gap:8px;"
+
                 ),
 
                 style=(
