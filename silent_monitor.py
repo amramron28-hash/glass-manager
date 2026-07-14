@@ -5,10 +5,14 @@ import asyncio
 import traceback
 import hashlib
 from datetime import datetime
-from database import load_db, delete_model
-from logic_engine import detect_cross_group_duplicates
+from database import load_db, delete_model, update_model_specs
+from logic_engine import detect_cross_group_duplicates, normalize_panel
+from ai_verifier import verify_phone_specs
 
 AUTO_FIX_LOG_FILE = "auto_fix_log.json"
+AI_CHECKED_FILE = "ai_checked.json"
+AI_ISSUES_FILE = "ai_issues.json"
+AI_BATCH_SIZE = 15
 
 # إعدادات المسارات
 BACKUP_FILE = os.path.join("www", "models_db.json")
@@ -32,6 +36,29 @@ class SilentMonitor:
         self.stats = {"phones": 0, "sizes": 0, "panels": 0, "sensors": 0, "duplicates": 0, "empty_groups": 0}
         self.duplicate_issues = []
         self.auto_fix_log = self._load_auto_fix_log()
+        self.ai_checked = self._load_json_set(AI_CHECKED_FILE)
+        self.ai_issues = self._load_json_list(AI_ISSUES_FILE)
+
+    def _load_json_set(self, path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return set(json.load(f))
+        except Exception:
+            return set()
+
+    def _load_json_list(self, path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+
+    def _save_json(self, path, data):
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            self.log(f"AI_SAVE_ERROR({path}) : {type(e).__name__}: {e}")
 
     def _load_auto_fix_log(self):
         try:
@@ -170,6 +197,148 @@ class SilentMonitor:
             self.duplicate_issues = []
         return self.stats
 
+    def _classify_sensor(self, sensor_text):
+        """يصنّف نص المستشعر إلى hardware أو virtual تقريبياً"""
+        t = str(sensor_text or "").lower()
+        if "virtual" in t or "software" in t or "camera" in t:
+            return "virtual"
+        return "hardware"
+
+    def run_ai_batch_check(self, batch_size=AI_BATCH_SIZE):
+        """
+        يفحص دفعة من الهواتف غير المفحوصة سابقاً عبر Gemini،
+        ويقارن نتيجة الذكاء الاصطناعي بما هو مخزّن في القاعدة.
+        كل هاتف يُفحص مرة واحدة فقط (تُحفظ في ai_checked.json)
+        لتوفير الحصة المجانية.
+        """
+
+        candidates = []
+
+        for size, panels in self.db.items():
+            if not isinstance(panels, dict):
+                continue
+            for panel, sensors in panels.items():
+                if not isinstance(sensors, dict):
+                    continue
+                for sensor, data in sensors.items():
+                    models = data.get("models", []) if isinstance(data, dict) else data
+                    if not isinstance(models, list):
+                        continue
+                    for model in models:
+                        key = f"{model}|{size}|{panel}|{sensor}"
+                        if key in self.ai_checked:
+                            continue
+                        candidates.append((model, size, panel, sensor, key))
+
+        batch = candidates[:batch_size]
+
+        checked_now = 0
+        found_now = 0
+
+        for model, size, panel, sensor, key in batch:
+
+            result = verify_phone_specs(model)
+
+            self.ai_checked.add(key)
+            checked_now += 1
+
+            if not result:
+                continue
+
+            ai_size = result.get("size")
+            ai_panel_norm = normalize_panel(result.get("panel", ""))
+            ai_sensor_cat = self._classify_sensor(result.get("sensor", ""))
+
+            db_panel_norm = normalize_panel(panel)
+            db_sensor_cat = self._classify_sensor(sensor)
+
+            size_mismatch = (
+                ai_size is not None
+                and abs(float(ai_size) - float(size)) > 0.05
+            )
+            panel_mismatch = (
+                result.get("panel")
+                and ai_panel_norm != db_panel_norm
+            )
+            sensor_mismatch = (ai_sensor_cat != db_sensor_cat)
+
+            if size_mismatch or panel_mismatch or sensor_mismatch:
+
+                self.ai_issues.append({
+                    "model": model,
+                    "db_size": size,
+                    "db_panel": panel,
+                    "db_sensor": sensor,
+                    "ai_size": ai_size,
+                    "ai_panel": result.get("panel"),
+                    "ai_sensor": result.get("sensor"),
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                })
+
+                found_now += 1
+
+                self.log(f"AI_ISSUE_FOUND : {model} (DB: {size}/{panel}/{sensor} <> AI: {ai_size}/{result.get('panel')}/{result.get('sensor')})")
+
+        if checked_now:
+            self._save_json(AI_CHECKED_FILE, list(self.ai_checked))
+            self._save_json(AI_ISSUES_FILE, self.ai_issues[-300:])
+            self.ai_issues = self.ai_issues[-300:]
+
+        remaining = len(candidates) - checked_now
+
+        return {
+            "checked_now": checked_now,
+            "found_now": found_now,
+            "remaining": max(remaining, 0),
+        }
+
+    def fix_ai_issue(self, index):
+        """
+        يطبّق تصحيح الذكاء الاصطناعي المقترح رقم index (بعد تأكيد يدوي من المستخدم)
+        """
+        try:
+            issue = self.ai_issues[index]
+        except (IndexError, TypeError):
+            return False
+
+        model = issue["model"]
+
+        new_size = issue.get("ai_size") or issue["db_size"]
+        new_panel = issue.get("ai_panel") or issue["db_panel"]
+        new_sensor_cat = self._classify_sensor(issue.get("ai_sensor", ""))
+
+        # نحافظ على تسمية المستشعر المستخدمة فعلياً في القاعدة لنفس الفئة
+        # (hardware_top_sensor أو Virtual) بدل نص Gemini الحر
+        new_sensor = (
+            "Virtual"
+            if new_sensor_cat == "virtual"
+            else "hardware_top_sensor"
+        )
+
+        ok = update_model_specs(
+            model,
+            issue["db_size"], issue["db_panel"], issue["db_sensor"],
+            new_size, new_panel, new_sensor,
+        )
+
+        if ok:
+
+            self._remove_model_from_db(
+                model, issue["db_size"], issue["db_panel"], issue["db_sensor"]
+            )
+
+            self.db.setdefault(str(new_size), {}) \
+                    .setdefault(new_panel, {}) \
+                    .setdefault(new_sensor, {"models": []})
+
+            if model not in self.db[str(new_size)][new_panel][new_sensor]["models"]:
+                self.db[str(new_size)][new_panel][new_sensor]["models"].append(model)
+
+            self.ai_issues.pop(index)
+            self._save_json(AI_ISSUES_FILE, self.ai_issues)
+
+        return ok
+
     def _auto_fix_confident_issues(self, raw_issues):
         """
         يصحّح تلقائياً فقط الحالات الواضحة جداً: مكرر معزول
@@ -244,7 +413,7 @@ class SilentMonitor:
         return report
 
     def health_report(self):
-        return {"status": self.status, "source": self.source, "last_sync": self.last_sync, "last_error": self.last_error, "statistics": self.stats, "files": self.check_required_files(), "notifications": len(self.duplicate_issues), "duplicate_issues": self.duplicate_issues, "auto_fix_log": self.auto_fix_log[-10:]}
+        return {"status": self.status, "source": self.source, "last_sync": self.last_sync, "last_error": self.last_error, "statistics": self.stats, "files": self.check_required_files(), "notifications": len(self.duplicate_issues), "duplicate_issues": self.duplicate_issues, "auto_fix_log": self.auto_fix_log[-10:], "ai_issues": self.ai_issues}
 
     def monitor(self):
         self.synchronize()
@@ -259,6 +428,8 @@ def get_status(): return watcher.health_report()
 def refresh(): return watcher.monitor()
 def monitor(): return watcher.monitor()
 def get_statistics(): return watcher.count_statistics()
+def run_ai_check(): return watcher.run_ai_batch_check()
+def fix_ai_issue_index(index): return watcher.fix_ai_issue(index)
 
 # دالة get_db_hash الجديدة والمطلوبة لـ server.py
 def get_db_hash():
