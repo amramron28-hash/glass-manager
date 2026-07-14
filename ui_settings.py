@@ -257,14 +257,21 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
             ui.tags.button(
 
                 ui.span(
-                    "🔴 " if is_unread else "",
+                    "🔴" if is_unread else "",
+                    style="flex-shrink:0;"
                 ),
 
-                f"📱 {model}",
+                ui.span(
+                    f"📱 {model}",
+                    style=(
+                        "flex:1;min-width:0;overflow-wrap:break-word;"
+                        "white-space:normal;text-align:right;"
+                    )
+                ),
 
                 ui.span(
-                    " ▲" if is_open else " ▼",
-                    style="opacity:.6;"
+                    "▲" if is_open else "▼",
+                    style="opacity:.6;flex-shrink:0;"
                 ),
 
                 onclick=(
@@ -274,7 +281,7 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
                 ),
 
                 style=(
-                    "width:100%;text-align:right;background:"
+                    "width:100%;background:"
                     + ("rgba(0,229,255,.08)" if is_unread else "transparent")
                     + ";border:none;border-bottom:1px solid rgba(255,255,255,.08);"
                     "color:#fff;padding:10px 4px;font-size:15px;"
@@ -305,8 +312,12 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
                     f"{correct.get('size','-')} / "
                     f"{correct.get('panel','-')} / {correct.get('sensor','-')} "
                     f"({correct.get('group_size',0)} موديل)",
-                    class_="coord-line",
-                    style="flex:1;min-width:0;overflow-wrap:break-word;"
+                    style=(
+                        "width:100%;display:block;"
+                        "white-space:normal;overflow-wrap:break-word;"
+                        "font-size:14px;color:var(--text-muted);"
+                        "line-height:1.6;margin-bottom:8px;"
+                    )
                 ),
 
                 ui.tags.button(
@@ -317,10 +328,10 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
                         f"'fix_duplicate', '{correct_payload}', "
                         "{priority:'event'});"
                     ),
-                    style="white-space:nowrap;font-size:12px;padding:6px 10px;opacity:.85;width:auto;flex-shrink:0;"
+                    style="font-size:12px;padding:6px 10px;opacity:.85;"
                 ),
 
-                style="display:flex;align-items:center;gap:8px;margin:6px 0;padding-right:14px;"
+                style="margin:6px 0;padding-right:14px;"
 
             )
         )
@@ -340,8 +351,12 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
                     ui.div(
                         f"⚠️ مكرر في: {w.get('size','-')} / "
                         f"{w.get('panel','-')} / {w.get('sensor','-')}",
-                        class_="coord-line",
-                        style="flex:1;min-width:0;overflow-wrap:break-word;"
+                        style=(
+                            "width:100%;display:block;"
+                            "white-space:normal;overflow-wrap:break-word;"
+                            "font-size:14px;color:var(--text-muted);"
+                            "line-height:1.6;margin-bottom:8px;"
+                        )
                     ),
 
                     ui.tags.button(
@@ -352,10 +367,10 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
                             f"'fix_duplicate', '{payload}', "
                             "{priority:'event'});"
                         ),
-                        style="white-space:nowrap;font-size:13px;padding:8px 12px;width:auto;flex-shrink:0;"
+                        style="font-size:13px;padding:8px 12px;"
                     ),
 
-                    style="display:flex;align-items:center;gap:8px;margin:6px 0;padding-right:14px;"
+                    style="margin:6px 0;padding-right:14px;"
 
                 )
             )
