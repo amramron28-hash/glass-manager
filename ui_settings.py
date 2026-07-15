@@ -164,6 +164,20 @@ def draw_silent_inspector():
             "🛠 تشغيل الفحص الذكي",
 
             class_="btn-neon",
+            
+            style="margin-bottom:10px;"
+
+        ),
+        
+        ui.input_action_button(
+
+            "btn_sync_local_db",
+
+            "🔄 مزامنة الملف المحلي إلى Supabase",
+
+            class_="btn-neon",
+
+            style="background:#3498db;color:white;"
 
         ),
 
@@ -663,4 +677,4 @@ __all__ = [
 
     "draw_ai_issues",
 
-]
+            ]
