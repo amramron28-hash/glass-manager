@@ -890,6 +890,11 @@ body{
         0 0 18px rgba(0,229,255,.30);
 
     transition:.25s;
+    
+    /* موازنة وضبط الترس للهواتف */
+    padding:0 !important;
+    line-height:1 !important;
+    text-align:center !important;
 
 }
 
@@ -1224,9 +1229,13 @@ body{
 
 .shiny-html-output{
 
-    width:100%;
+    background:transparent !important;
 
-    min-height:1px;
+    border:none !important;
+
+    box-shadow:none !important;
+
+    width:100%;
 
 }
 
@@ -1451,34 +1460,43 @@ textarea:focus{
 
 
 /* ==========================================================
-   END OF FILE
+   DRAWER MOBILE LAYOUT & OVERLAP FIX
    ========================================================== */
+
+.drawer {
+    display: block !important;
+    overflow-y: auto !important;
+}
+
+.drawer-header {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    flex: 0 0 auto;
+}
+
+.drawer-body {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding-bottom: 40px;
+}
+
+.drawer-body > * {
+    display: block !important;
+    height: auto !important;
+    width: 100% !important;
+    margin-bottom: 16px !important;
+    position: relative !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.metric-box {
+    margin-bottom: 0 !important;
+}
 
 /* ==========================================================
-   DRAWER FORCE-VISIBLE FIX (تشخيصي / وقائي)
+   END OF FILE
    ========================================================== */
-
-.drawer{
-    display:flex;
-    flex-direction:column;
-}
-
-.drawer-header{
-    flex:0 0 auto;
-}
-
-.drawer-body{
-    display:flex !important;
-    flex-direction:column;
-    gap:16px;
-    flex:1;
-    overflow-y:auto;
-    padding-bottom:30px;
-}
-
-.drawer-body > *{
-    display:block !important;
-    width:100%;
-    visibility:visible !important;
-    opacity:1 !important;
-}
