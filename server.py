@@ -459,6 +459,70 @@ def server(input, output, session):
 
 
     # ======================================================
+    # DYNAMIC LOCAL SYNC (مزامنة الملف المحلي إلى Supabase)
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.btn_sync_local_db, ignore_none=True)
+    async def _sync_local_db():
+        ui.notification_show("⏳ جاري بدء مزامنة ملف models_db.json المحلي إلى Supabase...", type="message", duration=5)
+        
+        try:
+            import os
+            import json
+            from database import supabase
+            from silent_monitor import refresh
+
+            JSON_FILE_PATH = os.path.join("www", "models_db.json")
+            
+            if not os.path.exists(JSON_FILE_PATH):
+                ui.notification_show("❌ لم يتم العثور على ملف models_db.json!", type="error", duration=5)
+                return
+
+            with open(JSON_FILE_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            records = []
+            for size, panels in data.items():
+                if not isinstance(panels, dict):
+                    continue
+                for panel, sensors in panels.items():
+                    if not isinstance(sensors, dict):
+                        continue
+                    for sensor, s_data in sensors.items():
+                        models_list = s_data.get("models", []) if isinstance(s_data, dict) else s_data
+                        if not isinstance(models_list, list):
+                            continue
+                        for model in models_list:
+                            records.append({
+                                "size": str(size).strip(),
+                                "panel": str(panel).strip(),
+                                "sensor": str(sensor).strip(),
+                                "model_name": str(model).strip()
+                            })
+
+            total_records = len(records)
+            
+            # مسح الجدول القديم بالكامل لتفادي التكرار نهائياً
+            supabase.table("phones").delete().neq("size", "none_existent_size").execute()
+            
+            # رفع البيانات الجديدة على دفعات (حجم الدفعة: 100)
+            chunk_size = 100
+            for i in range(0, total_records, chunk_size):
+                chunk = records[i:i + chunk_size]
+                supabase.table("phones").insert(chunk).execute()
+
+            # تحديث الإحصائيات والكاش في التطبيق
+            await asyncio.to_thread(refresh)
+            await get_database_async()
+
+            ui.notification_show(f"🎉 تم تحديث ومزامنة {total_records} هاتفاً بنجاح وتصفير الأخطاء!", type="message", duration=8)
+        except Exception as e:
+            log.error(f"Sync error: {e}")
+            ui.notification_show(f"❌ حدث خطأ أثناء المزامنة: {str(e)}", type="error", duration=10)
+
+
+    # ======================================================
     # WELCOME AREA
     # ======================================================
 
