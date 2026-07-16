@@ -1,11 +1,12 @@
-const CACHE_NAME = "glass-manager-cache-v4"; // تم رفع الإصدار لإجبار تنظيف الكاش القديم
+const CACHE_NAME = "glass-manager-cache-v5"; // تم رفع الإصدار لإجبار تنظيف الكاش وسحب الأيقونة الجديدة
 
 // ⚠️ لا تضف "/" هنا أبداً — إنها صفحة ديناميكية يولّدها Shiny
 // وتحتوي على session token مختلف في كل مرة. تخزينها يكسر الجلسة.
 const STATIC_ASSETS = [
     "/manifest.json",
     "/models_db.json",
-    "/style_v2.css"
+    "/style_v2.css",
+    "/AMMAR.jpg"  // تم إضافة أيقونتك هنا لتجبر المتصفح على تحميلها وحفظها كأيقونة للتطبيق فوراً
 ];
 
 // =========================
