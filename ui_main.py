@@ -8,7 +8,7 @@ from ui_settings import draw_settings_drawer
 app_ui = ui.page_fluid(
 
     # ==========================================================
-    # HEAD
+    # HEAD (تم تصحيحه لربط الأيقونة والمانيفست)
     # ==========================================================
 
     ui.tags.head(
@@ -24,6 +24,23 @@ app_ui = ui.page_fluid(
             rel="stylesheet",
             href="style_v2.css?v=7"
         ),
+
+        ui.tags.link(
+            rel="manifest",
+            href="manifest.json"
+        ),
+
+        ui.HTML("""
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+        navigator.serviceWorker
+            .register("/service-worker.js")
+            .catch(console.error);
+    });
+}
+</script>
+"""),
 
     ),
 
