@@ -26,8 +26,24 @@ app_ui = ui.page_fluid(
         ),
 
         ui.tags.link(
+            rel="icon",
+            type="image/jpeg",
+            href="AMMAR.jpg"
+        ),
+
+        ui.tags.link(
+            rel="apple-touch-icon",
+            href="AMMAR.jpg"
+        ),
+
+        ui.tags.link(
             rel="manifest",
             href="manifest.json"
+        ),
+
+        ui.tags.meta(
+            name="theme-color",
+            content="#00bfff"
         ),
 
         ui.HTML("""
@@ -141,3 +157,4 @@ document.addEventListener("DOMContentLoaded", function () {
     )
 
 )
+
