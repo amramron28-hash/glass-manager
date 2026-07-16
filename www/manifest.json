@@ -1,18 +1,18 @@
-{
+here{
   "short_name": "ZegaarGlass",
   "name": "ZEGAAR AMMAR GLASS MANAGER",
   "icons": [
     {
-      "src": "AMMAR.png",
-      "type": "image/png",
+      "src": "AMMAR.jpg",
+      "type": "image/jpeg",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "AMMAR.png",
-      "type": "image/png",
+      "src": "AMMAR.jpg",
+      "type": "image/jpeg",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "start_url": "./",
