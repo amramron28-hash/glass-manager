@@ -164,11 +164,11 @@ def draw_silent_inspector():
             "🛠 تشغيل الفحص الذكي",
 
             class_="btn-neon",
-            
+
             style="margin-bottom:10px;"
 
         ),
-        
+
         ui.input_action_button(
 
             "btn_sync_local_db",
@@ -504,39 +504,7 @@ def draw_duplicate_issues(issues, auto_fix_log=None, expanded_key=None, read_key
 
             ),
 
-            ui.div(
-
-                ui.h4(
-                    "✏️ تعديل يدوي",
-                    style="margin-top:16px;font-size:15px;"
-                ),
-
-                ui.p(
-                    "اضغط \"تعديل يدوي\" على أي هاتف أعلاه لملء الحقول تلقائياً، "
-                    "أو عدّل القيمة المطلوبة تصحيحها فقط ثم اضغط حفظ.",
-                    style="font-size:12px;color:var(--text-muted);margin-bottom:10px;"
-                ),
-
-                ui.input_text("edit_size", "المقاس"),
-
-                ui.input_text("edit_panel", "نوع الشاشة"),
-
-                ui.input_text("edit_sensor", "المستشعر"),
-
-                ui.input_action_button(
-                    "save_manual_edit",
-                    "💾 حفظ التعديل",
-                    class_="btn-neon"
-                ),
-
-                id="manual-edit-panel",
-
-                style=(
-                    "margin-top:14px;padding-top:14px;"
-                    "border-top:1px solid rgba(255,255,255,.12);"
-                ),
-
-            ),
+            _manual_edit_panel(),
 
             class_="metric-box glass-card",
 
@@ -677,4 +645,4 @@ __all__ = [
 
     "draw_ai_issues",
 
-            ]
+]
