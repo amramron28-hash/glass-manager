@@ -1,85 +1,126 @@
-const CACHE_NAME = "glass-manager-cache-v5"; // تم رفع الإصدار لإجبار تنظيف الكاش وسحب الأيقونة الجديدة
+const CACHE_NAME = "glass-manager-cache-v6";
 
-// الملفات الثابتة التي يتم حفظها في كاش الهاتف لتعمل بدون إنترنت
+// الملفات التي سيتم حفظها
 const STATIC_ASSETS = [
+    "/",
     "/manifest.json",
-    "/models_db.json",
-    "/style_v2.css",
-    "/AMMAR.jpg"  // تم إضافة أيقونتك هنا لتجبر المتصفح على تحميلها وحفظها كأيقونة للتطبيق فوراً
+    "/style_v2.css?v=7",
+    "/AMMAR.jpg",
+    "/phone_image.webp",
+    "/models_db.json"
 ];
 
-// =========================
+// =======================
 // INSTALL
-// =========================
+// =======================
+
 self.addEventListener("install", (event) => {
+
+    self.skipWaiting();
+
     event.waitUntil(
+
         caches.open(CACHE_NAME).then((cache) => {
+
             return cache.addAll(STATIC_ASSETS);
-        }).then(() => {
-            return self.skipWaiting();
+
         })
+
     );
+
 });
 
-// =========================
-// ACTIVATE (clean old caches)
-// =========================
+// =======================
+// ACTIVATE
+// =======================
+
 self.addEventListener("activate", (event) => {
+
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
+
+        caches.keys().then((keys) => {
+
             return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
+
+                keys.map((key) => {
+
+                    if (key !== CACHE_NAME) {
+
+                        return caches.delete(key);
+
                     }
+
                 })
+
             );
-        }).then(() => {
-            return self.clients.claim();
-        })
+
+        }).then(() => self.clients.claim())
+
     );
+
 });
 
-// =========================
+// =======================
 // FETCH
-// =========================
+// =======================
+
 self.addEventListener("fetch", (event) => {
+
     if (event.request.method !== "GET") return;
 
-    // ✅ طلبات التصفح (الصفحة الرئيسية وأي تنقل) دائماً من الشبكة مباشرة
+    // صفحات Shiny دائماً من الشبكة
     if (event.request.mode === "navigate") {
+
         event.respondWith(
-            fetch(event.request).catch(() => {
-                return caches.match(event.request);
-            })
+
+            fetch(event.request).catch(() => caches.match("/"))
+
         );
+
+        return;
+
+    }
+
+    // لا نضع طلبات Supabase أو WebSocket في الكاش
+    if (
+        event.request.url.includes("supabase") ||
+        event.request.url.includes("/websocket/")
+    ) {
         return;
     }
 
-    // ✅ الملفات الثابتة فقط (CSS, JSON, صور...) تستخدم cache-first
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                return cachedResponse;
+
+        caches.match(event.request).then((cached) => {
+
+            if (cached) {
+
+                return cached;
+
             }
 
-            return fetch(event.request).then((networkResponse) => {
-                if (
-                    !networkResponse ||
-                    networkResponse.status !== 200 ||
-                    networkResponse.type !== "basic"
-                ) {
-                    return networkResponse;
+            return fetch(event.request).then((response) => {
+
+                if (!response || response.status !== 200) {
+
+                    return response;
+
                 }
 
-                const responseClone = networkResponse.clone();
+                const copy = response.clone();
 
                 caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseClone);
+
+                    cache.put(event.request, copy);
+
                 });
 
-                return networkResponse;
+                return response;
+
             });
+
         })
+
     );
+
 });
