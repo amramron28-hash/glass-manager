@@ -8,7 +8,7 @@ from ui_settings import draw_settings_drawer
 app_ui = ui.page_fluid(
 
     # ==========================================================
-    # HEAD (تم تصحيحه لربط الأيقونة والمانيفست)
+    # HEAD
     # ==========================================================
 
     ui.tags.head(
@@ -20,43 +20,71 @@ app_ui = ui.page_fluid(
             content="width=device-width, initial-scale=1"
         ),
 
-        ui.tags.link(
-            rel="stylesheet",
-            href="style_v2.css?v=7"
-        ),
-
-        ui.tags.link(
-            rel="icon",
-            type="image/jpeg",
-            href="AMMAR.jpg"
-        ),
-
-        ui.tags.link(
-            rel="apple-touch-icon",
-            href="AMMAR.jpg"
-        ),
-
-        ui.tags.link(
-            rel="manifest",
-            href="manifest.json"
-        ),
-
         ui.tags.meta(
             name="theme-color",
             content="#00bfff"
         ),
 
-        ui.HTML("""
-<script>
+        ui.tags.meta(
+            name="mobile-web-app-capable",
+            content="yes"
+        ),
+
+        ui.tags.meta(
+            name="apple-mobile-web-app-capable",
+            content="yes"
+        ),
+
+        ui.tags.meta(
+            name="apple-mobile-web-app-status-bar-style",
+            content="black-translucent"
+        ),
+
+        ui.tags.meta(
+            name="apple-mobile-web-app-title",
+            content="ZEGAAR AMMAR"
+        ),
+
+        ui.tags.link(
+            rel="manifest",
+            href="/manifest.json"
+        ),
+
+        ui.tags.link(
+            rel="icon",
+            type="image/jpeg",
+            href="/AMMAR.jpg"
+        ),
+
+        ui.tags.link(
+            rel="shortcut icon",
+            href="/AMMAR.jpg"
+        ),
+
+        ui.tags.link(
+            rel="apple-touch-icon",
+            href="/AMMAR.jpg"
+        ),
+
+        ui.tags.link(
+            rel="stylesheet",
+            href="/style_v2.css?v=7"
+        ),
+
+        ui.tags.script("""
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
         navigator.serviceWorker
             .register("/service-worker.js")
-            .catch(console.error);
+            .then(function(reg){
+                console.log("Service Worker Registered", reg);
+            })
+            .catch(function(err){
+                console.error("Service Worker Error:", err);
+            });
     });
 }
-</script>
-"""),
+""")
 
     ),
 
@@ -86,7 +114,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         }
 
-        // اختيار اقتراح من قائمة البحث التلقائي
         const row = e.target.closest(".suggestion-row");
 
         if(row){
@@ -100,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 input.value = value;
 
                 input.dispatchEvent(
-                    new Event("input", {bubbles:true})
+                    new Event("input",{bubbles:true})
                 );
 
             }
@@ -114,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
 """),
 
     # ==========================================================
-    # FIXED BACKGROUND
+    # BACKGROUND
     # ==========================================================
 
     ui.div(
@@ -122,13 +149,13 @@ document.addEventListener("DOMContentLoaded", function () {
     ),
 
     # ==========================================================
-    # SETTINGS DRAWER
+    # SETTINGS
     # ==========================================================
 
     draw_settings_drawer(),
 
     # ==========================================================
-    # MAIN LAYOUT
+    # MAIN
     # ==========================================================
 
     ui.div(
@@ -142,10 +169,13 @@ document.addEventListener("DOMContentLoaded", function () {
         ),
 
         ui.div(
+
             ui.output_ui(
                 "results_workflow_view"
             ),
-            class_="results-workflow-view",
+
+            class_="results-workflow-view"
+
         ),
 
         ui.output_ui(
@@ -157,4 +187,3 @@ document.addEventListener("DOMContentLoaded", function () {
     )
 
 )
-
