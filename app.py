@@ -15,16 +15,46 @@ from server import server
 APP_DIR = Path(__file__).resolve().parent
 WWW_DIR = APP_DIR / "www"
 
-# 🛠️ دالة ذكية لتحويل صورتك تلقائياً لـ PNG المتوافقة مع نظام الأندرويد
+# =====================================================
+# GENERATE PWA ICON
+# =====================================================
+
 try:
+
     jpg_path = WWW_DIR / "AMMAR.jpg"
     png_path = WWW_DIR / "AMMAR.png"
-    if jpg_path.exists() and not png_path.exists():
+
+    if jpg_path.exists():
+
         with Image.open(jpg_path) as img:
-            img.save(png_path, "PNG")
-        print("✅ SUCCESS: Auto-converted AMMAR.jpg to AMMAR.png for PWA!")
+
+            img = img.convert("RGBA")
+
+            # إنشاء أيقونة عالية الجودة
+            icon = img.resize(
+                (512, 512),
+                Image.LANCZOS
+            )
+
+            icon.save(
+                png_path,
+                format="PNG",
+                optimize=True
+            )
+
+        print("✅ SUCCESS: PWA icon regenerated successfully!")
+
+    else:
+
+        print("⚠️ AMMAR.jpg not found.")
+
 except Exception as e:
+
     print("⚠️ PWA Image Conversion Error:", e)
+
+# =====================================================
+# INFORMATION
+# =====================================================
 
 print("RUNNING:", Path(__file__).resolve())
 print("CURRENT DIR:", os.getcwd())
@@ -32,6 +62,7 @@ print("WWW PATH:", WWW_DIR)
 print("WWW EXISTS:", WWW_DIR.exists())
 
 if WWW_DIR.exists():
+
     print("WWW FILES:", os.listdir(WWW_DIR))
 
 print("Shiny version:", shiny.__version__)
@@ -41,10 +72,15 @@ print("Shiny version:", shiny.__version__)
 # =====================================================
 
 app = App(
+
     ui=app_ui,
+
     server=server,
+
     static_assets=WWW_DIR,
+
     debug=True,
+
 )
 
 print("APP CREATED SUCCESSFULLY")
