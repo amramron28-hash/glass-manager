@@ -1,74 +1,24 @@
-const CACHE_NAME = "glass-manager-cache-v7"; // رفع الإصدار لتنظيف الكاش القديم أوتوماتيكياً
-
-const STATIC_ASSETS = [
-    "/manifest.json",
-    "/models_db.json",
-    "/style_v2.css",
-    "/icon-192.png",
-    "/icon-512.png"
-];
-
-self.addEventListener("install", (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(STATIC_ASSETS);
-        }).then(() => {
-            return self.skipWaiting();
-        })
-    );
-});
-
-self.addEventListener("activate", (event) => {
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        }).then(() => {
-            return self.clients.claim();
-        })
-    );
-});
-
-self.addEventListener("fetch", (event) => {
-    if (event.request.method !== "GET") return;
-
-    if (event.request.mode === "navigate") {
-        event.respondWith(
-            fetch(event.request).catch(() => {
-                return caches.match(event.request);
-            })
-        );
-        return;
+{
+  "short_name": "AmmarTelecom",
+  "name": "AMMAR TELECOM GLASS MANAGER",
+  "icons": [
+    {
+      "src": "AMMAR.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "AMMAR.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
-
-    event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-
-            return fetch(event.request).then((networkResponse) => {
-                if (
-                    !networkResponse ||
-                    networkResponse.status !== 200 ||
-                    networkResponse.type !== "basic"
-                ) {
-                    return networkResponse;
-                }
-
-                const responseClone = networkResponse.clone();
-
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseClone);
-                });
-
-                return networkResponse;
-            });
-        })
-    );
-});
+  ],
+  "start_url": "./?installed=true",
+  "scope": "./",
+  "background_color": "#0d1117",
+  "theme_color": "#00bfff",
+  "display": "standalone",
+  "orientation": "portrait"
+}
