@@ -1,7 +1,6 @@
 const CACHE_NAME = "glass-manager-cache-v5"; // تم رفع الإصدار لإجبار تنظيف الكاش وسحب الأيقونة الجديدة
 
-// ⚠️ لا تضف "/" هنا أبداً — إنها صفحة ديناميكية يولّدها Shiny
-// وتحتوي على session token مختلف في كل مرة. تخزينها يكسر الجلسة.
+// الملفات الثابتة التي يتم حفظها في كاش الهاتف لتعمل بدون إنترنت
 const STATIC_ASSETS = [
     "/manifest.json",
     "/models_db.json",
@@ -48,11 +47,9 @@ self.addEventListener("fetch", (event) => {
     if (event.request.method !== "GET") return;
 
     // ✅ طلبات التصفح (الصفحة الرئيسية وأي تنقل) دائماً من الشبكة مباشرة
-    // هذا يضمن أن Shiny يحصل على session token جديد وصحيح في كل مرة
     if (event.request.mode === "navigate") {
         event.respondWith(
             fetch(event.request).catch(() => {
-                // في حال انقطاع الشبكة فقط، حاول أي نسخة مخزنة كحل أخير
                 return caches.match(event.request);
             })
         );
