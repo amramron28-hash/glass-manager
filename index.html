@@ -3,51 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>ZEGAAR AMMAR GLASS MANAGER</title>
-    <link rel="manifest" href="manifest.json">
+
+    <!-- PWA -->
+    <link rel="manifest" href="www/manifest.json">
     <meta name="theme-color" content="#00bfff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <!-- Icons -->
+    <link rel="icon" href="www/AMMAR.jpg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="www/AMMAR.jpg">
+
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        body { background: #060e1c; color: white; padding: 20px; font-family: Arial; }
-        .box { border: 2px solid #00bfff; padding: 20px; border-radius: 15px; background: #0b1a33; margin-bottom: 20px; }
-        input, button { padding: 12px; width: 100%; margin-bottom: 10px; border-radius: 5px; border: none; }
-        button { background: #00bfff; color: #060e1c; font-weight: bold; cursor: pointer; }
+        *{
+            box-sizing:border-box;
+            font-family:Arial,sans-serif;
+        }
+
+        body{
+            margin:0;
+            padding:20px;
+            background:#060e1c;
+            color:#fff;
+        }
+
+        .box{
+            background:#0b1a33;
+            border:2px solid #00bfff;
+            border-radius:15px;
+            padding:20px;
+            margin-bottom:20px;
+        }
+
+        input{
+            width:100%;
+            padding:12px;
+            border:none;
+            border-radius:8px;
+            margin-bottom:12px;
+            font-size:16px;
+        }
+
+        button{
+            width:100%;
+            padding:12px;
+            border:none;
+            border-radius:8px;
+            background:#00bfff;
+            color:#000;
+            font-size:16px;
+            font-weight:bold;
+            cursor:pointer;
+        }
+
+        button:hover{
+            opacity:.9;
+        }
+
+        #results{
+            min-height:120px;
+        }
+
+        ul{
+            padding-right:20px;
+        }
+
+        li{
+            margin:8px 0;
+        }
     </style>
 </head>
+
 <body>
 
 <div class="box">
-    <input type="text" id="phone-name" placeholder="ابحث عن اسم الهاتف...">
-    <button onclick="searchPhone()">بحث</button>
+
+    <input
+        type="text"
+        id="phone-name"
+        placeholder="ابحث عن اسم الهاتف...">
+
+    <button onclick="searchPhone()">
+        بحث
+    </button>
+
 </div>
 
-<div id="results" class="box"></div>
+<div id="results" class="box">
+    أدخل اسم الهاتف ثم اضغط على زر البحث.
+</div>
 
 <script>
-    // إعداد Supabase (ضع مفاتيحك هنا)
-    const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_KEY');
 
-    async function searchPhone() {
-        const name = document.getElementById('phone-name').value;
-        const resDiv = document.getElementById('results');
-        
-        // استعلام ذكي من Supabase
-        const { data, error } = await supabase
-            .from('glass_models')
-            .select('*')
-            .ilike('model_name', `%${name}%`);
+const supabaseClient = supabase.createClient(
+    "YOUR_SUPABASE_URL",
+    "YOUR_SUPABASE_KEY"
+);
 
-        if (data && data.length > 0) {
-            resDiv.innerHTML = `<h3>نتائج البحث:</h3><ul>${data.map(i => `<li>${i.model_name} - قياس: ${i.size}</li>`).join('')}</ul>`;
-        } else {
-            resDiv.innerHTML = `<p>⚠️ الموديل غير موجود. <button onclick="alert('خطة الطوارئ!')">إضافة يدوي</button></p>`;
-        }
+async function searchPhone(){
+
+    const phone=document.getElementById("phone-name").value.trim();
+
+    const results=document.getElementById("results");
+
+    if(phone===""){
+        results.innerHTML="<p>يرجى كتابة اسم الهاتف.</p>";
+        return;
     }
 
-    // تسجيل الـ Service Worker للتثبيت
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('service-worker.js');
+    const {data,error}=await supabaseClient
+        .from("glass_models")
+        .select("*")
+        .ilike("model_name","%"+phone+"%");
+
+    if(error){
+        results.innerHTML="<p>❌ "+error.message+"</p>";
+        return;
     }
+
+    if(!data || data.length===0){
+
+        results.innerHTML=`
+            <p>⚠️ لم يتم العثور على الهاتف.</p>
+            <button onclick="alert('إضافة يدوية')">
+                إضافة يدوياً
+            </button>
+        `;
+
+        return;
+    }
+
+    let html="<h3>نتائج البحث</h3><ul>";
+
+    data.forEach(item=>{
+
+        html+=`
+        <li>
+            <strong>${item.model_name}</strong><br>
+            القياس : ${item.size}
+        </li>
+        `;
+
+    });
+
+    html+="</ul>";
+
+    results.innerHTML=html;
+}
+
+if("serviceWorker" in navigator){
+
+    window.addEventListener("load",()=>{
+
+        navigator.serviceWorker
+            .register("www/service-worker.js")
+            .then(()=>console.log("Service Worker Registered"))
+            .catch(err=>console.error(err));
+
+    });
+
+}
+
 </script>
+
 </body>
 </html>
