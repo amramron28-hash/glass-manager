@@ -28,29 +28,52 @@ try:
 
         with Image.open(jpg_path) as img:
 
+            # تحويل إلى RGBA (شفافية)
             img = img.convert("RGBA")
 
-            # إنشاء أيقونة عالية الجودة
+            # الحصول على الأبعاد الأصلية
+            width, height = img.size
+
+            # إنشاء صورة مربعة (Crop من المنتصف إذا لزم الأمر)
+            if width != height:
+                size = min(width, height)
+                left = (width - size) // 2
+                top = (height - size) // 2
+                right = left + size
+                bottom = top + size
+                img = img.crop((left, top, right, bottom))
+
+            # إنشاء أيقونة عالية الجودة 512x512
             icon = img.resize(
                 (512, 512),
                 Image.LANCZOS
             )
 
+            # حفظ كـ PNG
             icon.save(
                 png_path,
                 format="PNG",
-                optimize=True
+                optimize=True,
+                quality=95
             )
 
         print("✅ SUCCESS: PWA icon regenerated successfully!")
+        print(f"   Source: {jpg_path}")
+        print(f"   Output: {png_path}")
 
     else:
 
-        print("⚠️ AMMAR.jpg not found.")
+        print("⚠️ AMMAR.jpg not found in www folder.")
+        print(f"   Expected path: {jpg_path}")
+        print(f"   WWW folder exists: {WWW_DIR.exists()}")
+        if WWW_DIR.exists():
+            print(f"   WWW files: {os.listdir(WWW_DIR)}")
 
 except Exception as e:
 
-    print("⚠️ PWA Image Conversion Error:", e)
+    print("❌ PWA Image Conversion Error:", e)
+    import traceback
+    traceback.print_exc()
 
 # =====================================================
 # INFORMATION
