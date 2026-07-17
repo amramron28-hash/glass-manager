@@ -8,7 +8,7 @@ from ui_settings import draw_settings_drawer
 app_ui = ui.page_fluid(
 
     # ==========================================================
-    # HEAD (تم تعديله لربط الأيقونات المباشرة بالمتصفح)
+    # HEAD (ربط الأيقونات الجديدة)
     # ==========================================================
 
     ui.tags.head(
@@ -30,22 +30,22 @@ app_ui = ui.page_fluid(
             href="manifest.json"
         ),
 
-        # هذه الروابط تجبر متصفح الهاتف على إظهار صورتك كأيقونة ومسح شعار الـ H تماماً
+        # روابط الأيقونات الجديدة لضمان التوافق التام مع هواتف الأندرويد والآيفون
         ui.tags.link(
             rel="icon",
             type="image/png",
-            href="AMMAR.png"
+            href="icon-192.png"
         ),
 
         ui.tags.link(
             rel="shortcut icon",
             type="image/png",
-            href="AMMAR.png"
+            href="icon-192.png"
         ),
 
         ui.tags.link(
             rel="apple-touch-icon",
-            href="AMMAR.png"
+            href="icon-192.png"
         ),
 
         ui.HTML("""
