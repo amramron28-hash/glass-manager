@@ -8,7 +8,7 @@ from ui_settings import draw_settings_drawer
 app_ui = ui.page_fluid(
 
     # ==========================================================
-    # HEAD (ربط الأيقونات الجديدة)
+    # HEAD (ربط الأيقونة المصححة AMMAR.png)
     # ==========================================================
 
     ui.tags.head(
@@ -30,22 +30,22 @@ app_ui = ui.page_fluid(
             href="manifest.json"
         ),
 
-        # روابط الأيقونات الجديدة لضمان التوافق التام مع هواتف الأندرويد والآيفون
+        # روابط الأيقونات المحدثة لتشير إلى الملف المولد تلقائياً بنجاح AMMAR.png
         ui.tags.link(
             rel="icon",
             type="image/png",
-            href="icon-192.png"
+            href="AMMAR.png"
         ),
 
         ui.tags.link(
             rel="shortcut icon",
             type="image/png",
-            href="icon-192.png"
+            href="AMMAR.png"
         ),
 
         ui.tags.link(
             rel="apple-touch-icon",
-            href="icon-192.png"
+            href="AMMAR.png"
         ),
 
         ui.HTML("""
