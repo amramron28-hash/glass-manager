@@ -58,6 +58,9 @@ from ui_plans import (
 
 MAX_SUGGESTIONS = 10
 
+# قفل عالمي لمنع تشغيل فحصين ذكيين في نفس الوقت وتجنب استهلاك الحصة المجانية
+is_inspector_running = False
+
 
 # ==========================================================
 # DATABASE HELPERS
@@ -226,7 +229,6 @@ def server(input, output, session):
 
         show_curtain.set(True)
 
-        # التصحيح: اسم الوسيط هو phone وليس query
         result = run_system_workflows(
 
             phone=query,
@@ -308,6 +310,7 @@ def server(input, output, session):
         size_val = str(input.wiz_size() or "").strip()
 
         if not size_val:
+            ui.notification_show("⚠️ يرجى إدخال مقاس الشاشة أولاً!", type="warning", duration=4)
             return
 
         wizard_size.set(size_val)
@@ -341,6 +344,7 @@ def server(input, output, session):
             val = str(input.wiz_panel() or "").strip()
 
         if not val or val == "-":
+            ui.notification_show("⚠️ يرجى اختيار أو كتابة نوع الشاشة!", type="warning", duration=4)
             return
 
         wizard_panel.set(val)
@@ -374,26 +378,31 @@ def server(input, output, session):
             val = str(input.wiz_sensor() or "").strip()
 
         if not val or val == "-":
+            ui.notification_show("⚠️ يرجى اختيار أو كتابة نوع المستشعر!", type="warning", duration=4)
             return
 
         wizard_sensor.set(val)
 
-        database = await get_database_async() or {}
+        try:
+            database = await get_database_async() or {}
 
-        specs = {
-            "size": wizard_size(),
-            "panel": wizard_panel(),
-            "sensor": val,
-        }
+            specs = {
+                "size": wizard_size(),
+                "panel": wizard_panel(),
+                "sensor": val,
+            }
 
-        matched = await asyncio.to_thread(
-            find_group_by_specs,
-            database,
-            specs,
-        )
+            matched = await asyncio.to_thread(
+                find_group_by_specs,
+                database,
+                specs,
+            )
 
-        wizard_matched.set(matched)
-        wizard_step.set("confirm")
+            wizard_matched.set(matched)
+            wizard_step.set("confirm")
+        except Exception as e:
+            log.error(f"Error in wizard sensor step: {e}")
+            ui.notification_show("❌ حدث خطأ غير متوقع أثناء معالجة البيانات.", type="error", duration=5)
 
 
     # ======================================================
@@ -404,13 +413,18 @@ def server(input, output, session):
     @reactive.event(input.wiz_confirm_save, ignore_none=True)
     async def _wizard_confirm_save():
 
-        phone = wizard_phone()
-        size = wizard_size()
-        panel = wizard_panel()
-        sensor = wizard_sensor()
+        phone = str(wizard_phone()).strip()
+        size = str(wizard_size()).strip()
+        panel = str(wizard_panel()).strip()
+        sensor = str(wizard_sensor()).strip()
+
+        if not all([phone, size, panel, sensor]):
+            ui.notification_show("❌ مدخلات ناقصة، لا يمكن إتمام عملية التسجيل.", type="error", duration=5)
+            return
+
+        ui.notification_show("⏳ جاري إضافة الموديل الجديد وحفظه في السحابة...", type="message", duration=4)
 
         try:
-
             ok = await asyncio.to_thread(
                 add_model,
                 size,
@@ -418,22 +432,20 @@ def server(input, output, session):
                 sensor,
                 phone,
             )
-
+            if ok:
+                ui.notification_show("✅ تم حفظ وإضافة الهاتف الجديد بنجاح!", type="message", duration=5)
+                ui.update_text(
+                    "search_query",
+                    value=phone,
+                )
+            else:
+                ui.notification_show("❌ فشل الاتصال بقاعدة البيانات، لم يتم الحفظ.", type="error", duration=5)
         except Exception as e:
-
             log.error(f"Wizard save error: {e}")
-            ok = False
-
-        _reset_wizard()
-
-        await get_database_async()
-
-        if ok:
-
-            ui.update_text(
-                "search_query",
-                value=phone,
-            )
+            ui.notification_show("❌ حدث خطأ داخلي أثناء الحفظ.", type="error", duration=5)
+        finally:
+            _reset_wizard()
+            await get_database_async()
 
 
     # ======================================================
@@ -443,19 +455,31 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.btn_run_inspector, ignore_none=True)
     async def _run_inspector():
+        global is_inspector_running
+        if is_inspector_running:
+            ui.notification_show("⚠️ فحص ذكي جارٍ بالفعل، يرجى الانتظار لحين الانتهاء.", type="warning", duration=4)
+            return
 
-        await asyncio.to_thread(run_intelligent_inspector)
+        is_inspector_running = True
+        ui.notification_show("⏳ جاري تشغيل الفحص الذكي وتدقيق السجلات عبر السحابة...", type="message", duration=5)
 
-        result = await asyncio.to_thread(run_ai_check)
+        try:
+            await asyncio.to_thread(run_intelligent_inspector)
+            result = await asyncio.to_thread(run_ai_check)
 
-        if result:
-            log.info(
-                f"AI check: فُحص {result['checked_now']}، "
-                f"وُجد {result['found_now']} مشكلة، "
-                f"متبقٍ {result['remaining']}"
-            )
-
-        await get_database_async()
+            if result:
+                log.info(
+                    f"AI check: فُحص {result['checked_now']}، "
+                    f"وُجد {result['found_now']} مشكلة، "
+                    f"متبقٍ {result['remaining']}"
+                )
+            ui.notification_show("✅ اكتمل الفحص الذكي وتحديث البيانات الإحصائية!", type="message", duration=5)
+        except Exception as e:
+            log.error(f"Error in running inspector: {e}")
+            ui.notification_show("❌ حدث خطأ أثناء تشغيل الفحص الذكي.", type="error", duration=5)
+        finally:
+            is_inspector_running = False
+            await get_database_async()
 
 
     # ======================================================
@@ -465,7 +489,7 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.btn_sync_local_db, ignore_none=True)
     async def _sync_local_db():
-        ui.notification_show("⏳ جاري بدء مزامنة ملف models_db.json المحلي إلى Supabase...", type="message", duration=5)
+        ui.notification_show("⏳ جاري بدء مزامنة ملف models_db.json المحمي إلى Supabase...", type="message", duration=5)
         
         try:
             import os
@@ -473,10 +497,11 @@ def server(input, output, session):
             from database import supabase
             from silent_monitor import refresh
 
-            JSON_FILE_PATH = os.path.join("www", "models_db.json")
+            # تعديل المسار ليقرأ من الملف الخارجي الرئيسي المصحح مباشرة وتجنب المجلد الفرعي المكتوب فوقه
+            JSON_FILE_PATH = "models_db.json"
             
             if not os.path.exists(JSON_FILE_PATH):
-                ui.notification_show("❌ لم يتم العثور على ملف models_db.json!", type="error", duration=5)
+                ui.notification_show("❌ لم يتم العثور على ملف models_db.json الرئيسي!", type="error", duration=5)
                 return
 
             with open(JSON_FILE_PATH, "r", encoding="utf-8") as f:
@@ -889,6 +914,7 @@ def server(input, output, session):
         target = edit_target()
 
         if not target:
+            ui.notification_show("⚠️ يرجى اختيار هاتف للتعديل أولاً من الإشعارات.", type="warning", duration=4)
             return
 
         old_model, old_size, old_panel, old_sensor = target
@@ -899,40 +925,45 @@ def server(input, output, session):
         new_sensor = str(input.edit_sensor() or "").strip()
 
         if not (new_size and new_panel and new_sensor):
+            ui.notification_show("❌ جميع الحقول مطلوبة لإتمام عملية التعديل.", type="error", duration=4)
             return
 
-        try:
+        ui.notification_show("⏳ جاري تحديث بيانات الهاتف يدوياً في السحابة...", type="message", duration=4)
 
+        try:
             if new_model != old_model:
 
                 # تغيير الاسم أيضاً: نحذف القديم ونضيف الجديد بنفس المواصفات
                 await asyncio.to_thread(
                     delete_model, old_model, old_size, old_panel, old_sensor
                 )
-                await asyncio.to_thread(
+                ok = await asyncio.to_thread(
                     add_model, new_size, new_panel, new_sensor, new_model
                 )
 
             else:
 
-                await asyncio.to_thread(
+                ok = await asyncio.to_thread(
                     update_model_specs,
                     old_model, old_size, old_panel, old_sensor,
                     new_size, new_panel, new_sensor,
                 )
 
+            if ok:
+                edit_target.set(None)
+                ui.update_text("edit_model", value="")
+                ui.update_text("edit_size", value="")
+                ui.update_text("edit_panel", value="")
+                ui.update_text("edit_sensor", value="")
+                ui.notification_show("✅ تم حفظ التعديل بنجاح وتحديث قاعدة البيانات!", type="message", duration=5)
+            else:
+                ui.notification_show("❌ لم نتمكن من حفظ التعديل، يرجى مراجعة اتصال السحابة.", type="error", duration=5)
+
         except Exception as e:
-
             log.error(f"Manual edit save error: {e}")
-
-        edit_target.set(None)
-
-        ui.update_text("edit_model", value="")
-        ui.update_text("edit_size", value="")
-        ui.update_text("edit_panel", value="")
-        ui.update_text("edit_sensor", value="")
-
-        await get_database_async()
+            ui.notification_show("❌ حدث خطأ داخلي أثناء حفظ التعديل اليدوي.", type="error", duration=5)
+        finally:
+            await get_database_async()
 
 
     # ======================================================
