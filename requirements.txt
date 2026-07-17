@@ -6,3 +6,4 @@ gotrue>=1.0.0
 python-dotenv
 pandas
 requests
+Pillow
