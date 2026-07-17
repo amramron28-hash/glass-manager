@@ -1,24 +1,32 @@
 {
+  "id": "/",
   "short_name": "AmmarTelecom",
   "name": "AMMAR TELECOM GLASS MANAGER",
+  "description": "Professional Glass Screen Protector Manager",
+  "lang": "ar",
+  "dir": "rtl",
+
   "icons": [
     {
-      "src": "AMMAR.png",
+      "src": "/AMMAR.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "AMMAR.png",
+      "src": "/AMMAR.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
-  "start_url": "./?installed=true",
-  "scope": "./",
-  "background_color": "#0d1117",
-  "theme_color": "#00bfff",
+
+  "start_url": "/",
+  "scope": "/",
+
   "display": "standalone",
-  "orientation": "portrait"
+  "orientation": "portrait",
+
+  "background_color": "#0d1117",
+  "theme_color": "#00bfff"
 }
