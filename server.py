@@ -269,21 +269,26 @@ def server(input, output, session):
 
         elif status == "plan_3":
 
-            # فشل البحث بالاسم -> ابدأ الويزارد بالخطوة الأولى (المقاس)
-            wizard_step.set("size")
-            wizard_phone.set(query)
-            wizard_size.set("")
-            wizard_panel.set("")
-            wizard_sensor.set("")
-            wizard_panel_add_mode.set(False)
-            wizard_sensor_add_mode.set(False)
-            wizard_matched.set(None)
-
+            # تم الحذف: لا نفتح الويزارد تلقائياً لعدم مقاطعة كتابة المستخدم
             show_not_found_modal.set(False)
 
         else:
 
             show_not_found_modal.set(False)
+
+
+    # ======================================================
+    # TRIGGER WIZARD (التحكم التلقائي لبدء الويزارد بكامل الاسم)
+    # ======================================================
+
+    @reactive.effect
+    @reactive.event(input.trigger_wizard, ignore_none=True)
+    def _handle_trigger_wizard():
+        phone = str(input.trigger_wizard() or "").strip()
+        if phone:
+            _reset_wizard()
+            wizard_phone.set(phone)
+            wizard_step.set("size")
 
 
     # ======================================================
@@ -562,7 +567,7 @@ def server(input, output, session):
 
 
     # ======================================================
-    # RESULTS
+    # RESULTS (تنبيه ذكي غير مزعج بدلاً من المودال المفاجئ أثناء الكتابة)
     # ======================================================
 
     @render.ui
@@ -574,7 +579,27 @@ def server(input, output, session):
 
             return None
 
-        if result.get("status") != "success":
+        status = result.get("status", "")
+
+        # إذا لم يكن الهاتف موجوداً، نعرض كارت أنيق يقترح عليه إضافة الهاتف بدلاً من فتح المودال قسراً أثناء الكتابة
+        if status == "plan_3":
+            query = str(input.search_query() or "").strip()
+            return ui.div(
+                ui.div(
+                    f"⚠️ الهاتف '{query}' غير مسجل في قاعدة البيانات حالياً.",
+                    class_="coord-line",
+                    style="text-align:center; color: var(--text-muted); font-size:16px; border:none;"
+                ),
+                ui.tags.button(
+                    f"➕ إضافة الموديل وتحديد مواصفاته الآن",
+                    class_="btn-neon",
+                    style="background: #3498db; color: white; margin-top:15px;",
+                    onclick=f"Shiny.setInputValue('trigger_wizard', '{query}', {{priority:'event'}});"
+                ),
+                class_="glass-card neon-card"
+            )
+
+        if status != "success":
 
             return None
 
@@ -1079,3 +1104,452 @@ def server(input, output, session):
     # ======================================================
 
     return
+--- START OF FILE glass-manager-main/ui_plans.py ---
+
+from shiny import ui
+
+
+# ==========================================================
+# MODAL OVERLAY
+# ==========================================================
+
+def draw_modal_overlay(inner):
+
+    if inner is None:
+        return None
+
+    return ui.div(
+
+        inner,
+
+        class_="modal-overlay"
+
+    )
+
+
+# ==========================================================
+# WIZARD - STEP 1: SIZE
+# ==========================================================
+
+def draw_wizard_size_modal(phone):
+
+    return draw_modal_overlay(
+
+        ui.div(
+
+            ui.h2("لم يتم العثور على الهاتف"),
+
+            ui.p(f"الهاتف: {phone}"),
+
+            ui.p("الخطوة 1 من 3 — أدخل مقاس الشاشة"),
+
+            ui.input_text(
+                "wiz_size",
+                "المقاس (مثال: 6.5)"
+            ),
+
+            ui.div(
+
+                ui.input_action_button(
+                    "wiz_size_next",
+                    "التالي ⟵",
+                    class_="btn-neon"
+                ),
+
+                ui.input_action_button(
+                    "btn_close_modal",
+                    "إلغاء",
+                    class_="btn-close"
+                ),
+
+                class_="modal-buttons"
+
+            ),
+
+            class_="glass-card modal-card"
+
+        )
+
+    )
+
+
+# ==========================================================
+# WIZARD - STEP 2: PANEL
+# ==========================================================
+
+def draw_wizard_panel_modal(phone, panels, add_mode=False):
+
+    body = [
+
+        ui.h2("لم يتم العثور على الهاتف"),
+
+        ui.p(f"الهاتف: {phone}"),
+
+        ui.p("الخطوة 2 من 3 — نوع الشاشة"),
+
+    ]
+
+    if add_mode:
+
+        body.append(
+            ui.input_text(
+                "wiz_panel_new",
+                "اكتب نوع الشاشة الجديد"
+            )
+        )
+
+    else:
+
+        body.append(
+            ui.input_select(
+                "wiz_panel",
+                "اختر نوع الشاشة",
+                choices=panels or ["-"]
+            )
+        )
+
+    body.append(
+
+        ui.input_action_button(
+            "wiz_show_add_panel",
+            "↩ اختيار من القائمة" if add_mode else "➕ نوع جديد غير موجود",
+            class_="btn-close",
+            style="background: #3498db !important; color: white !important; font-weight: 800; border-radius: 12px; margin-top: 10px; padding: 12px; border: none; cursor: pointer; pointer-events: auto !important;"
+        )
+
+    )
+
+    body.append(
+
+        ui.div(
+
+            ui.input_action_button(
+                "wiz_panel_next",
+                "التالي ⟵",
+                class_="btn-neon"
+            ),
+
+            ui.input_action_button(
+                "btn_close_modal",
+                "إلغاء",
+                class_="btn-close"
+            ),
+
+            class_="modal-buttons"
+
+        )
+
+    )
+
+    return draw_modal_overlay(
+        ui.div(*body, class_="glass-card modal-card")
+    )
+
+
+# ==========================================================
+# WIZARD - STEP 3: SENSOR
+# ==========================================================
+
+def draw_wizard_sensor_modal(phone, sensors, add_mode=False):
+
+    body = [
+
+        ui.h2("لم يتم العثور على الهاتف"),
+
+        ui.p(f"الهاتف: {phone}"),
+
+        ui.p("الخطوة 3 من 3 — مستشعر التقارب"),
+
+    ]
+
+    if add_mode:
+
+        body.append(
+            ui.input_text(
+                "wiz_sensor_new",
+                "اكتب اسم المستشعر الجديد"
+            )
+        )
+
+    else:
+
+        body.append(
+            ui.input_select(
+                "wiz_sensor",
+                "اختر المستشعر",
+                choices=sensors or ["-"]
+            )
+        )
+
+    body.append(
+
+        ui.input_action_button(
+            "wiz_show_add_sensor",
+            "↩ اختيار من القائمة" if add_mode else "➕ مستشعر جديد غير موجود",
+            class_="btn-close",
+            style="background: #3498db !important; color: white !important; font-weight: 800; border-radius: 12px; margin-top: 10px; padding: 12px; border: none; cursor: pointer; pointer-events: auto !important;"
+        )
+
+    )
+
+    body.append(
+
+        ui.div(
+
+            ui.input_action_button(
+                "wiz_sensor_next",
+                "بحث عن مطابقة ⟵",
+                class_="btn-neon"
+            ),
+
+            ui.input_action_button(
+                "btn_close_modal",
+                "إلغاء",
+                class_="btn-close"
+            ),
+
+            class_="modal-buttons"
+
+        )
+
+    )
+
+    return draw_modal_overlay(
+        ui.div(*body, class_="glass-card modal-card")
+    )
+
+
+# ==========================================================
+# WIZARD - CONFIRM (MERGE OR NEW GROUP)
+# ==========================================================
+
+def draw_wizard_confirm_modal(phone, size, panel, sensor, matched):
+
+    if matched:
+
+        title = "🟢 وُجدت مجموعة مطابقة"
+
+        message = f'هل تريد إضافة "{phone}" إلى هذه المجموعة؟'
+
+    else:
+
+        title = "🆕 لا توجد مجموعة مطابقة"
+
+        message = f'هل تريد تسجيل "{phone}" كمجموعة جديدة بهذه المواصفات؟'
+
+    return draw_modal_overlay(
+
+        ui.div(
+
+            ui.h2(title),
+
+            ui.p(message),
+
+            ui.div(
+                f"المقاس: {size}",
+                class_="coord-line"
+            ),
+
+            ui.div(
+                f"نوع الشاشة: {panel}",
+                class_="coord-line"
+            ),
+
+            ui.div(
+                f"المستشعر: {sensor}",
+                class_="coord-line"
+            ),
+
+            ui.div(
+
+                ui.input_action_button(
+                    "wiz_confirm_save",
+                    "✅ تأكيد الإضافة",
+                    class_="btn-neon"
+                ),
+
+                ui.input_action_button(
+                    "btn_close_modal",
+                    "إلغاء",
+                    class_="btn-close"
+                ),
+
+                class_="modal-buttons"
+
+            ),
+
+            class_="glass-card modal-card"
+
+        )
+
+    )
+
+
+# ==========================================================
+# PLAN 2 (قديم - غير مستخدم حالياً، أُبقي للتوافق)
+# ==========================================================
+
+def draw_plan_2_modal(
+        phone="",
+        panels=None,
+        sensors=None
+):
+
+    panels = panels or []
+    sensors = sensors or []
+
+
+    return draw_modal_overlay(
+
+        ui.div(
+
+            ui.h2(
+                "الخطة الثانية"
+            ),
+
+
+            ui.p(
+                f"الهاتف: {phone}"
+            ),
+
+
+            ui.input_select(
+
+                "p2_panel",
+
+                "نوع الشاشة",
+
+                choices=panels
+
+            ),
+
+
+            ui.input_select(
+
+                "p2_sensor",
+
+                "المستشعر",
+
+                choices=sensors
+
+            ),
+
+
+            ui.div(
+
+                ui.input_action_button(
+
+                    "btn_plan2_save",
+
+                    "💾 حفظ",
+
+                    class_="btn-neon"
+
+                ),
+
+
+                ui.input_action_button(
+
+                    "btn_close_modal",
+
+                    "إغلاق",
+
+                    class_="btn-close"
+
+                ),
+
+
+                class_="modal-buttons"
+
+            ),
+
+
+            class_="glass-card modal-card"
+
+        )
+
+    )
+
+
+
+# ==========================================================
+# PLAN 3 (قديم - غير مستخدم حالياً، أُبقي للتوافق)
+# ==========================================================
+
+def draw_plan_3_modal(
+        phone="",
+        result=None
+):
+
+    return draw_modal_overlay(
+
+        ui.div(
+
+            ui.h2(
+                "الخطة الثالثة"
+            ),
+
+
+            ui.p(
+
+                f"لم يتم العثور على نتائج للهاتف: {phone}"
+
+            ),
+
+
+            ui.input_text(
+
+                "p3_size",
+
+                "المقاس"
+
+            ),
+
+
+            ui.input_text(
+
+                "p3_panel",
+
+                "نوع الشاشة"
+
+            ),
+
+
+            ui.input_text(
+
+                "p3_sensor",
+
+                "المستشعر"
+
+            ),
+
+
+            # زر الإضافة المستقبلي +
+
+            ui.input_action_button(
+
+                "btn_plan3_save",
+
+                "💾 إضافة",
+
+                class_="btn-neon"
+
+            ),
+
+
+            ui.input_action_button(
+
+                "btn_close_modal",
+
+                "إغلاق",
+
+                class_="btn-close"
+
+            ),
+
+
+            class_="glass-card modal-card"
+
+        )
+
+)
